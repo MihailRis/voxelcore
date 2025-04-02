@@ -51,7 +51,7 @@ static std::unordered_map<int, std::string> keynames {};
 static std::unordered_map<int, std::string> buttonsnames{};
 
 std::string input_util::get_name(mousecode code) {
-    auto found = buttonsnames.find(static_cast<int>(code));
+    const auto found = buttonsnames.find(static_cast<int>(code));
     if (found == buttonsnames.end()) {
         return "unknown";
     }
@@ -59,7 +59,7 @@ std::string input_util::get_name(mousecode code) {
 }
 
 std::string input_util::get_name(keycode code) {
-    auto found = keynames.find(static_cast<int>(code));
+    const auto found = keynames.find(static_cast<int>(code));
     if (found == keynames.end()) {
         return "unknown";
     }

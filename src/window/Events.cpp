@@ -77,13 +77,12 @@ void Events::pollEvents() {
     pressedKeys.clear();
     glfwPollEvents();
 
-    for (auto& entry : bindings) {
-        auto& binding = entry.second;
+    for (auto& [_, binding] : bindings) {
         if (!binding.enable) {
             binding.state = false;
             continue;
         }
-        binding.justChange = false;
+        binding.justChanged = false;
 
         bool newstate = false;
         switch (binding.type) {
@@ -98,13 +97,13 @@ void Events::pollEvents() {
         if (newstate) {
             if (!binding.state) {
                 binding.state = true;
-                binding.justChange = true;
+                binding.justChanged = true;
                 binding.onactived.notify();
             }
         } else {
             if (binding.state) {
                 binding.state = false;
-                binding.justChange = true;
+                binding.justChanged = true;
             }
         }
     }
