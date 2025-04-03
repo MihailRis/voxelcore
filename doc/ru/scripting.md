@@ -11,7 +11,7 @@
 - [Библиотеки](#)
     - [app](scripting/builtins/libapp.md)
     - [base64](scripting/builtins/libbase64.md)
-    - [bjson, json, toml](scripting/filesystem.md)
+    - [bjson, json, toml, yaml](scripting/filesystem.md)
     - [block](scripting/builtins/libblock.md)
     - [byteutil](scripting/builtins/libbyteutil.md)
     - [cameras](scripting/builtins/libcameras.md)

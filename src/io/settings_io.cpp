@@ -7,7 +7,6 @@
 #include "coders/toml.hpp"
 #include "debug/Logger.hpp"
 #include "settings.hpp"
-#include "window/Events.hpp"
 #include "window/input.hpp"
 
 static debug::Logger logger("settings_io");

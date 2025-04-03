@@ -36,6 +36,22 @@ toml.parse(code: str) -> table
 
 Парсит TOML строку в таблицу.
 
+## Библиотека yaml
+
+Библиотека содержит функции для сериализации и десериализации таблиц:
+
+```python
+yaml.tostring(object: table) -> str
+```
+
+Сериализует объект в YAML строку.
+
+```python
+yaml.parse(code: str) -> table
+```
+
+Парсит YAML строку в таблицу.
+
 ## Библиотека bjson
 
 Библиотека содержит функции для работы с двоичным форматом обмена данными [vcbjson](../../specs/binary_json_spec.md).

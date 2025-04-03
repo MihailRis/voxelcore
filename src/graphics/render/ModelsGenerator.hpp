@@ -11,6 +11,8 @@ class Block;
 
 class ModelsGenerator {
 public:
+    static void prepare(Content& content, Assets& assets);
+
     static model::Model generate(
         const ItemDef& def, const Content& content, const Assets& assets
     );

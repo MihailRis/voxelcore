@@ -43,7 +43,6 @@ struct ContentPack {
     std::string creator = "";
     std::string description = "no description";
     io::path folder;
-    std::string path;
     std::vector<DependencyPack> dependencies;
     std::string source = "";
 
@@ -58,14 +57,10 @@ struct ContentPack {
     static const std::vector<std::string> RESERVED_NAMES;
 
     static bool is_pack(const io::path& folder);
-    static ContentPack read(
-        const std::string& path, const io::path& folder
-    );
+    static ContentPack read(const io::path& folder);
 
     static void scanFolder(
-        const std::string& path,
-        const io::path& folder,
-        std::vector<ContentPack>& packs
+        const io::path& folder, std::vector<ContentPack>& packs
     );
 
     static std::vector<std::string> worldPacksList(

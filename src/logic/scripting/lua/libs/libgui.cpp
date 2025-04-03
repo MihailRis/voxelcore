@@ -2,6 +2,7 @@
 #include "assets/Assets.hpp"
 #include "engine/Engine.hpp"
 #include "frontend/locale.hpp"
+#include "graphics/ui/GUI.hpp"
 #include "graphics/ui/elements/Button.hpp"
 #include "graphics/ui/elements/Canvas.hpp"
 #include "graphics/ui/elements/CheckBox.hpp"
@@ -80,8 +81,9 @@ static int l_container_add(lua::State* L) {
     }
     auto xmlsrc = lua::require_string(L, 2);
     try {
-        auto subnode =
-            guiutil::create(xmlsrc, docnode.document->getEnvironment());
+        auto subnode = guiutil::create(
+            engine->getGUI(), xmlsrc, docnode.document->getEnvironment()
+        );
         node->add(subnode);
         UINode::getIndices(subnode, docnode.document->getMapWriteable());
     } catch (const std::exception& err) {
@@ -93,7 +95,7 @@ static int l_container_add(lua::State* L) {
 static int l_node_destruct(lua::State* L) {
     auto docnode = get_document_node(L);
     auto node = docnode.node;
-    engine->getGUI()->postRunnable([node]() {
+    engine->getGUI().postRunnable([node]() {
         auto parent = node->getParent();
         if (auto container = dynamic_cast<Container*>(parent)) {
             container->remove(node.get());
@@ -651,7 +653,7 @@ static void p_set_focused(
     const std::shared_ptr<UINode>& node, lua::State* L, int idx
 ) {
     if (lua::toboolean(L, idx) && !node->isFocused()) {
-        engine->getGUI()->setFocus(node);
+        engine->getGUI().setFocus(node);
     } else if (node->isFocused()) {
         node->defocus();
     }
@@ -770,7 +772,7 @@ static int l_gui_reindex(lua::State* L) {
 
 /// @brief gui.get_locales_info() -> table of tables
 static int l_gui_get_locales_info(lua::State* L) {
-    auto& locales = langs::locales_info;
+    auto& locales = langs::get_locales_info();
     lua::createtable(L, 0, locales.size());
     for (auto& entry : locales) {
         lua::createtable(L, 0, 1);
@@ -782,7 +784,7 @@ static int l_gui_get_locales_info(lua::State* L) {
 }
 
 static int l_gui_getviewport(lua::State* L) {
-    return lua::pushvec2(L, engine->getGUI()->getContainer()->getSize());
+    return lua::pushvec2(L, engine->getGUI().getContainer()->getSize());
 }
 
 static int l_gui_clear_markup(lua::State* L) {
@@ -845,6 +847,7 @@ static int l_gui_load_document(lua::State* L) {
     auto args = lua::tovalue(L, 3);
     
     auto documentPtr = UiDocument::read(
+        engine->getGUI(),
         scripting::get_root_environment(),
         alias,
         filename,

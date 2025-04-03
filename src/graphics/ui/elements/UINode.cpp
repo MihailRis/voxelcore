@@ -8,7 +8,7 @@
 using gui::UINode;
 using gui::Align;
 
-UINode::UINode(glm::vec2 size) : size(size) {
+UINode::UINode(GUI& gui, glm::vec2 size) : gui(gui), size(size) {
 }
 
 UINode::~UINode() {
@@ -74,18 +74,18 @@ UINode* UINode::listenDoubleClick(const onaction& action) {
     return this;
 }
 
-void UINode::click(GUI*, int, int) {
+void UINode::click(int, int) {
     pressed = true;
 }
 
-void UINode::doubleClick(GUI* gui, int x, int y) {
+void UINode::doubleClick(int x, int y) {
     pressed = true;
     if (isInside(glm::vec2(x, y))) {
         doubleClickCallbacks.notify(gui);
     }
 }
 
-void UINode::mouseRelease(GUI* gui, int x, int y) {
+void UINode::mouseRelease(int x, int y) {
     pressed = false;
     if (isInside(glm::vec2(x, y))) {
         actions.notify(gui);

@@ -2,15 +2,15 @@
 
 using namespace gui;
 
-SplitBox::SplitBox(const glm::vec2& size, float splitPos, Orientation orientation)
- : BasePanel(size, glm::vec4(), 4.0f, orientation), splitPos(splitPos) {
+SplitBox::SplitBox(GUI& gui, const glm::vec2& size, float splitPos, Orientation orientation)
+ : BasePanel(gui, size, glm::vec4(), 4.0f, orientation), splitPos(splitPos) {
     setCursor(
         orientation == Orientation::vertical ? CursorShape::NS_RESIZE
                                              : CursorShape::EW_RESIZE
     );
 }
 
-void SplitBox::mouseMove(GUI*, int x, int y) {
+void SplitBox::mouseMove(int x, int y) {
     auto pos = calcPos();
     auto size = getSize();
     
@@ -59,7 +59,7 @@ void SplitBox::refresh() {
     }
 }
 
-void SplitBox::doubleClick(GUI*, int x, int y) {
+void SplitBox::doubleClick(int x, int y) {
     if (nodes.size() < 2) {
         return;
     }

@@ -36,6 +36,22 @@ toml.parse(code: str) -> table
 
 Parses a TOML string into a table.
 
+## *yaml* library
+
+The library contains functions for serializing and deserializing tables:
+
+```python
+yaml.tostring(object: table) -> str
+```
+
+Serializes an object into a YAML string.
+
+```python
+yaml.parse(code: str) -> table
+```
+
+Parses a YAML string into a table.
+
 ## *bjson* library
 
 The library contains functions for working with the binary data exchange format [vcbjson](../../specs/binary_json_spec.md).

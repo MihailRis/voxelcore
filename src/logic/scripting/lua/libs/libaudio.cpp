@@ -1,4 +1,5 @@
 #include "audio/audio.hpp"
+#include "assets/Assets.hpp"
 #include "engine/Engine.hpp"
 #include "api_lua.hpp"
 
@@ -70,8 +71,8 @@ inline audio::speakerid_t play_stream(
     if (std::strchr(filename, ':')) {
         file = std::string(filename);
     } else {
-        auto paths = scripting::engine->getResPaths();
-        file = paths->find(filename);
+        const auto& paths = scripting::engine->getResPaths();
+        file = paths.find(filename);
     }
     return audio::play_stream(
         file,

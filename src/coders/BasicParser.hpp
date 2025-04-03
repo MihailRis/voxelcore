@@ -7,16 +7,20 @@ template <typename CharT>
 class BasicParser {
     using StringT = std::basic_string<CharT>;
     using StringViewT = std::basic_string_view<CharT>;
+
+    void skipWhitespaceHashComment(bool newline = true);
 protected:
     std::string_view filename;
     StringViewT source;
     uint pos = 0;
     uint line = 1;
     uint linestart = 0;
+    bool hashComment = false;
 
-    virtual void skipWhitespace();
+    void skipWhitespace(bool newline = true);
     void skip(size_t n);
     void skipLine();
+    void skipEmptyLines();
     bool skipTo(const StringT& substring);
     void expect(CharT expected);
     void expect(const StringT& substring);

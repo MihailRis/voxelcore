@@ -14,6 +14,7 @@ Mainloop::Mainloop(Engine& engine) : engine(engine) {
 
 void Mainloop::run() {
     auto& time = engine.getTime();
+    auto& window = engine.getWindow();
 
     engine.setLevelConsumer([this](auto level, int64_t localPlayer) {
         if (level == nullptr) {
@@ -32,10 +33,10 @@ void Mainloop::run() {
     engine.setScreen(std::make_shared<MenuScreen>(engine));
     
     logger.info() << "main loop started";
-    while (!Window::isShouldClose()){
-        time.update(Window::time());
+    while (!window.isShouldClose()){
+        time.update(window.time());
         engine.updateFrontend();
-        if (!Window::isIconified()) {
+        if (!window.isIconified()) {
             engine.renderFrame();
         }
         engine.postUpdate();

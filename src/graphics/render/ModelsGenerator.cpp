@@ -48,6 +48,30 @@ static inline UVRegion get_region_for(
     return texreg.region;
 }
 
+void ModelsGenerator::prepare(Content& content, Assets& assets) {
+    for (auto& [name, def] : content.blocks.getDefs()) {
+        if (def->model == BlockModel::custom && def->modelName.empty()) {
+            assets.store(
+                std::make_unique<model::Model>(
+                    loadCustomBlockModel(
+                        def->customModelRaw, assets, !def->shadeless
+                    )
+                ),
+                name + ".model"
+            );
+            def->modelName = def->name + ".model";
+        }
+    }
+    for (auto& [name, def] : content.items.getDefs()) {
+        assets.store(
+            std::make_unique<model::Model>(
+                generate(*def, content, assets)
+            ),
+            name + ".model"
+        );
+    }
+}
+
 model::Model ModelsGenerator::fromCustom(
     const Assets& assets,
     const std::vector<BoxModel>& modelBoxes,

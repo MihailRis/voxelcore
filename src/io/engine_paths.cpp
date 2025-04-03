@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <array>
-#include <filesystem>
 #include <sstream>
 #include <stack>
 #include "typedefs.hpp"
@@ -32,13 +31,9 @@ namespace fs = std::filesystem;
 
 static debug::Logger logger("engine-paths");
 
-static inline io::path SCREENSHOTS_FOLDER = "screenshots";
-static inline io::path CONTENT_FOLDER = "content";
-static inline io::path WORLDS_FOLDER = "worlds";
-static inline io::path CONFIG_FOLDER = "config";
-static inline io::path EXPORT_FOLDER = "export";
-static inline io::path CONTROLS_FILE = "controls.toml";
-static inline io::path SETTINGS_FILE = "settings.toml";
+static inline io::path SCREENSHOTS_FOLDER = "user:screenshots";
+static inline io::path CONTENT_FOLDER = "user:content";
+static inline io::path WORLDS_FOLDER = "user:worlds";
 
 void EnginePaths::prepare() {
     io::set_device("res", std::make_shared<io::StdfsDevice>(resourcesFolder, false));
@@ -52,14 +47,13 @@ void EnginePaths::prepare() {
     logger.info() << "resources folder: " << fs::canonical(resourcesFolder).u8string();
     logger.info() << "user files folder: " << fs::canonical(userFilesFolder).u8string();
     
-    auto contentFolder = io::path("user:") / CONTENT_FOLDER;
-    if (!io::is_directory(contentFolder)) {
-        io::create_directories(contentFolder);
+    if (!io::is_directory(CONTENT_FOLDER)) {
+        io::create_directories(CONTENT_FOLDER);
     }
 
     io::create_subdevice("core", "res", "");
-    io::create_subdevice("export", "user", EXPORT_FOLDER);
-    io::create_subdevice("config", "user", CONFIG_FOLDER);
+    io::create_subdevice("export", "user", "export");
+    io::create_subdevice("config", "user", "config");
 }
 
 const std::filesystem::path& EnginePaths::getUserFilesFolder() const {
@@ -71,7 +65,7 @@ const std::filesystem::path& EnginePaths::getResourcesFolder() const {
 }
 
 io::path EnginePaths::getNewScreenshotFile(const std::string& ext) {
-    auto folder = io::path("user:") / SCREENSHOTS_FOLDER;
+    auto folder = SCREENSHOTS_FOLDER;
     if (!io::is_directory(folder)) {
         io::create_directories(folder);
     }
@@ -95,11 +89,7 @@ io::path EnginePaths::getNewScreenshotFile(const std::string& ext) {
 }
 
 io::path EnginePaths::getWorldsFolder() const {
-    return io::path("user:") / WORLDS_FOLDER;
-}
-
-io::path EnginePaths::getConfigFolder() const {
-    return io::path("user:") / CONFIG_FOLDER;
+    return WORLDS_FOLDER;
 }
 
 io::path EnginePaths::getCurrentWorldFolder() {
@@ -108,14 +98,6 @@ io::path EnginePaths::getCurrentWorldFolder() {
 
 io::path EnginePaths::getWorldFolderByName(const std::string& name) {
     return getWorldsFolder() / name;
-}
-
-io::path EnginePaths::getControlsFile() const {
-    return io::path("user:") / CONTROLS_FILE;
-}
-
-io::path EnginePaths::getSettingsFile() const {
-    return io::path("user:") / SETTINGS_FILE;
 }
 
 std::vector<io::path> EnginePaths::scanForWorlds() const {
@@ -192,15 +174,15 @@ void EnginePaths::unmount(const std::string& name) {
     mounted.erase(found);
 }
 
-std::string EnginePaths::createWriteablePackDevice(const std::string& name) {
-    const auto& found = writeablePacks.find(name);
-    if (found != writeablePacks.end()) {
+std::string EnginePaths::createWriteableDevice(const std::string& name) {
+    const auto& found = writeables.find(name);
+    if (found != writeables.end()) {
         return found->second;
     }
     io::path folder;
-    for (const auto& pack : *contentPacks) {
-        if (pack.id == name) {
-            folder = pack.folder;
+    for (const auto& point : entryPoints) {
+        if (point.name == name) {
+            folder = point.path;
             break;
         }
     }
@@ -209,29 +191,33 @@ std::string EnginePaths::createWriteablePackDevice(const std::string& name) {
     }
     auto entryPoint = std::string("W.") + generate_random_base64<6>();
     io::create_subdevice(entryPoint, folder.entryPoint(), folder.pathPart());
-    writeablePacks[name] = entryPoint;
+    writeables[name] = entryPoint;
     return entryPoint;
 }
 
-void EnginePaths::setContentPacks(std::vector<ContentPack>* contentPacks) {
+void EnginePaths::cleanup() {
     // Remove previous content entry-points
-    for (const auto& id : contentEntryPoints) {
+    for (const auto& [id, _] : entryPoints) {
         io::remove_device(id);
     }
-    for (const auto& [_, entryPoint] : writeablePacks) {
+    for (const auto& [_, entryPoint] : writeables) {
         io::remove_device(entryPoint);
     }
     for (const auto& entryPoint : mounted) {
         io::remove_device(entryPoint);
     }
-    contentEntryPoints.clear();
-    this->contentPacks = contentPacks;
-    // Create content devices
-    for (const auto& pack : *contentPacks) {
-        auto parent = pack.folder.entryPoint();
-        io::create_subdevice(pack.id, parent, pack.folder);
-        contentEntryPoints.push_back(pack.id);
+    entryPoints.clear();
+}
+
+void EnginePaths::setEntryPoints(std::vector<PathsRoot> entryPoints) {
+    cleanup();
+
+    // Create sub-devices
+    for (const auto& point : entryPoints) {
+        auto parent = point.path.entryPoint();
+        io::create_subdevice(point.name, parent, point.path);
     }
+    this->entryPoints = std::move(entryPoints);
 }
 
 std::tuple<std::string, std::string> EnginePaths::parsePath(std::string_view path) {
@@ -244,8 +230,8 @@ std::tuple<std::string, std::string> EnginePaths::parsePath(std::string_view pat
     return {prefix, filename};
 }
 
-ResPaths::ResPaths(io::path mainRoot, std::vector<PathsRoot> roots)
-    : mainRoot(std::move(mainRoot)), roots(std::move(roots)) {
+ResPaths::ResPaths(std::vector<PathsRoot> roots)
+    : roots(std::move(roots)) {
 }
 
 io::path ResPaths::find(const std::string& filename) const {
@@ -256,7 +242,7 @@ io::path ResPaths::find(const std::string& filename) const {
             return file;
         }
     }
-    return mainRoot / filename;
+    return io::path("res:") / filename;
 }
 
 std::string ResPaths::findRaw(const std::string& filename) const {
@@ -345,6 +331,11 @@ dv::value ResPaths::readCombinedObject(const std::string& filename, bool deep) c
     return object;
 }
 
-const io::path& ResPaths::getMainRoot() const {
-    return mainRoot;
+std::vector<io::path> ResPaths::collectRoots() {
+    std::vector<io::path> collected;
+    collected.reserve(roots.size());
+    for (const auto& root : roots) {
+        collected.emplace_back(root.path);
+    }
+    return collected;
 }

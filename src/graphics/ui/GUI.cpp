@@ -1,13 +1,15 @@
 #include "GUI.hpp"
 
-#include "gui_util.hpp"
+#include <algorithm>
+#include <iostream>
+#include <utility>
 
-#include "elements/UINode.hpp"
+#include "assets/Assets.hpp"
 #include "elements/Label.hpp"
 #include "elements/Menu.hpp"
 #include "elements/Panel.hpp"
-
-#include "assets/Assets.hpp"
+#include "elements/UINode.hpp"
+#include "engine/Engine.hpp"
 #include "frontend/UiDocument.hpp"
 #include "frontend/locale.hpp"
 #include "graphics/core/Batch2D.hpp"
@@ -15,31 +17,36 @@
 #include "graphics/core/Shader.hpp"
 #include "graphics/core/Font.hpp"
 #include "graphics/core/DrawContext.hpp"
-#include "window/Events.hpp"
+#include "graphics/core/Shader.hpp"
+#include "gui_util.hpp"
+#include "window/Camera.hpp"
 #include "window/Window.hpp"
 #include "window/input.hpp"
-#include "window/Camera.hpp"
 
 #include <algorithm>
 #include <utility>
 
 using namespace gui;
 
-GUI::GUI()
-    : batch2D(std::make_unique<Batch2D>(1024)),
-      container(std::make_shared<Container>(glm::vec2(1000))) {
+GUI::GUI(Engine& engine)
+    : engine(engine),
+      input(engine.getInput()),
+      batch2D(std::make_unique<Batch2D>(1024)),
+      container(std::make_shared<Container>(*this, glm::vec2(1000))) {
     container->setId("root");
-    uicamera = std::make_unique<Camera>(glm::vec3(), Window::height);
+    uicamera =
+        std::make_unique<Camera>(glm::vec3(), engine.getWindow().getSize().y);
     uicamera->perspective = false;
     uicamera->flipped = true;
 
-    menu = std::make_shared<Menu>();
+    menu = std::make_shared<Menu>(*this);
     menu->setId("menu");
     menu->setZIndex(10);
     container->add(menu);
     container->setScrollable(false);
 
     tooltip = guiutil::create(
+        *this,
         "<container color='#000000A0' interactive='false' z-index='999'>"
             "<label id='tooltip.label' pos='2' autoresize='true' multiline='true' text-wrap='false'></label>"
         "</container>"
@@ -65,12 +72,15 @@ std::shared_ptr<Menu> GUI::getMenu() {
 }
 
 void GUI::onAssetsLoad(Assets* assets) {
-    assets->store(std::make_unique<UiDocument>(
-        "core:root", 
-        uidocscript {}, 
-        std::dynamic_pointer_cast<gui::UINode>(container), 
-        nullptr
-    ), "core:root");
+    assets->store(
+        std::make_unique<UiDocument>(
+            "core:root",
+            uidocscript {},
+            std::dynamic_pointer_cast<gui::UINode>(container),
+            nullptr
+        ),
+        "core:root"
+    );
 }
 
 void GUI::resetTooltip() {
@@ -79,11 +89,13 @@ void GUI::resetTooltip() {
 }
 
 void GUI::updateTooltip(float delta) {
-    if (hover == nullptr || !hover->isInside(Events::cursor)) {
+    const auto& cursor = input.getCursor();
+    if (hover == nullptr || !hover->isInside(cursor.pos)) {
         return resetTooltip();
     }
     if (tooltipTimer + delta >= hover->getTooltipDelay()) {
-        auto label = std::dynamic_pointer_cast<gui::Label>(get("tooltip.label"));
+        auto label =
+            std::dynamic_pointer_cast<gui::Label>(get("tooltip.label"));
         const auto& text = hover->getTooltip();
         if (text.empty() && tooltip->isVisible()) {
             return resetTooltip();
@@ -91,11 +103,11 @@ void GUI::updateTooltip(float delta) {
         if (label && !text.empty()) {
             tooltip->setVisible(true);
             label->setText(langs::get(text));
-            auto size = label->getSize()+glm::vec2(4.0f);
-            auto pos = Events::cursor+glm::vec2(10.0f);
+            auto size = label->getSize() + glm::vec2(4.0f);
+            auto pos = cursor.pos + glm::vec2(10.0f);
             auto rootSize = container->getSize();
-            pos.x = glm::min(pos.x, rootSize.x-size.x);
-            pos.y = glm::min(pos.y, rootSize.y-size.y);
+            pos.x = glm::min(pos.x, rootSize.x - size.x);
+            pos.y = glm::min(pos.y, rootSize.y - size.y);
             tooltip->setSize(size);
             tooltip->setPos(pos);
         }
@@ -103,32 +115,34 @@ void GUI::updateTooltip(float delta) {
     tooltipTimer += delta;
 }
 
-/// @brief Mouse related input and logic handling 
-void GUI::actMouse(float delta) {
-    float mouseDelta = glm::length(Events::delta);
+/// @brief Mouse related input and logic handling
+void GUI::actMouse(float delta, const CursorState& cursor) {
+    float mouseDelta = glm::length(cursor.delta);
     doubleClicked = false;
     doubleClickTimer += delta + mouseDelta * 0.1f;
 
-    auto hover = container->getAt(Events::cursor);
+    auto hover = container->getAt(cursor.pos);
     if (this->hover && this->hover != hover) {
         this->hover->setHover(false);
     }
     if (hover) {
         hover->setHover(true);
-        if (Events::scroll) {
-            hover->scrolled(Events::scroll);
+
+        int scroll = input.getScroll();
+        if (scroll) {
+            hover->scrolled(scroll);
         }
     }
     this->hover = hover;
 
-    if (Events::jclicked(mousecode::BUTTON_1)) {
+    if (input.jclicked(Mousecode::BUTTON_1)) {
         if (pressed == nullptr && this->hover) {
             pressed = hover;
             if (doubleClickTimer < doubleClickDelay) {
-                pressed->doubleClick(this, Events::cursor.x, Events::cursor.y);
+                pressed->doubleClick(cursor.pos.x, cursor.pos.y);
                 doubleClicked = true;
             } else {
-                pressed->click(this, Events::cursor.x, Events::cursor.y);
+                pressed->click(cursor.pos.x, cursor.pos.y);
             }
             doubleClickTimer = 0.0f;
             if (focus && focus != pressed) {
@@ -136,7 +150,7 @@ void GUI::actMouse(float delta) {
             }
             if (focus != pressed) {
                 focus = pressed;
-                focus->onFocus(this);
+                focus->onFocus();
                 return;
             }
         }
@@ -144,59 +158,61 @@ void GUI::actMouse(float delta) {
             focus->defocus();
             focus = nullptr;
         }
-    } else if (!Events::clicked(mousecode::BUTTON_1) && pressed) {
-        pressed->mouseRelease(this, Events::cursor.x, Events::cursor.y);
+    } else if (!input.clicked(Mousecode::BUTTON_1) && pressed) {
+        pressed->mouseRelease(cursor.pos.x, cursor.pos.y);
         pressed = nullptr;
     }
 
     if (hover) {
-        for (mousecode code : MOUSECODES_ALL) {
-            if (Events::jclicked(code)) {
-                hover->clicked(this, code);
-            }
-        }
-    }
-} 
-
-void GUI::actFocused() {
-    if (Events::jpressed(keycode::ESCAPE)) {
-        focus->defocus();
-        focus = nullptr;
-        return;
-    }
-    for (auto codepoint : Events::codepoints) {
-        focus->typed(codepoint);
-    }
-    for (auto key : Events::pressedKeys) {
-        focus->keyPressed(key);
-    }
-
-    if (!Events::isCursorLocked()) {
-        if (Events::clicked(mousecode::BUTTON_1) && 
-            (Events::jclicked(mousecode::BUTTON_1) || Events::delta.x || Events::delta.y))
-        {
-            if (!doubleClicked) {
-                focus->mouseMove(this, Events::cursor.x, Events::cursor.y);
+        for (Mousecode code : MOUSECODES_ALL) {
+            if (input.jclicked(code)) {
+                hover->clicked(code);
             }
         }
     }
 }
 
-void GUI::act(float delta, const Viewport& vp) {
-    container->setSize(vp.size());
+void GUI::actFocused() {
+    if (input.jpressed(Keycode::ESCAPE)) {
+        focus->defocus();
+        focus = nullptr;
+        return;
+    }
+    for (auto codepoint : input.getCodepoints()) {
+        focus->typed(codepoint);
+    }
+    for (auto key : input.getPressedKeys()) {
+        focus->keyPressed(key);
+    }
+
+    const auto& cursor = input.getCursor();
+    if (!cursor.locked) {
+        if (input.clicked(Mousecode::BUTTON_1) &&
+            (input.jclicked(Mousecode::BUTTON_1) || cursor.delta.x ||
+             cursor.delta.y)) {
+            if (!doubleClicked) {
+                focus->mouseMove(cursor.pos.x, cursor.pos.y);
+            }
+        }
+    }
+}
+
+void GUI::act(float delta, const glm::uvec2& vp) {
+    container->setSize(vp);
     container->act(delta);
     auto prevfocus = focus;
 
     updateTooltip(delta);
-    if (!Events::isCursorLocked()) {
-        actMouse(delta);
+
+    const auto& cursor = input.getCursor();
+    if (!cursor.locked) {
+        actMouse(delta, cursor);
     } else {
         if (hover) {
             hover->setHover(false);
             hover = nullptr;
         }
     }
-    
     if (focus) {
         actFocused();
     }
@@ -217,7 +233,6 @@ void GUI::draw(const DrawContext& pctx, const Assets& assets) {
     auto ctx = pctx.sub(batch2D.get());
 
     auto& viewport = ctx.getViewport();
-    glm::vec2 wsize = viewport.size();
 
     auto& page = menu->getCurrent();
     if (page.panel) {
@@ -227,8 +242,9 @@ void GUI::draw(const DrawContext& pctx, const Assets& assets) {
             panel->cropToContent();
         }
     }
-    menu->setPos((wsize - menu->getSize()) / 2.0f);
-    uicamera->setFov(wsize.y);
+    menu->setPos((glm::vec2(viewport) - menu->getSize()) / 2.0f);
+    uicamera->setFov(viewport.y);
+    uicamera->setAspectRatio(viewport.x / static_cast<float>(viewport.y));
 
     auto uishader = assets.get<Shader>("ui");
     uishader->use();
@@ -238,7 +254,7 @@ void GUI::draw(const DrawContext& pctx, const Assets& assets) {
     container->draw(ctx, assets);
 
     if (hover) {
-        Window::setCursor(hover->getCursor());
+        engine.getWindow().setCursor(hover->getCursor());
     }
     if (hover && debug) {
         auto pos = hover->calcPos();
@@ -260,11 +276,11 @@ void GUI::draw(const DrawContext& pctx, const Assets& assets) {
         batch2D->untexture();
         auto node = hover->getParent();
         while (node) {
-            auto pos = node->calcPos();
+            auto parentPos = node->calcPos();
             auto size = node->getSize();
 
             batch2D->setColor(0, 255, 255);
-            batch2D->lineRect(pos.x, pos.y, size.x-1, size.y-1);
+            batch2D->lineRect(parentPos.x, parentPos.y, size.x-1, size.y-1);
 
             node = node->getParent();
         }
@@ -313,7 +329,7 @@ void GUI::setFocus(std::shared_ptr<UINode> node) {
     }
     focus = std::move(node);
     if (focus) {
-        focus->onFocus(this);
+        focus->onFocus();
     }
 }
 
@@ -335,4 +351,16 @@ float GUI::getDoubleClickDelay() const {
 
 void GUI::toggleDebug() {
     debug = !debug;
+}
+
+const Input& GUI::getInput() const {
+    return engine.getInput();
+}
+
+Input& GUI::getInput() {
+    return engine.getInput();
+}
+
+Window& GUI::getWindow() {
+    return engine.getWindow();
 }

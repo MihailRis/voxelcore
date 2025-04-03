@@ -12,27 +12,33 @@
 #include "objects/Player.hpp"
 #include "voxels/Block.hpp"
 #include "world/Level.hpp"
+#include "engine/Engine.hpp"
 
 LevelFrontend::LevelFrontend(
+    Engine& engine,
     Player* currentPlayer,
     LevelController* controller,
-    Assets& assets,
     const EngineSettings& settings
 )
     : level(*controller->getLevel()),
       controller(controller),
-      assets(assets),
+      assets(*engine.getAssets()),
       contentCache(std::make_unique<ContentGfxCache>(
           level.content, assets, settings.graphics
       )) {
     assets.store(
         BlocksPreview::build(
-            *contentCache, assets, *level.content.getIndices()
+            engine.getWindow(),
+            *contentCache,
+            *engine.getAssets(),
+            *level.content.getIndices()
         ),
         "block-previews"
     );
+
+    auto& rassets = assets;
     controller->getBlocksController()->listenBlockInteraction(
-        [currentPlayer, controller, &assets](auto player, const auto& pos, const auto& def, BlockInteraction type) {
+        [currentPlayer, controller, &rassets](auto player, const auto& pos, const auto& def, BlockInteraction type) {
             const auto& level = *controller->getLevel();
             auto material = level.content.findBlockMaterial(def.material);
             if (material == nullptr) {
@@ -40,7 +46,7 @@ LevelFrontend::LevelFrontend(
             }
 
             if (type == BlockInteraction::step) {
-                auto sound = assets.get<audio::Sound>(material->stepsSound);
+                auto sound = rassets.get<audio::Sound>(material->stepsSound);
                 glm::vec3 pos {};
                 auto soundsCamera = currentPlayer->currentCamera.get();
                 if (soundsCamera == currentPlayer->spCamera.get() ||
@@ -66,10 +72,10 @@ LevelFrontend::LevelFrontend(
                 audio::Sound* sound = nullptr;
                 switch (type) {
                     case BlockInteraction::placing:
-                        sound = assets.get<audio::Sound>(material->placeSound);
+                        sound = rassets.get<audio::Sound>(material->placeSound);
                         break;
                     case BlockInteraction::destruction:
-                        sound = assets.get<audio::Sound>(material->breakSound);
+                        sound = rassets.get<audio::Sound>(material->breakSound);
                         break; 
                     default:
                         break;   
@@ -93,14 +99,6 @@ LevelFrontend::~LevelFrontend() = default;
 
 Level& LevelFrontend::getLevel() {
     return level;
-}
-
-const Level& LevelFrontend::getLevel() const {
-    return level;
-}
-
-const Assets& LevelFrontend::getAssets() const {
-    return assets;
 }
 
 ContentGfxCache& LevelFrontend::getContentGfxCache() {

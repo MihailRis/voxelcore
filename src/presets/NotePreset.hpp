@@ -3,6 +3,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <optional>
+#include <string>
 
 #include "interfaces/Serializable.hpp"
 

@@ -3,8 +3,6 @@
 #include <cmath>
 #include <glm/ext.hpp>
 
-#include "Window.hpp"
-
 Camera::Camera(glm::vec3 position, float fov) : fov(fov), position(position) {
     updateVectors();
 }
@@ -30,17 +28,12 @@ void Camera::rotate(float x, float y, float z) {
 }
 
 glm::mat4 Camera::getProjection() const {
-    constexpr float epsilon = 1e-6f; // 0.000001
-    float aspect_ratio = this->aspect;
-    if (std::fabs(aspect_ratio) < epsilon) {
-        aspect_ratio = Window::width / static_cast<float>(Window::height);
-    }
     if (perspective) {
-        return glm::perspective(fov * zoom, aspect_ratio, near, far);
+        return glm::perspective(fov * zoom, ar, near, far);
     } else if (flipped) {
-        return glm::ortho(-0.5f, fov * aspect_ratio-0.5f, fov, 0.0f);
+        return glm::ortho(0.0f, fov * ar, fov, 0.0f);
     } else {
-        return glm::ortho(-0.5f, fov * aspect_ratio-0.5f, 0.0f, fov);
+        return glm::ortho(0.0f, fov * ar, 0.0f, fov);
     }
 }
 
@@ -69,5 +62,9 @@ float Camera::getFov() const {
 }
 
 float Camera::getAspectRatio() const {
-    return aspect;
+    return ar;
+}
+
+void Camera::setAspectRatio(float ar) {
+    this->ar = ar;
 }

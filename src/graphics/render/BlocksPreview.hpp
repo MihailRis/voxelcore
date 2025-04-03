@@ -13,6 +13,7 @@ class Batch3D;
 class Block;
 class ContentIndices;
 class Shader;
+class Window;
 class ContentGfxCache;
 
 class BlocksPreview {
@@ -26,6 +27,7 @@ class BlocksPreview {
     );
 public:
     static std::unique_ptr<Atlas> build(
+        Window& window,
         const ContentGfxCache& cache,
         const Assets& assets, 
         const ContentIndices& indices

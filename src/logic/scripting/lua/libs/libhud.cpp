@@ -6,6 +6,7 @@
 #include "content/Content.hpp"
 #include "frontend/UiDocument.hpp"
 #include "frontend/hud.hpp"
+#include "content/ContentControl.hpp"
 #include "graphics/ui/elements/InventoryView.hpp"
 #include "items/Inventories.hpp"
 #include "logic/BlocksController.hpp"
@@ -176,7 +177,7 @@ static int l_reload_script(lua::State* L) {
     if (content == nullptr) {
         throw std::runtime_error("content is not initialized");
     }
-    auto& writeableContent = *engine->getWriteableContent();
+    auto& writeableContent = *content_control->get();
     auto pack = writeableContent.getPackRuntime(packid);
     const auto& info = pack->getInfo();
     scripting::load_hud_script(

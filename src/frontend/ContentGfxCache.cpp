@@ -69,10 +69,6 @@ void ContentGfxCache::refresh() {
 
 ContentGfxCache::~ContentGfxCache() = default;
 
-const Content* ContentGfxCache::getContent() const {
-    return &content;
-}
-
 const model::Model& ContentGfxCache::getModel(blockid_t id) const {
     const auto& found = models.find(id);
     if (found == models.end()) {

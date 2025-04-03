@@ -13,7 +13,6 @@
 #include "objects/Player.hpp"
 #include "util/stringutil.hpp"
 #include "voxels/Block.hpp"
-#include "window/Events.hpp"
 #include "window/input.hpp"
 #include "world/Level.hpp"
 #include "graphics/core/Atlas.hpp"
@@ -46,8 +45,8 @@ SlotLayout::SlotLayout(
     shareFunc(std::move(shareFunc)),
     rightClick(std::move(rightClick)) {}
 
-InventoryBuilder::InventoryBuilder() {
-    view = std::make_shared<InventoryView>();
+InventoryBuilder::InventoryBuilder(GUI& gui) : gui(gui) {
+    view = std::make_shared<InventoryView>(gui);
 }
 
 void InventoryBuilder::addGrid(
@@ -75,7 +74,8 @@ void InventoryBuilder::addGrid(
     view->setSize(vsize);
 
     if (addpanel) {
-        auto panel = std::make_shared<gui::Container>(glm::vec2(width, height));
+        auto panel =
+            std::make_shared<gui::Container>(gui, glm::vec2(width, height));
         view->setColor(glm::vec4(0.122f, 0.122f, 0.122f, 0.878f));
         view->add(panel, pos);
     }
@@ -106,8 +106,8 @@ std::shared_ptr<InventoryView> InventoryBuilder::build() {
 }
 
 SlotView::SlotView(
-    SlotLayout layout
-) : UINode(glm::vec2(InventoryView::SLOT_SIZE)),
+    GUI& gui, SlotLayout layout
+) : UINode(gui, glm::vec2(InventoryView::SLOT_SIZE)),
     layout(std::move(layout))
 {
     setColor(glm::vec4(0, 0, 0, 0.2f));
@@ -280,7 +280,8 @@ bool SlotView::isHighlighted() const {
 }
 
 void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
-    if (layout.taking && Events::pressed(keycode::LEFT_SHIFT)) {
+    const auto& input = gui.getInput();
+    if (layout.taking && input.pressed(Keycode::LEFT_SHIFT)) {
         if (layout.shareFunc) {
             layout.shareFunc(layout.index, stack);
         }
@@ -347,20 +348,20 @@ void SlotView::performRightClick(ItemStack& stack, ItemStack& grabbed) {
     }
 }
 
-void SlotView::clicked(gui::GUI* gui, mousecode button) {
+void SlotView::clicked(Mousecode button) {
     if (bound == nullptr)
         return;
     auto exchangeSlot =
-        std::dynamic_pointer_cast<SlotView>(gui->get(EXCHANGE_SLOT_NAME));
+        std::dynamic_pointer_cast<SlotView>(gui.get(EXCHANGE_SLOT_NAME));
     if (exchangeSlot == nullptr) {
         return;
     }
     ItemStack& grabbed = exchangeSlot->getStack();
     ItemStack& stack = *bound;
     
-    if (button == mousecode::BUTTON_1) {
+    if (button == Mousecode::BUTTON_1) {
         performLeftClick(stack, grabbed);
-    } else if (button == mousecode::BUTTON_2) {
+    } else if (button == Mousecode::BUTTON_2) {
         performRightClick(stack, grabbed);
     }
     if (layout.updateFunc) {
@@ -368,8 +369,8 @@ void SlotView::clicked(gui::GUI* gui, mousecode button) {
     }
 }
 
-void SlotView::onFocus(gui::GUI* gui) {
-    clicked(gui, mousecode::BUTTON_1);
+void SlotView::onFocus() {
+    clicked(Mousecode::BUTTON_1);
 }
 
 const std::wstring& SlotView::getTooltip() const {
@@ -398,7 +399,7 @@ ItemStack& SlotView::getStack() {
     return *bound;
 }
 
-InventoryView::InventoryView() : Container(glm::vec2()) {
+InventoryView::InventoryView(GUI& gui) : Container(gui, glm::vec2()) {
     setColor(glm::vec4(0, 0, 0, 0.0f));
 }
 
@@ -419,7 +420,7 @@ std::shared_ptr<SlotView> InventoryView::addSlot(const SlotLayout& layout) {
     }
     setSize(vsize);
 
-    auto slot = std::make_shared<SlotView>(layout);
+    auto slot = std::make_shared<SlotView>(gui, layout);
     if (!layout.background) {
         slot->setColor(glm::vec4());
     }

@@ -7,10 +7,10 @@
 
 using namespace gui;
 
-InputBindBox::InputBindBox(Binding& binding, glm::vec4 padding) 
-    : Panel(glm::vec2(100,32), padding, 0),
+InputBindBox::InputBindBox(GUI& gui, Binding& binding, glm::vec4 padding) 
+    : Panel(gui, glm::vec2(100,32), padding, 0),
       binding(binding),
-      label(std::make_shared<Label>(L"")) {
+      label(std::make_shared<Label>(gui, L"")) {
     add(label);
     setScrollable(false);
     hoverColor = glm::vec4(0.05f, 0.1f, 0.2f, 0.75f);
@@ -25,15 +25,15 @@ void InputBindBox::drawBackground(const DrawContext& pctx, const Assets&) {
     label->setText(util::str2wstr_utf8(binding.text()));
 }
 
-void InputBindBox::clicked(GUI*, mousecode button) {
+void InputBindBox::clicked(Mousecode button) {
     if (isFocused()) {
         binding.reset(button);
         defocus();
     }
 }
 
-void InputBindBox::keyPressed(keycode key) {
-    if (key != keycode::ESCAPE) {
+void InputBindBox::keyPressed(Keycode key) {
+    if (key != Keycode::ESCAPE) {
         binding.reset(key);
     }
     defocus();

@@ -16,6 +16,11 @@ class ContentPackRuntime;
 class Decorator;
 class Level;
 class World;
+class Input;
+
+namespace gui {
+    class GUI;
+}
 
 class LevelScreen : public Screen {
     World& world;
@@ -27,6 +32,8 @@ class LevelScreen : public Screen {
     std::unique_ptr<PostProcessing> postProcessing;
     std::unique_ptr<Decorator> decorator;
     std::unique_ptr<Hud> hud;
+    gui::GUI& gui;
+    Input& input;
 
     void saveWorldPreview();
 

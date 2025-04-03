@@ -28,8 +28,9 @@ inline const std::string BIND_PLAYER_FAST_INTERACTOIN =
     "player.fast_interaction";
 inline const std::string BIND_HUD_INVENTORY = "hud.inventory";
 
+class Input;
 class ContentBuilder;
 
 namespace corecontent {
-    void setup(ContentBuilder& builder);
+    void setup(Input& input, ContentBuilder& builder);
 }

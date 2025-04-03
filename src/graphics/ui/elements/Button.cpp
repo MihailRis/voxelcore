@@ -3,17 +3,23 @@
 #include <utility>
 
 #include "Label.hpp"
-#include "graphics/core/DrawContext.hpp"
 #include "graphics/core/Batch2D.hpp"
+#include "graphics/core/DrawContext.hpp"
 
 using namespace gui;
 
-Button::Button(const std::shared_ptr<UINode>& content, glm::vec4 padding)
-    : Panel(glm::vec2(), padding, 0) {
+Button::Button(
+    GUI& gui, const std::shared_ptr<UINode>& content, glm::vec4 padding
+)
+    : Panel(gui, glm::vec2(), padding, 0) {
     glm::vec4 margin = getMargin();
-    setSize(content->getSize()+
-            glm::vec2(padding[0]+padding[2]+margin[0]+margin[2],
-                      padding[1]+padding[3]+margin[1]+margin[3]));
+    setSize(
+        content->getSize() +
+        glm::vec2(
+            padding[0] + padding[2] + margin[0] + margin[2],
+            padding[1] + padding[3] + margin[1] + margin[3]
+        )
+    );
     add(content);
     setScrollable(false);
     setHoverColor(glm::vec4(0.05f, 0.1f, 0.15f, 0.75f));
@@ -22,15 +28,16 @@ Button::Button(const std::shared_ptr<UINode>& content, glm::vec4 padding)
 }
 
 Button::Button(
+    GUI& gui,
     const std::wstring& text,
-    glm::vec4 padding, 
+    glm::vec4 padding,
     const onaction& action,
     glm::vec2 size
-) : Panel(size, padding, 0) 
-{
+)
+    : Panel(gui, size, padding, 0) {
     if (size.y < 0.0f) {
         size = glm::vec2(
-            glm::max(padding.x + padding.z + text.length()*8, size.x),
+            glm::max(padding.x + padding.z + text.length() * 8, size.x),
             glm::max(padding.y + padding.w + 16, size.y)
         );
     }
@@ -41,9 +48,11 @@ Button::Button(
     }
     setScrollable(false);
 
-    label = std::make_shared<Label>(text);
+    label = std::make_shared<Label>(gui, text);
     label->setAlign(Align::center);
-    label->setSize(size-glm::vec2(padding.z+padding.x, padding.w+padding.y));
+    label->setSize(
+        size - glm::vec2(padding.z + padding.x, padding.w + padding.y)
+    );
     label->setInteractive(false);
     add(label);
     setHoverColor(glm::vec4(0.05f, 0.1f, 0.15f, 0.75f));
@@ -73,7 +82,9 @@ Button* Button::textSupplier(wstringsupplier supplier) {
 void Button::refresh() {
     Panel::refresh();
     if (label) {
-        label->setSize(size-glm::vec2(padding.z+padding.x, padding.w+padding.y));
+        label->setSize(
+            size - glm::vec2(padding.z + padding.x, padding.w + padding.y)
+        );
     }
 }
 

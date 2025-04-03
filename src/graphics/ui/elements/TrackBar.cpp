@@ -9,12 +9,13 @@
 using namespace gui;
 
 TrackBar::TrackBar(
+    GUI& gui,
     double min, 
     double max, 
     double value, 
     double step, 
     int trackWidth
-) : UINode(glm::vec2(26)), 
+) : UINode(gui, glm::vec2(26)), 
     min(min), 
     max(max), 
     value(value), 
@@ -54,7 +55,7 @@ void TrackBar::setSubConsumer(doubleconsumer consumer) {
     this->subconsumer = std::move(consumer);
 }
 
-void TrackBar::mouseMove(GUI*, int x, int) {
+void TrackBar::mouseMove(int x, int) {
     glm::vec2 pos = calcPos();
     value = x - trackWidth/2;
     value -= pos.x;
@@ -62,7 +63,7 @@ void TrackBar::mouseMove(GUI*, int x, int) {
     value += min;
     value = (value > max) ? max : value;
     value = (value < min) ? min : value;
-    value = (int64_t)round(value / step) * step;
+    value = static_cast<int64_t>(std::round(value / step)) * step;
 
     if (consumer && !changeOnRelease) {
         consumer(value);
@@ -72,7 +73,7 @@ void TrackBar::mouseMove(GUI*, int x, int) {
     }
 }
 
-void TrackBar::mouseRelease(GUI*, int, int) {
+void TrackBar::mouseRelease(int, int) {
     if (consumer && changeOnRelease) {
         consumer(value);
     }

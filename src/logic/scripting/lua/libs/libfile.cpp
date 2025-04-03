@@ -17,7 +17,7 @@ using namespace scripting;
 static int l_find(lua::State* L) {
     auto path = lua::require_string(L, 1);
     try {
-        return lua::pushstring(L, engine->getResPaths()->findRaw(path));
+        return lua::pushstring(L, engine->getResPaths().findRaw(path));
     } catch (const std::runtime_error& err) {
         return 0;
     }
@@ -159,7 +159,7 @@ static int l_write_bytes(lua::State* L) {
 }
 
 static int l_list_all_res(lua::State* L, const std::string& path) {
-    auto files = engine->getResPaths()->listdirRaw(path);
+    auto files = engine->getResPaths().listdirRaw(path);
     lua::createtable(L, files.size(), 0);
     for (size_t i = 0; i < files.size(); i++) {
         lua::pushstring(L, files[i]);
@@ -222,7 +222,7 @@ static int l_read_combined_list(lua::State* L) {
     if (path.find(':') != std::string::npos) {
         throw std::runtime_error("entry point must not be specified");
     }
-    return lua::pushvalue(L, engine->getResPaths()->readCombinedList(path));
+    return lua::pushvalue(L, engine->getResPaths().readCombinedList(path));
 }
 
 static int l_read_combined_object(lua::State* L) {
@@ -230,7 +230,7 @@ static int l_read_combined_object(lua::State* L) {
     if (path.find(':') != std::string::npos) {
         throw std::runtime_error("entry point must not be specified");
     }
-    return lua::pushvalue(L, engine->getResPaths()->readCombinedObject(path));
+    return lua::pushvalue(L, engine->getResPaths().readCombinedObject(path));
 }
 
 static int l_is_writeable(lua::State* L) {

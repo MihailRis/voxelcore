@@ -5,13 +5,12 @@
 #include "content/ContentBuilder.hpp"
 #include "io/io.hpp"
 #include "io/engine_paths.hpp"
-#include "window/Window.hpp"
-#include "window/Events.hpp"
 #include "window/input.hpp"
 #include "voxels/Block.hpp"
+#include "coders/toml.hpp"
 
 // All in-game definitions (blocks, items, etc..)
-void corecontent::setup(ContentBuilder& builder) {
+void corecontent::setup(Input& input, ContentBuilder& builder) {
     {
         Block& block = builder.blocks.create(CORE_AIR);
         block.replaceable = true;
@@ -30,8 +29,8 @@ void corecontent::setup(ContentBuilder& builder) {
 
     auto bindsFile = "res:bindings.toml";
     if (io::is_regular_file(bindsFile)) {
-        Events::loadBindings(
-            bindsFile, io::read_string(bindsFile), BindType::BIND
+        input.getBindings().read(
+            toml::parse(bindsFile, io::read_string(bindsFile)), BindType::BIND
         );
     }
 

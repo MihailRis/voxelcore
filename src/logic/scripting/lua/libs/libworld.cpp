@@ -7,6 +7,7 @@
 #include "coders/json.hpp"
 #include "content/Content.hpp"
 #include "content/ContentLoader.hpp"
+#include "content/ContentControl.hpp"
 #include "engine/Engine.hpp"
 #include "world/files/WorldFiles.hpp"
 #include "io/engine_paths.hpp"
@@ -217,7 +218,7 @@ static int l_reload_script(lua::State* L) {
     if (content == nullptr) {
         throw std::runtime_error("content is not initialized");
     }
-    auto& writeableContent = *engine->getWriteableContent();
+    auto& writeableContent = *content_control->get();
     auto pack = writeableContent.getPackRuntime(packid);
     ContentLoader::loadWorldScript(*pack);
     return 0;

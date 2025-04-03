@@ -1,6 +1,8 @@
 #pragma once
 
 #include <glm/vec3.hpp>
+#include <string>
+#include <vector>
 
 #include "interfaces/Serializable.hpp"
 

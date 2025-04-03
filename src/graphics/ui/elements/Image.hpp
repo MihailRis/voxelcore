@@ -8,7 +8,7 @@ namespace gui {
         std::string texture;
         bool autoresize = false;
     public:
-        Image(std::string texture, glm::vec2 size=glm::vec2(32,32));
+        Image(GUI& gui, std::string texture, glm::vec2 size=glm::vec2(32,32));
 
         virtual void draw(const DrawContext& pctx, const Assets& assets) override;
 

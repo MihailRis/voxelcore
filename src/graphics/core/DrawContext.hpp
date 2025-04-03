@@ -1,15 +1,19 @@
 #pragma once
 
+#include <glm/vec2.hpp>
+#include <glm/vec4.hpp>
+
 #include "commons.hpp"
-#include "Viewport.hpp"
 #include "typedefs.hpp"
 
+class Window;
 class Batch2D;
 class Framebuffer;
 
 class DrawContext {
+    Window& window;
     const DrawContext* parent;
-    Viewport viewport;
+    glm::uvec2 viewport;
     Batch2D* g2d;
     Flushable* flushable = nullptr;
     Framebuffer* fbo = nullptr;
@@ -20,15 +24,19 @@ class DrawContext {
     int scissorsCount = 0;
     float lineWidth = 1.0f;
 public:
-    DrawContext(const DrawContext* parent, Viewport viewport, Batch2D* g2d);
+    DrawContext(
+        const DrawContext* parent,
+        Window& window,
+        Batch2D* g2d
+    );
     ~DrawContext();
     
     Batch2D* getBatch2D() const;
     
-    const Viewport& getViewport() const;
+    const glm::uvec2& getViewport() const;
     DrawContext sub(Flushable* flushable=nullptr) const;
 
-    void setViewport(const Viewport& viewport);
+    void setViewport(const glm::uvec2& viewport);
     void setFramebuffer(Framebuffer* fbo);
     void setDepthMask(bool flag);
     void setDepthTest(bool flag);

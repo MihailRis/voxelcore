@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace gui {
-    class Container : public UINode, public util::ObjectsKeeper {
+    class Container : public UINode, public ::util::ObjectsKeeper {
         int prevScrollY = -1;
     protected:
         std::vector<std::shared_ptr<UINode>> nodes;
@@ -22,7 +22,7 @@ namespace gui {
             return prevScrollY != -1;
         }
     public:
-        Container(glm::vec2 size);
+        Container(GUI& gui, glm::vec2 size);
         virtual ~Container();
 
         virtual void act(float delta) override;
@@ -44,8 +44,8 @@ namespace gui {
         virtual void refresh() override;
         void setScroll(int scroll);
 
-        virtual void mouseMove(GUI*, int x, int y) override;
-        virtual void mouseRelease(GUI*, int x, int y) override;
+        virtual void mouseMove(int x, int y) override;
+        virtual void mouseRelease(int x, int y) override;
 
         const std::vector<std::shared_ptr<UINode>>& getNodes() const;
     };

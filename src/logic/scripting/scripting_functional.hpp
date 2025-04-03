@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <string>
 
-#include "data/dv.hpp"
+#include "data/dv_fwd.hpp"
 #include "delegates.hpp"
 #include "typedefs.hpp"
 

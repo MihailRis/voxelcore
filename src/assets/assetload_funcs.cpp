@@ -34,7 +34,7 @@ namespace fs = std::filesystem;
 
 static bool load_animation(
     Assets* assets,
-    const ResPaths* paths,
+    const ResPaths& paths,
     const std::string& atlasName,
     const std::string& directory,
     const std::string& name,
@@ -43,14 +43,14 @@ static bool load_animation(
 
 assetload::postfunc assetload::texture(
     AssetsLoader*,
-    const ResPaths* paths,
+    const ResPaths& paths,
     const std::string& filename,
     const std::string& name,
     const std::shared_ptr<AssetCfg>&
 ) {
-    auto actualFile = paths->find(filename + ".png");
+    auto actualFile = paths.find(filename + ".png");
     try {
-        std::shared_ptr<ImageData> image(imageio::read(actualFile).release());
+        std::shared_ptr<ImageData> image(imageio::read(actualFile));
         return [name, image, actualFile](auto assets) {
             assets->store(Texture::from(image.get()), name);
         };
@@ -62,13 +62,13 @@ assetload::postfunc assetload::texture(
 
 assetload::postfunc assetload::shader(
     AssetsLoader*,
-    const ResPaths* paths,
+    const ResPaths& paths,
     const std::string& filename,
     const std::string& name,
     const std::shared_ptr<AssetCfg>&
 ) {
-    io::path vertexFile = paths->find(filename + ".glslv");
-    io::path fragmentFile = paths->find(filename + ".glslf");
+    io::path vertexFile = paths.find(filename + ".glslv");
+    io::path fragmentFile = paths.find(filename + ".glslf");
 
     std::string vertexSource = io::read_string(vertexFile);
     std::string fragmentSource = io::read_string(fragmentFile);
@@ -104,14 +104,14 @@ static bool append_atlas(AtlasBuilder& atlas, const io::path& file) {
 
 assetload::postfunc assetload::atlas(
     AssetsLoader* loader,
-    const ResPaths* paths,
+    const ResPaths& paths,
     const std::string& directory,
     const std::string& name,
     const std::shared_ptr<AssetCfg>& config
 ) {
     auto atlasConfig = std::dynamic_pointer_cast<AtlasCfg>(config);
     if (atlasConfig && atlasConfig->type == AtlasType::SEPARATE) {
-        for (const auto& file : paths->listdir(directory)) {
+        for (const auto& file : paths.listdir(directory)) {
             if (!imageio::is_read_supported(file.extension()))
                 continue;
             loader->add(
@@ -123,7 +123,7 @@ assetload::postfunc assetload::atlas(
         return [](auto){};
     }
     AtlasBuilder builder;
-    for (const auto& file : paths->listdir(directory)) {
+    for (const auto& file : paths.listdir(directory)) {
         if (!imageio::is_read_supported(file.extension())) continue;
         if (!append_atlas(builder, file)) continue;
     }
@@ -140,7 +140,7 @@ assetload::postfunc assetload::atlas(
 
 assetload::postfunc assetload::font(
     AssetsLoader*,
-    const ResPaths* paths,
+    const ResPaths& paths,
     const std::string& filename,
     const std::string& name,
     const std::shared_ptr<AssetCfg>&
@@ -148,7 +148,7 @@ assetload::postfunc assetload::font(
     auto pages = std::make_shared<std::vector<std::unique_ptr<ImageData>>>();
     for (size_t i = 0; i <= 1024; i++) {
         std::string pagefile = filename + "_" + std::to_string(i) + ".png";
-        auto file = paths->find(pagefile);
+        auto file = paths.find(pagefile);
         if (io::exists(file)) {
             pages->push_back(imageio::read(file));
         } else if (i == 0) {
@@ -177,7 +177,7 @@ assetload::postfunc assetload::font(
 
 assetload::postfunc assetload::layout(
     AssetsLoader*,
-    const ResPaths* paths,
+    const ResPaths&,
     const std::string& file,
     const std::string& name,
     const std::shared_ptr<AssetCfg>& config
@@ -189,6 +189,7 @@ assetload::postfunc assetload::layout(
             auto prefix = name.substr(0, pos);
             assets->store(
                 UiDocument::read(
+                    *cfg->gui,
                     cfg->env,
                     name,
                     file,
@@ -205,7 +206,7 @@ assetload::postfunc assetload::layout(
 }
 assetload::postfunc assetload::sound(
     AssetsLoader*,
-    const ResPaths* paths,
+    const ResPaths& paths,
     const std::string& file,
     const std::string& name,
     const std::shared_ptr<AssetCfg>& config
@@ -219,13 +220,13 @@ assetload::postfunc assetload::sound(
     for (size_t i = 0; i < extensions.size(); i++) {
         extension = extensions[i];
         // looking for 'sound_name' as base sound
-        auto soundFile = paths->find(file + extension);
+        auto soundFile = paths.find(file + extension);
         if (io::exists(soundFile)) {
             baseSound = audio::load_sound(soundFile, keepPCM);
             break;
         }
         // looking for 'sound_name_0' as base sound
-        auto variantFile = paths->find(file + "_0" + extension);
+        auto variantFile = paths.find(file + "_0" + extension);
         if (io::exists(variantFile)) {
             baseSound = audio::load_sound(variantFile, keepPCM);
             break;
@@ -238,7 +239,7 @@ assetload::postfunc assetload::sound(
     // loading sound variants
     for (uint i = 1;; i++) {
         auto variantFile =
-            paths->find(file + "_" + std::to_string(i) + extension);
+            paths.find(file + "_" + std::to_string(i) + extension);
         if (!io::exists(variantFile)) {
             break;
         }
@@ -264,12 +265,12 @@ static void request_textures(AssetsLoader* loader, const model::Model& model) {
 
 assetload::postfunc assetload::model(
     AssetsLoader* loader,
-    const ResPaths* paths,
+    const ResPaths& paths,
     const std::string& file,
     const std::string& name,
     const std::shared_ptr<AssetCfg>&
 ) {
-    auto path = paths->find(file + ".vec3");
+    auto path = paths.find(file + ".vec3");
     if (io::exists(path)) {
         auto bytes = io::read_bytes_buffer(path);
         auto modelVEC3 = std::make_shared<vec3::File>(vec3::load(path.string(), bytes));
@@ -289,7 +290,7 @@ assetload::postfunc assetload::model(
             }
         };
     }
-    path = paths->find(file + ".obj");
+    path = paths.find(file + ".obj");
     auto text = io::read_string(path);
     try {
         auto model = obj::parse(path.string(), text).release();
@@ -383,7 +384,7 @@ inline bool contains(
 
 static bool load_animation(
     Assets* assets,
-    const ResPaths* paths,
+    const ResPaths& paths,
     const std::string& atlasName,
     const std::string& directory,
     const std::string& name,
@@ -391,20 +392,20 @@ static bool load_animation(
 ) {
     std::string animsDir = directory + "/animation";
 
-    for (const auto& folder : paths->listdir(animsDir)) {
+    for (const auto& folder : paths.listdir(animsDir)) {
         if (!io::is_directory(folder)) continue;
         if (folder.name() != name) continue;
         //FIXME: if (fs::is_empty(folder)) continue;
 
         AtlasBuilder builder;
-        append_atlas(builder, paths->find(directory + "/" + name + ".png"));
+        append_atlas(builder, paths.find(directory + "/" + name + ".png"));
 
         std::vector<std::pair<std::string, int>> frameList;
         std::string animFile = folder.string() + "/animation.json";
         if (io::exists(animFile)) {
             read_anim_file(animFile, frameList);
         }
-        for (const auto& file : paths->listdir(animsDir + "/" + name)) {
+        for (const auto& file : paths.listdir(animsDir + "/" + name)) {
             if (!frameList.empty() &&
                 !contains(frameList, file.stem())) {
                 continue;

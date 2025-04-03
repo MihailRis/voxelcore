@@ -6,6 +6,7 @@
 #include <string.h>
 #include <algorithm>
 
+#include "data/dv.hpp"
 #include "util/data_io.hpp"
 #include "util/stringutil.hpp"
 

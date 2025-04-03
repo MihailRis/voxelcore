@@ -21,14 +21,14 @@ sudo make install
 > [!WARNING]
 > If you are using ALT Linux, you should not use this EnTT installation method
 
-#### ALT Linux based distro
+#### ALT Linux based distros
 
 ```sh
 su -
 apt-get install entt-devel libglfw3-devel libGLEW-devel libglm-devel libpng-devel libvorbis-devel libopenal-devel libluajit-devel libstdc++13-devel-static libcurl-devel
 ```
 
-#### Debian based distro
+#### Debian based distros
 
 ```sh
 sudo apt install libglfw3-dev libglfw3 libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libcurl4-openssl-dev
@@ -42,13 +42,13 @@ sudo apt install libglfw3-dev libglfw3 libglew-dev libglm-dev libpng-dev libopen
 > sudo ln -s /usr/include/luajit-2.1 /usr/include/lua
 > ```
 
-#### RHEL based distro
+#### RHEL based distros
 
 ```sh
 sudo dnf install glfw-devel glfw glew-devel glm-devel libpng-devel libvorbis-devel openal-devel luajit-devel libcurl-devel
 ```
 
-#### Arch based distro
+#### Arch based distros
 
 If you use X11
 
@@ -68,7 +68,7 @@ And you need entt. In yay you can use
 yay -S entt
 ```
 
-### Build engine with CMake
+### Building engine with CMake
 
 ```sh
 git clone --recursive https://github.com/MihailRis/VoxelEngine-Cpp.git
@@ -79,7 +79,7 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 cmake --build .
 ```
 
-## Build project in macOS
+## Building project in macOS
 
 ### Install libraries
 
@@ -92,7 +92,7 @@ brew install glfw3 glew glm libpng libvorbis lua luajit libcurl openal-soft skyp
 > ```lua luajit openal-soft```, then download, install and compile them manually
 > (Lua, LuaJIT and OpenAL).
 
-### Build engine with CMake
+### Building engine with CMake
 
 ```sh
 git clone --recursive https://github.com/MihailRis/VoxelEngine-Cpp.git
@@ -103,7 +103,7 @@ cmake -DCMAKE_BUILD_TYPE=Release ..
 cmake --build .
 ```
 
-## Build in Windows
+## Building in Windows
 
 >[!NOTE]
 > Requirement:

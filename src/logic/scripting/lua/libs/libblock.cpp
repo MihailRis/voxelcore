@@ -1,5 +1,6 @@
 #include "content/Content.hpp"
 #include "content/ContentLoader.hpp"
+#include "content/ContentControl.hpp"
 #include "lighting/Lighting.hpp"
 #include "logic/BlocksController.hpp"
 #include "logic/LevelController.hpp"
@@ -625,7 +626,7 @@ static int l_reload_script(lua::State* L) {
     if (content == nullptr) {
         throw std::runtime_error("content is not initialized");
     }
-    auto& writeableContent = *engine->getWriteableContent();
+    auto& writeableContent = *content_control->get();
     auto& def = writeableContent.blocks.require(name);
     ContentLoader::reloadScript(writeableContent, def);
     return 0;

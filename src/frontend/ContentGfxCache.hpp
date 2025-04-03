@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <unordered_map>
 
+#include "maths/UVRegion.hpp"
 #include "graphics/commons/Model.hpp"
 
 class Content;
@@ -14,10 +15,6 @@ class Atlas;
 class Block;
 struct UVRegion;
 struct GraphicsSettings;
-
-namespace model {
-    struct Model;
-}
 
 class ContentGfxCache {
     const Content& content;
@@ -40,8 +37,6 @@ public:
     }
 
     const model::Model& getModel(blockid_t id) const;
-
-    const Content* getContent() const;
 
     void refresh(const Block& block, const Atlas& atlas);
 

@@ -6,6 +6,7 @@
 #include "scripting_commons.hpp"
 #include "content/Content.hpp"
 #include "content/ContentPack.hpp"
+#include "content/ContentControl.hpp"
 #include "debug/Logger.hpp"
 #include "engine/Engine.hpp"
 #include "io/engine_paths.hpp"
@@ -40,6 +41,7 @@ Engine* scripting::engine = nullptr;
 Level* scripting::level = nullptr;
 const Content* scripting::content = nullptr;
 const ContentIndices* scripting::indices = nullptr;
+ContentControl* scripting::content_control = nullptr;
 BlocksController* scripting::blocks = nullptr;
 LevelController* scripting::controller = nullptr;
 
@@ -68,6 +70,7 @@ int scripting::load_script(
 
 void scripting::initialize(Engine* engine) {
     scripting::engine = engine;
+    scripting::content_control = &engine->getContentControl();
     lua::initialize(engine->getPaths(), engine->getCoreParameters());
 
     load_script(io::path("stdlib.lua"), true);
@@ -268,21 +271,21 @@ void scripting::on_world_load(LevelController* controller) {
         lua::call_nothrow(L, 0, 0);
     } 
     
-    for (auto& pack : scripting::engine->getAllContentPacks()) {
+    for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldopen");
     }
 }
 
 void scripting::on_world_tick() {
     auto L = lua::get_main_state();
-    for (auto& pack : scripting::engine->getAllContentPacks()) {
+    for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldtick");
     }
 }
 
 void scripting::on_world_save() {
     auto L = lua::get_main_state();
-    for (auto& pack : scripting::engine->getAllContentPacks()) {
+    for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldsave");
     }
     if (lua::getglobal(L, "__vc_on_world_save")) {
@@ -292,7 +295,7 @@ void scripting::on_world_save() {
 
 void scripting::on_world_quit() {
     auto L = lua::get_main_state();
-    for (auto& pack : scripting::engine->getAllContentPacks()) {
+    for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldquit");
     }
     if (lua::getglobal(L, "__vc_on_world_quit")) {
@@ -308,7 +311,7 @@ void scripting::on_world_quit() {
 void scripting::cleanup() {
     auto L = lua::get_main_state();
     lua::requireglobal(L, "pack");
-    for (auto& pack : scripting::engine->getAllContentPacks()) {
+    for (auto& pack : content_control->getAllContentPacks()) {
         lua::requirefield(L, "unload");
         lua::pushstring(L, pack.id);
         lua::call_nothrow(L, 1);

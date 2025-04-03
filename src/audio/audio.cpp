@@ -17,12 +17,12 @@ static debug::Logger logger("audio");
 using namespace audio;
 
 namespace {
-    static speakerid_t nextId = 1;
-    static Backend* backend;
-    static std::unordered_map<speakerid_t, std::unique_ptr<Speaker>> speakers;
-    static std::unordered_map<speakerid_t, std::shared_ptr<Stream>> streams;
-    static std::vector<std::unique_ptr<Channel>> channels;
-    static util::ObjectsKeeper objects_keeper {};
+    speakerid_t nextId = 1;
+    Backend* backend;
+    std::unordered_map<speakerid_t, std::unique_ptr<Speaker>> speakers;
+    std::unordered_map<speakerid_t, std::shared_ptr<Stream>> streams;
+    std::vector<std::unique_ptr<Channel>> channels;
+    util::ObjectsKeeper objects_keeper {};
 }
 
 Channel::Channel(std::string name) : name(std::move(name)) {
