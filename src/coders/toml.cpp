@@ -16,7 +16,7 @@ using namespace toml;
 class TomlReader : BasicParser<char> {
     dv::value root;
 
-    // modified version of BaseParser.parseString
+    // modified version of BasicParser.parseString
     // todo: extract common part
     std::string parseMultilineString() {
         pos += 2;

@@ -38,7 +38,7 @@ uint Shader::getUniformLocation(const std::string& name) {
     return found->second;
 }
 
-void Shader::uniformMatrix(const std::string& name, glm::mat4 matrix){
+void Shader::uniformMatrix(const std::string& name, const glm::mat4& matrix){
     glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
@@ -54,11 +54,11 @@ void Shader::uniform2f(const std::string& name, float x, float y){
     glUniform2f(getUniformLocation(name), x, y);
 }
 
-void Shader::uniform2f(const std::string& name, glm::vec2 xy){
+void Shader::uniform2f(const std::string& name, const glm::vec2& xy){
     glUniform2f(getUniformLocation(name), xy.x, xy.y);
 }
 
-void Shader::uniform2i(const std::string& name, glm::ivec2 xy){
+void Shader::uniform2i(const std::string& name, const glm::ivec2& xy){
     glUniform2i(getUniformLocation(name), xy.x, xy.y);
 }
 
@@ -66,8 +66,12 @@ void Shader::uniform3f(const std::string& name, float x, float y, float z){
     glUniform3f(getUniformLocation(name), x,y,z);
 }
 
-void Shader::uniform3f(const std::string& name, glm::vec3 xyz){
+void Shader::uniform3f(const std::string& name, const glm::vec3& xyz){
     glUniform3f(getUniformLocation(name), xyz.x, xyz.y, xyz.z);
+}
+
+void Shader::uniform4f(const std::string& name, const glm::vec4& xyzw) {
+    glUniform4f(getUniformLocation(name), xyzw.x, xyzw.y, xyzw.z, xyzw.w);
 }
 
 

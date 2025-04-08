@@ -31,13 +31,9 @@ namespace {
 }
 
 template<typename CharT>
-void BasicParser<CharT>::skipWhitespace(bool newline) {
-    if (hashComment) {
-        skipWhitespaceHashComment(newline);
-        return;
-    }
+void BasicParser<CharT>::skipWhitespaceBasic(bool newline) {
     while (hasNext()) {
-        char next = source[pos];
+        CharT next = source[pos];
         if (next == '\n') {
             if (!newline) {
                 break;
@@ -55,23 +51,20 @@ void BasicParser<CharT>::skipWhitespace(bool newline) {
 }
 
 template<typename CharT>
-void BasicParser<CharT>::skipWhitespaceHashComment(bool newline) {
-    while (hasNext()) {
-        char next = source[pos];
-        if (next == '\n') {
-            if (!newline) {
-                break;
-            }
-            line++;
-            linestart = ++pos;
-            continue;
-        }
-        if (is_whitespace(next)) {
-            pos++;
-        } else {
-            break;
-        }
+void BasicParser<CharT>::skipWhitespace(bool newline) {
+    if (hashComment) {
+        skipWhitespaceHashComment(newline);
+        return;
+    } else if (clikeComment) {
+        skipWhitespaceCLikeComment(newline);
+        return;
     }
+    skipWhitespaceBasic(newline);
+}
+
+template<typename CharT>
+void BasicParser<CharT>::skipWhitespaceHashComment(bool newline) {
+    skipWhitespaceBasic(newline);
     if (hasNext() && source[pos] == '#') {
         if (!newline) {
             readUntilEOL();
@@ -80,6 +73,39 @@ void BasicParser<CharT>::skipWhitespaceHashComment(bool newline) {
         skipLine();
         if (hasNext() && (is_whitespace(source[pos]) || source[pos] == '#')) {
             skipWhitespaceHashComment(newline);
+        }
+    }
+}
+
+template<typename CharT>
+void BasicParser<CharT>::skipWhitespaceCLikeComment(bool newline) {
+    skipWhitespaceBasic(newline);
+    if (hasNext() && source[pos] == '/' && pos + 1 < source.length()) {
+        pos++;
+        switch (source[pos]) {
+            case '*':
+                pos++;
+                while (hasNext()) {
+                    if (source[pos] == '/' && source[pos-1] == '*') {
+                        pos++;
+                        skipWhitespace();
+                        return;
+                    }
+                    pos++;
+                }
+                break;
+            case '/':
+                if (!newline) {
+                    readUntilEOL();
+                    return;
+                }
+                skipLine();
+                if (hasNext() && (is_whitespace(source[pos]) || source[pos] == '/')) {
+                    skipWhitespaceCLikeComment(newline);
+                }
+            default:
+                pos--;
+                break;
         }
     }
 }

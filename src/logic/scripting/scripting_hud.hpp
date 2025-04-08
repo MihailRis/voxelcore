@@ -9,6 +9,7 @@
 
 class Hud;
 class WorldRenderer;
+class PostProcessing;
 
 namespace gui {
     class UINode;
@@ -18,8 +19,11 @@ namespace gui {
 namespace scripting {
     extern Hud *hud;
     extern WorldRenderer* renderer;
+    extern PostProcessing* post_processing;
 
-    void on_frontend_init(Hud* hud, WorldRenderer* renderer);
+    void on_frontend_init(
+        Hud* hud, WorldRenderer* renderer, PostProcessing* postProcessing
+    );
     void on_frontend_render();
     void on_frontend_close();
 

@@ -20,10 +20,10 @@ file.read(путь: str) -> str
 Читает весь текстовый файл и возвращает в виде строки
 
 ```python
-file.read_bytes(путь: str) -> array of integers
+file.read_bytes(путь: str, [опционально] usetable) -> array of integers
 ```
 
-Читает файл в массив байт.
+Читает файл в массив байт. При значении usetable = false возвращает Bytearray вместо table.
 
 ```lua
 file.is_writeable(путь: str) -> bool

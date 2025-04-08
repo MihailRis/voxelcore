@@ -38,6 +38,7 @@ extern const luaL_Reg networklib[];
 extern const luaL_Reg packlib[];
 extern const luaL_Reg particleslib[]; // gfx.particles
 extern const luaL_Reg playerlib[];
+extern const luaL_Reg posteffectslib[]; // gfx.posteffects
 extern const luaL_Reg quatlib[];
 extern const luaL_Reg text3dlib[]; // gfx.text3d
 extern const luaL_Reg timelib[];
@@ -46,7 +47,7 @@ extern const luaL_Reg utf8lib[];
 extern const luaL_Reg vec2lib[];  // vecn.cpp
 extern const luaL_Reg vec3lib[];  // vecn.cpp
 extern const luaL_Reg vec4lib[];  // vecn.cpp
-extern const luaL_Reg weatherlib[];
+extern const luaL_Reg weatherlib[]; // gfx.weather
 extern const luaL_Reg worldlib[];
 extern const luaL_Reg yamllib[];
 

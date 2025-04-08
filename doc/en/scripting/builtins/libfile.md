@@ -20,10 +20,10 @@ file.read(path: str) -> str
 Read whole text file.
 
 ```python
-file.read_bytes(path: str) -> array of integers
+file.read_bytes(path: str, [optional] usetable) -> array of integers
 ```
 
-Read file into bytes array.
+Read file into bytes array. If usetable = false , returns Bytearray instead of table.
 
 ```lua
 file.is_writeable(path: str) -> bool

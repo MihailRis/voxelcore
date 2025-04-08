@@ -19,6 +19,7 @@ static debug::Logger logger("scripting-hud");
 
 Hud* scripting::hud = nullptr;
 WorldRenderer* scripting::renderer = nullptr;
+PostProcessing* scripting::post_processing = nullptr;
 
 static void load_script(const std::string& name) {
     auto file = io::path("res:scripts") / name;
@@ -28,9 +29,12 @@ static void load_script(const std::string& name) {
     lua::execute(lua::get_main_state(), 0, src, file.string());
 }
 
-void scripting::on_frontend_init(Hud* hud, WorldRenderer* renderer) {
+void scripting::on_frontend_init(
+    Hud* hud, WorldRenderer* renderer, PostProcessing* postProcessing
+) {
     scripting::hud = hud;
     scripting::renderer = renderer;
+    scripting::post_processing = postProcessing;
 
     auto L = lua::get_main_state();
 
@@ -39,6 +43,7 @@ void scripting::on_frontend_init(Hud* hud, WorldRenderer* renderer) {
     lua::openlib(L, "gfx", "particles", particleslib);
     lua::openlib(L, "gfx", "weather", weatherlib);
     lua::openlib(L, "gfx", "text3d", text3dlib);
+    lua::openlib(L, "gfx", "posteffects", posteffectslib);
 
     load_script("hud_classes.lua");
 
@@ -85,6 +90,7 @@ void scripting::on_frontend_close() {
 
     scripting::renderer = nullptr;
     scripting::hud = nullptr;
+    scripting::post_processing = nullptr;
 }
 
 void scripting::load_hud_script(

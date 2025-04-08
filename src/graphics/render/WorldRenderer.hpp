@@ -3,10 +3,7 @@
 #include <vector>
 #include <memory>
 #include <algorithm>
-#include <GL/glew.h>
 #include <string>
-
-#include <glm/glm.hpp>
 
 #include "typedefs.hpp"
 

@@ -44,6 +44,8 @@ static bool perform_keyword(
         config.workingDir = fs::path(reader.next());
     } else if (keyword == "--output-always") {
         config.outputAlways = true;
+    } else if (keyword == "--memchecker") {
+        config.memchecker = reader.next();
     } else {
         std::cerr << "unknown argument " << keyword << std::endl;
         return false;

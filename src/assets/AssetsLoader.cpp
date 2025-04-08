@@ -34,6 +34,7 @@ AssetsLoader::AssetsLoader(Engine& engine, Assets& assets, const ResPaths& paths
     addLoader(AssetType::LAYOUT, assetload::layout);
     addLoader(AssetType::SOUND, assetload::sound);
     addLoader(AssetType::MODEL, assetload::model);
+    addLoader(AssetType::POST_EFFECT, assetload::posteffect);
 }
 
 void AssetsLoader::addLoader(AssetType tag, aloader_func func) {
@@ -131,6 +132,8 @@ static std::string assets_def_folder(AssetType tag) {
             return SOUNDS_FOLDER;
         case AssetType::MODEL:
             return MODELS_FOLDER;
+        case AssetType::POST_EFFECT:
+            return POST_EFFECTS_FOLDER;
     }
     return "<error>";
 }
@@ -196,6 +199,7 @@ void AssetsLoader::processPreloadConfig(const io::path& file) {
     processPreloadList(AssetType::TEXTURE, root["textures"]);
     processPreloadList(AssetType::SOUND, root["sounds"]);
     processPreloadList(AssetType::MODEL, root["models"]);
+    processPreloadList(AssetType::POST_EFFECT, root["post-effects"]);
     // layouts are loaded automatically
 }
 

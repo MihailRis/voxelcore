@@ -60,6 +60,20 @@ assetload::postfunc assetload::texture(
     }
 }
 
+static auto process_program(const ResPaths& paths, const std::string& filename) {
+    io::path vertexFile = paths.find(filename + ".glslv");
+    io::path fragmentFile = paths.find(filename + ".glslf");
+
+    std::string vertexSource = io::read_string(vertexFile);
+    std::string fragmentSource = io::read_string(fragmentFile);
+
+    auto& preprocessor = *Shader::preprocessor;
+
+    auto vertex = preprocessor.process(vertexFile, vertexSource);
+    auto fragment = preprocessor.process(fragmentFile, fragmentSource);
+    return std::make_pair(vertex, fragment);
+}
+
 assetload::postfunc assetload::shader(
     AssetsLoader*,
     const ResPaths& paths,
@@ -67,15 +81,13 @@ assetload::postfunc assetload::shader(
     const std::string& name,
     const std::shared_ptr<AssetCfg>&
 ) {
+    auto [vertex, fragment] = process_program(paths, filename);
+
     io::path vertexFile = paths.find(filename + ".glslv");
     io::path fragmentFile = paths.find(filename + ".glslf");
 
-    std::string vertexSource = io::read_string(vertexFile);
-    std::string fragmentSource = io::read_string(fragmentFile);
-
-    vertexSource = Shader::preprocessor->process(vertexFile, vertexSource);
-    fragmentSource =
-        Shader::preprocessor->process(fragmentFile, fragmentSource);
+    std::string vertexSource = std::move(vertex.code);
+    std::string fragmentSource = std::move(fragment.code);
 
     return [=](auto assets) {
         assets->store(
@@ -86,6 +98,40 @@ assetload::postfunc assetload::shader(
                 fragmentSource
             ),
             name
+        );
+    };
+}
+
+assetload::postfunc assetload::posteffect(
+    AssetsLoader*,
+    const ResPaths& paths,
+    const std::string& file,
+    const std::string& name,
+    const std::shared_ptr<AssetCfg>& settings
+) {
+    io::path effectFile = paths.find(file + ".glsl");
+    std::string effectSource = io::read_string(effectFile);
+
+    auto& preprocessor = *Shader::preprocessor;
+    preprocessor.addHeader(
+        "__effect__", preprocessor.process(effectFile, effectSource, true)
+    );
+
+    auto [vertex, fragment] = process_program(paths, SHADERS_FOLDER + "/effect");
+    auto params = std::move(fragment.params);
+
+    std::string vertexSource = std::move(vertex.code);
+    std::string fragmentSource = std::move(fragment.code);
+
+    return [=](auto assets) {
+        auto program = Shader::create(
+            effectFile.string(),
+            effectFile.string(),
+            vertexSource,
+            fragmentSource
+        );
+        assets->store(
+            std::make_shared<PostEffect>(std::move(program), params), name
         );
     };
 }

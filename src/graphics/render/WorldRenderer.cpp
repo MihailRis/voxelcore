@@ -388,12 +388,7 @@ void WorldRenderer::draw(
         renderBlockOverlay(wctx);
     }
 
-    // Rendering fullscreen quad
-    auto screenShader = assets.get<Shader>("screen");
-    screenShader->use();
-    screenShader->uniform1f("u_timer", timer);
-    screenShader->uniform1f("u_dayTime", worldInfo.daytime);
-    postProcessing.render(pctx, screenShader);
+    postProcessing.render(pctx, assets, timer);
 }
 
 void WorldRenderer::renderBlockOverlay(const DrawContext& wctx) {

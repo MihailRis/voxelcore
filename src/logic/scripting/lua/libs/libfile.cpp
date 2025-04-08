@@ -125,14 +125,18 @@ static int l_read_bytes(lua::State* L) {
     if (io::is_regular_file(path)) {
         size_t length = static_cast<size_t>(io::file_size(path));
 
-        auto bytes = io::read_bytes(path, length);
+        auto bytes = io::read_bytes(path);
 
-        lua::createtable(L, length, 0);
-        int newTable = lua::gettop(L);
+        if (lua::gettop(L) < 2 || !lua::toboolean(L, 2)) {
+            lua::newuserdata<lua::LuaBytearray>(L, std::move(bytes));
+        } else {
+            lua::createtable(L, length, 0);
+            int newTable = lua::gettop(L);
 
-        for (size_t i = 0; i < length; i++) {
-            lua::pushinteger(L, bytes[i]);
-            lua::rawseti(L, i + 1, newTable);
+            for (size_t i = 0; i < length; i++) {
+                lua::pushinteger(L, bytes[i]);
+                lua::rawseti(L, i + 1, newTable);
+            }
         }
         return 1;
     }

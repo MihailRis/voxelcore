@@ -1,12 +1,14 @@
 #pragma once
 
+#include <vector>
 #include <memory>
 
 class Mesh;
-class Shader;
+class Assets;
 class Framebuffer;
 class DrawContext;
 class ImageData;
+class PostEffect;
 
 /// @brief Framebuffer with blitting with shaders.
 /// @attention Current implementation does not support multiple render passes 
@@ -14,10 +16,12 @@ class ImageData;
 class PostProcessing {
     /// @brief Main framebuffer (lasy field)
     std::unique_ptr<Framebuffer> fbo;
+    std::unique_ptr<Framebuffer> fboSecond;
     /// @brief Fullscreen quad mesh as the post-processing canvas
     std::unique_ptr<Mesh> quadMesh;
+    std::vector<std::shared_ptr<PostEffect>> effectSlots;
 public:
-    PostProcessing();
+    PostProcessing(size_t effectSlotsCount);
     ~PostProcessing();
 
     /// @brief Prepare and bind framebuffer
@@ -27,9 +31,12 @@ public:
     /// @brief Render fullscreen quad using the passed shader 
     /// with framebuffer texture bound
     /// @param context graphics context
-    /// @param screenShader shader used for fullscreen quad
     /// @throws std::runtime_error if use(...) wasn't called before
-    void render(const DrawContext& context, Shader* screenShader);
+    void render(const DrawContext& context, const Assets& assets, float timer);
+
+    void setEffect(size_t slot, std::shared_ptr<PostEffect> effect);
+
+    PostEffect* getEffect(size_t slot);
 
     /// @brief Make an image from the last rendered frame
     std::unique_ptr<ImageData> toImage();
