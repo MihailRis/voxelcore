@@ -1,14 +1,14 @@
 <splitbox id="editorRoot" orientation="horizontal" split-pos="0.3">
     <splitbox split-pos="0.75">
         <panel interval="2" color="0" padding="2">
-            <textbox pos="2" sub-consumer="filter_files"></textbox>
-            <panel id="filesList" color="#00000010" interval="6" padding="4"
+            <textbox pos="2" padding="4,0,4,0" sub-consumer="filter_files" hint="@Filter"></textbox>
+            <panel id="filesList" color="#00000030" interval="6" padding="4"
                     size-func="-1,-45" pos="2,38">
                 <!-- content is generated in script -->
             </panel>
         </panel>
         <panel id="problemsLog"
-            color="#00000010" 
+            color="#00000030" 
             padding="5,15,5,15">
             <label margin="0,0,0,5">@Problems</label>
         </panel>

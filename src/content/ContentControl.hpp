@@ -11,6 +11,7 @@ class Content;
 class PacksManager;
 class EnginePaths;
 class Input;
+struct Project;
 
 namespace io {
     class path;
@@ -19,7 +20,10 @@ namespace io {
 class ContentControl {
 public:
     ContentControl(
-        EnginePaths& paths, Input& input, std::function<void()> postContent
+        const Project& project,
+        EnginePaths& paths,
+        Input& input,
+        std::function<void()> postContent
     );
     ~ContentControl();
 

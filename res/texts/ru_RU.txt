@@ -24,6 +24,7 @@ Save=Сохранить
 Grant %{0} pack modification permission?=Выдать разрешение на модификацию пака %{0}?
 Error at line %{0}=Ошибка на строке %{0}
 Run=Запустить
+Filter=Фильтр
 
 editor.info.tooltip=CTRL+S - Сохранить\nCTRL+R - Запустить\nCTRL+Z - Отменить\nCTRL+Y - Повторить
 devtools.traceback=Стек вызовов (от последнего)
@@ -58,7 +59,6 @@ menu.Quit=Выход
 menu.Save and Quit to Menu=Сохранить и Выйти в Меню
 menu.Settings=Настройки
 menu.Reset settings=Сбросить настройки
-menu.Contents Menu=Меню контентпаков
 menu.Open data folder=Открыть папку данных
 menu.Open content folder=Открыть папку [content]
 

@@ -3,6 +3,12 @@ console_mode = "console"
 history = session.get_entry("commands_history")
 history_pointer = #history
 
+events.on("core:open_traceback", function()
+    if modes then
+        modes:set('debug')
+    end
+end)
+
 function setup_variables()
     local pid = hud.get_player()
     local x,y,z = player.get_pos(pid)

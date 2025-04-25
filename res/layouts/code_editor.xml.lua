@@ -1,5 +1,5 @@
 local writeables = {}
-local registry = require "core:internal/scripts_registry"
+local registry
 local filenames
 
 local current_file = {
@@ -163,7 +163,6 @@ end
 
 events.on("core:open_traceback", function(traceback_b64)
     local traceback = bjson.frombytes(base64.decode(traceback_b64))
-    modes:set('debug')
 
     clear_traceback()
 
@@ -257,14 +256,16 @@ function build_files_list(filenames, selected)
 end
 
 function on_open(mode)
+    registry = require "core:internal/scripts_registry"
+    
     local files_list = document.filesList
-
-    filenames = registry.filenames
-    table.sort(filenames)
-    build_files_list(filenames)
 
     document.editorContainer:setInterval(200, refresh_file_title)
 
     clear_traceback()
     clear_output()
+
+    filenames = registry.filenames
+    table.sort(filenames)
+    build_files_list(filenames)
 end

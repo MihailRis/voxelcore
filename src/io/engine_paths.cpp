@@ -46,6 +46,7 @@ void EnginePaths::prepare() {
     }
     logger.info() << "resources folder: " << fs::canonical(resourcesFolder).u8string();
     logger.info() << "user files folder: " << fs::canonical(userFilesFolder).u8string();
+    logger.info() << "project folder: " << fs::canonical(projectFolder).u8string();
     
     if (!io::is_directory(CONTENT_FOLDER)) {
         io::create_directories(CONTENT_FOLDER);
@@ -140,6 +141,11 @@ void EnginePaths::setResourcesFolder(std::filesystem::path folder) {
 void EnginePaths::setScriptFolder(std::filesystem::path folder) {
     io::set_device("script", std::make_shared<io::StdfsDevice>(folder));
     this->scriptFolder = std::move(folder);
+}
+
+void EnginePaths::setProjectFolder(std::filesystem::path folder) {
+    io::set_device("project", std::make_shared<io::StdfsDevice>(folder));
+    this->projectFolder = std::move(folder);
 }
 
 void EnginePaths::setCurrentWorldFolder(io::path folder) {
