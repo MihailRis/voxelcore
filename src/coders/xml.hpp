@@ -53,11 +53,11 @@ namespace xml {
         /// @brief Get element tag
         const std::string& getTag() const;
 
-        inline bool isText() const {
+        bool isText() const {
             return getTag() == "#";
         }
 
-        inline const std::string& text() const {
+        const std::string& getInnerText() const {
             return attr("#").getText();
         }
 

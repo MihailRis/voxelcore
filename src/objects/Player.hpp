@@ -2,7 +2,6 @@
 
 #include <glm/glm.hpp>
 #include <memory>
-#include <optional>
 
 #include "interfaces/Serializable.hpp"
 #include "settings.hpp"

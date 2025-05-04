@@ -1,7 +1,7 @@
 #include "Framebuffer.hpp"
 
 #include <GL/glew.h>
-#include "GLTexture.hpp"
+#include "Texture.hpp"
 
 Framebuffer::Framebuffer(uint fbo, uint depth, std::unique_ptr<Texture> texture)
   : fbo(fbo), depth(depth), texture(std::move(texture)) 
@@ -25,7 +25,7 @@ static std::unique_ptr<Texture> create_texture(int width, int height, int format
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex, 0);
-    return std::make_unique<GLTexture>(tex, width, height);
+    return std::make_unique<Texture>(tex, width, height);
 }
 
 Framebuffer::Framebuffer(uint width, uint height, bool alpha) 

@@ -1,3 +1,4 @@
+#define VC_ENABLE_REFLECTION
 #include "World.hpp"
 
 #include <glm/glm.hpp>
@@ -49,7 +50,7 @@ void World::updateTimers(float delta) {
 void World::writeResources(const Content& content) {
     auto root = dv::object();
     for (size_t typeIndex = 0; typeIndex < RESOURCE_TYPES_COUNT; typeIndex++) {
-        auto typeName = to_string(static_cast<ResourceType>(typeIndex));
+        auto typeName = ResourceTypeMeta.getNameString(static_cast<ResourceType>(typeIndex));
         auto& list = root.list(typeName);
         auto& indices = content.resourceIndices[typeIndex];
         for (size_t i = 0; i < indices.size(); i++) {

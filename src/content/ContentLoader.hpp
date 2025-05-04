@@ -28,29 +28,10 @@ class ContentLoader {
     ContentPackStats* stats;
     const ResPaths& paths;
 
-    void loadBlock(
-        Block& def, const std::string& full, const std::string& name
-    );
-    void loadItem(
-        ItemDef& def, const std::string& full, const std::string& name
-    );
-    void loadEntity(
-        EntityDef& def, const std::string& full, const std::string& name
-    );
     void loadGenerator(
         GeneratorDef& def, const std::string& full, const std::string& name
     );
-
     static void loadBlockMaterial(BlockMaterial& def, const io::path& file);
-    void loadBlock(
-        Block& def, const std::string& name, const io::path& file
-    );
-    void loadItem(
-        ItemDef& def, const std::string& name, const io::path& file
-    );
-    void loadEntity(
-        EntityDef& def, const std::string& name, const io::path& file
-    );
     void loadResources(ResourceType type, const dv::value& list);
     void loadResourceAliases(ResourceType type, const dv::value& aliases);
 

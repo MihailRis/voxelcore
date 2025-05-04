@@ -1,3 +1,4 @@
+#define VC_ENABLE_REFLECTION
 #include "content/Content.hpp"
 #include "content/ContentLoader.hpp"
 #include "content/ContentControl.hpp"
@@ -311,7 +312,7 @@ static int l_get_textures(lua::State* L) {
 
 static int l_get_model(lua::State* L) {
     if (auto def = require_block(L)) {
-        return lua::pushstring(L, to_string(def->model));
+        return lua::pushlstring(L, BlockModelTypeMeta.getName(def->model.type));
     }
     return 0;
 }

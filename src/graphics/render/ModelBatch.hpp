@@ -1,14 +1,12 @@
 #pragma once
 
-#include "maths/UVRegion.hpp"
-
 #include <memory>
 #include <vector>
 #include <string>
 #include <glm/glm.hpp>
 #include <unordered_map>
 
-class Mesh;
+template<typename VertexStructure> class Mesh;
 class Texture;
 class Chunks;
 class Assets;

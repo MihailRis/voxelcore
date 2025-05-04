@@ -20,7 +20,8 @@ ContentPack ContentPack::createCore(const EnginePaths& paths) {
 }
 
 const std::vector<std::string> ContentPack::RESERVED_NAMES = {
-    "res", "abs", "local", "core", "user", "world", "none", "null"
+    "res", "abs", "local", "core", "user", "world", "none", "null", "project", 
+    "pack", "packid", "root"
 };
 
 contentpack_error::contentpack_error(
@@ -114,10 +115,11 @@ ContentPack ContentPack::read(const io::path& folder) {
         }
     }
 
-    if (pack.id == "none")
+    if (pack.id == "none") {
         throw contentpack_error(
             pack.id, folder, "content-pack id is not specified"
         );
+    }
     checkContentPackId(pack.id, folder);
 
     return pack;

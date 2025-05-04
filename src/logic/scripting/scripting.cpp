@@ -154,6 +154,22 @@ std::unique_ptr<Process> scripting::start_coroutine(
     });
 }
 
+[[nodiscard]] scriptenv scripting::create_environment(
+    const scriptenv& parent
+) {
+    auto L = lua::get_main_state();
+    int id = lua::create_environment(L, (parent ? *parent : 0));
+    lua::pushenv(L, id);
+    lua::pushvalue(L, -1);
+    lua::setfield(L, "CUR_ENV");
+
+    lua::pop(L);
+    return std::shared_ptr<int>(new int(id), [=](int* id) { //-V508
+        lua::remove_environment(L, *id);
+        delete id;
+    });
+}
+
 [[nodiscard]] scriptenv scripting::create_doc_environment(
     const scriptenv& parent, const std::string& name
 ) {
@@ -243,7 +259,7 @@ void scripting::on_content_load(Content* content) {
         const auto& materials = content->getBlockMaterials();
         lua::createtable(L, 0, materials.size());
         for (const auto& [name, material] : materials) {
-            lua::pushvalue(L, material->serialize());
+            lua::pushvalue(L, material->toTable());
             lua::setfield(L, name);
         }
         lua::setfield(L, "materials");
@@ -259,6 +275,11 @@ void scripting::on_content_load(Content* content) {
     }
     load_script("post_content.lua", true);
     load_script("stdcmd.lua", true);
+}
+
+void scripting::on_content_reset() {
+    scripting::content = nullptr;
+    scripting::indices = nullptr;
 }
 
 void scripting::on_world_load(LevelController* controller) {

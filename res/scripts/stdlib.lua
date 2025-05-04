@@ -186,8 +186,13 @@ end
 gui_util = require "core:internal/gui_util"
 
 Document = gui_util.Document
+Element = gui_util.Element
 RadioGroup = gui_util.RadioGroup
 __vc_page_loader = gui_util.load_page
+
+function __vc_get_document_node(docname, nodeid)
+    return Element.new(docname, nodeid)
+end
 
 _GUI_ROOT = Document.new("core:root")
 _MENU = _GUI_ROOT.menu
@@ -221,15 +226,23 @@ end
 
 function gui.template(name, params)
     local text = file.read(file.find("layouts/templates/"..name..".xml"))
-    for k,v in pairs(params) do
-        local arg = tostring(v):gsub("'", "\\'"):gsub('"', '\\"')
-        text = text:gsub("(%%{"..k.."})", arg)
-    end
-    text = text:gsub("if%s*=%s*'%%{%w+}'", "if=''")
-    text = text:gsub("if%s*=%s*\"%%{%w+}\"", "if=\"\"")
+    text = text:gsub("%%{([^}]+)}", function(n) 
+        local s = params[n]
+        if s == nil then
+            return
+        end
+        if type(s) ~= "string" then
+            return tostring(s)
+        end
+        if #s == 0 then
+            return ''
+        end
+        local e = string.escape(s)
+        return e:sub(2, #e-1)
+    end)
+    text = text:gsub('if%s*=%s*[\'"]%%{%w+}[\'"]', "if=\"\"")
     -- remove unsolved properties: attr='%{var}'
-    text = text:gsub("%s*%S+='%%{[^}]+}'%s*", " ")
-    text = text:gsub('%s*%S+="%%{[^}]+}"%s*', " ")
+    text = text:gsub('%s*%S+=[\'"]%%{[^}]+}[\'"]%s*', " ")
     return text
 end
 
@@ -263,6 +276,11 @@ entities.get_all = function(uids)
         return stdcomp.get_all(uids)
     end
 end
+local bytearray = require "core:internal/bytearray"
+Bytearray = bytearray.FFIBytearray
+Bytearray_as_string = bytearray.FFIBytearray_as_string
+Bytearray_construct = function(...) return Bytearray(...) end
+ffi = nil
 
 math.randomseed(time.uptime() * 1536227939)
 

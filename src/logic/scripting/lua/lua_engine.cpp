@@ -117,7 +117,6 @@ void lua::init_state(State* L, StateType stateType) {
 
     initialize_libs_extends(L);
 
-    newusertype<LuaBytearray>(L);
     newusertype<LuaHeightmap>(L);
     newusertype<LuaVoxelFragment>(L);
     newusertype<LuaCanvas>(L);

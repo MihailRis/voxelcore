@@ -33,6 +33,4 @@ namespace util {
         a.reserve(a.size() + b.size());
         a.insert(a.end(), b.begin(), b.end());
     }
-
-    std::string to_string(const std::vector<std::string>& vec);
 }

@@ -1,7 +1,7 @@
-#include "syntax_highlighting.hpp"
+#include "SyntaxProcessor.hpp"
 
 #include "coders/commons.hpp"
-#include "coders/lua_parsing.hpp"
+#include "coders/syntax_parser.hpp"
 #include "graphics/core/Font.hpp"
 
 using namespace devtools;
@@ -55,16 +55,28 @@ static std::unique_ptr<FontStylesScheme> build_styles(
     return std::make_unique<FontStylesScheme>(std::move(styles));
 }
 
-std::unique_ptr<FontStylesScheme> devtools::syntax_highlight(
-    const std::string& lang, std::wstring_view source
+void SyntaxProcessor::addSyntax(
+    std::unique_ptr<Syntax> syntax
 ) {
+    const auto ptr = syntax.get();
+    langs.emplace_back(std::move(syntax));
+
+    for (auto& ext : ptr->extensions) {
+        langsExtensions[ext] = ptr;
+    }
+}
+
+std::unique_ptr<FontStylesScheme> SyntaxProcessor::highlight(
+    const std::string& ext, std::wstring_view source
+) const {
+    const auto& found = langsExtensions.find(ext);
+    if (found == langsExtensions.end()) {
+        return nullptr;
+    } 
+    const auto& syntax = *found->second;
     try {
-        if (lang == "lua") {
-            auto tokens = lua::tokenize("<string>", source);
-            return build_styles(tokens);
-        } else {
-            return nullptr;
-        }
+        auto tokens = tokenize(syntax, "<string>", source);
+        return build_styles(tokens);
     } catch (const parsing_error& err) {
         return nullptr;
     }

@@ -49,6 +49,7 @@ namespace scripting {
     void initialize(Engine* engine);
 
     void on_content_load(Content* content);
+    void on_content_reset();
 
     bool register_event(
         int env, const std::string& name, const std::string& id
@@ -57,6 +58,7 @@ namespace scripting {
 
     scriptenv get_root_environment();
     scriptenv create_pack_environment(const ContentPack& pack);
+    scriptenv create_environment(const scriptenv& parent);
     scriptenv create_doc_environment(
         const scriptenv& parent, const std::string& name
     );

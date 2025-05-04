@@ -1,0 +1,3 @@
+# default project
+name = "default"
+base_packs = ["base"]

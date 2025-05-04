@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 #include <set>
 #include <stdexcept>
 #include <string>
@@ -23,23 +22,6 @@ struct GeneratorDef;
 
 namespace rigging {
     class SkeletonConfig;
-}
-
-constexpr const char* ContentType_name(ContentType type) {
-    switch (type) {
-        case ContentType::NONE:
-            return "none";
-        case ContentType::BLOCK:
-            return "block";
-        case ContentType::ITEM:
-            return "item";
-        case ContentType::ENTITY:
-            return "entity";
-        case ContentType::GENERATOR:
-            return "generator";
-        default:
-            return "unknown";
-    }
 }
 
 class namereuse_error : public std::runtime_error {
@@ -184,26 +166,6 @@ public:
         return names.size();
     }
 };
-
-constexpr const char* to_string(ResourceType type) {
-    switch (type) {
-        case ResourceType::CAMERA:
-            return "camera";
-        case ResourceType::POST_EFFECT_SLOT:
-            return "post-effect-slot";
-        default:
-            return "unknown";
-    }
-}
-
-inline std::optional<ResourceType> ResourceType_from(std::string_view str) {
-    if (str == "camera") {
-        return ResourceType::CAMERA;
-    } else if (str == "post-effect-slot") {
-        return ResourceType::POST_EFFECT_SLOT;
-    }
-    return std::nullopt;
-}
 
 using ResourceIndicesSet = ResourceIndices[RESOURCE_TYPES_COUNT];
 

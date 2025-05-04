@@ -4,7 +4,6 @@
 #include <string>
 #include <stdexcept>
 #include <unordered_map>
-#include <optional>
 
 #include "typedefs.hpp"
 #include "interfaces/Serializable.hpp"

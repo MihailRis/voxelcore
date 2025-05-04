@@ -746,14 +746,22 @@ namespace lua {
         }
     }
 
-    inline std::vector<ubyte> require_bytearray(lua::State* L, int idx) {
-        if (auto* bytearray = lua::touserdata<LuaBytearray>(L, idx)) {
-            return bytearray->data();
-        } else if (lua::istable(L, idx)) {
-            std::vector<ubyte> bytes;
-            read_bytes_from_table(L, idx, bytes);
-            return bytes;
-        }
-        throw std::runtime_error("bytearray expected");
+    inline int create_bytearray(lua::State* L, const void* bytes, size_t size) {
+        lua::requireglobal(L, "Bytearray_construct");
+        lua::pushlstring(
+            L, std::string_view(reinterpret_cast<const char*>(bytes), size)
+        );
+        return lua::call(L, 1, 1);
+    }
+
+    inline int create_bytearray(lua::State* L, const std::vector<ubyte>& bytes) {
+        return create_bytearray(L, bytes.data(), bytes.size());
+    }
+
+    inline std::string_view bytearray_as_string(lua::State* L, int idx) {
+        lua::requireglobal(L, "Bytearray_as_string");
+        lua::pushvalue(L, idx);
+        lua::call(L, 1, 1);
+        return lua::tolstring(L, -1);
     }
 }

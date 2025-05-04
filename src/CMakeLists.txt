@@ -108,7 +108,6 @@ target_compile_options(
            -Wno-unused-parameter
            -Wno-sign-compare
            -Wno-unknown-pragmas
-           $<$<CONFIG:Debug>:-Og>
            >)
 
 target_link_options(

@@ -1,3 +1,4 @@
+#define VC_ENABLE_REFLECTION
 #include "EngineController.hpp"
 
 #include <algorithm>
@@ -164,7 +165,7 @@ static dv::value create_missing_content_report(
     auto root = dv::object();
     auto& contentEntries = root.list("content");
     for (auto& entry : report->getMissingContent()) {
-        std::string contentName = ContentType_name(entry.type);
+        std::string contentName = ContentTypeMeta.getNameString(entry.type);
         auto& contentEntry = contentEntries.object();
         contentEntry["type"] = contentName;
         contentEntry["name"] = entry.name;

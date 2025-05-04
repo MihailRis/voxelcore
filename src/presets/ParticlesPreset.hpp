@@ -5,8 +5,9 @@
 #include <vector>
 
 #include "interfaces/Serializable.hpp"
+#include "util/EnumMetadata.hpp"
 
-enum ParticleSpawnShape {
+enum class ParticleSpawnShape {
     /// @brief Coordinates are regulary distributed within 
     /// the volume of a ball.
     BALL = 0,
@@ -18,8 +19,11 @@ enum ParticleSpawnShape {
     BOX
 };
 
-std::string to_string(ParticleSpawnShape shape);
-ParticleSpawnShape ParticleSpawnShape_from(std::string_view s);
+VC_ENUM_METADATA(ParticleSpawnShape)
+    {"ball", ParticleSpawnShape::BALL},
+    {"sphere", ParticleSpawnShape::SPHERE},
+    {"box", ParticleSpawnShape::BOX},
+VC_ENUM_END
 
 struct ParticlesPreset : public Serializable {
     /// @brief Collision detection
@@ -53,7 +57,7 @@ struct ParticlesPreset : public Serializable {
     /// @brief Maximum angular velocity
     float maxAngularVelocity = 0.0f;
     /// @brief Spawn spread shape
-    ParticleSpawnShape spawnShape = BALL;
+    ParticleSpawnShape spawnShape = ParticleSpawnShape::BALL;
     /// @brief Spawn spread
     glm::vec3 spawnSpread {};
     /// @brief Texture name

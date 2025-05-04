@@ -1,3 +1,4 @@
+#define VC_ENABLE_REFLECTION
 #include "Entities.hpp"
 
 #include <glm/ext/matrix_transform.hpp>
@@ -216,9 +217,7 @@ void Entities::loadEntity(const dv::value& map, Entity entity) {
         dv::get_vec(bodymap, "vel", body.hitbox.velocity);
         std::string bodyTypeName;
         map.at("type").get(bodyTypeName);
-        if (auto bodyType = BodyType_from(bodyTypeName)) {
-            body.hitbox.type = *bodyType;
-        }
+        BodyTypeMeta.getItem(bodyTypeName, body.hitbox.type);
         bodymap["crouch"].asBoolean(body.hitbox.crouching);
         bodymap["damping"].asNumber(body.hitbox.linearDamping);
     }
@@ -329,7 +328,7 @@ dv::value Entities::serialize(const Entity& entity) {
         if (def.save.body.settings) {
             bodymap["damping"] = rigidbody.hitbox.linearDamping;
             if (hitbox.type != def.bodyType) {
-                bodymap["type"] = to_string(hitbox.type);
+                bodymap["type"] = BodyTypeMeta.getNameString(hitbox.type);
             }
             if (hitbox.crouching) {
                 bodymap["crouch"] = hitbox.crouching;

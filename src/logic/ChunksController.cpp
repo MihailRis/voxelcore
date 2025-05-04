@@ -35,12 +35,14 @@ void ChunksController::update(
     int64_t maxDuration, int loadDistance, uint padding, Player& player
 ) const {
     const auto& position = player.getPosition();
-    int centerX = floordiv<CHUNK_W>(position.x);
-    int centerY = floordiv<CHUNK_D>(position.z);
+    int centerX = floordiv<CHUNK_W>(glm::floor(position.x));
+    int centerY = floordiv<CHUNK_D>(glm::floor(position.z));
     
     if (player.isLoadingChunks()) {
         /// FIXME: one generator for multiple players
         generator->update(centerX, centerY, loadDistance);
+    } else {
+        return;
     }
 
     int64_t mcstotal = 0;

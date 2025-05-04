@@ -28,27 +28,30 @@ For example:
 document["worlds-panel"]:clear()
 ```
 
+Access to nested elements is performed by index (starting from one).
+
 ## General properties and methods
 
 Properties that apply to all elements:
 
-| Name          | Type   | Read | Write | Description                                 |
-| ------------- | ------ | ---- | ----- | ------------------------------------------- |
-| id            | string | yes  | *no*  | element id                                  |
-| pos           | vec2   | yes  | yes   | element position inside a container         |
-| wpos          | vec2   | yes  | yes   | element position inside the window          |
-| size          | vec2   | yes  | yes   | element size                                |
-| interactive   | bool   | yes  | yes   | ability to interact with the element        |
-| enabled       | bool   | yes  | yes   | visually indicated version of *interactive* |
-| visible       | bool   | yes  | yes   | element visibility                          |
-| focused       | bool   | yes  | yes   | focus on element                            |
-| color         | rgba   | yes  | yes   | element color                               |
-| hoverColor    | rgba   | yes  | yes   | hover color                                 |
-| pressedColor  | rgba   | yes  | yes   | color when pressed                          |
-| tooltip       | string | yes  | yes   | tooltip text                                |
-| tooltipDelay  | float  | yes  | yes   | tooltip delay                               |
-| contentOffset | vec2   | yes  | *no*  | element content offset                      |
-| cursor        | string | yes  | yes   | cursor displayed on hover                   |
+| Name          | Type    | Read | Write | Description                                 |
+| ------------- | ------- | ---- | ----- | ------------------------------------------- |
+| id            | string  | yes  | *no*  | element id                                  |
+| pos           | vec2    | yes  | yes   | element position inside a container         |
+| wpos          | vec2    | yes  | yes   | element position inside the window          |
+| size          | vec2    | yes  | yes   | element size                                |
+| interactive   | bool    | yes  | yes   | ability to interact with the element        |
+| enabled       | bool    | yes  | yes   | visually indicated version of *interactive* |
+| visible       | bool    | yes  | yes   | element visibility                          |
+| focused       | bool    | yes  | yes   | focus on element                            |
+| color         | rgba    | yes  | yes   | element color                               |
+| hoverColor    | rgba    | yes  | yes   | hover color                                 |
+| pressedColor  | rgba    | yes  | yes   | color when pressed                          |
+| tooltip       | string  | yes  | yes   | tooltip text                                |
+| tooltipDelay  | float   | yes  | yes   | tooltip delay                               |
+| contentOffset | vec2    | yes  | *no*  | element content offset                      |
+| cursor        | string  | yes  | yes   | cursor displayed on hover                   |
+| parent        | Element | yes  | *no*  | parent element or nil                       |
 
 Common element methods:
 
@@ -161,9 +164,10 @@ Properties:
 
 Properties:
 
-| Name  | Type   | Read | Write | Description  |
-| ----- | ------ | ---- | ----- | ------------ |
-| src   | string | yes  | yes   | texture name |
+| Name   | Type   | Read | Write | Description      |
+| ------ | ------ | ---- | ----- | ---------------- |
+| src    | string | yes  | yes   | texture name     |
+| region | vec4   | yes  | yes   | image sub-region |
 
 ## Canvas
 
@@ -192,6 +196,11 @@ Here, *color* can be specified in the following ways:
 | data:set_data(data: table<int>)                          | replaces pixel data (width * height * 4 numbers)        |
 | data:create_texture(name: str)                           | creates and shares texture to renderer                  |
 
+## Inline frame (iframe)
+
+| Name     | Type   | Read | Write | Description                 |
+|----------|--------|------|-------|-----------------------------|
+| src      | string | yes  | yes   | id of the embedded document |
 
 ## Inventory
 

@@ -3,21 +3,15 @@
 #include "Mesh.hpp"
 #include "Texture.hpp"
 
-#include <GL/glew.h>
 #include "typedefs.hpp"
 #include "maths/UVRegion.hpp"
 
-/// xyz, uv, rgba
-inline constexpr uint B3D_VERTEX_SIZE = 9;
-
-Batch3D::Batch3D(size_t capacity) 
+Batch3D::Batch3D(size_t capacity)
     : capacity(capacity) {
-    const VertexAttribute attrs[] = {
-        {3}, {2}, {4}, {0}
-    };
 
-    buffer = std::make_unique<float[]>(capacity * B3D_VERTEX_SIZE);
-    mesh = std::make_unique<Mesh>(buffer.get(), 0, attrs);
+
+    buffer = std::make_unique<Batch3DVertex[]>(capacity);
+    mesh = std::make_unique<Mesh<Batch3DVertex>>(buffer.get(), 0);
     index = 0;
 
     const ubyte pixels[] = {
@@ -40,69 +34,54 @@ void Batch3D::vertex(
     float x, float y, float z, float u, float v,
     float r, float g, float b, float a
 ) {
-    buffer[index++] = x;
-    buffer[index++] = y;
-    buffer[index++] = z;
-    buffer[index++] = u;
-    buffer[index++] = v;
-    buffer[index++] = r;
-    buffer[index++] = g;
-    buffer[index++] = b;
-    buffer[index++] = a;
+    buffer[index].position = {x, y, z};
+    buffer[index].uv = {u, v};
+    buffer[index].color = {r, g, b, a};
+    index++;
 }
 void Batch3D::vertex(
     glm::vec3 coord, float u, float v,
     float r, float g, float b, float a
 ) {
-    buffer[index++] = coord.x;
-    buffer[index++] = coord.y;
-    buffer[index++] = coord.z;
-    buffer[index++] = u;
-    buffer[index++] = v;
-    buffer[index++] = r;
-    buffer[index++] = g;
-    buffer[index++] = b;
-    buffer[index++] = a;
+    buffer[index].position = coord;
+    buffer[index].uv = {u, v};
+    buffer[index].color = {r, g, b, a};
+    index++;
 }
 void Batch3D::vertex(
     glm::vec3 point,
     glm::vec2 uvpoint,
     float r, float g, float b, float a
 ) {
-    buffer[index++] = point.x;
-    buffer[index++] = point.y;
-    buffer[index++] = point.z;
-    buffer[index++] = uvpoint.x;
-    buffer[index++] = uvpoint.y;
-    buffer[index++] = r;
-    buffer[index++] = g;
-    buffer[index++] = b;
-    buffer[index++] = a;
+    buffer[index].position = point;
+    buffer[index].uv = uvpoint;
+    buffer[index].color = {r, g, b, a};
+    index++;
 }
 
 void Batch3D::face(
-    const glm::vec3& coord, 
+    const glm::vec3& coord,
     float w, float h,
     const glm::vec3& axisX,
     const glm::vec3& axisY,
     const UVRegion& region,
     const glm::vec4& tint
 ) {
-    if (index + B3D_VERTEX_SIZE * 6 > capacity) {
+    if (index + 6 >= capacity) {
         flush();
     }
-    vertex(coord, region.u1, region.v1, 
+    vertex(coord, region.u1, region.v1,
            tint.r, tint.g, tint.b, tint.a);
-    vertex(coord + axisX * w, region.u2, region.v1, 
+    vertex(coord + axisX * w, region.u2, region.v1,
             tint.r, tint.g, tint.b, tint.a);
-    vertex(coord + axisX * w + axisY * h, region.u2, region.v2, 
+    vertex(coord + axisX * w + axisY * h, region.u2, region.v2,
            tint.r, tint.g, tint.b, tint.a);
 
-    vertex(coord, region.u1, region.v1, 
+    vertex(coord, region.u1, region.v1,
            tint.r, tint.g, tint.b, tint.a);
     vertex(coord + axisX * w + axisY * h, region.u2, region.v2,
            tint.r, tint.g, tint.b, tint.a);
-    vertex(coord + axisY * h, region.u1, region.v2, 
+    vertex(coord + axisY * h, region.u1, region.v2,
            tint.r, tint.g, tint.b, tint.a);
 }
 
@@ -134,18 +113,18 @@ void Batch3D::sprite(
 }
 
 void Batch3D::sprite(
-    const glm::vec3& pos, 
-    const glm::vec3& up, 
-    const glm::vec3& right, 
-    float w, float h, 
-    const UVRegion& uv, 
+    const glm::vec3& pos,
+    const glm::vec3& up,
+    const glm::vec3& right,
+    float w, float h,
+    const UVRegion& uv,
     const glm::vec4& color
 ){
     const float r = color.r;
     const float g = color.g;
     const float b = color.b;
     const float a = color.a;
-    if (index + 6*B3D_VERTEX_SIZE >= capacity) {
+    if (index + 6 >= capacity) {
         flush();
     }
 
@@ -194,17 +173,17 @@ void Batch3D::xSprite(
     float w, float h, const UVRegion& uv, const glm::vec4& tint, bool shading
 ) {
     face(
-        glm::vec3(-w * 0.25f, 0.0f, -w * 0.25f), 
-        w, h, 
-        glm::vec3(1, 0, 0), 
-        glm::vec3(0, 1, 0), 
+        glm::vec3(-w * 0.25f, 0.0f, -w * 0.25f),
+        w, h,
+        glm::vec3(1, 0, 0),
+        glm::vec3(0, 1, 0),
         uv, (shading ? do_tint(1.0f)*tint : tint)
     );
     face(
-        glm::vec3(w * 0.25f, 0.0f, w * 0.5f - w * 0.25f), 
+        glm::vec3(w * 0.25f, 0.0f, w * 0.5f - w * 0.25f),
         w, h,
-        glm::vec3(0, 0, -1), 
-        glm::vec3(0, 1,  0), 
+        glm::vec3(0, 0, -1),
+        glm::vec3(0, 1,  0),
         uv, (shading ? do_tint(0.9f)*tint : tint)
     );
 }
@@ -221,41 +200,41 @@ void Batch3D::cube(
     const glm::vec3 Z(0.0f, 0.0f, 1.0f);
 
     face(
-        coord+glm::vec3(0.0f, 0.0f, 0.0f), 
-        size.x, size.y, X, Y, texfaces[5], 
+        coord+glm::vec3(0.0f, 0.0f, 0.0f),
+        size.x, size.y, X, Y, texfaces[5],
         (shading ? do_tint(0.8)*tint : tint)
     );
     face(
-        coord+glm::vec3(size.x, 0.0f, -size.z), 
-        size.x, size.y, -X, Y, texfaces[4], 
+        coord+glm::vec3(size.x, 0.0f, -size.z),
+        size.x, size.y, -X, Y, texfaces[4],
         (shading ? do_tint(0.8f)*tint : tint)
     );
     face(
-        coord+glm::vec3(0.0f, size.y, 0.0f), 
-        size.x, size.z, X, -Z, texfaces[3], 
+        coord+glm::vec3(0.0f, size.y, 0.0f),
+        size.x, size.z, X, -Z, texfaces[3],
         (shading ? do_tint(1.0f)*tint : tint)
     );
     face(
-        coord+glm::vec3(0.0f, 0.0f, -size.z), 
-        size.x, size.z, X, Z, texfaces[2], 
+        coord+glm::vec3(0.0f, 0.0f, -size.z),
+        size.x, size.z, X, Z, texfaces[2],
         (shading ? do_tint(0.7f)*tint : tint)
     );
     face(
-        coord+glm::vec3(0.0f, 0.0f, -size.z), 
-        size.z, size.y, Z, Y, texfaces[0], 
+        coord+glm::vec3(0.0f, 0.0f, -size.z),
+        size.z, size.y, Z, Y, texfaces[0],
         (shading ? do_tint(0.9f)*tint : tint)
     );
     face(
-        coord+glm::vec3(size.x, 0.0f, 0.0f), 
-        size.z, size.y, -Z, Y, texfaces[1], 
+        coord+glm::vec3(size.x, 0.0f, 0.0f),
+        size.z, size.y, -Z, Y, texfaces[1],
         (shading ? do_tint(0.9f)*tint : tint)
     );
 }
 
 void Batch3D::blockCube(
-    const glm::vec3& size, 
-    const UVRegion(&texfaces)[6], 
-    const glm::vec4& tint, 
+    const glm::vec3& size,
+    const UVRegion(&texfaces)[6],
+    const glm::vec4& tint,
     bool shading
 ) {
     cube((1.0f - size) * -0.5f, size, texfaces, tint, shading);
@@ -264,27 +243,27 @@ void Batch3D::blockCube(
 void Batch3D::vertex(
     const glm::vec3& coord, const glm::vec2& uv, const glm::vec4& tint
 ) {
-    if (index + B3D_VERTEX_SIZE >= capacity) {
+    if (index + 1 >= capacity) {
         flush();
     }
     vertex(coord, uv, tint.r, tint.g, tint.b, tint.a);
 }
 
 void Batch3D::point(const glm::vec3& coord, const glm::vec4& tint) {
-    if (index + B3D_VERTEX_SIZE >= capacity) {
+    if (index + 1 >= capacity) {
         flushPoints();
     }
     vertex(coord, {}, tint.r, tint.g, tint.b, tint.a);
 }
 
 void Batch3D::flush() {
-    mesh->reload(buffer.get(), index / B3D_VERTEX_SIZE);
+    mesh->reload(buffer.get(), index);
     mesh->draw();
     index = 0;
 }
 
 void Batch3D::flushPoints() {
-    mesh->reload(buffer.get(), index / B3D_VERTEX_SIZE);
+    mesh->reload(buffer.get(), index);
     mesh->draw(GL_POINTS);
     index = 0;
 }

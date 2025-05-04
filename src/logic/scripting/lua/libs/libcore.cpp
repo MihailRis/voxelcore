@@ -248,12 +248,14 @@ static int l_load_texture(lua::State* L) {
         }
         lua::pop(L);
         load_texture(buffer.data(), buffer.size(), lua::require_string(L, 2));
-    } else if (auto bytes = lua::touserdata<lua::LuaBytearray>(L, 1)) {
+    } else {
+        auto string = lua::bytearray_as_string(L, 1);
         load_texture(
-            bytes->data().data(),
-            bytes->data().size(),
+            reinterpret_cast<const ubyte*>(string.data()),
+            string.size(),
             lua::require_string(L, 2)
         );
+        lua::pop(L);
     }
     return 0;
 }

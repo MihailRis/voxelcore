@@ -50,16 +50,16 @@ static inline UVRegion get_region_for(
 
 void ModelsGenerator::prepare(Content& content, Assets& assets) {
     for (auto& [name, def] : content.blocks.getDefs()) {
-        if (def->model == BlockModel::custom && def->modelName.empty()) {
+        if (def->model.type == BlockModelType::CUSTOM && def->model.name.empty()) {
             assets.store(
                 std::make_unique<model::Model>(
                     loadCustomBlockModel(
-                        def->customModelRaw, assets, !def->shadeless
+                        def->model.customRaw, assets, !def->shadeless
                     )
                 ),
                 name + ".model"
             );
-            def->modelName = def->name + ".model";
+            def->model.name = def->name + ".model";
         }
     }
     for (auto& [name, def] : content.items.getDefs()) {
@@ -74,7 +74,7 @@ void ModelsGenerator::prepare(Content& content, Assets& assets) {
 
 model::Model ModelsGenerator::fromCustom(
     const Assets& assets,
-    const std::vector<BoxModel>& modelBoxes,
+    const std::vector<AABB>& modelBoxes,
     const std::vector<std::string>& modelTextures,
     const std::vector<glm::vec3>& points,
     bool lighting
@@ -95,32 +95,30 @@ model::Model ModelsGenerator::fromCustom(
             modelBoxes[i].center(), modelBoxes[i].size() * 0.5f, boxtexfaces
         );
     }
-    glm::vec3 norm {0, 1, 0};
     for (size_t i = 0; i < points.size() / 4; i++) {
         auto texture = modelTextures[modelBoxes.size() * 6 + i];
+
+        const glm::vec3& v0 = points[i * 4];
+        const glm::vec3& v1 = points[i * 4 + 1];
+        const glm::vec3& v2 = points[i * 4 + 2];
+        const glm::vec3& v3 = points[i * 4 + 3];
+
+        glm::vec3 edge1 = v1 - v0;
+        glm::vec3 edge2 = v2 - v0;
+
+        glm::vec3 norm = glm::cross(edge1, edge2);
+        norm = glm::normalize(norm);
 
         auto& mesh = model.addMesh(texture);
         mesh.lighting = lighting;
 
         auto reg = get_region_for(texture, assets);
-        mesh.vertices.push_back(
-            {points[i * 4 + 0], glm::vec2(reg.u1, reg.v1), norm}
-        );
-        mesh.vertices.push_back(
-            {points[i * 4 + 1], glm::vec2(reg.u2, reg.v1), norm}
-        );
-        mesh.vertices.push_back(
-            {points[i * 4 + 2], glm::vec2(reg.u2, reg.v2), norm}
-        );
-        mesh.vertices.push_back(
-            {points[i * 4 + 0], glm::vec2(reg.u1, reg.v1), norm}
-        );
-        mesh.vertices.push_back(
-            {points[i * 4 + 2], glm::vec2(reg.u2, reg.v2), norm}
-        );
-        mesh.vertices.push_back(
-            {points[i * 4 + 3], glm::vec2(reg.u1, reg.v2), norm}
-        );
+        mesh.vertices.push_back({v0, glm::vec2(reg.u1, reg.v1), norm});
+        mesh.vertices.push_back({v1, glm::vec2(reg.u2, reg.v1), norm});
+        mesh.vertices.push_back({v2, glm::vec2(reg.u2, reg.v2), norm});
+        mesh.vertices.push_back({v0, glm::vec2(reg.u1, reg.v1), norm});
+        mesh.vertices.push_back({v2, glm::vec2(reg.u2, reg.v2), norm});
+        mesh.vertices.push_back({v3, glm::vec2(reg.u1, reg.v2), norm});
     }
     return model;
 }
@@ -131,12 +129,12 @@ model::Model ModelsGenerator::generate(
     if (def.iconType == ItemIconType::BLOCK) {
         auto model = assets.require<model::Model>("block");
         const auto& blockDef = content.blocks.require(def.icon);
-        if (blockDef.model == BlockModel::xsprite) {
+        if (blockDef.model.type == BlockModelType::XSPRITE) {
             return create_flat_model(
                 "blocks:" + blockDef.textureFaces.at(0), assets
             );
-        } else if (blockDef.model == BlockModel::custom) {
-            model = assets.require<model::Model>(blockDef.modelName);
+        } else if (blockDef.model.type == BlockModelType::CUSTOM) {
+            model = assets.require<model::Model>(blockDef.model.name);
             for (auto& mesh : model.meshes) {
                 mesh.scale(glm::vec3(0.2f));
             }
@@ -144,8 +142,8 @@ model::Model ModelsGenerator::generate(
         }
         for (auto& mesh : model.meshes) {
             mesh.lighting = !blockDef.shadeless;
-            switch (blockDef.model) {
-                case BlockModel::aabb: {
+            switch (blockDef.model.type) {
+                case BlockModelType::AABB: {
                     glm::vec3 size = blockDef.hitboxes.at(0).size();
                     float m = glm::max(size.x, glm::max(size.y, size.z));
                     m = glm::min(1.0f, m);

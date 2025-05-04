@@ -10,7 +10,6 @@
 #include "coders/byte_utils.hpp"
 #include "content/Content.hpp"
 #include "world/files/WorldFiles.hpp"
-#include "graphics/core/Mesh.hpp"
 #include "lighting/Lightmap.hpp"
 #include "maths/aabb.hpp"
 #include "maths/rays.hpp"
@@ -32,18 +31,18 @@ Chunks::Chunks(
     : events(events),
       indices(indices),
       areaMap(w, d) {
-    areaMap.setCenter(ox-w/2, oz-d/2);
+    areaMap.setCenter(ox - w / 2, oz - d / 2);
     areaMap.setOutCallback([this](int, int, const auto& chunk) {
         this->events->trigger(LevelEventType::CHUNK_HIDDEN, chunk.get());
     });
 }
 
 void Chunks::configure(int32_t x, int32_t z, uint32_t radius) {
-    setCenter(x, z);
     uint32_t diameter = radius * 2LL;
     if (getWidth() != diameter) {
         resize(diameter, diameter);
     }
+    setCenter(x, z);
 }
 
 voxel* Chunks::get(int32_t x, int32_t y, int32_t z) const {
@@ -313,7 +312,7 @@ glm::vec3 Chunks::rayCastToObstacle(
 }
 
 void Chunks::setCenter(int32_t x, int32_t z) {
-    areaMap.setCenter(floordiv(x, CHUNK_W), floordiv(z, CHUNK_D));
+    areaMap.setCenter(floordiv<CHUNK_W>(x), floordiv<CHUNK_D>(z));
 }
 
 void Chunks::resize(uint32_t newW, uint32_t newD) {

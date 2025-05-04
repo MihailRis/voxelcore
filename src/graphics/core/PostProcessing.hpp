@@ -2,13 +2,23 @@
 
 #include <vector>
 #include <memory>
+#include <glm/glm.hpp>
+#include "MeshData.hpp"
 
-class Mesh;
+template<typename VertexStructure> class Mesh;
 class Assets;
 class Framebuffer;
 class DrawContext;
 class ImageData;
 class PostEffect;
+
+struct PostProcessingVertex {
+    glm::vec2 position;
+
+    static constexpr VertexAttribute ATTRIBUTES[] {
+        {VertexAttribute::Type::FLOAT, false, 2}, 
+        {{}, 0}};
+};
 
 /// @brief Framebuffer with blitting with shaders.
 /// @attention Current implementation does not support multiple render passes 
@@ -18,7 +28,7 @@ class PostProcessing {
     std::unique_ptr<Framebuffer> fbo;
     std::unique_ptr<Framebuffer> fboSecond;
     /// @brief Fullscreen quad mesh as the post-processing canvas
-    std::unique_ptr<Mesh> quadMesh;
+    std::unique_ptr<Mesh<PostProcessingVertex>> quadMesh;
     std::vector<std::shared_ptr<PostEffect>> effectSlots;
 public:
     PostProcessing(size_t effectSlotsCount);

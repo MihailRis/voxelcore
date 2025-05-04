@@ -1,7 +1,6 @@
 #pragma once
 
 #include <glm/glm.hpp>
-#include <optional>
 #include <string>
 #include <vector>
 #include <array>
@@ -10,6 +9,8 @@
 #include "maths/UVRegion.hpp"
 #include "maths/aabb.hpp"
 #include "typedefs.hpp"
+#include "util/EnumMetadata.hpp"
+#include "interfaces/Serializable.hpp"
 
 struct ParticlesPreset;
 
@@ -76,25 +77,44 @@ struct BlockRotProfile {
     /// @brief Doors, signs and other panes
     static const BlockRotProfile PANE;
 
+    /// @brief Stairs, stairs and stairs
+    static const BlockRotProfile STAIRS;
+
     static inline std::string PIPE_NAME = "pipe";
     static inline std::string PANE_NAME = "pane";
+    static inline std::string STAIRS_NAME = "stairs";
 };
 
-enum class BlockModel {
+enum class BlockModelType {
     /// @brief invisible
-    none,
+    NONE,
     /// @brief default cube shape
-    block,
+    BLOCK,
     /// @brief X-shape (grass)
-    xsprite,
+    XSPRITE,
     /// @brief box shape sized as block hitbox
-    aabb,
+    AABB,
     /// @brief custom model defined in json
-    custom
+    CUSTOM
 };
 
-std::string to_string(BlockModel model);
-std::optional<BlockModel> BlockModel_from(std::string_view str);
+struct BlockModel {
+    BlockModelType type = BlockModelType::BLOCK;
+    
+    /// @brief Custom model raw data
+    dv::value customRaw = nullptr;
+
+    /// @brief Custom model name (generated or an asset)
+    std::string name = "";
+};
+
+VC_ENUM_METADATA(BlockModelType)
+    {"none", BlockModelType::NONE},
+    {"block", BlockModelType::BLOCK},
+    {"X", BlockModelType::XSPRITE},
+    {"aabb", BlockModelType::AABB},
+    {"custom", BlockModelType::CUSTOM},
+VC_ENUM_END
 
 enum class CullingMode {
     DEFAULT,
@@ -102,20 +122,23 @@ enum class CullingMode {
     DISABLED,
 };
 
-std::string to_string(CullingMode mode);
-std::optional<CullingMode> CullingMode_from(std::string_view str);
-
-using BoxModel = AABB;
+VC_ENUM_METADATA(CullingMode)
+    {"default", CullingMode::DEFAULT},
+    {"optional", CullingMode::OPTIONAL},
+    {"disabled", CullingMode::DISABLED},
+VC_ENUM_END
 
 /// @brief Common kit of block properties applied to groups of blocks
-struct BlockMaterial {
+struct BlockMaterial : Serializable {
     std::string name;
     std::string stepsSound;
     std::string placeSound;
     std::string breakSound;
     std::string hitSound;
 
-    dv::value serialize() const;
+    dv::value toTable() const; // for compatibility
+    dv::value serialize() const override;
+    void deserialize(const dv::value& src) override;
 };
 
 /// @brief Block properties definition
@@ -143,13 +166,8 @@ public:
     /// @brief Influences visible block sides for transparent blocks
     uint8_t drawGroup = 0;
 
-    /// @brief Block model type
-    BlockModel model = BlockModel::block;
-
-    /// @brief Custom model raw data
-    dv::value customModelRaw = nullptr;
-
-    std::string modelName = "";
+    /// @brief Block model
+    BlockModel model {};
 
     /// @brief Culling mode
     CullingMode culling = CullingMode::DEFAULT;

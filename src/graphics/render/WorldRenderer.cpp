@@ -1,6 +1,5 @@
 #include "WorldRenderer.hpp"
 
-#include <GL/glew.h>
 #include <assert.h>
 
 #include <algorithm>
@@ -119,6 +118,7 @@ void WorldRenderer::setupWorldShader(
     shader.uniform1f("u_gamma", settings.graphics.gamma.get());
     shader.uniform1f("u_fogFactor", fogFactor);
     shader.uniform1f("u_fogCurve", settings.graphics.fogCurve.get());
+    shader.uniform1i("u_debugLights", lightsDebug);
     shader.uniform1f("u_weatherFogOpacity", weather.fogOpacity());
     shader.uniform1f("u_weatherFogDencity", weather.fogDencity());
     shader.uniform1f("u_weatherFogCurve", weather.fogCurve());
@@ -441,6 +441,10 @@ void WorldRenderer::clear() {
 
 void WorldRenderer::setDebug(bool flag) {
     debug = flag;
+}
+
+void WorldRenderer::toggleLightsDebug() {
+    lightsDebug = !lightsDebug;
 }
 
 Weather& WorldRenderer::getWeather() {

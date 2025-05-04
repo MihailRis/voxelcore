@@ -1,3 +1,4 @@
+#define VC_ENABLE_REFLECTION
 #include "gui_xml.hpp"
 
 #include <stdexcept>
@@ -11,6 +12,7 @@
 #include "elements/SplitBox.hpp"
 #include "elements/TrackBar.hpp"
 #include "elements/Image.hpp"
+#include "elements/InlineFrame.hpp"
 #include "elements/InputBindBox.hpp"
 #include "elements/InventoryView.hpp"
 #include "elements/Menu.hpp"
@@ -61,7 +63,7 @@ static runnable create_runnable(
     const std::string& name
 ) {
     if (element.has(name)) {
-        std::string text = element.attr(name).getText();
+        const std::string& text = element.attr(name).getText();
         if (!text.empty()) {
             return scripting::create_runnable(
                 reader.getEnvironment(), text, reader.getFilename()
@@ -168,13 +170,22 @@ static void read_uinode(
         node.setTooltipDelay(element.attr("tooltip-delay").asFloat());
     }
     if (element.has("cursor")) {
-        if (auto cursor = CursorShape_from(element.attr("cursor").getText())) {
-            node.setCursor(*cursor);
+        CursorShape cursor;
+        if (CursorShapeMeta.getItem(element.attr("cursor").getText(), cursor)) {
+            node.setCursor(cursor);
         }
     }
 
     if (auto onclick = create_action(reader, element, "onclick")) {
         node.listenAction(onclick);
+    }
+
+    if (auto onfocus = create_action(reader, element, "onfocus")) {
+        node.listenFocus(onfocus);
+    }
+
+    if (auto ondefocus = create_action(reader, element, "ondefocus")) {
+        node.listenDefocus(ondefocus);
     }
 
     if (auto ondoubleclick = create_action(reader, element, "ondoubleclick")) {
@@ -276,7 +287,7 @@ static std::wstring parse_inner_text(
 ) {
     std::wstring text = L"";
     if (element.size() == 1) {
-        std::string source = element.sub(0).attr("#").getText();
+        std::string source = element.sub(0).getInnerText();
         util::trim(source);
         text = util::str2wstr_utf8(source);
         if (text[0] == '@') {
@@ -290,7 +301,7 @@ static std::wstring parse_inner_text(
     return text;
 }
 
-static std::shared_ptr<UINode> readLabel(
+static std::shared_ptr<UINode> read_label(
     const UiXmlReader& reader, const xml::xmlelement& element
 ) {
     std::wstring text = parse_inner_text(element, reader.getContext());
@@ -376,7 +387,7 @@ static std::shared_ptr<UINode> read_button(
 
     std::shared_ptr<Button> button;
     auto& elements = element.getElements();
-    if (!elements.empty() && elements[0]->getTag() != "#") {
+    if (!elements.empty() && !elements[0]->isText()) {
         auto inner = reader.readUINode(*elements.at(0));
         if (inner != nullptr) {
             button = std::make_shared<Button>(gui, inner, padding);
@@ -431,6 +442,11 @@ static std::shared_ptr<UINode> read_text_box(
     auto placeholder =
         util::str2wstr_utf8(element.attr("placeholder", "").getText());
     auto hint = util::str2wstr_utf8(element.attr("hint", "").getText());
+    if (!hint.empty() && hint[0] == '@') {
+        hint = langs::get(
+            hint.substr(1), util::str2wstr_utf8(reader.getContext())
+        );
+    }
     auto text = parse_inner_text(element, reader.getContext());
     auto textbox = std::make_shared<TextBox>(
         reader.getGUI(), placeholder, glm::vec4(0.0f)
@@ -528,6 +544,11 @@ static std::shared_ptr<UINode> read_image(
     std::string src = element.attr("src", "").getText();
     auto image = std::make_shared<Image>(reader.getGUI(), src);
     read_uinode(reader, element, *image);
+
+    if (element.has("region")) {
+        auto vec = element.attr("region").asVec4();
+        image->setRegion(UVRegion(vec.x, vec.y, vec.z, vec.w));
+    }
     return image;
 }
 
@@ -611,7 +632,7 @@ static slotcallback read_slot_func(
     };
 }
 
-static void readSlot(
+static void read_slot(
     InventoryView* view, UiXmlReader& reader, const xml::xmlelement& element
 ) {
     int index = element.attr("index", "0").asInt();
@@ -641,7 +662,7 @@ static void readSlot(
     view->add(slot);
 }
 
-static void readSlotsGrid(
+static void read_slots_grid(
     InventoryView* view,
     const UiXmlReader& reader,
     const xml::xmlelement& element
@@ -718,9 +739,9 @@ static std::shared_ptr<UINode> read_inventory(
 
     for (auto& sub : element.getElements()) {
         if (sub->getTag() == "slot") {
-            readSlot(view.get(), reader, *sub);
+            read_slot(view.get(), reader, *sub);
         } else if (sub->getTag() == "slots-grid") {
-            readSlotsGrid(view.get(), reader, *sub);
+            read_slots_grid(view.get(), reader, *sub);
         }
     }
     return view;
@@ -737,11 +758,24 @@ static std::shared_ptr<UINode> read_page_box(
     return menu;
 }
 
-UiXmlReader::UiXmlReader(gui::GUI& gui, const scriptenv& env) : gui(gui), env(env) {
+static std::shared_ptr<UINode> read_iframe(
+    UiXmlReader& reader, const xml::xmlelement& element
+) {
+    auto& gui = reader.getGUI();
+    auto iframe = std::make_shared<InlineFrame>(gui);
+    read_container_impl(reader, element, *iframe);
+
+    std::string src = element.attr("src", "").getText();
+    iframe->setSrc(src);
+    return iframe;
+}
+
+UiXmlReader::UiXmlReader(gui::GUI& gui, scriptenv&& env) : gui(gui), env(std::move(env)) {
     contextStack.emplace("");
     add("image", read_image);
     add("canvas", read_canvas);
-    add("label", readLabel);
+    add("iframe", read_iframe);
+    add("label", read_label);
     add("panel", read_panel);
     add("button", read_button);
     add("textbox", read_text_box);

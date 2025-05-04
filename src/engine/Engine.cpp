@@ -12,6 +12,8 @@
 #include "coders/json.hpp"
 #include "coders/toml.hpp"
 #include "coders/commons.hpp"
+#include "devtools/Editor.hpp"
+#include "devtools/Project.hpp"
 #include "content/ContentControl.hpp"
 #include "core_defs.hpp"
 #include "io/io.hpp"
@@ -73,16 +75,24 @@ Engine& Engine::getInstance() {
 void Engine::initialize(CoreParameters coreParameters) {
     params = std::move(coreParameters);
     settingsHandler = std::make_unique<SettingsHandler>(settings);
-    cmd = std::make_unique<cmd::CommandsInterpreter>();
-    network = network::Network::create(settings.network);
 
     logger.info() << "engine version: " << ENGINE_VERSION_STRING;
     if (params.headless) {
         logger.info() << "headless mode is enabled";
     }
+    if (params.projectFolder.empty()) {
+        params.projectFolder = params.resFolder;
+    }
     paths.setResourcesFolder(params.resFolder);
     paths.setUserFilesFolder(params.userFolder);
+    paths.setProjectFolder(params.projectFolder);
     paths.prepare();
+    loadProject();
+
+    editor = std::make_unique<devtools::Editor>(*this);
+    cmd = std::make_unique<cmd::CommandsInterpreter>();
+    network = network::Network::create(settings.network);
+
     if (!params.scriptFile.empty()) {
         paths.setScriptFolder(params.scriptFile.parent_path());
     }
@@ -90,9 +100,12 @@ void Engine::initialize(CoreParameters coreParameters) {
 
     controller = std::make_unique<EngineController>(*this);
     if (!params.headless) {
-        std::string title = "VoxelCore v" +
+        std::string title = project->title;
+        if (title.empty()) {
+            title = "VoxelCore v" +
                             std::to_string(ENGINE_VERSION_MAJOR) + "." +
                             std::to_string(ENGINE_VERSION_MINOR);
+        }
         if (ENGINE_DEBUG_BUILD) {
             title += " [debug]";
         }
@@ -133,7 +146,8 @@ void Engine::initialize(CoreParameters coreParameters) {
             langs::locale_by_envlocale(platform::detect_locale())
         );
     }
-    content = std::make_unique<ContentControl>(paths, *input, [this]() {
+    content = std::make_unique<ContentControl>(*project, paths, *input, [this]() {
+        editor->loadTools();
         langs::setup(langs::get_current(), paths.resPaths.collectRoots());
         if (!isHeadless()) {
             for (auto& pack : content->getAllContentPacks()) {
@@ -189,7 +203,8 @@ void Engine::updateHotkeys() {
     if (input->jpressed(Keycode::F2)) {
         saveScreenshot();
     }
-    if (input->jpressed(Keycode::F8)) {
+    if (input->pressed(Keycode::LEFT_CONTROL) && input->pressed(Keycode::F3) &&
+        input->jpressed(Keycode::U)) {
         gui->toggleDebug();
     }
     if (input->jpressed(Keycode::F11)) {
@@ -320,6 +335,13 @@ void Engine::loadAssets() {
     }
     assets->setup();
     gui->onAssetsLoad(assets.get());
+}
+
+void Engine::loadProject() {
+    io::path projectFile = "project:project.toml";
+    project = std::make_unique<Project>();
+    project->deserialize(io::read_object(projectFile));
+    logger.info() << "loaded project " << util::quote(project->name);
 }
 
 void Engine::setScreen(std::shared_ptr<Screen> screen) {

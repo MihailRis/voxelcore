@@ -1,4 +1,7 @@
-local export = {}
+local export = {
+    filenames = {},
+    classification = {}
+}
 
 local function collect_components(dirname, dest)
     if file.isdir(dirname) then

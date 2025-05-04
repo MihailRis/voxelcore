@@ -6,6 +6,7 @@
 
 #include "typedefs.hpp"
 #include "maths/Heightmap.hpp"
+#include "util/EnumMetadata.hpp"
 
 enum class InterpolationType {
     NEAREST,
@@ -13,7 +14,11 @@ enum class InterpolationType {
     CUBIC,
 };
 
-std::optional<InterpolationType> InterpolationType_from(std::string_view str);
+VC_ENUM_METADATA(InterpolationType)
+    {"nearest", InterpolationType::NEAREST},
+    {"linear", InterpolationType::LINEAR},
+    {"cubic", InterpolationType::CUBIC},
+VC_ENUM_END
 
 class Heightmap {
     uint width, height;

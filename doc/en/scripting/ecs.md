@@ -29,6 +29,9 @@ entity:has_component(name: str) -> bool
 
 -- Enables/disables the component
 entity:set_enabled(name: str, enable: bool)
+
+-- Returns id of player the entity is bound
+entity:get_player() -> int or nil
 ```
 
 ## Built-in components

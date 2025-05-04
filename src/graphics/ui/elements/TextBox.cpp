@@ -8,7 +8,8 @@
 #include "../markdown.hpp"
 #include "Label.hpp"
 #include "assets/Assets.hpp"
-#include "devtools/syntax_highlighting.hpp"
+#include "devtools/Editor.hpp"
+#include "devtools/SyntaxProcessor.hpp"
 #include "engine/Engine.hpp"
 #include "graphics/core/Batch2D.hpp"
 #include "graphics/core/DrawContext.hpp"
@@ -811,7 +812,8 @@ void TextBox::stepDefaultUp(bool shiftPressed, bool breakSelection) {
 
 void TextBox::refreshSyntax() {
     if (!syntax.empty()) {
-        if (auto styles = devtools::syntax_highlight(syntax, input)) {
+        const auto& processor = gui.getEditor().getSyntaxProcessor();
+        if (auto styles = processor.highlight(syntax, input)) {
             label->setStyles(std::move(styles));
         }
     }

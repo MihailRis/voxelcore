@@ -1,11 +1,26 @@
-local _ffi = ffi
-ffi = nil
-
 -- Lua has no parallelizm, also _set_data does not call any lua functions so
 -- may be reused one global ffi buffer per lua_State
 local canvas_ffi_buffer
 local canvas_ffi_buffer_size = 0
 
+local ipairs_mt_supported = false
+for i, _ in ipairs(setmetatable({l={1}}, {
+    __ipairs=function(self) return ipairs(self.l) end})) do
+    ipairs_mt_supported = true
+end
+
+if not ipairs_mt_supported then
+    local raw_ipairs = ipairs
+    ipairs = function(t)
+        local metatable = getmetatable(t)
+        if metatable and metatable.__ipairs then
+            return metatable.__ipairs(t)
+        end
+        return raw_ipairs(t)
+    end
+end
+
+local _ffi = ffi
 function __vc_Canvas_set_data(self, data)
     if type(data) == "cdata" then
         self:_set_data(tostring(_ffi.cast("uintptr_t", data)))

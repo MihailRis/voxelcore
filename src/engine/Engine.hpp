@@ -20,6 +20,7 @@ class Screen;
 class ContentControl;
 class EngineController;
 class Input;
+struct Project;
 
 namespace gui {
     class GUI;
@@ -33,6 +34,10 @@ namespace network {
     class Network;
 }
 
+namespace devtools {
+    class Editor;
+}
+
 class initialize_error : public std::runtime_error {
 public:
     initialize_error(const std::string& message) : std::runtime_error(message) {}
@@ -44,6 +49,7 @@ struct CoreParameters {
     std::filesystem::path resFolder = "res";
     std::filesystem::path userFolder = ".";
     std::filesystem::path scriptFile;
+    std::filesystem::path projectFolder;
 };
 
 using OnWorldOpen = std::function<void(std::unique_ptr<Level>, int64_t)>;
@@ -53,6 +59,7 @@ class Engine : public util::ObjectsKeeper {
     EngineSettings settings;
     EnginePaths paths;
 
+    std::unique_ptr<Project> project;
     std::unique_ptr<SettingsHandler> settingsHandler;
     std::unique_ptr<Assets> assets;
     std::shared_ptr<Screen> screen;
@@ -63,6 +70,7 @@ class Engine : public util::ObjectsKeeper {
     std::unique_ptr<Window> window;
     std::unique_ptr<Input> input;
     std::unique_ptr<gui::GUI> gui;
+    std::unique_ptr<devtools::Editor> editor;
     PostRunnables postRunnables;
     Time time;
     OnWorldOpen levelConsumer;
@@ -73,6 +81,7 @@ class Engine : public util::ObjectsKeeper {
     void saveSettings();
     void updateHotkeys();
     void loadAssets();
+    void loadProject();
 public:
     Engine();
     ~Engine();
@@ -160,5 +169,9 @@ public:
 
     cmd::CommandsInterpreter& getCmd() {
         return *cmd;
+    }
+
+    devtools::Editor& getEditor() {
+        return *editor;
     }
 };

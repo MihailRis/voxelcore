@@ -1,19 +1,32 @@
 #pragma once
 
 #include <memory>
-#include <stdlib.h>
 #include <glm/glm.hpp>
 
 #include "commons.hpp"
 #include "maths/UVRegion.hpp"
+#include "MeshData.hpp"
 
+template<typename VertexStructure>
 class Mesh;
 class Texture;
 
+struct Batch2DVertex {
+    glm::vec2 position;
+    glm::vec2 uv;
+    glm::vec4 color;
+
+    static constexpr VertexAttribute ATTRIBUTES[] {
+        {VertexAttribute::Type::FLOAT, false, 2},
+        {VertexAttribute::Type::FLOAT, false, 2},
+        {VertexAttribute::Type::FLOAT, false, 4},
+        {{}, 0}};
+};
+
 class Batch2D : public Flushable {
-    std::unique_ptr<float[]> buffer;
+    std::unique_ptr<Batch2DVertex[]> buffer;
     size_t capacity;
-    std::unique_ptr<Mesh> mesh;
+    std::unique_ptr<Mesh<Batch2DVertex>> mesh;
     std::unique_ptr<Texture> blank;
     size_t index;
     glm::vec4 color;

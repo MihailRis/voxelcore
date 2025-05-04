@@ -3,6 +3,8 @@
 #include <string>
 #include <optional>
 
+#include "util/EnumMetadata.hpp"
+
 enum class DrawPrimitive {
     point = 0,
     line,
@@ -48,8 +50,18 @@ enum class CursorShape {
     LAST=NOT_ALLOWED
 };
 
-std::optional<CursorShape> CursorShape_from(std::string_view name);
-std::string to_string(CursorShape shape);
+VC_ENUM_METADATA(CursorShape)
+    {"arrow", CursorShape::ARROW},
+    {"text", CursorShape::TEXT},
+    {"crosshair", CursorShape::CROSSHAIR},
+    {"pointer", CursorShape::POINTER},
+    {"ew-resize", CursorShape::EW_RESIZE},
+    {"ns-resize", CursorShape::NS_RESIZE},
+    {"nwse-resize", CursorShape::NWSE_RESIZE},
+    {"nesw-resize", CursorShape::NESW_RESIZE},
+    {"all-resize", CursorShape::ALL_RESIZE},
+    {"not-allowed", CursorShape::NOT_ALLOWED},
+VC_ENUM_END
 
 class Flushable {
 public:

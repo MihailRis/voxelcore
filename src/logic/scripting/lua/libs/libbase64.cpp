@@ -16,14 +16,14 @@ static int l_encode(lua::State* L) {
         return lua::pushstring(L, util::base64_encode(
             reinterpret_cast<const ubyte*>(buffer.data()), buffer.size()
         ));
-    } else if (auto bytes = lua::touserdata<lua::LuaBytearray>(L, 1)) {
-        return lua::pushstring(
-            L,
-            util::base64_encode(
-                bytes->data().data(),
-                bytes->data().size()
-            )
+    } else {
+        auto string = lua::bytearray_as_string(L, 1);
+        auto out = util::base64_encode(
+            reinterpret_cast<const ubyte*>(string.data()),
+            string.size()
         );
+        lua::pop(L);
+        return lua::pushstring(L, std::move(out));
     }
     throw std::runtime_error("array or ByteArray expected");
 }
@@ -36,13 +36,10 @@ static int l_decode(lua::State* L) {
             lua::pushinteger(L, buffer[i] & 0xFF);
             lua::rawseti(L, i+1);
         }
+        return 1;
     } else {
-        lua::newuserdata<lua::LuaBytearray>(L, buffer.size());
-        auto bytearray = lua::touserdata<lua::LuaBytearray>(L, -1);   
-        bytearray->data().reserve(buffer.size());
-        std::memcpy(bytearray->data().data(), buffer.data(), buffer.size());
+        return lua::create_bytearray(L, buffer.data(), buffer.size());
     }
-    return 1;
 }
 
 const luaL_Reg base64lib[] = {

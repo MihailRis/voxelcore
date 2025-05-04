@@ -1,13 +1,12 @@
 #include "png.hpp"
 
 #include <png.h>
-#include <GL/glew.h>
 
 #include <iostream>
 
 #include "debug/Logger.hpp"
 #include "io/io.hpp"
-#include "graphics/core/GLTexture.hpp"
+#include "graphics/core/Texture.hpp"
 #include "graphics/core/ImageData.hpp"
 
 static debug::Logger logger("png-coder");
@@ -206,7 +205,7 @@ std::unique_ptr<ImageData> png::load_image(const ubyte* bytes, size_t size) {
 
 std::unique_ptr<Texture> png::load_texture(const ubyte* bytes, size_t size) {
     auto image = load_image(bytes, size);
-    auto texture = GLTexture::from(image.get());
+    auto texture = Texture::from(image.get());
     texture->setNearestFilter();
     return texture;
 }

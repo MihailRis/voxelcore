@@ -103,6 +103,7 @@ void BasicParser<CharT>::skipWhitespaceCLikeComment(bool newline) {
                 if (hasNext() && (is_whitespace(source[pos]) || source[pos] == '/')) {
                     skipWhitespaceCLikeComment(newline);
                 }
+                break;
             default:
                 pos--;
                 break;
@@ -166,6 +167,9 @@ size_t BasicParser<CharT>::remain() const {
 
 template<typename CharT>
 bool BasicParser<CharT>::isNext(const std::basic_string<CharT>& substring) {
+    if (substring.empty()) {
+        return false;
+    }
     if (source.length() - pos < substring.length()) {
         return false;
     }

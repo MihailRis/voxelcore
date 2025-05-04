@@ -14,13 +14,10 @@ static int l_tobytes(lua::State* L) {
             lua::pushinteger(L, string[i] & 0xFF);
             lua::rawseti(L, i+1);
         }
+        return 1;
     } else {
-        lua::newuserdata<lua::LuaBytearray>(L, string.length());
-        auto bytearray = lua::touserdata<lua::LuaBytearray>(L, -1);   
-        bytearray->data().reserve(string.length());
-        std::memcpy(bytearray->data().data(), string.data(), string.length());
+        return lua::create_bytearray(L, string.data(), string.length());
     }
-    return 1;
 }
 
 static int l_tostring(lua::State* L) {
@@ -35,16 +32,10 @@ static int l_tostring(lua::State* L) {
         }
         lua::pop(L);
         return lua::pushlstring(L, buffer.data(), size);
-    } else if (auto bytes = lua::touserdata<lua::LuaBytearray>(L, 1)) {
-        return lua::pushstring(
-            L,
-            std::string(
-                reinterpret_cast<char*>(bytes->data().data()),
-                bytes->data().size()
-            )
-        );
+    } else {
+        lua::bytearray_as_string(L, 1);
+        return 1;
     }
-    return 1;
 }
 
 static int l_length(lua::State* L) {

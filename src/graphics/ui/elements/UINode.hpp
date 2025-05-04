@@ -66,6 +66,7 @@ namespace gui {
     class UINode : public std::enable_shared_from_this<UINode> {
     protected:
         GUI& gui;
+        bool mustRefresh = true;
     private:
         /// @brief element identifier used for direct access in UiDocument
         std::string id = "";
@@ -114,6 +115,10 @@ namespace gui {
         ActionsSet actions;
         /// @brief 'ondoubleclick' callbacks
         ActionsSet doubleClickCallbacks;
+        /// @brief 'onfocus' callbacks
+        ActionsSet focusCallbacks;
+        /// @brief 'ondefocus' callbacks
+        ActionsSet defocusCallbacks;
         /// @brief element tooltip text
         std::wstring tooltip;
         /// @brief element tooltip delay
@@ -127,7 +132,12 @@ namespace gui {
 
         /// @brief Called every frame for all visible elements 
         /// @param delta delta timУ
-        virtual void act(float delta) {};
+        virtual void act(float delta) {
+            if (mustRefresh) {
+                mustRefresh = false;
+                refresh();
+            }
+        };
         virtual void draw(const DrawContext& pctx, const Assets& assets) = 0;
 
         virtual void setVisible(bool flag);
@@ -169,10 +179,12 @@ namespace gui {
         /// @brief Get element z-index
         int getZIndex() const;
 
-        virtual UINode* listenAction(const onaction &action);
-        virtual UINode* listenDoubleClick(const onaction &action);
+        virtual UINode* listenAction(const onaction& action);
+        virtual UINode* listenDoubleClick(const onaction& action);
+        virtual UINode* listenFocus(const onaction& action);
+        virtual UINode* listenDefocus(const onaction& action);
 
-        virtual void onFocus() {focused = true;}
+        virtual void onFocus();
         virtual void doubleClick(int x, int y);
         virtual void click(int x, int y);
         virtual void clicked(Mousecode button) {}
@@ -269,5 +281,9 @@ namespace gui {
             const std::shared_ptr<UINode>& node,
             const std::string& id
         );
+
+        void setMustRefresh() {
+            mustRefresh = true;
+        }
     };
 }

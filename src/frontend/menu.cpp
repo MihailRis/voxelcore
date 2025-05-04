@@ -26,7 +26,7 @@ void menus::create_version_label(gui::GUI& gui) {
     auto text = ENGINE_VERSION_STRING + " debug build";
     gui.add(guiutil::create(
         gui,
-        "<label z-index='1000' color='#FFFFFF80' gravity='top-right' "
+        "<label z-index='1000' color='#FFFFFF30' gravity='top-right' "
         "margin='4'>" +
         text + "</label>"
     ));

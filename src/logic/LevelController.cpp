@@ -77,8 +77,8 @@ void LevelController::update(float delta, bool pause) {
         player->updateEntity();
         glm::vec3 position = player->getPosition();
         player->chunks->configure(
-            position.x,
-            position.z,
+            glm::floor(position.x),
+            glm::floor(position.z),
             settings.chunks.loadDistance.get() + settings.chunks.padding.get()
         );
         chunks->update(

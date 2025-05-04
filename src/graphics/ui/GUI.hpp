@@ -18,6 +18,10 @@ class Engine;
 class Input;
 class Window;
 
+namespace devtools {
+    class Editor;
+}
+
 /*
  Some info about padding and margin.
     Padding is element inner space, margin is outer
@@ -159,5 +163,7 @@ namespace gui {
         const Input& getInput() const;
         Input& getInput();
         Window& getWindow();
+        devtools::Editor& getEditor();
+        Engine& getEngine();
     };
 }

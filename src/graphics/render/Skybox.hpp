@@ -6,16 +6,24 @@
 #include <glm/glm.hpp>
 #include "typedefs.hpp"
 #include "maths/fastmaths.hpp"
+#include "graphics/core/MeshData.hpp"
 
-class Mesh;
+template<typename VertexStructure> class Mesh;
 class Shader;
 class Assets;
 class Camera;
 class Batch3D;
-class Shader;
 class Cubemap;
 class Framebuffer;
 class DrawContext;
+
+struct SkyboxVertex {
+    glm::vec2 position;
+
+    static constexpr VertexAttribute ATTRIBUTES[] {
+        {VertexAttribute::Type::FLOAT, false, 2}, 
+        {{}, 0}};
+};
 
 struct skysprite {
     std::string texture;
@@ -32,7 +40,7 @@ class Skybox {
     FastRandom random;
     glm::vec3 lightDir;
 
-    std::unique_ptr<Mesh> mesh;
+    std::unique_ptr<Mesh<SkyboxVertex>> mesh;
     std::unique_ptr<Batch3D> batch3d;
     std::vector<skysprite> sprites;
     int frameid = 0;

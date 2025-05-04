@@ -8,6 +8,7 @@
 #include "ContentLoader.hpp"
 #include "PacksManager.hpp"
 #include "objects/rigging.hpp"
+#include "devtools/Project.hpp"
 #include "logic/scripting/scripting.hpp"
 #include "core_defs.hpp"
 
@@ -16,12 +17,15 @@ static void load_configs(Input& input, const io::path& root) {
 }
 
 ContentControl::ContentControl(
-    EnginePaths& paths, Input& input, std::function<void()> postContent
+    const Project& project,
+    EnginePaths& paths,
+    Input& input,
+    std::function<void()> postContent
 )
     : paths(paths),
       input(input),
       postContent(std::move(postContent)),
-      basePacks(io::read_list("res:config/builtins.list")),
+      basePacks(project.basePacks),
       manager(std::make_unique<PacksManager>()) {
     manager->setSources({
         "world:content",
@@ -60,6 +64,7 @@ void ContentControl::resetContent() {
     }
     paths.resPaths = ResPaths(resRoots);
     content.reset();
+    scripting::on_content_reset();
 
     contentPacks.clear();
     contentPacks = manager->getAll(basePacks);

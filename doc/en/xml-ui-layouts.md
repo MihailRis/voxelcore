@@ -40,6 +40,8 @@ Examples:
 - `size-func` - element size provider (two numbers), called when the size of the container in which the element is located changes, or when an element is added to the container. Can be called before on_hud_open is called.
 - `onclick` - lua function called when an element is clicked.
 - `ondoubleclick` - lua function called when you double click on an element.
+- `onfocus` - lua function called when focusing on an element.
+- `ondefocus` - lua function called when the element loses focus.
 - `tooltip` - tooltip text
 - `tooltip-delay` - tooltip show-up delay
 - `gravity` - automatic positioning of the element in the container. (Does not work in automatic containers like panel). Values: *top-left, top-center, top-right, center-left, center-center, center-right, bottom-left, bottom-center, bottom-right*.
@@ -112,6 +114,7 @@ Inner text is a button text.
 
 - `src` - name of an image stored in textures folder. Extension is not specified. Type: string.
   Example: *gui/error*
+- `region` - image region x1, y1, x2, y2 from 0.0, 0.0 (upper left corner), 1.0, 1.0 (lower right corner)
 
 ## *canvas*
 
@@ -153,6 +156,12 @@ The key code for comparison can be obtained via `input.keycode("key_name")`
 - `sub-consumer` - Lua function that receives intermediate values ​​(use to update text when `change-on-release="true"`)
 - `supplier` - Lua function - value supplier
 - `change-on-release` - Call consumer on trackbar release only. Type: boolean. Default: false
+
+## Inline frame - *iframe*
+
+Container for embedding an external document. Content is scaling to the iframe size.
+
+- `src` - document id in the format `pack:name` (`pack/layouts/name.xml`)
 
 # Inventory elements
 

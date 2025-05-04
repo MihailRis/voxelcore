@@ -24,10 +24,10 @@
 const int STARS_COUNT = 3000;
 const int STARS_SEED = 632;
 
-Skybox::Skybox(uint size, Shader& shader) 
-  : size(size), 
-    shader(shader), 
-    batch3d(std::make_unique<Batch3D>(4096)) 
+Skybox::Skybox(uint size, Shader& shader)
+  : size(size),
+    shader(shader),
+    batch3d(std::make_unique<Batch3D>(4096))
 {
     auto cubemap = std::make_unique<Cubemap>(size, size, ImageFormat::rgb888);
 
@@ -35,12 +35,16 @@ Skybox::Skybox(uint size, Shader& shader)
     glGenFramebuffers(1, &fboid);
     fbo = std::make_unique<Framebuffer>(fboid, 0, std::move(cubemap));
 
-    float vertices[] {
-        -1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
-        -1.0f, -1.0f,  1.0f, 1.0f, 1.0f, -1.0f
+    SkyboxVertex vertices[]{
+        {{-1.0f, -1.0f}},
+        {{-1.0f, 1.0f}},
+        {{1.0f, 1.0f}},
+        {{-1.0f, -1.0f}},
+        {{1.0f, 1.0f}},
+        {{1.0f, -1.0f}}
     };
-    VertexAttribute attrs[] {{2}, {0}};
-    mesh = std::make_unique<Mesh>(vertices, 6, attrs);
+
+    mesh = std::make_unique<Mesh<SkyboxVertex>>(vertices, 6);
 
     sprites.push_back(skysprite {
         "misc/moon",
@@ -95,11 +99,11 @@ void Skybox::drawStars(float angle, float opacity) {
 }
 
 void Skybox::draw(
-    const DrawContext& pctx, 
-    const Camera& camera, 
-    const Assets& assets, 
+    const DrawContext& pctx,
+    const Camera& camera,
+    const Assets& assets,
     float daytime,
-    float fog) 
+    float fog)
 {
     const glm::uvec2& viewport = pctx.getViewport();
 
@@ -116,7 +120,7 @@ void Skybox::draw(
 
     float angle = daytime * glm::pi<float>() * 2.0f;
     float opacity = glm::pow(1.0f-fog, 7.0f);
-    
+
     for (auto& sprite : sprites) {
         batch3d->texture(assets.get<Texture>(sprite.texture));
 
@@ -129,7 +133,7 @@ void Skybox::draw(
         if (!sprite.emissive) {
             tint *= 0.6f+std::cos(angle)*0.4;
         }
-        batch3d->sprite(pos, glm::vec3(0, 0, 1), 
+        batch3d->sprite(pos, glm::vec3(0, 0, 1),
                         up, 1, 1, UVRegion(), tint);
     }
 
@@ -153,7 +157,7 @@ void Skybox::refresh(const DrawContext& pctx, float t, float mie, uint quality) 
     cubemap->bind();
     shader.use();
     t *= glm::pi<float>()*2.0f;
-    
+
     lightDir = glm::normalize(glm::vec3(sin(t), -cos(t), 0.0f));
     shader.uniform1i("u_quality", quality);
     shader.uniform1f("u_mie", mie);
@@ -171,7 +175,7 @@ void Skybox::refresh(const DrawContext& pctx, float t, float mie, uint quality) 
     }
     prevMie = mie;
     prevT = t;
-    
+
     cubemap->unbind();
     glActiveTexture(GL_TEXTURE0);
 }
@@ -190,7 +194,7 @@ void Skybox::refreshFace(uint face, Cubemap* cubemap) {
         {0.0f, 1.0f, 0.0f},
         {0.0f, 1.0f, 0.0f},
         {0.0f, 0.0f, -1.0f},
-        
+
         {0.0f, 0.0f, 1.0f},
         {0.0f, 1.0f, 0.0f},
         {0.0f, 1.0f, 0.0f},
@@ -200,7 +204,7 @@ void Skybox::refreshFace(uint face, Cubemap* cubemap) {
         {1.0f, 0.0f, 0.0f},
         {-1.0f, 0.0f, 0.0f},
         {0.0f, -1.0f, 0.0f},
-        
+
         {0.0f, 1.0f, 0.0f},
         {0.0f, 0.0f, -1.0f},
         {0.0f, 0.0f, 1.0f},

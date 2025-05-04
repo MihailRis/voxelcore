@@ -29,6 +29,9 @@ entity:has_component(name: str) -> bool
 
 -- Включает/выключает компонент по имени
 entity:set_enabled(name: str, enable: bool)
+
+-- Возвращает id игрока, к которому привязана сущность
+entity:get_player() -> int или nil
 ```
 
 ## Встроенные компоненты

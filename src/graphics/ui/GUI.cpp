@@ -280,7 +280,7 @@ void GUI::draw(const DrawContext& pctx, const Assets& assets) {
             auto size = node->getSize();
 
             batch2D->setColor(0, 255, 255);
-            batch2D->lineRect(parentPos.x, parentPos.y, size.x-1, size.y-1);
+            batch2D->lineRect(parentPos.x+1, parentPos.y, size.x-2, size.y-1);
 
             node = node->getParent();
         }
@@ -363,4 +363,12 @@ Input& GUI::getInput() {
 
 Window& GUI::getWindow() {
     return engine.getWindow();
+}
+
+devtools::Editor& GUI::getEditor() {
+    return engine.getEditor();
+}
+
+Engine& GUI::getEngine() {
+    return engine;
 }

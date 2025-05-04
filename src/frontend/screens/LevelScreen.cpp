@@ -184,16 +184,21 @@ void LevelScreen::saveWorldPreview() {
 void LevelScreen::updateHotkeys() {
     auto& settings = engine.getSettings();
 
-    if (input.jpressed(Keycode::O)) {
-        settings.graphics.frustumCulling.toggle();
-    }
     if (input.jpressed(Keycode::F1)) {
         hudVisible = !hudVisible;
     }
-    if (input.jpressed(Keycode::F3)) {
-        debug = !debug;
-        hud->setDebug(debug);
-        renderer->setDebug(debug);
+    if (!input.pressed(Keycode::LEFT_CONTROL)) {
+        if (input.jpressed(Keycode::F3)) {
+            debug = !debug;
+            hud->setDebug(debug);
+            renderer->setDebug(debug);
+        }
+    } else if (input.pressed(Keycode::F3)) {
+        if (input.jpressed(Keycode::L)) {
+            renderer->toggleLightsDebug();
+        } else if (input.jpressed(Keycode::O)) {
+            settings.graphics.frustumCulling.toggle();
+        }
     }
 }
 

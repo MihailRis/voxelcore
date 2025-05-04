@@ -128,7 +128,7 @@ static int l_read_bytes(lua::State* L) {
         auto bytes = io::read_bytes(path);
 
         if (lua::gettop(L) < 2 || !lua::toboolean(L, 2)) {
-            lua::newuserdata<lua::LuaBytearray>(L, std::move(bytes));
+            lua::create_bytearray(L, std::move(bytes));
         } else {
             lua::createtable(L, length, 0);
             int newTable = lua::gettop(L);
@@ -148,18 +148,12 @@ static int l_read_bytes(lua::State* L) {
 static int l_write_bytes(lua::State* L) {
     io::path path = get_writeable_path(L);
 
-    if (auto bytearray = lua::touserdata<lua::LuaBytearray>(L, 2)) {
-        auto& bytes = bytearray->data();
-        return lua::pushboolean(
-            L, io::write_bytes(path, bytes.data(), bytes.size())
-        );
-    }
-
-    std::vector<ubyte> bytes;
-    lua::read_bytes_from_table(L, 2, bytes);
-    return lua::pushboolean(
-        L, io::write_bytes(path, bytes.data(), bytes.size())
+    auto string = lua::bytearray_as_string(L, 2);
+    bool res = io::write_bytes(
+        path, reinterpret_cast<const ubyte*>(string.data()), string.size()
     );
+    lua::pop(L);
+    return lua::pushboolean(L, res);
 }
 
 static int l_list_all_res(lua::State* L, const std::string& path) {

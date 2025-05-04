@@ -1,28 +1,74 @@
-#include "lua_parsing.hpp"
+#include "syntax_parser.hpp"
 
 #include <set>
 
+#include "data/dv.hpp"
+#include "util/stringutil.hpp"
 #include "BasicParser.hpp"
 
-using namespace lua;
 using namespace devtools;
 
-static std::set<std::wstring_view> keywords {
-    L"and", L"break", L"do", L"else", L"elseif", L"end", L"false", L"for", L"function", 
-    L"if", L"in", L"local", L"nil", L"not", L"or", L"repeat", L"return", L"then", L"true",
-    L"until", L"while"
-};
+dv::value Syntax::serialize() const {
+    auto map = dv::object();
+    map["language"] = language;
+    map["line-comment"] = util::wstr2str_utf8(lineComment);
+    map["multiline-comment-start"] = util::wstr2str_utf8(multilineCommentStart);
+    map["multiline-comment-end"] = util::wstr2str_utf8(multilineCommentEnd);
+    map["multiline-string-start"] = util::wstr2str_utf8(multilineStringStart);
+    map["multiline-string-end"] = util::wstr2str_utf8(multilineStringEnd);
 
-static bool is_lua_keyword(std::wstring_view view) {
-    return keywords.find(view) != keywords.end();
+    auto& extsList = map.list("extensions");
+    for (const auto& ext : extensions) {
+        extsList.add(ext);
+    }
+
+    auto& keywordsList = map.list("keywords");
+    for (const auto& keyword : keywords) {
+        keywordsList.add(util::wstr2str_utf8(keyword));
+    }
+    return map;
 }
 
-inline bool is_lua_identifier_start(int c) {
+void Syntax::deserialize(const dv::value& src) {
+    src.at("language").get(language);
+
+    std::string lineComment;
+    std::string multilineCommentStart;
+    std::string multilineCommentEnd;
+    std::string multilineStringStart;
+    std::string multilineStringEnd;
+    src.at("line-comment").get(lineComment);
+    src.at("multiline-comment-start").get(multilineCommentStart);
+    src.at("multiline-comment-end").get(multilineCommentEnd);
+    src.at("multiline-string-start").get(multilineStringStart);
+    src.at("multiline-string-end").get(multilineStringEnd);
+    this->lineComment = util::str2wstr_utf8(lineComment);
+    this->multilineCommentStart = util::str2wstr_utf8(multilineCommentStart);
+    this->multilineCommentEnd = util::str2wstr_utf8(multilineCommentEnd);
+    this->multilineStringStart = util::str2wstr_utf8(multilineStringStart);
+    this->multilineStringEnd = util::str2wstr_utf8(multilineStringEnd);
+
+    if (src.has("extensions")) {
+        const auto& extsList = src["extensions"];
+        for (const auto& ext : extsList) {
+            extensions.insert(ext.asString());
+        }
+    }
+
+    if (src.has("keywords")) {
+        const auto& keywordsList = src["keywords"];
+        for (const auto& keyword : keywordsList) {
+            keywords.insert(util::str2wstr_utf8(keyword.asString()));
+        }
+    }
+}
+
+inline bool is_common_identifier_start(int c) {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_';
 }
 
-inline bool is_lua_identifier_part(int c) {
-    return is_lua_identifier_start(c) || is_digit(c);
+inline bool is_common_identifier_part(int c) {
+    return is_common_identifier_start(c) || is_digit(c);
 }
 
 inline bool is_lua_operator_start(int c) {
@@ -32,10 +78,13 @@ inline bool is_lua_operator_start(int c) {
 }
 
 class Tokenizer : BasicParser<wchar_t> {
+    const Syntax& syntax;
     std::vector<Token> tokens;
 public:
-    Tokenizer(std::string_view file, std::wstring_view source)
-        : BasicParser(file, source) {
+    Tokenizer(
+        const Syntax& syntax, std::string_view file, std::wstring_view source
+    )
+        : BasicParser(file, source), syntax(syntax) {
     }
 
     std::wstring parseLuaName() {
@@ -111,9 +160,12 @@ public:
             }
             wchar_t c = peek();
             auto start = currentLocation();
-            if (is_lua_identifier_start(c)) {
+            if (is_common_identifier_start(c)) {
                 auto name = parseLuaName();
-                TokenTag tag = (is_lua_keyword(name) ? TokenTag::KEYWORD : TokenTag::NAME);
+                TokenTag tag =
+                    (syntax.keywords.find(name) == syntax.keywords.end()
+                         ? TokenTag::NAME
+                         : TokenTag::KEYWORD);
                 emitToken(
                     tag,
                     std::move(name),
@@ -133,24 +185,29 @@ public:
                 emitToken(tag, std::wstring(literal), start);
                 continue;
             }
+            const auto& mcommentStart = syntax.multilineCommentStart;
+            if (!mcommentStart.empty() && c == mcommentStart[0] &&
+                isNext(syntax.multilineCommentStart)) {
+                auto string = readUntil(syntax.multilineCommentEnd, true);
+                skip(syntax.multilineCommentEnd.length());
+                emitToken(
+                    TokenTag::COMMENT,
+                    std::wstring(string) + syntax.multilineCommentEnd,
+                    start
+                );
+                continue;
+            }
+            const auto& mstringStart = syntax.multilineStringStart;
+            if (!mstringStart.empty() && c == mstringStart[0] &&
+                isNext(syntax.multilineStringStart)) {
+                skip(mstringStart.length());
+                auto string = readUntil(syntax.multilineStringEnd, true);
+                skip(syntax.multilineStringEnd.length());
+                emitToken(TokenTag::STRING, std::wstring(string), start);
+                continue;
+            }
             switch (c) {
                 case '(': case '[': case '{': 
-                    if (isNext(L"[==[")) {
-                        auto string = readUntil(L"]==]", true);
-                        skip(4);
-                        emitToken(
-                            TokenTag::COMMENT,
-                            std::wstring(string) + L"]==]",
-                            start
-                        );
-                        continue;
-                    } else if (isNext(L"[[")) {
-                        skip(2);
-                        auto string = readUntil(L"]]", true);
-                        skip(2);
-                        emitToken(TokenTag::STRING, std::wstring(string), start);
-                        continue;
-                    }
                     emitToken(TokenTag::OPEN_BRACKET, std::wstring({c}), start, true);
                     continue;
                 case ')': case ']': case '}': 
@@ -188,6 +245,8 @@ public:
     }
 };
 
-std::vector<Token> lua::tokenize(std::string_view file, std::wstring_view source) {
-    return Tokenizer(file, source).tokenize();
+std::vector<Token> devtools::tokenize(
+    const Syntax& syntax, std::string_view file, std::wstring_view source
+) {
+    return Tokenizer(syntax, file, source).tokenize();
 }

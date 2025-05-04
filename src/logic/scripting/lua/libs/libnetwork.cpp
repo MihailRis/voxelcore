@@ -12,11 +12,20 @@ static int l_get(lua::State* L, network::Network& network) {
     lua::pushvalue(L, 2);
     auto onResponse = lua::create_lambda_nothrow(L);
 
+    network::OnReject onReject = nullptr;
+    if (lua::gettop(L) >= 3) {
+        lua::pushvalue(L, 3);
+        auto callback = lua::create_lambda_nothrow(L);
+        onReject = [callback](int code) {
+            callback({code});
+        };
+    }
+
     network.get(url, [onResponse](std::vector<char> bytes) {
         engine->postRunnable([=]() {
             onResponse({std::string(bytes.data(), bytes.size())});
         });
-    });
+    }, std::move(onReject));
     return 0;
 }
 
@@ -26,6 +35,15 @@ static int l_get_binary(lua::State* L, network::Network& network) {
     lua::pushvalue(L, 2);
     auto onResponse = lua::create_lambda_nothrow(L);
 
+    network::OnReject onReject = nullptr;
+    if (lua::gettop(L) >= 3) {
+        lua::pushvalue(L, 3);
+        auto callback = lua::create_lambda_nothrow(L);
+        onReject = [callback](int code) {
+            callback({code});
+        };
+    }
+
     network.get(url, [onResponse](std::vector<char> bytes) {
         auto buffer = std::make_shared<util::Buffer<ubyte>>(
             reinterpret_cast<const ubyte*>(bytes.data()), bytes.size()
@@ -33,7 +51,7 @@ static int l_get_binary(lua::State* L, network::Network& network) {
         engine->postRunnable([=]() {
             onResponse({buffer});
         });
-    });
+    }, std::move(onReject));
     return 0;
 }
 
@@ -44,12 +62,22 @@ static int l_post(lua::State* L, network::Network& network) {
     lua::pushvalue(L, 3);
     auto onResponse = lua::create_lambda_nothrow(L);
 
+    network::OnReject onReject = nullptr;
+    if (lua::gettop(L) >= 4) {
+        lua::pushvalue(L, 4);
+        auto callback = lua::create_lambda_nothrow(L);
+        onReject = [callback](int code) {
+            callback({code});
+        };
+    }
+
     std::string string;
     if (data.isString()) {
         string = data.asString();
     } else {
         string = json::stringify(data, false);
     }
+
     engine->getNetwork().post(url, string, [onResponse](std::vector<char> bytes) {
         auto buffer = std::make_shared<util::Buffer<ubyte>>(
             reinterpret_cast<const ubyte*>(bytes.data()), bytes.size()
@@ -57,7 +85,7 @@ static int l_post(lua::State* L, network::Network& network) {
         engine->postRunnable([=]() {
             onResponse({std::string(bytes.data(), bytes.size())});
         });
-    });
+    }, std::move(onReject));
     return 0;
 }
 
@@ -109,13 +137,13 @@ static int l_send(lua::State* L, network::Network& network) {
         }
         lua::pop(L);
         connection->send(buffer.data(), size);
-    } else if (auto bytes = lua::touserdata<lua::LuaBytearray>(L, 2)) {
-        connection->send(
-            reinterpret_cast<char*>(bytes->data().data()), bytes->data().size()
-        );
     } else if (lua::isstring(L, 2)) {
         auto string = lua::tolstring(L, 2);
         connection->send(string.data(), string.length());
+    } else {
+        auto string = lua::bytearray_as_string(L, 2);
+        connection->send(string.data(), string.length());
+        lua::pop(L);
     }
     return 0;
 }
@@ -140,13 +168,10 @@ static int l_recv(lua::State* L, network::Network& network) {
             lua::pushinteger(L, buffer[i] & 0xFF);
             lua::rawseti(L, i+1);
         }
+        return 1;
     } else {
-        lua::newuserdata<lua::LuaBytearray>(L, size);
-        auto bytearray = lua::touserdata<lua::LuaBytearray>(L, -1);   
-        bytearray->data().reserve(size);
-        std::memcpy(bytearray->data().data(), buffer.data(), size);
+        return lua::create_bytearray(L, buffer.data(), size);
     }
-    return 1;
 }
 
 static int l_available(lua::State* L, network::Network& network) {

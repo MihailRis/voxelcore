@@ -1,11 +1,21 @@
 #pragma once
 
 #include <string>
+#include <glm/vec2.hpp>
 
 #include "util/HandlersList.hpp"
 
+namespace dv {
+    class value;
+}
+
+enum class BindType {
+    BIND = 0,
+    REBIND = 1
+};
+
 /// @brief Represents glfw3 keycode values.
-enum class keycode : int {
+enum class Keycode : int {
     SPACE = 32,
     APOSTROPHE = 39,
     COMMA = 44,
@@ -98,7 +108,7 @@ enum class keycode : int {
 
 /// @brief Represents glfw3 mouse button IDs.
 /// @details There is a subset of glfw3 mouse button IDs.
-enum class mousecode : int {
+enum class Mousecode : int {
     BUTTON_1 = 0,  // Left mouse button
     BUTTON_2 = 1,  // Right mouse button
     BUTTON_3 = 2,  // Middle mouse button
@@ -110,43 +120,49 @@ enum class mousecode : int {
     UNKNOWN = -1,
 };
 
-inline mousecode MOUSECODES_ALL[] {
-    mousecode::BUTTON_1, mousecode::BUTTON_2, mousecode::BUTTON_3, mousecode::BUTTON_4,
-    mousecode::BUTTON_5, mousecode::BUTTON_6, mousecode::BUTTON_7, mousecode::BUTTON_8 };
+inline Mousecode MOUSECODES_ALL[] {
+    Mousecode::BUTTON_1,
+    Mousecode::BUTTON_2,
+    Mousecode::BUTTON_3,
+    Mousecode::BUTTON_4,
+    Mousecode::BUTTON_5,
+    Mousecode::BUTTON_6,
+    Mousecode::BUTTON_7,
+    Mousecode::BUTTON_8};
 
 namespace input_util {
     void initialize();
 
-    keycode keycode_from(const std::string& name);
-    mousecode mousecode_from(const std::string& name);
+    Keycode keycode_from(const std::string& name);
+    Mousecode mousecode_from(const std::string& name);
 
     /// @return Key label by keycode
-    std::string to_string(keycode code);
+    std::string to_string(Keycode code);
     /// @return Mouse button label by keycode
-    std::string to_string(mousecode code);
+    std::string to_string(Mousecode code);
 
     /// @return Key name by keycode
-    std::string get_name(keycode code);
+    std::string get_name(Keycode code);
     /// @return Mouse button name by keycode
-    std::string get_name(mousecode code);
+    std::string get_name(Mousecode code);
 }
 
-enum class inputtype {
-    keyboard,
-    mouse,
+enum class InputType {
+    KEYBOARD,
+    MOUSE,
 };
 
 struct Binding {
     util::HandlersList<> onactived;
 
-    inputtype type;
+    InputType type;
     int code;
     bool state = false;
     bool justChanged = false;
-    bool enable = true;
+    bool enabled = true;
 
     Binding() = default;
-    Binding(inputtype type, int code) : type(type), code(code) {
+    Binding(InputType type, int code) : type(type), code(code) {
     }
 
     bool active() const {
@@ -157,19 +173,122 @@ struct Binding {
         return state && justChanged;
     }
 
-    void reset(inputtype, int);
-    void reset(keycode);
-    void reset(mousecode);
+    void reset(InputType, int);
+    void reset(Keycode);
+    void reset(Mousecode);
 
     inline std::string text() const {
         switch (type) {
-            case inputtype::keyboard: {
-                return input_util::to_string(static_cast<keycode>(code));
+            case InputType::KEYBOARD: {
+                return input_util::to_string(static_cast<Keycode>(code));
             }
-            case inputtype::mouse: {
-                return input_util::to_string(static_cast<mousecode>(code));
+            case InputType::MOUSE: {
+                return input_util::to_string(static_cast<Mousecode>(code));
             }
         }
         return "<unknown input type>";
+    }
+};
+
+class Bindings {
+    std::unordered_map<std::string, Binding> bindings;
+public:
+    bool active(const std::string& name) const {
+        const auto& found = bindings.find(name);
+        if (found == bindings.end()) {
+            return false;
+        }
+        return found->second.active();
+    }
+
+    bool jactive(const std::string& name) const {
+        const auto& found = bindings.find(name);
+        if (found == bindings.end()) {
+            return false;
+        }
+        return found->second.jactive();
+    }
+
+    Binding* get(const std::string& name) {
+        const auto found = bindings.find(name);
+        if (found == bindings.end()) {
+            return nullptr;
+        }
+        return &found->second;
+    }
+
+    const Binding* get(const std::string& name) const {
+        const auto found = bindings.find(name);
+        if (found == bindings.end()) {
+            return nullptr;
+        }
+        return &found->second;
+    }
+
+    Binding& require(const std::string& name);
+
+    const Binding& require(const std::string& name) const;
+
+    void bind(const std::string& name, InputType type, int code) {
+        bindings.try_emplace(name, Binding(type, code));
+    }
+
+    void rebind(const std::string& name, InputType type, int code) {
+        require(name) = Binding(type, code);
+    }
+
+    auto& getAll() {
+        return bindings;
+    }
+
+    void enableAll() {
+        for (auto& entry : bindings) {
+            entry.second.enabled = true;
+        }
+    }
+
+    void read(const dv::value& map, BindType bindType);
+    std::string write() const;
+};
+
+struct CursorState {
+    bool locked = false;
+    glm::vec2 pos {};
+    glm::vec2 delta {};
+};
+
+class Input {
+public:
+    virtual ~Input() = default;
+
+    virtual void pollEvents() = 0;
+
+    virtual const char* getClipboardText() const = 0;
+    virtual void setClipboardText(const char* str) = 0;
+
+    virtual int getScroll() = 0;
+
+    virtual bool pressed(Keycode keycode) const = 0;
+    virtual bool jpressed(Keycode keycode) const = 0;
+
+    virtual bool clicked(Mousecode mousecode) const = 0;
+    virtual bool jclicked(Mousecode mousecode) const = 0;
+
+    virtual CursorState getCursor() const = 0;
+
+    virtual bool isCursorLocked() const = 0;
+    virtual void toggleCursor() = 0;
+
+    virtual Bindings& getBindings() = 0;
+
+    virtual const Bindings& getBindings() const = 0;
+
+    virtual ObserverHandler addKeyCallback(Keycode key, KeyCallback callback) = 0;
+
+    virtual const std::vector<Keycode>& getPressedKeys() const = 0;
+    virtual const std::vector<uint>& getCodepoints() const = 0;
+
+    ObserverHandler addCallback(const std::string& name, KeyCallback callback) {
+        return getBindings().require(name).onactived.add(callback);
     }
 };

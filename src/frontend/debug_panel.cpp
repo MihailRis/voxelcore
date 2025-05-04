@@ -93,11 +93,11 @@ std::shared_ptr<UINode> create_debug_panel(
     panel->add(create_label(gui, []() { return L"fps: "+fpsString;}));
    
     panel->add(create_label(gui, []() {
-        return L"meshes: " + std::to_wstring(Mesh::meshesCount);
+        return L"meshes: " + std::to_wstring(MeshStats::meshesCount);
     }));
     panel->add(create_label(gui, []() {
-        int drawCalls = Mesh::drawCalls;
-        Mesh::drawCalls = 0;
+        int drawCalls = MeshStats::drawCalls;
+        MeshStats::drawCalls = 0;
         return L"draw-calls: " + std::to_wstring(drawCalls);
     }));
     panel->add(create_label(gui, []() {

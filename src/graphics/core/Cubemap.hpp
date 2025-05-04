@@ -1,9 +1,9 @@
 #pragma once
 
-#include "GLTexture.hpp"
+#include "Texture.hpp"
 
 /// @brief Cubemap texture
-class Cubemap : public GLTexture {
+class Cubemap : public Texture {
 public:
     Cubemap(uint width, uint height, ImageFormat format);
 

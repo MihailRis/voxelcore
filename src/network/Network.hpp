@@ -11,7 +11,7 @@
 
 namespace network {
     using OnResponse = std::function<void(std::vector<char>)>;
-    using OnReject = std::function<void(const char*)>;
+    using OnReject = std::function<void(int)>;
 
     class Requests {
     public:

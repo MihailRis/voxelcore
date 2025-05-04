@@ -1,3 +1,4 @@
+#define VC_ENABLE_REFLECTION
 #include "GLSLExtension.hpp"
 
 #include <sstream>
@@ -93,22 +94,6 @@ inline void parsing_warning(
 
 inline void source_line(std::stringstream& ss, uint linenum) {
     ss << "#line " << linenum << "\n";
-}
-
-static std::optional<Type> param_type_from(
-    const std::string& name
-) {
-    static const std::unordered_map<std::string, Type> typeNames {
-        {"float", Type::FLOAT},
-        {"vec2", Type::VEC2},
-        {"vec3", Type::VEC3},
-        {"vec4", Type::VEC4},
-    };
-    const auto& found = typeNames.find(name);
-    if (found == typeNames.end()) {
-        return std::nullopt;
-    }
-    return found->second;
 }
 
 static Value default_value_for(Type type) {
@@ -212,11 +197,13 @@ public:
     }
 
     bool processParamDirective() {
+        using Param = PostEffect::Param;
+
         skipWhitespace(false);
         // Parse type name
         auto typeName = parseName();
-        auto type = param_type_from(typeName);
-        if (!type.has_value()) {
+        Param::Type type {};
+        if (!Param::TypeMeta.getItem(typeName, type)) {
             throw error("unsupported param type " + util::quote(typeName));
         }
         skipWhitespace(false);
@@ -228,17 +215,17 @@ public:
         skipWhitespace(false);
         ss << "uniform " << typeName << " " << paramName << ";\n";
         
-        auto defValue = default_value_for(type.value());
+        auto defValue = default_value_for(type);
         // Parse default value
         if (peekNoJump() == '=') {
             skip(1);
             skipWhitespace(false);
-            defValue = parseDefaultValue(type.value(), typeName);
+            defValue = parseDefaultValue(type, typeName);
         }
 
         skipLine();
 
-        params[paramName] = PostEffect::Param(type.value(), std::move(defValue));
+        params[paramName] = PostEffect::Param(type, std::move(defValue));
         return false;
     }
 
