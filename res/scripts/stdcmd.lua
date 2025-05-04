@@ -291,6 +291,19 @@ console.add_command(
     end
 )
 
+console.add_command(
+    "weather.list",
+    "Show avaluable weather presets list",
+    function(args, kwargs)
+        local filenames = file.list("presets/weather/")
+        local presets = " "
+        for index, filename in pairs(filenames) do
+            presets = presets .. "\n" .. filename:gsub("core:presets/weather//", ""):gsub(".json", "")
+        end
+        return "avluable presets:" .. presets
+    end
+)
+
 console.cheats = {
     "blocks.fill",
     "tp",
