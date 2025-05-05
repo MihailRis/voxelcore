@@ -1,8 +1,13 @@
 in vec4 a_color;
 in vec2 a_texCoord;
+in vec3 a_position;
 in vec3 a_dir;
+in vec3 a_normal;
 in float a_fog;
-out vec4 f_color;
+
+layout (location = 0) out vec4 f_color;
+layout (location = 1) out vec4 f_position;
+layout (location = 2) out vec4 f_normal;
 
 uniform sampler2D u_texture0;
 uniform samplerCube u_cubemap;
@@ -20,4 +25,6 @@ void main() {
         discard;
     f_color = mix(a_color * tex_color, vec4(fogColor,1.0), a_fog);
     f_color.a = alpha;
+    f_position = vec4(a_position, 1.0);
+    f_normal = vec4(a_normal, 1.0);
 }

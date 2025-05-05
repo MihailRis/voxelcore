@@ -44,7 +44,7 @@ class BlocksRenderer {
 
     SortingMeshData sortingMesh;
 
-    void vertex(const glm::vec3& coord, float u, float v, const glm::vec4& light);
+    void vertex(const glm::vec3& coord, float u, float v, const glm::vec4& light, const glm::vec3& normal);
     void index(uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e, uint32_t f);
 
     void vertexAO(

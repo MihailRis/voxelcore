@@ -10,7 +10,7 @@
 #include "frontend/ContentGfxCache.hpp"
 
 const glm::vec3 BlocksRenderer::SUN_VECTOR(0.528265f, 0.833149f, -0.163704f);
-const float DIRECTIONAL_LIGHT_FACTOR = 0.3f;
+const float DIRECTIONAL_LIGHT_FACTOR = 0.2f;
 
 BlocksRenderer::BlocksRenderer(
     size_t capacity,
@@ -39,12 +39,16 @@ BlocksRenderer::~BlocksRenderer() {
 
 /// Basic vertex add method
 void BlocksRenderer::vertex(
-    const glm::vec3& coord, float u, float v, const glm::vec4& light
+    const glm::vec3& coord, float u, float v, const glm::vec4& light, const glm::vec3& normal
 ) {
 
     vertexBuffer[vertexCount].position = coord;
 
     vertexBuffer[vertexCount].uv = {u,v};
+
+    vertexBuffer[vertexCount].normal[0] = static_cast<uint8_t>(normal.r * 127 + 128);
+    vertexBuffer[vertexCount].normal[1] = static_cast<uint8_t>(normal.g * 127 + 128);
+    vertexBuffer[vertexCount].normal[2] = static_cast<uint8_t>(normal.b * 127 + 128);
 
     vertexBuffer[vertexCount].color[0] = static_cast<uint8_t>(light.r * 255);
     vertexBuffer[vertexCount].color[1] = static_cast<uint8_t>(light.g * 255);
@@ -82,10 +86,10 @@ void BlocksRenderer::face(
     auto Y = axisY * h;
     auto Z = axisZ * d;
     float s = 0.5f;
-    vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, lights[0] * tint);
-    vertex(coord + ( X - Y + Z) * s, region.u2, region.v1, lights[1] * tint);
-    vertex(coord + ( X + Y + Z) * s, region.u2, region.v2, lights[2] * tint);
-    vertex(coord + (-X + Y + Z) * s, region.u1, region.v2, lights[3] * tint);
+    vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, lights[0] * tint, axisZ);
+    vertex(coord + ( X - Y + Z) * s, region.u2, region.v1, lights[1] * tint, axisZ);
+    vertex(coord + ( X + Y + Z) * s, region.u2, region.v2, lights[2] * tint, axisZ);
+    vertex(coord + (-X + Y + Z) * s, region.u1, region.v2, lights[3] * tint, axisZ);
     index(0, 1, 3, 1, 2, 3);
 }
 
@@ -103,7 +107,7 @@ void BlocksRenderer::vertexAO(
         axisX,
         axisY
     );
-    vertex(coord, u, v, light * tint);
+    vertex(coord, u, v, light * tint, axisZ);
 }
 
 void BlocksRenderer::faceAO(
@@ -134,11 +138,12 @@ void BlocksRenderer::faceAO(
         vertexAO(coord + ( X + Y + Z) * s, region.u2, region.v2, tint, axisX, axisY, axisZ);
         vertexAO(coord + (-X + Y + Z) * s, region.u1, region.v2, tint, axisX, axisY, axisZ);
     } else {
+        auto axisZ = glm::normalize(Z);
         glm::vec4 tint(1.0f);
-        vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, tint);
-        vertex(coord + ( X - Y + Z) * s, region.u2, region.v1, tint);
-        vertex(coord + ( X + Y + Z) * s, region.u2, region.v2, tint);
-        vertex(coord + (-X + Y + Z) * s, region.u1, region.v2, tint);
+        vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, tint, axisZ);
+        vertex(coord + ( X - Y + Z) * s, region.u2, region.v1, tint, axisZ);
+        vertex(coord + ( X + Y + Z) * s, region.u2, region.v2, tint, axisZ);
+        vertex(coord + (-X + Y + Z) * s, region.u1, region.v2, tint, axisZ);
     }
     index(0, 1, 2, 0, 2, 3);
 }
@@ -163,10 +168,10 @@ void BlocksRenderer::face(
         d = (1.0f - DIRECTIONAL_LIGHT_FACTOR) + d * DIRECTIONAL_LIGHT_FACTOR;
         tint *= d;
     }
-    vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, tint);
-    vertex(coord + ( X - Y + Z) * s, region.u2, region.v1, tint);
-    vertex(coord + ( X + Y + Z) * s, region.u2, region.v2, tint);
-    vertex(coord + (-X + Y + Z) * s, region.u1, region.v2, tint);
+    vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, tint, Z);
+    vertex(coord + ( X - Y + Z) * s, region.u2, region.v1, tint, Z);
+    vertex(coord + ( X + Y + Z) * s, region.u2, region.v2, tint, Z);
+    vertex(coord + (-X + Y + Z) * s, region.u1, region.v2, tint, Z);
     index(0, 1, 2, 0, 2, 3);
 }
 
@@ -337,7 +342,8 @@ void BlocksRenderer::blockCustomModel(
                     coord + vcoord.x * X + vcoord.y * Y + vcoord.z * Z,
                     vertex.uv.x,
                     vertex.uv.y,
-                    glm::vec4(d, d, d, d) * aoColor
+                    glm::vec4(d, d, d, d) * aoColor,
+                    n
                 );
                 indexBuffer[indexCount++] = vertexOffset++;
             }

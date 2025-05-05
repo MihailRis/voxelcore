@@ -11,6 +11,7 @@ class Framebuffer;
 class DrawContext;
 class ImageData;
 class PostEffect;
+class Camera;
 
 struct PostProcessingVertex {
     glm::vec2 position;
@@ -30,6 +31,10 @@ class PostProcessing {
     /// @brief Fullscreen quad mesh as the post-processing canvas
     std::unique_ptr<Mesh<PostProcessingVertex>> quadMesh;
     std::vector<std::shared_ptr<PostEffect>> effectSlots;
+
+    std::vector<glm::vec3> ssaoKernel;
+    uint noiseTexture;
+    bool ssaoConfigured = false;
 public:
     PostProcessing(size_t effectSlotsCount);
     ~PostProcessing();
@@ -42,7 +47,7 @@ public:
     /// with framebuffer texture bound
     /// @param context graphics context
     /// @throws std::runtime_error if use(...) wasn't called before
-    void render(const DrawContext& context, const Assets& assets, float timer);
+    void render(const DrawContext& context, const Assets& assets, float timer, const Camera& camera, uint depthMap);
 
     void setEffect(size_t slot, std::shared_ptr<PostEffect> effect);
 

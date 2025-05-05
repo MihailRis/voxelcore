@@ -41,6 +41,7 @@
 #include "graphics/core/Shader.hpp"
 #include "graphics/core/Texture.hpp"
 #include "graphics/core/Font.hpp"
+#include "graphics/core/ShadowMap.hpp"
 #include "BlockWrapsRenderer.hpp"
 #include "ParticlesRenderer.hpp"
 #include "PrecipitationRenderer.hpp"
@@ -100,6 +101,10 @@ WorldRenderer::WorldRenderer(
         settings.graphics.skyboxResolution.get(),
         assets->require<Shader>("skybox_gen")
     );
+
+    shadowMap = std::make_unique<ShadowMap>(1024);
+
+    shadowCamera = std::make_unique<Camera>();
 }
 
 WorldRenderer::~WorldRenderer() = default;
@@ -114,11 +119,13 @@ void WorldRenderer::setupWorldShader(
     shader.uniformMatrix("u_model", glm::mat4(1.0f));
     shader.uniformMatrix("u_proj", camera.getProjection());
     shader.uniformMatrix("u_view", camera.getView());
+    shader.uniformMatrix("u_shadowsMatrix", shadowCamera->getProjView());
     shader.uniform1f("u_timer", timer);
     shader.uniform1f("u_gamma", settings.graphics.gamma.get());
     shader.uniform1f("u_fogFactor", fogFactor);
     shader.uniform1f("u_fogCurve", settings.graphics.fogCurve.get());
     shader.uniform1i("u_debugLights", lightsDebug);
+    shader.uniform1i("u_debugNormals", false);
     shader.uniform1f("u_weatherFogOpacity", weather.fogOpacity());
     shader.uniform1f("u_weatherFogDencity", weather.fogDencity());
     shader.uniform1f("u_weatherFogCurve", weather.fogCurve());
@@ -126,6 +133,11 @@ void WorldRenderer::setupWorldShader(
     shader.uniform2f("u_lightDir", skybox->getLightDir());
     shader.uniform3f("u_cameraPos", camera.position);
     shader.uniform1i("u_cubemap", 1);
+
+    glActiveTexture(GL_TEXTURE4);
+    shader.uniform1i("u_shadows", 4);
+    glBindTexture(GL_TEXTURE_2D, shadowMap->getDepthMap());
+    glActiveTexture(GL_TEXTURE0);
 
     auto indices = level.content.getIndices();
     // Light emission when an emissive item is chosen
@@ -354,6 +366,28 @@ void WorldRenderer::draw(
 
     const auto& assets = *engine.getAssets();
     auto& linesShader = assets.require<Shader>("lines");
+    auto& shadowsShader = assets.require<Shader>("shadows");
+
+    *shadowCamera = Camera(camera.position + glm::vec3(0, 50, 0), 1);
+    shadowCamera->near = 0.5f;
+    shadowCamera->far = 200.0f;
+    shadowCamera->setAspectRatio(1.0f);
+    shadowCamera->rotate(glm::radians(-90.0f), 0.0f, 0.0f);
+    //shadowCamera.perspective = false;
+    /*shadowCamera.rotation = //glm::inverse(
+        glm::lookAt({}, glm::normalize(shadowCamera.position-camera.position), glm::vec3(0, 1, 0));
+    //);*/
+    shadowCamera->updateVectors();
+    {
+        frustumCulling->update(shadowCamera->getProjView());
+        auto sctx = pctx.sub();
+        sctx.setDepthTest(true);
+        sctx.setViewport({1024, 1024});
+        shadowMap->bind();
+        setupWorldShader(shadowsShader, *shadowCamera, settings, 0.0f);
+        chunks->drawChunks(*shadowCamera, shadowsShader);
+        shadowMap->unbind();
+    }
 
     /* World render scope with diegetic HUD included */ {
         DrawContext wctx = pctx.sub();
@@ -370,25 +404,25 @@ void WorldRenderer::draw(
             ctx.setCullFace(true);
             renderLevel(ctx, camera, settings, uiDelta, pause, hudVisible);
             // Debug lines
-            if (hudVisible) {
-                if (debug) {
-                    guides->renderDebugLines(
-                        ctx, camera, *lineBatch, linesShader, showChunkBorders
-                    );
-                }
-                if (player.currentCamera == player.fpCamera) {
-                    renderHands(camera, delta);
-                }
-            }
+            // if (hudVisible) {
+            //     if (debug) {
+            //         guides->renderDebugLines(
+            //             ctx, camera, *lineBatch, linesShader, showChunkBorders
+            //         );
+            //     }
+            //     if (player.currentCamera == player.fpCamera) {
+            //         renderHands(camera, delta);
+            //     }
+            // }
         }
-        {
-            DrawContext ctx = wctx.sub();
-            texts->render(ctx, camera, settings, hudVisible, true);
-        }
-        renderBlockOverlay(wctx);
+        // {
+        //     DrawContext ctx = wctx.sub();
+        //     texts->render(ctx, camera, settings, hudVisible, true);
+        // }
+        //renderBlockOverlay(wctx);
     }
 
-    postProcessing.render(pctx, assets, timer);
+    postProcessing.render(pctx, assets, timer, camera, shadowMap->getDepthMap());
 }
 
 void WorldRenderer::renderBlockOverlay(const DrawContext& wctx) {

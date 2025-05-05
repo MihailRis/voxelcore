@@ -9,6 +9,8 @@ class Texture;
 class Framebuffer {
     uint fbo;
     uint depth;
+    uint positions;
+    uint normals;
     uint width;
     uint height;
     uint format;
@@ -23,6 +25,8 @@ public:
 
     /// @brief Stop using framebuffer
     void unbind();
+
+    void bindBuffers();
 
     /// @brief Update framebuffer texture size
     /// @param width new width

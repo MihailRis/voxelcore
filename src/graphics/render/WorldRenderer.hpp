@@ -30,6 +30,7 @@ class PostProcessing;
 class DrawContext;
 class ModelBatch;
 class Assets;
+class ShadowMap;
 struct EngineSettings;
 
 class WorldRenderer {
@@ -44,7 +45,10 @@ class WorldRenderer {
     std::unique_ptr<GuidesRenderer> guides;
     std::unique_ptr<ChunksRenderer> chunks;
     std::unique_ptr<Skybox> skybox;
+    std::unique_ptr<ShadowMap> shadowMap;
     Weather weather {};
+
+    std::unique_ptr<Camera> shadowCamera;
     
     float timer = 0.0f;
     bool debug = false;

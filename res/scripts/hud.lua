@@ -55,4 +55,8 @@ function on_hud_open()
             player.set_vel(pid, 0, 1, 0)
         end
     end)
+
+    local slot = gfx.posteffects.index("core:default")
+    gfx.posteffects.set_effect(slot, "ssao")
+    --gfx.posteffects.set_intensity(slot, 1.0)
 end

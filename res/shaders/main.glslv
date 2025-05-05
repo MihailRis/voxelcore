@@ -3,11 +3,14 @@
 layout (location = 0) in vec3 v_position;
 layout (location = 1) in vec2 v_texCoord;
 layout (location = 2) in vec4 v_light;
+layout (location = 3) in vec4 v_normal;
 
 out vec4 a_color;
 out vec2 a_texCoord;
+out vec3 a_normal;
 out float a_distance;
 out float a_fog;
+out vec3 a_position;
 out vec3 a_dir;
 
 uniform mat4 u_model;
@@ -31,6 +34,11 @@ void main() {
     vec3 pos3d = modelpos.xyz-u_cameraPos;
     modelpos.xyz = apply_planet_curvature(modelpos.xyz, pos3d);
 
+    mat3 normalMatrix = transpose(inverse(mat3(u_view * u_model)));
+    a_normal = v_normal.xyz * 2.0 - 1.0;
+    a_normal = normalMatrix * (false ? -a_normal : a_normal);
+    //a_normal = v_normal.xyz * 2.0 - 1.0;
+
     vec3 light = v_light.rgb;
     float torchlight = max(0.0, 1.0-distance(u_cameraPos, modelpos.xyz) /
                        u_torchlightDistance);
@@ -47,4 +55,6 @@ void main() {
     a_fog = min(1.0, max(pow(depth * u_fogFactor, u_fogCurve),
                          min(pow(depth * u_weatherFogDencity, u_weatherFogCurve), u_weatherFogOpacity)));
     gl_Position = u_proj * u_view * modelpos;
+
+    a_position = (u_view * modelpos).xyz;
 }

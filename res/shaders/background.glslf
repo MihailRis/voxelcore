@@ -1,5 +1,7 @@
 in vec3 v_coord;
-out vec4 f_color;
+layout (location = 0) out vec4 f_color;
+layout (location = 1) out vec3 f_position;
+layout (location = 2) out vec3 f_normal;
 
 uniform samplerCube u_cubemap;
 

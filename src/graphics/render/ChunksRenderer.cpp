@@ -143,7 +143,7 @@ void ChunksRenderer::update() {
 }
 
 const Mesh<ChunkVertex>* ChunksRenderer::retrieveChunk(
-    size_t index, const Camera& camera, Shader& shader, bool culling
+    size_t index, const Camera& camera, bool culling
 ) {
     auto chunk = chunks.getChunks()[index];
     if (chunk == nullptr) {
@@ -219,7 +219,7 @@ void ChunksRenderer::drawChunks(
     // TODO: minimize draw calls number
     for (int i = indices.size()-1; i >= 0; i--) {
         auto& chunk = chunks.getChunks()[indices[i].index];
-        auto mesh = retrieveChunk(indices[i].index, camera, shader, culling);
+        auto mesh = retrieveChunk(indices[i].index, camera, culling);
 
         if (mesh) {
             glm::vec3 coord(
