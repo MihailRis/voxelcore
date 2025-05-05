@@ -293,14 +293,14 @@ console.add_command(
 
 console.add_command(
     "weather.list",
-    "Show avaluable weather presets list",
+    "Show available weather presets list",
     function(args, kwargs)
-        local filenames = file.list("presets/weather/")
+        local filenames = file.list_all_res("presets/weather/")
         local presets = " "
         for index, filename in pairs(filenames) do
-            presets = presets .. "\n" .. filename:gsub("core:presets/weather//", ""):gsub(".json", "")
+            presets = presets .. "\n" .. file.stem(filename)
         end
-        return "avluable presets:" .. presets
+        return "available presets:" .. presets
     end
 )
 
