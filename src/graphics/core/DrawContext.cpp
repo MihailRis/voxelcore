@@ -100,7 +100,7 @@ void DrawContext::setViewport(const glm::uvec2& viewport) {
     glViewport(0, 0, viewport.x, viewport.y);
 }
 
-void DrawContext::setFramebuffer(Framebuffer* fbo) {
+void DrawContext::setFramebuffer(Bindable* fbo) {
     if (this->fbo == fbo)
         return;
     this->fbo = fbo;
