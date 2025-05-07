@@ -31,11 +31,19 @@ namespace model {
             const glm::vec3& norm,
             const UVRegion& region
         );
+        void addRect(
+            const glm::vec3& pos,
+            const glm::vec3& right,
+            const glm::vec3& up,
+            const glm::vec3& norm,
+            const UVRegion& region
+        );
         void addBox(const glm::vec3& pos, const glm::vec3& size);
         void addBox(
             const glm::vec3& pos,
             const glm::vec3& size,
-            const UVRegion (&texfaces)[6]
+            const UVRegion (&texfaces)[6],
+            const bool enabledSides[6]
         );
         void scale(const glm::vec3& size);
     };
@@ -47,6 +55,11 @@ namespace model {
         /// @param texture texture name
         /// @return writeable Mesh
         Mesh& addMesh(const std::string& texture) {
+            for (auto& mesh : meshes) {
+                if (mesh.texture == texture) {
+                    return mesh;
+                }
+            }
             meshes.push_back({texture, {}});
             return meshes[meshes.size()-1];
         }

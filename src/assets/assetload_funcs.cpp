@@ -10,6 +10,7 @@
 #include "coders/imageio.hpp"
 #include "coders/json.hpp"
 #include "coders/obj.hpp"
+#include "coders/vcm.hpp"
 #include "coders/vec3.hpp"
 #include "constants.hpp"
 #include "debug/Logger.hpp"
@@ -300,7 +301,8 @@ assetload::postfunc assetload::sound(
 
 static void request_textures(AssetsLoader* loader, const model::Model& model) {
     for (auto& mesh : model.meshes) {
-        if (mesh.texture.find('$') == std::string::npos) {
+        if (mesh.texture.find('$') == std::string::npos &&
+            mesh.texture.find(':') == std::string::npos) {
             auto filename = TEXTURES_FOLDER + "/" + mesh.texture;
             loader->add(
                 AssetType::TEXTURE, filename, mesh.texture, nullptr
@@ -337,17 +339,34 @@ assetload::postfunc assetload::model(
         };
     }
     path = paths.find(file + ".obj");
-    auto text = io::read_string(path);
-    try {
-        auto model = obj::parse(path.string(), text).release();
-        return [=](Assets* assets) {
-            request_textures(loader, *model);
-            assets->store(std::unique_ptr<model::Model>(model), name);
-        };
-    } catch (const parsing_error& err) {
-        std::cerr << err.errorLog() << std::endl;
-        throw;
+    if (io::exists(path)) {
+        auto text = io::read_string(path);
+        try {
+            auto model = obj::parse(path.string(), text).release();
+            return [=](Assets* assets) {
+                request_textures(loader, *model);
+                assets->store(std::unique_ptr<model::Model>(model), name);
+            };
+        } catch (const parsing_error& err) {
+            std::cerr << err.errorLog() << std::endl;
+            throw;
+        }
     }
+    path = paths.find(file + ".xml");
+    if (io::exists(path)) {
+        auto text = io::read_string(path);
+        try {
+            auto model = vcm::parse(path.string(), text).release();
+            return [=](Assets* assets) {
+                request_textures(loader, *model);
+                assets->store(std::unique_ptr<model::Model>(model), name);
+            };
+        } catch (const parsing_error& err) {
+            std::cerr << err.errorLog() << std::endl;
+            throw;
+        }
+    }
+    throw std::runtime_error("could not to find model " + util::quote(file));
 }
 
 static void read_anim_file(
