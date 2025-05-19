@@ -6,14 +6,17 @@ parameters = [
 layers = [
     {below-sea-level=false, height=1, block="base:grass_block"},
     {below-sea-level=false, height=7, block="base:dirt"},
-    {height=15, block="base:cobblestone"},
-    {height=2, block="base:granite"},
+    {height=10, block="base:cobblestone"},
+    {height=3, block="base:granite"},
     {height=2, block="base:diorite"},
-    {height=20, block="base:cobbled_deepslate"},
-    {height=-1, block="base:bazalt"}
+    {height=5, block="base:cobblestone"},
+    {height=4, block="base:granite"},
+    {height=3, block="base:diorite"},
+    {height=-1, block="base:cobbled_deepslate"},
+    {y=-64, height=1, block="base:basalt"}
 ]
 sea-layers = [
-    {height=-1, block="base:water"}
+    {y=-1, height=1, block="base:water"}
 ]
 plant-chance = 0.4
 plants = [
@@ -32,7 +35,9 @@ cave-blocks = [
     {block="core:air", weight=100},
     {block="base:cobblestone", weight=10},
     {block="base:granite", weight=5},
-    {block="base:diorite", weight=5}
+    {block="base:diorite", weight=5},
+    {block="base:cobbled_deepslate", weight=20},
+    {y=-64, height=1, block="base:basalt"}
 ]
 cave-size = {min=3, max=16}
 
@@ -43,19 +48,23 @@ parameters = [
 ]
 layers = [
     {height=6, block="base:sand"},
-    {height=15, block="base:cobblestone"},
-    {height=2, block="base:granite"},
-    {height=20, block="base:cobbled_deepslate"},
-    {height=-1, block="base:bazalt"}
+    {height=8, block="base:cobblestone"},
+    {height=4, block="base:granite"},
+    {height=5, block="base:cobblestone"},
+    {height=3, block="base:diorite"},
+    {height=-1, block="base:cobbled_deepslate"},
+    {y=-64, height=1, block="base:basalt"}
 ]
 sea-layers = [
-    {height=-1, block="base:water"}
+    {y=-1, height=1, block="base:water"}
 ]
 cave-chance = 0.04
 cave-blocks = [
     {block="core:air", weight=100},
     {block="base:cobblestone", weight=15},
-    {block="base:sandstone", weight=8}
+    {block="base:sandstone", weight=8},
+    {block="base:cobbled_deepslate", weight=20},
+    {y=-64, height=1, block="base:basalt"}
 ]
 cave-size = {min=2, max=16}
 
@@ -67,14 +76,16 @@ parameters = [
 layers = [
     {below-sea-level=false, height=1, block="base:grass_block"},
     {below-sea-level=false, height=5, block="base:dirt"},
-    {height=8, block="base:cobblestone"},
-    {height=1, block="base:granite"},
-    {height=1, block="base:diorite"},
-    {height=15, block="base:cobbled_deepslate"},
-    {height=-1, block="base:bazalt"}
+    {height=6, block="base:cobblestone"},
+    {height=3, block="base:granite"},
+    {height=2, block="base:diorite"},
+    {height=4, block="base:cobblestone"},
+    {height=2, block="base:granite"},
+    {height=-1, block="base:cobbled_deepslate"},
+    {y=-64, height=1, block="base:basalt"}
 ]
 sea-layers = [
-    {height=-1, block="base:water"}
+    {y=-1, height=1, block="base:water"}
 ]
 plant-chance = 0.3
 plants = [
@@ -90,6 +101,8 @@ cave-chance = 0.06
 cave-blocks = [
     {block="core:air", weight=100},
     {block="base:cobblestone", weight=8},
-    {block="base:granite", weight=3}
+    {block="base:granite", weight=3},
+    {block="base:cobbled_deepslate", weight=20},
+    {y=-64, height=1, block="base:basalt"}
 ]
 cave-size = {min=4, max=12}
