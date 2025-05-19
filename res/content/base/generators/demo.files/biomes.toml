@@ -6,8 +6,11 @@ parameters = [
 layers = [
     {below-sea-level=false, height=1, block="base:grass_block"},
     {below-sea-level=false, height=7, block="base:dirt"},
-    {height=-1, block="base:stone"},
-    {height=1, block="base:bazalt"}
+    {height=15, block="base:cobblestone"},
+    {height=2, block="base:granite"},
+    {height=2, block="base:diorite"},
+    {height=20, block="base:cobbled_deepslate"},
+    {height=-1, block="base:bazalt"}
 ]
 sea-layers = [
     {height=-1, block="base:water"}
@@ -24,7 +27,14 @@ structures = [
     {name="tree2", weight=1},
     {name="tower", weight=0.002}
 ]
-
+cave-chance = 0.05
+cave-blocks = [
+    {block="core:air", weight=100},
+    {block="base:cobblestone", weight=10},
+    {block="base:granite", weight=5},
+    {block="base:diorite", weight=5}
+]
+cave-size = {min=3, max=16}
 
 [desert]
 parameters = [
@@ -33,13 +43,21 @@ parameters = [
 ]
 layers = [
     {height=6, block="base:sand"},
-    {height=-1, block="base:stone"},
-    {height=1, block="base:bazalt"}
+    {height=15, block="base:cobblestone"},
+    {height=2, block="base:granite"},
+    {height=20, block="base:cobbled_deepslate"},
+    {height=-1, block="base:bazalt"}
 ]
 sea-layers = [
     {height=-1, block="base:water"}
 ]
-
+cave-chance = 0.04
+cave-blocks = [
+    {block="core:air", weight=100},
+    {block="base:cobblestone", weight=15},
+    {block="base:sandstone", weight=8}
+]
+cave-size = {min=2, max=16}
 
 [plains]
 parameters = [
@@ -49,8 +67,11 @@ parameters = [
 layers = [
     {below-sea-level=false, height=1, block="base:grass_block"},
     {below-sea-level=false, height=5, block="base:dirt"},
-    {height=-1, block="base:stone"},
-    {height=1, block="base:bazalt"}
+    {height=8, block="base:cobblestone"},
+    {height=1, block="base:granite"},
+    {height=1, block="base:diorite"},
+    {height=15, block="base:cobbled_deepslate"},
+    {height=-1, block="base:bazalt"}
 ]
 sea-layers = [
     {height=-1, block="base:water"}
@@ -60,8 +81,15 @@ plants = [
     {weight=1, block="base:grass"},
     {weight=0.03, block="base:flower"}
 ]
-structure-chance=0.0001
+structure-chance = 0.0001
 structures = [
     {name="tree0", weight=1},
     {name="tree1", weight=1}
 ]
+cave-chance = 0.06
+cave-blocks = [
+    {block="core:air", weight=100},
+    {block="base:cobblestone", weight=8},
+    {block="base:granite", weight=3}
+]
+cave-size = {min=4, max=12}
