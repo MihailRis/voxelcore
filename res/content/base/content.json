@@ -15,7 +15,7 @@
     "stone",
     "water",
     "sand",
-    "bazalt",
+    "basalt",
     "grass",
     "flower",
     "brick",
@@ -33,6 +33,6 @@
     "ice"
   ],
   "items": [
-    "bazalt_breaker"
+    "basalt_breaker"
   ]
 }
