@@ -1,0 +1,7 @@
+{
+    "texture": "lava",
+    "emission": [15, 0, 0],
+    "shadeless": true,
+    "material": "base:lava",
+    "base:durability": 0.3
+}

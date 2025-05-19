@@ -1,0 +1,5 @@
+{
+    "texture": "diamond_ore",
+    "breakable": true,
+    "base:durability": 18.0
+}
