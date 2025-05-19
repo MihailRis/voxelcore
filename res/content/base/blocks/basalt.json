@@ -1,0 +1,5 @@
+{
+    "texture": "basalt",
+    "breakable": false,
+    "base:durability": 1e9
+}
