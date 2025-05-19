@@ -1,6 +1,6 @@
 {
     "texture": "leaves",
-    "material": "base:grass",
+    "material": "base:leaves",
     "draw-group": 5,
     "culling": "optional",
     "particles": {
