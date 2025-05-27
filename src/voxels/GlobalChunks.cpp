@@ -212,6 +212,6 @@ const AABB* GlobalChunks::isObstacleWith(AABB box) const {
     return blocks_agent::is_obstacle_with(*this, box);
 }
 const AABB* GlobalChunks::isObstacleWith(float x, float y, float z, const glm::vec3& halfbox) const {
-    return isObstacleWith((AABB){(glm::vec3){x, y, z}-halfbox, (glm::vec3){x, y, z}+halfbox});
+    return isObstacleWith(AABB(glm::vec3(x, y, z)-halfbox, glm::vec3(x, y, z)+halfbox));
 }
 
