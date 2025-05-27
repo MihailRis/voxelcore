@@ -499,10 +499,10 @@ inline const AABB* is_obstacle_with(const Storage& chunks, AABB box) {
                     const auto& boxes =
                         def.rotatable ? def.rt.hitboxes[v->state.rotation] : def.hitboxes;
                     for (const auto& hitbox : boxes) {
-                        const auto& union_box = (AABB){hitbox.min() + box.min() - box.center(), 
-                                                       hitbox.max() + box.max() - box.center()};
+                        const auto& union_box = AABB(hitbox.min() + box.min() - box.center(), 
+                                                     hitbox.max() + box.max() - box.center());
                         if (union_box.contains(
-                            {box.center() - vec - offset}
+                            box.center() - vec - offset
                         )) {
                             is_null = false;
                             combined_box.addPoint(hitbox.min() + vec);
