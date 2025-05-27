@@ -8,6 +8,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <type_traits>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
@@ -139,7 +140,8 @@ static float calc_step_height(
     return stepHeight;
 }
 
-template <int nx, int ny, int nz>
+template <int nx, int ny, int nz,
+        std::enable_if_t<nx < 3 && ny < 3 && nz < 3>* = nullptr>
 static bool calc_collision_neg(
     const GlobalChunks& chunks,
     glm::vec3& pos,
@@ -172,7 +174,7 @@ static bool calc_collision_neg(
     return false;
 }
 
-template <int nx, int ny, int nz>
+template <int nx, int ny, int nz, std::enable_if_t<nx < 3 && ny < 3 && nz < 3>* = nullptr>
 static void calc_collision_pos(
     const GlobalChunks& chunks,
     glm::vec3& pos,
