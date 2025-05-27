@@ -58,6 +58,8 @@ public:
     void putChunk(std::shared_ptr<Chunk> chunk);
 
     const AABB* isObstacleAt(float x, float y, float z) const;
+    const AABB* isObstacleWith(float x, float y, float z, const glm::vec3& halfbox) const;
+    const AABB* isObstacleWith(AABB box) const;
 
     inline Chunk* getChunk(int cx, int cz) const {
         const auto& found = chunksMap.find(keyfrom(cx, cz));
