@@ -10,14 +10,11 @@
 #include <cmath>
 #include <iostream>
 #include <algorithm>
-#include <type_traits>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
 const float E = 0.03f;
 const float MAX_FIX = 0.1f;
-
-static debug::Logger logger("physics");
 
 PhysicsSolver::PhysicsSolver(glm::vec3 gravity) : gravity(gravity) {
 }
