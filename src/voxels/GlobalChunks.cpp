@@ -1,6 +1,7 @@
 #include "GlobalChunks.hpp"
 
 #include <algorithm>
+#include <glm/fwd.hpp>
 
 #include "content/Content.hpp"
 #include "coders/json.hpp"
@@ -207,3 +208,10 @@ void GlobalChunks::putChunk(std::shared_ptr<Chunk> chunk) {
 const AABB* GlobalChunks::isObstacleAt(float x, float y, float z) const {
     return blocks_agent::is_obstacle_at(*this, x, y, z);
 }
+const AABB* GlobalChunks::isObstacleWith(AABB box) const {
+    return blocks_agent::is_obstacle_with(*this, box);
+}
+const AABB* GlobalChunks::isObstacleWith(float x, float y, float z, const glm::vec3& halfbox) const {
+    return isObstacleWith((AABB){(glm::vec3){x, y, z}-halfbox, (glm::vec3){x, y, z}+halfbox});
+}
+

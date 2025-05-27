@@ -30,12 +30,21 @@ struct AABB {
         return glm::vec3(fabs(b.x - a.x), fabs(b.y - a.y), fabs(b.z - a.z));
     }
 
+    /// @brief Get AABB center
     inline glm::vec3 center() const {
         return (a + b) * 0.5f;
     }
 
+    /// @brief Move AABB
     inline AABB translated(const glm::vec3& pos) const {
         return AABB(a + pos, b + pos);
+    }
+
+    /// @brief Increment AABB size from center
+    inline void increment(const glm::vec3 add) {
+        glm::vec3 center = (a + b) * 0.5f;
+        a = (a - center) - add * 0.5f + center;
+        b = (b - center) + add * 0.5f + center;
     }
 
     /// @brief Multiply AABB size from center

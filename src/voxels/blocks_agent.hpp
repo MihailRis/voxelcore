@@ -474,5 +474,51 @@ inline const AABB* is_obstacle_at(const Storage& chunks, float x, float y, float
     }
     return nullptr;
 }
+template <class Storage>
+inline const AABB* is_obstacle_with(const Storage& chunks, AABB box) {
+    static AABB combined_box;
+    bool is_null = true;
+    for (int ix = floor(box.min().x); ix <= ceil(box.max().x); ++ix) {
+        for (int iy = floor(box.min().y); iy <= ceil(box.max().y); ++iy) {
+            for (int iz = floor(box.min().z); iz <= ceil(box.max().z); ++iz) {
+                glm::vec3 vec{ix, iy, iz};
+                voxel* v = get(chunks, ix, iy, iz);
+                if (v == nullptr) {
+                    if (iy < CHUNK_H) {
+                        is_null = false;
+                    }
+                    continue;
+                }
+                const auto& def = chunks.getContentIndices().blocks.require(v->id);
+                if (def.obstacle) {
+                    glm::vec3 offset {};
+                    if (v->state.segment) {
+                        glm::ivec3 point(ix, iy, iz);
+                        offset = seek_origin(chunks, point, def, v->state) - point;
+                    }
+                    const auto& boxes =
+                        def.rotatable ? def.rt.hitboxes[v->state.rotation] : def.hitboxes;
+                    for (const auto& hitbox : boxes) {
+                        const auto& union_box = (AABB){hitbox.min() + box.min() - box.center(), 
+                                                       hitbox.max() + box.max() - box.center()};
+                        if (union_box.contains(
+                            {box.center() - vec - offset}
+                        )) {
+                            is_null = false;
+                            combined_box.addPoint(hitbox.min() + vec);
+                            combined_box.addPoint(hitbox.max() + vec);
+                            continue;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (is_null) {
+        return nullptr;
+    } else {
+        return &combined_box;
+    }
+}
 
 } // blocks_agent
