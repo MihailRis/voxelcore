@@ -19,8 +19,17 @@ Problems=Праблемы
 Monitor=Маніторынг
 Debug=Адладка
 File=Файл
+Read only=Толькі для чытання
+Save=Захаваць
+Grant %{0} pack modification permission?=Выдаць дазвол на мадыфікацыю пака %{0}?
+Error at line %{0}=Памылка ў радку %{0}
+Run=Запусціць
+Filter=Фільтр
 
+editor.info.tooltip=CTRL+S - Захаваць\nCTRL+R - Запусціць\nCTRL+Z - Скасаваць\nCTRL+Y - Паўтарыць
 devtools.traceback=Стэк выклікаў (ад апошняга)
+devtools.output=Вывод
+
 error.pack-not-found=Не ўдалося знайсці пакет
 error.dependency-not-found=Выкарыстоўваная залежнасць не знойдзена
 pack.remove-confirm=Выдаліць увесь кантэнт, які пастаўляецца пакетам/пакетамі, са свету (беззваротна)?
@@ -43,7 +52,7 @@ menu.Display=Дысплей
 menu.Graphics=Графіка
 menu.missing-content=Адсутнічае Кантэнт!
 menu.New World=Новы Свет
-menu.Open worlds folder=Адкрыць папку з сусветамі
+menu.Open worlds folder=Адкрыць тэчку са сусветамі
 menu.Worlds=Сусветы
 menu.Page not found=Старонка не знойдзена
 menu.Quit=Выхад
@@ -51,8 +60,8 @@ menu.Save and Quit to Menu=Захаваць і Выйсці ў Меню
 menu.Settings=Налады
 menu.Reset settings=Скінуць налады
 menu.Contents Menu=Меню кантэнт-пакаў
-menu.Open data folder=Адкрыць папку з дадзенымі
-menu.Open content folder=Адкрыць папку [content]
+menu.Open data folder=Адкрыць тэчку з дадзенымі
+menu.Open content folder=Адкрыць тэчку [content]
 
 world.Seed=Зерне
 world.Name=Назва

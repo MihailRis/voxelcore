@@ -2,8 +2,8 @@
 
 ## Latest release
 
-- [Download](https://github.com/MihailRis/VoxelEngine-Cpp/releases/latest) | [Скачать](https://github.com/MihailRis/VoxelEngine-Cpp/releases/latest)
-- [Documentation](https://github.com/MihailRis/VoxelEngine-Cpp/blob/release-0.27/doc/en/main-page.md) | [Документация](https://github.com/MihailRis/VoxelEngine-Cpp/blob/release-0.27/doc/ru/main-page.md)
+- [Download](https://github.com/MihailRis/VoxelCore/releases/latest) | [Скачать](https://github.com/MihailRis/VoxelCore/releases/latest)
+- [Documentation](https://github.com/MihailRis/VoxelCore/blob/release-0.27/doc/en/main-page.md) | [Документация](https://github.com/MihailRis/VoxelCore/blob/release-0.27/doc/ru/main-page.md)
 
 ## Build project in Linux
 
@@ -71,8 +71,8 @@ yay -S entt
 ### Building engine with CMake
 
 ```sh
-git clone --recursive https://github.com/MihailRis/VoxelEngine-Cpp.git
-cd VoxelEngine-Cpp
+git clone --recursive https://github.com/MihailRis/VoxelCore.git
+cd VoxelCore
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
@@ -95,8 +95,8 @@ brew install glfw3 glew glm libpng libvorbis lua luajit libcurl openal-soft skyp
 ### Building engine with CMake
 
 ```sh
-git clone --recursive https://github.com/MihailRis/VoxelEngine-Cpp.git
-cd VoxelEngine-Cpp
+git clone --recursive https://github.com/MihailRis/VoxelCore.git
+cd VoxelCore
 mkdir build
 cd build
 cmake -DCMAKE_BUILD_TYPE=Release ..
@@ -128,8 +128,8 @@ $env:PATH = "$env:VCPKG_ROOT;$env:PATH"
 
 After installing **vcpkg** you can build project:
 ```PowerShell
-git clone --recursive https://github.com/MihailRis/VoxelEngine-Cpp.git
-cd VoxelEngine-Cpp
+git clone --recursive https://github.com/MihailRis/VoxelCore.git
+cd VoxelCore
 cmake --preset default-vs-msvc-windows
 cmake --build --preset default-vs-msvc-windows
 ```
@@ -139,6 +139,8 @@ cmake --build --preset default-vs-msvc-windows
 ### Step 0. Install docker on your system
 
 See <https://docs.docker.com/engine/install>
+
+### Do you have Linux
 
 ### Step 1. Build docker container
 
@@ -156,4 +158,32 @@ docker run --rm -it -v$(pwd):/project voxel-engine bash -c "cmake -DCMAKE_BUILD_
 
 ```sh
 docker run --rm -it -v$(pwd):/project -v/tmp/.X11-unix:/tmp/.X11-unix -v${XAUTHORITY}:/home/user/.Xauthority:ro -eDISPLAY --network=host voxel-engine ./build/VoxelEngine
+```
+
+### Do you have Windows
+
+### Step 1. You need to install VcXsrv
+
+### Step 2. Run VcXsrv with the command
+
+```powershell
+.\vcxsrv.exe :0 -multiwindow -ac
+```
+
+### Step 3. Build docker container
+
+```powershell
+docker build -t voxel-engine .
+```
+
+### Step 4. Build project using the docker container
+
+```powershell
+docker run --rm -it -v "${PWD}:/project" voxel-engine bash -c "cmake -DCMAKE_BUILD_TYPE=Release -Bbuild && cmake --build build"
+```
+
+### Step 5. Run project using the docker container
+
+```powershell
+docker run --rm -it -v "${PWD}:/project" -e DISPLAY=host.docker.internal:0.0 --network host voxel-engine ./build/VoxelEngine
 ```
