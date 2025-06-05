@@ -30,7 +30,7 @@ namespace debug {
         static void init(const std::string& filename);
         static void flush();
 
-        Logger::Logger(const std::string& name) : name(name) {
+        Logger(const std::string& name) : name(name) {
         }
 
         void log(LogLevel level, std::string message);
