@@ -2,25 +2,24 @@
 
 #include <chrono>
 #include <ctime>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
+#include <mutex>
 #include <utility>
 
 using namespace debug;
 
-std::ofstream Logger::file;
-std::mutex Logger::mutex;
-std::string Logger::utcOffset = "";
-unsigned Logger::moduleLen = 20;
+static std::ofstream file;
+static std::mutex mutex;
+static std::string utcOffset = "";
+constexpr unsigned int moduleLen = 20;
 
 LogMessage::~LogMessage() {
     logger->log(level, ss.str());
 }
 
-Logger::Logger(std::string name) : name(std::move(name)) {
-}
-
-void Logger::log(
+static void write(
     LogLevel level, const std::string& name, const std::string& message
 ) {
     if (level == LogLevel::print) {
@@ -84,5 +83,5 @@ void Logger::flush() {
 }
 
 void Logger::log(LogLevel level, std::string message) {
-    log(level, name, std::move(message));
+    write(level, name, std::move(message));
 }
