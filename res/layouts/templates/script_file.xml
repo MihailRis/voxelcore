@@ -3,7 +3,7 @@
     <label hover-color='#30A0FF'
         pos="20,2"
         interactive="true"
-        onclick='open_file_in_editor("%{filename}")'
+        onclick='%{open_func}("%{filename}")'
         markup='md'
         tooltip='%{unit}'
         sizefunc="-1,-1">

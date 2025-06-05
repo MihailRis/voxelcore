@@ -10,6 +10,7 @@
 class GLSLExtension;
 
 class Shader {
+    static Shader* used;
     uint id;
     std::unordered_map<std::string, uint> uniformLocations;
     
@@ -43,4 +44,6 @@ public:
         const std::string& vertexSource, 
         const std::string& fragmentSource
     );
+
+    static Shader& getUsed();
 };

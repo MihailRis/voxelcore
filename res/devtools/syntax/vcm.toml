@@ -1,0 +1,3 @@
+language = "VCM"
+extensions = ["vcm"]
+line-comment-start = "#"

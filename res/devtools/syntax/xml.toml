@@ -1,0 +1,4 @@
+language = "XML"
+extensions = ["xml"]
+multiline-comment-start = "<!--"
+multiline-comment-end = "-->"

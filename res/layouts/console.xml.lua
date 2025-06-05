@@ -104,8 +104,10 @@ function set_mode(mode)
 
     if mode == 'debug' then
         document.root.color = {16, 18, 20, 220}
+        document.editorRoot.src = "core:code_editor"
     else
         document.root.color = {0, 0, 0, 128}
+        document.editorRoot.src = ""
     end
 
     document.prompt.visible = show_prompt

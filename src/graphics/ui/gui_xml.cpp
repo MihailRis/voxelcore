@@ -19,6 +19,7 @@
 #include "elements/Panel.hpp"
 #include "elements/TextBox.hpp"
 #include "elements/TrackBar.hpp"
+#include "elements/ModelViewer.hpp"
 #include "engine/Engine.hpp"
 #include "frontend/locale.hpp"
 #include "frontend/menu.hpp"
@@ -366,6 +367,23 @@ static std::shared_ptr<UINode> read_split_box(
         }
     }
     return splitBox;
+}
+
+static std::shared_ptr<UINode> read_model_viewer(
+    UiXmlReader& reader, const xml::xmlelement& element
+) {
+    auto model = element.attr("src", "").getText();
+    auto viewer = std::make_shared<ModelViewer>(
+        reader.getGUI(), glm::vec2(), model
+    );
+    read_container_impl(reader, element, *viewer);
+    if (element.has("center")) {
+        viewer->setCenter(element.attr("center").asVec3());
+    }
+    if (element.has("cam-rotation")) {
+        viewer->setRotation(glm::radians(element.attr("cam-rotation").asVec3()));
+    }
+    return viewer;
 }
 
 static std::shared_ptr<UINode> read_panel(
@@ -785,6 +803,7 @@ UiXmlReader::UiXmlReader(gui::GUI& gui, scriptenv&& env) : gui(gui), env(std::mo
     add("trackbar", read_track_bar);
     add("container", read_container);
     add("bindbox", read_input_bind_box);
+    add("modelviewer", read_model_viewer);
     add("inventory", read_inventory);
 }
 

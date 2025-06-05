@@ -50,16 +50,31 @@ static inline UVRegion get_region_for(
 
 void ModelsGenerator::prepare(Content& content, Assets& assets) {
     for (auto& [name, def] : content.blocks.getDefs()) {
-        if (def->model.type == BlockModelType::CUSTOM && def->model.name.empty()) {
-            assets.store(
-                std::make_unique<model::Model>(
-                    loadCustomBlockModel(
-                        def->model.customRaw, assets, !def->shadeless
-                    )
-                ),
-                name + ".model"
-            );
-            def->model.name = def->name + ".model";
+        if (def->model.type == BlockModelType::CUSTOM) {
+            if (def->model.name.empty()) {
+                assets.store(
+                    std::make_unique<model::Model>(
+                        loadCustomBlockModel(
+                            def->model.customRaw, assets, !def->shadeless
+                        )
+                    ),
+                    name + ".model"
+                );
+                def->model.name = def->name + ".model";
+            } else {
+                auto srcModel = assets.get<model::Model>(def->model.name);
+                if (srcModel) {
+                    auto model = std::make_unique<model::Model>(*srcModel);
+                    for (auto& mesh : model->meshes) {
+                        if (mesh.texture.length() && mesh.texture[0] == '$') {
+                            int index = std::stoll(mesh.texture.substr(1));
+                            mesh.texture = "blocks:" + def->textureFaces[index];
+                        }
+                    }
+                    def->model.name = name + ".model";
+                    assets.store(std::move(model), def->model.name);
+                }
+            }
         }
     }
     for (auto& [name, def] : content.items.getDefs()) {
@@ -83,7 +98,7 @@ model::Model ModelsGenerator::fromCustom(
     for (size_t i = 0; i < modelBoxes.size(); i++) {
         auto& mesh = model.addMesh("blocks:");
         mesh.lighting = lighting;
-        const UVRegion boxtexfaces[6] = {
+        UVRegion boxtexfaces[6] = {
             get_region_for(modelTextures[i * 6 + 5], assets),
             get_region_for(modelTextures[i * 6 + 4], assets),
             get_region_for(modelTextures[i * 6 + 3], assets),
@@ -91,8 +106,15 @@ model::Model ModelsGenerator::fromCustom(
             get_region_for(modelTextures[i * 6 + 1], assets),
             get_region_for(modelTextures[i * 6 + 0], assets)
         };
+        boxtexfaces[2].scale(glm::vec2(-1));
+        boxtexfaces[5].scale(glm::vec2(-1, 1));
+
+        bool enabled[6] {1,1,1,1,1,1};
         mesh.addBox(
-            modelBoxes[i].center(), modelBoxes[i].size() * 0.5f, boxtexfaces
+            modelBoxes[i].center(),
+            modelBoxes[i].size() * 0.5f,
+            boxtexfaces,
+            enabled
         );
     }
     for (size_t i = 0; i < points.size() / 4; i++) {

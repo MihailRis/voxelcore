@@ -36,6 +36,7 @@ void InlineFrame::setDocument(const std::shared_ptr<UiDocument>& document) {
 }
 
 void InlineFrame::act(float delta) {
+    Container::act(delta);
     if (document || src.empty()) {
         return;
     }

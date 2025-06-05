@@ -14,6 +14,7 @@
 #include "graphics/ui/elements/TextBox.hpp"
 #include "graphics/ui/elements/TrackBar.hpp"
 #include "graphics/ui/elements/InlineFrame.hpp"
+#include "graphics/ui/elements/ModelViewer.hpp"
 #include "graphics/ui/gui_util.hpp"
 #include "graphics/ui/markdown.hpp"
 #include "graphics/core/Font.hpp"
@@ -111,6 +112,16 @@ static int l_node_destruct(lua::State* L) {
             container->remove(node.get());
         }
     });
+    return 0;
+}
+
+static int l_container_refresh(lua::State* L) {
+    auto docnode = get_document_node(L);
+    auto node = dynamic_cast<Container*>(docnode.node.get());
+    if (node == nullptr) {
+        return 0;
+    }
+    node->refresh();
     return 0;
 }
 
@@ -341,6 +352,8 @@ static int p_get_src(UINode* node, lua::State* L) {
         return lua::pushstring(L, image->getTexture());
     } else if (auto iframe = dynamic_cast<InlineFrame*>(node)) {
         return lua::pushstring(L, iframe->getSrc());
+    } else if (auto modelviewer = dynamic_cast<ModelViewer*>(node)) {
+        return lua::pushstring(L, modelviewer->getModel());
     }
     return 0;
 }
@@ -406,6 +419,13 @@ static int p_get_add(UINode* node, lua::State* L) {
 
 static int p_get_destruct(UINode*, lua::State* L) {
     return lua::pushcfunction(L, lua::wrap<l_node_destruct>);
+}
+
+static int p_refresh(UINode* node, lua::State* L) {
+    if (dynamic_cast<Container*>(node)) {
+        return lua::pushcfunction(L, lua::wrap<l_container_refresh>);
+    }
+    return 0;
 }
 
 static int p_get_reposition(UINode*, lua::State* L) {
@@ -490,6 +510,12 @@ static int p_get_scroll(UINode* node, lua::State* L) {
 }
 
 static int l_gui_getattr(lua::State* L) {
+    if (!lua::isstring(L, 1)) {
+        throw std::runtime_error("document name is not a string");
+    }
+    if (!lua::isstring(L, 2)) {
+        throw std::runtime_error("element id is not a string");
+    }
     auto docname = lua::require_string(L, 1);
     auto element = lua::require_string(L, 2);
     if (lua::isnumber(L, 3)) {
@@ -506,6 +532,9 @@ static int l_gui_getattr(lua::State* L) {
         const auto& node = nodes.at(index);
         const auto& id = request_node_id(DocumentNode {docnode.document, node});
         return push_document_node(L, id);
+    }
+    if (!lua::isstring(L, 3)) {
+        throw std::runtime_error("attribute name is not a string");
     }
     auto attr = lua::require_string(L, 3);
 
@@ -530,6 +559,7 @@ static int l_gui_getattr(lua::State* L) {
             {"moveInto", p_move_into},
             {"add", p_get_add},
             {"destruct", p_get_destruct},
+            {"refresh", p_refresh},
             {"reposition", p_get_reposition},
             {"clear", p_get_clear},
             {"setInterval", p_set_interval},
@@ -666,6 +696,8 @@ static void p_set_src(UINode* node, lua::State* L, int idx) {
         image->setTexture(lua::require_string(L, idx));
     } else if (auto iframe = dynamic_cast<InlineFrame*>(node)) {
         iframe->setSrc(lua::require_string(L, idx));
+    } else if (auto modelviewer = dynamic_cast<ModelViewer*>(node)) {
+        modelviewer->setModel(lua::require_string(L, idx));
     }
 }
 static void p_set_region(UINode* node, lua::State* L, int idx) {
@@ -755,6 +787,15 @@ static int p_set_scroll(UINode* node, lua::State* L, int idx) {
 }
 
 static int l_gui_setattr(lua::State* L) {
+    if (!lua::isstring(L, 1)) {
+        throw std::runtime_error("document name is not a string");
+    }
+    if (!lua::isstring(L, 2)) {
+        throw std::runtime_error("element id is not a string");
+    }
+    if (!lua::isstring(L, 3)) {
+        throw std::runtime_error("attribute name is not a string");
+    }
     auto docname = lua::require_string(L, 1);
     auto element = lua::require_string(L, 2);
     auto attr = lua::require_string(L, 3);
