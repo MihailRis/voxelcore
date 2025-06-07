@@ -7,7 +7,7 @@ local names = {
     "hidden", "draw-group", "picking-item", "surface-replacement", "script-name",
     "ui-layout", "inventory-size", "tick-interval", "overlay-texture",
     "translucent", "fields", "particles", "icon-type", "icon", "placing-block", 
-    "stack-size", "name", "script-file"
+    "stack-size", "name", "script-file", "culling"
 }
 for name, _ in pairs(user_props) do
     table.insert(names, name)
