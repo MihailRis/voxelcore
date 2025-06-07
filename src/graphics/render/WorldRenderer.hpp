@@ -48,6 +48,7 @@ class WorldRenderer {
     
     float timer = 0.0f;
     bool debug = false;
+    bool lightsDebug = false;
 
     /// @brief Render block selection lines
     void renderBlockSelection();
@@ -106,6 +107,8 @@ public:
     void clear();
 
     void setDebug(bool flag);
+
+    void toggleLightsDebug();
 
     Weather& getWeather();
 };

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdlib.h>
-#include <vector>
 #include <memory>
 #include <glm/glm.hpp>
 #include "voxels/voxel.hpp"
@@ -10,28 +8,27 @@
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"
 #include "voxels/VoxelsVolume.hpp"
-#include "graphics/core/MeshData.hpp"
 #include "maths/util.hpp"
 #include "commons.hpp"
 #include "settings.hpp"
 
+template<typename VertexStructure> class Mesh;
 class Content;
-class Mesh;
 class Block;
 class Chunk;
 class Chunks;
 class VoxelsVolume;
-class Chunks;
 class ContentGfxCache;
 struct UVRegion;
 
 class BlocksRenderer {
     static const glm::vec3 SUN_VECTOR;
     const Content& content;
-    std::unique_ptr<float[]> vertexBuffer;
-    std::unique_ptr<int[]> indexBuffer;
+    std::unique_ptr<ChunkVertex[]> vertexBuffer;
+    std::unique_ptr<uint32_t[]> indexBuffer;
+    size_t vertexCount;
     size_t vertexOffset;
-    size_t indexOffset, indexSize;
+    size_t indexCount;
     size_t capacity;
     int voxelBufferPadding = 2;
     bool overflow = false;
@@ -48,7 +45,7 @@ class BlocksRenderer {
     SortingMeshData sortingMesh;
 
     void vertex(const glm::vec3& coord, float u, float v, const glm::vec4& light);
-    void index(int a, int b, int c, int d, int e, int f);
+    void index(uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e, uint32_t f);
 
     void vertexAO(
         const glm::vec3& coord, float u, float v, 

@@ -20,16 +20,17 @@ if not ipairs_mt_supported then
     end
 end
 
+local _ffi = ffi
 function __vc_Canvas_set_data(self, data)
     if type(data) == "cdata" then
-        self:_set_data(tostring(ffi.cast("uintptr_t", data)))
+        self:_set_data(tostring(_ffi.cast("uintptr_t", data)))
     end
     local width = self.width
     local height = self.height
 
     local size = width * height * 4
     if size > canvas_ffi_buffer_size then
-        canvas_ffi_buffer = ffi.new(
+        canvas_ffi_buffer = _ffi.new(
             string.format("unsigned char[%s]", size)
         )
         canvas_ffi_buffer_size = size
@@ -37,7 +38,7 @@ function __vc_Canvas_set_data(self, data)
     for i=0, size - 1 do
         canvas_ffi_buffer[i] = data[i + 1]
     end
-    self:_set_data(tostring(ffi.cast("uintptr_t", canvas_ffi_buffer)))
+    self:_set_data(tostring(_ffi.cast("uintptr_t", canvas_ffi_buffer)))
 end
 
 function crc32(bytes, chksum)
@@ -45,14 +46,14 @@ function crc32(bytes, chksum)
 
     local length = #bytes
     if type(bytes) == "table" then
-        local buffer_len = ffi.new('int[1]', length)
-        local buffer = ffi.new(
+        local buffer_len = _ffi.new('int[1]', length)
+        local buffer = _ffi.new(
             string.format("char[%s]", length)
         )
         for i=1, length do
             buffer[i - 1] = bytes[i]
         end
-        bytes = ffi.string(buffer, buffer_len[0])
+        bytes = _ffi.string(buffer, buffer_len[0])
     end
     return _crc32(bytes, chksum)
 end

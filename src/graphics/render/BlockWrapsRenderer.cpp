@@ -44,8 +44,8 @@ void BlockWrapsRenderer::draw(const BlockWrapper& wrapper) {
     }
     if (vox->id != BLOCK_VOID) {
         const auto& def = level.content.getIndices()->blocks.require(vox->id);
-        switch (def.model) {
-            case BlockModel::block:
+        switch (def.model.type) {
+            case BlockModelType::BLOCK:
                 batch->cube(
                     glm::vec3(wrapper.position) + glm::vec3(0.5f),
                     glm::vec3(1.01f),
@@ -54,7 +54,7 @@ void BlockWrapsRenderer::draw(const BlockWrapper& wrapper) {
                     false
                 );
                 break;
-            case BlockModel::aabb: {
+            case BlockModelType::AABB: {
                 const auto& aabb =
                     (def.rotatable ? def.rt.hitboxes[vox->state.rotation]
                                    : def.hitboxes)

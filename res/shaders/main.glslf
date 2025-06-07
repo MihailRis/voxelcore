@@ -7,10 +7,13 @@ out vec4 f_color;
 uniform sampler2D u_texture0;
 uniform samplerCube u_cubemap;
 uniform bool u_alphaClip;
+uniform bool u_debugLights;
 
 void main() {
     vec3 fogColor = texture(u_cubemap, a_dir).rgb;
     vec4 tex_color = texture(u_texture0, a_texCoord);
+    if (u_debugLights)
+        tex_color.rgb = vec3(1.0);
     float alpha = a_color.a * tex_color.a;
     if (u_alphaClip) {
         if (alpha < 0.2f)

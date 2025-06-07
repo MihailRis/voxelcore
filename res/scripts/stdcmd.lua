@@ -291,6 +291,19 @@ console.add_command(
     end
 )
 
+console.add_command(
+    "weather.list",
+    "Show available weather presets list",
+    function(args, kwargs)
+        local filenames = file.list_all_res("presets/weather/")
+        local presets = " "
+        for index, filename in pairs(filenames) do
+            presets = presets .. "\n" .. file.stem(filename)
+        end
+        return "available presets:" .. presets
+    end
+)
+
 console.cheats = {
     "blocks.fill",
     "tp",

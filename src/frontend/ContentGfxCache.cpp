@@ -35,19 +35,17 @@ void ContentGfxCache::refresh(const Block& def, const Atlas& atlas) {
             sideregions[def.rt.id * 6 + side] = atlas.get(TEXTURE_NOTFOUND);
         }
     }
-    if (def.model == BlockModel::custom) {
-        auto model = assets.require<model::Model>(def.modelName);
-        // temporary dirty fix tbh
-        if (def.modelName.find(':') == std::string::npos) {
-            for (auto& mesh : model.meshes) {
-                size_t pos = mesh.texture.find(':');
-                if (pos == std::string::npos) {
-                    continue;
-                }
-                if (auto region = atlas.getIf(mesh.texture.substr(pos+1))) {
-                    for (auto& vertex : mesh.vertices) {
-                        vertex.uv = region->apply(vertex.uv);
-                    }
+    if (def.model.type == BlockModelType::CUSTOM) {
+        auto model = assets.require<model::Model>(def.model.name);
+
+        for (auto& mesh : model.meshes) {
+            size_t pos = mesh.texture.find(':');
+            if (pos == std::string::npos) {
+                continue;
+            }
+            if (auto region = atlas.getIf(mesh.texture.substr(pos+1))) {
+                for (auto& vertex : mesh.vertices) {
+                    vertex.uv = region->apply(vertex.uv);
                 }
             }
         }

@@ -34,7 +34,7 @@ public:
     Batch2D* getBatch2D() const;
     
     const glm::uvec2& getViewport() const;
-    DrawContext sub(Flushable* flushable=nullptr) const;
+    [[nodiscard]] DrawContext sub(Flushable* flushable=nullptr) const;
 
     void setViewport(const glm::uvec2& viewport);
     void setFramebuffer(Framebuffer* fbo);

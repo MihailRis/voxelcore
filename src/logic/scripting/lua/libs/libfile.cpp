@@ -1,4 +1,3 @@
-#include <filesystem>
 #include <string>
 #include <set>
 
@@ -156,7 +155,8 @@ static int l_write_bytes(lua::State* L) {
     return lua::pushboolean(L, res);
 }
 
-static int l_list_all_res(lua::State* L, const std::string& path) {
+static int l_list_all_res(lua::State* L) {
+    std::string path = lua::require_string(L, 1);
     auto files = engine->getResPaths().listdirRaw(path);
     lua::createtable(L, files.size(), 0);
     for (size_t i = 0; i < files.size(); i++) {
@@ -169,7 +169,7 @@ static int l_list_all_res(lua::State* L, const std::string& path) {
 static int l_list(lua::State* L) {
     std::string dirname = lua::require_string(L, 1);
     if (dirname.find(':') == std::string::npos) {
-        return l_list_all_res(L, dirname);
+        return l_list_all_res(L);
     }
     io::path path = dirname;
     if (!io::is_directory(path)) {
@@ -265,6 +265,7 @@ const luaL_Reg filelib[] = {
     {"isfile", lua::wrap<l_isfile>},
     {"length", lua::wrap<l_length>},
     {"list", lua::wrap<l_list>},
+    {"list_all_res", lua::wrap<l_list_all_res>},
     {"mkdir", lua::wrap<l_mkdir>},
     {"mkdirs", lua::wrap<l_mkdirs>},
     {"read_bytes", lua::wrap<l_read_bytes>},

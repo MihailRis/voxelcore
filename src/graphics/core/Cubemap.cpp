@@ -4,7 +4,7 @@
 #include <GL/glew.h>
 
 Cubemap::Cubemap(uint width, uint height, ImageFormat imageFormat) 
-  : GLTexture(0, width, height) 
+  : Texture(0, width, height) 
 {
     glGenTextures(1, &id);
     glBindTexture(GL_TEXTURE_CUBE_MAP, id);

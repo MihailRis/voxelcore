@@ -16,6 +16,7 @@
 namespace fs = std::filesystem;
 
 GLSLExtension* Shader::preprocessor = new GLSLExtension();
+Shader* Shader::used = nullptr;
 
 Shader::Shader(uint id) : id(id){
 }
@@ -25,6 +26,7 @@ Shader::~Shader(){
 }
 
 void Shader::use(){
+    used = this;
     glUseProgram(id);
 }
 
@@ -130,4 +132,8 @@ std::unique_ptr<Shader> Shader::create(
         );
     }
     return std::make_unique<Shader>(id);
+}
+
+Shader& Shader::getUsed() {
+    return *used;
 }

@@ -166,11 +166,12 @@ local bytearray_mt = {
         end
     end
 }
+bytearray_mt.__pairs = bytearray_mt.__ipairs
 
 local bytearray_type = FFI.metatype("bytearray_t", bytearray_mt)
 
 local FFIBytearray = {
-    __call = function (n)
+    __call = function (self, n)
         local t = type(n)
         if t == "string" then
             local buffer = malloc(#n)

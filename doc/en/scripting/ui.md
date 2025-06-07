@@ -164,9 +164,10 @@ Properties:
 
 Properties:
 
-| Name  | Type   | Read | Write | Description  |
-| ----- | ------ | ---- | ----- | ------------ |
-| src   | string | yes  | yes   | texture name |
+| Name   | Type   | Read | Write | Description      |
+| ------ | ------ | ---- | ----- | ---------------- |
+| src    | string | yes  | yes   | texture name     |
+| region | vec4   | yes  | yes   | image sub-region |
 
 ## Canvas
 

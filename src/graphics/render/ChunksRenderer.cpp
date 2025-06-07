@@ -74,7 +74,7 @@ ChunksRenderer::ChunksRenderer(
               if (!result.cancelled) {
                   auto meshData = std::move(result.meshData);
                   meshes[result.key] = ChunkMesh {
-                      std::make_unique<Mesh>(meshData.mesh),
+                      std::make_unique<Mesh<ChunkVertex>>(meshData.mesh),
                       std::move(meshData.sortingMesh)};
               }
               inwork.erase(result.key);
@@ -92,7 +92,7 @@ ChunksRenderer::ChunksRenderer(
 ChunksRenderer::~ChunksRenderer() {
 }
 
-const Mesh* ChunksRenderer::render(
+const Mesh<ChunkVertex>* ChunksRenderer::render(
     const std::shared_ptr<Chunk>& chunk, bool important
 ) {
     chunk->flags.modified = false;
@@ -125,7 +125,7 @@ void ChunksRenderer::clear() {
     threadPool.clearQueue();
 }
 
-const Mesh* ChunksRenderer::getOrRender(
+const Mesh<ChunkVertex>* ChunksRenderer::getOrRender(
     const std::shared_ptr<Chunk>& chunk, bool important
 ) {
     auto found = meshes.find(glm::ivec2(chunk->x, chunk->z));
@@ -142,7 +142,7 @@ void ChunksRenderer::update() {
     threadPool.update();
 }
 
-const Mesh* ChunksRenderer::retrieveChunk(
+const Mesh<ChunkVertex>* ChunksRenderer::retrieveChunk(
     size_t index, const Camera& camera, Shader& shader, bool culling
 ) {
     auto chunk = chunks.getChunks()[index];
@@ -234,14 +234,14 @@ void ChunksRenderer::drawChunks(
 }
 
 static inline void write_sorting_mesh_entries(
-    float* buffer, const std::vector<SortingMeshEntry>& chunkEntries
+    ChunkVertex* buffer, const std::vector<SortingMeshEntry>& chunkEntries
 ) {
     for (const auto& entry : chunkEntries) {
         const auto& vertexData = entry.vertexData;
         std::memcpy(
             buffer,
             vertexData.data(),
-            vertexData.size() * sizeof(float)
+            vertexData.size() * sizeof(ChunkVertex)
         );
         buffer += vertexData.size();
     }
@@ -288,10 +288,8 @@ void ChunksRenderer::drawSortedMeshes(const Camera& camera, Shader& shader) {
         if (chunkEntries.size() == 1) {
             auto& entry = chunkEntries.at(0);
             if (found->second.sortedMesh == nullptr) {
-                found->second.sortedMesh = std::make_unique<Mesh>(
-                    entry.vertexData.data(),
-                    entry.vertexData.size() / CHUNK_VERTEX_SIZE,
-                    CHUNK_VATTRS
+                found->second.sortedMesh = std::make_unique<Mesh<ChunkVertex>>(
+                    entry.vertexData.data(), entry.vertexData.size()
                 );
             }
             found->second.sortedMesh->draw();
@@ -310,13 +308,13 @@ void ChunksRenderer::drawSortedMeshes(const Camera& camera, Shader& shader) {
                 size += entry.vertexData.size();
             }
 
-            static util::Buffer<float> buffer;
+            static util::Buffer<ChunkVertex> buffer;
             if (buffer.size() < size) {
-                buffer = util::Buffer<float>(size);
+                buffer = util::Buffer<ChunkVertex>(size);
             }
             write_sorting_mesh_entries(buffer.data(), chunkEntries);
-            found->second.sortedMesh = std::make_unique<Mesh>(
-                buffer.data(), size / CHUNK_VERTEX_SIZE, CHUNK_VATTRS
+            found->second.sortedMesh = std::make_unique<Mesh<ChunkVertex>>(
+                buffer.data(), size
             );
         }
         found->second.sortedMesh->draw();

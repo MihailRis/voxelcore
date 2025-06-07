@@ -203,7 +203,8 @@ void Engine::updateHotkeys() {
     if (input->jpressed(Keycode::F2)) {
         saveScreenshot();
     }
-    if (input->jpressed(Keycode::F8)) {
+    if (input->pressed(Keycode::LEFT_CONTROL) && input->pressed(Keycode::F3) &&
+        input->jpressed(Keycode::U)) {
         gui->toggleDebug();
     }
     if (input->jpressed(Keycode::F11)) {

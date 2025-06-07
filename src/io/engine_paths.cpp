@@ -192,6 +192,9 @@ std::string EnginePaths::createWriteableDevice(const std::string& name) {
             break;
         }
     }
+    if (name == "core") {
+        folder = "res:";
+    }
     if (folder.emptyOrInvalid()) {
         throw std::runtime_error("pack not found");
     }

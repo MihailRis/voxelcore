@@ -324,6 +324,7 @@ dv::value Player::serialize() const {
 
     root["flight"] = flight;
     root["noclip"] = noclip;
+    root["suspended"] = suspended;
     root["infinite-items"] = infiniteItems;
     root["instant-destruction"] = instantDestruction;
     root["loading-chunks"] = loadingChunks;
@@ -357,6 +358,7 @@ void Player::deserialize(const dv::value& src) {
 
     flight = src["flight"].asBoolean();
     noclip = src["noclip"].asBoolean();
+    src.at("suspended").get(suspended);
     src.at("infinite-items").get(infiniteItems);
     src.at("instant-destruction").get(instantDestruction);
     src.at("loading-chunks").get(loadingChunks);

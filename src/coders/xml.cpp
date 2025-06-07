@@ -355,6 +355,83 @@ std::unique_ptr<Document> xml::parse(
     return parser.parse();
 }
 
+namespace {
+class VcmParser : public BasicParser<char> {
+public:
+    VcmParser(std::string_view filename, std::string_view source)
+        : BasicParser(filename, source) {
+        document = std::make_unique<Document>("1.0", "UTF-8");
+        hashComment = true;
+    }
+
+    std::string parseValue() {
+        char c = peek();
+        if (c == '"' || c == '\'') {
+            nextChar();
+            return parseString(c);
+        }
+        if (c == '(') {
+            nextChar();
+            // TODO: replace with array parsing after moving to dv::value's
+            std::string value = std::string(readUntil(')'));
+            expect(')');
+            return value;
+        }
+        return std::string(readUntilWhitespace());
+    }
+
+    void parseSubElements(Node& node) {
+        skipWhitespace();
+        while (hasNext()) {
+            if (peek() != '@') {
+                throw error("unexpected character in element");
+            }
+            nextChar();
+            auto subnodePtr = std::make_unique<Node>(parseName());
+            auto subnode = subnodePtr.get();
+            node.add(std::move(subnodePtr));
+
+            skipWhitespace();
+            while (hasNext() && peek() != '@' && peek() != '{' && peek() != '}') {
+                std::string attrname = parseName();
+                skipWhitespace();
+                std::string value = parseValue();
+                subnode->set(attrname, value);
+                skipWhitespace();
+            }
+            if (!hasNext()) {
+                break;
+            }
+            char c = peek();
+            if (c == '{') {
+                nextChar();
+                parseSubElements(*subnode);
+                expect('}');
+                skipWhitespace();
+            } else if (c == '}') {
+                break;
+            }
+        }
+    }
+
+    std::unique_ptr<Document> parse(const std::string& rootTag) {
+        auto root = std::make_unique<Node>(rootTag);
+        parseSubElements(*root);
+        document->setRoot(std::move(root));
+        return std::move(document);
+    }
+private:
+    std::unique_ptr<Document> document;
+};
+}
+
+std::unique_ptr<Document> xml::parse_vcm(
+    std::string_view filename, std::string_view source, std::string_view tag
+) {
+    VcmParser parser(filename, source);
+    return parser.parse(std::string(tag));
+}
+
 inline void newline(
     std::stringstream& ss, bool nice, const std::string& indentStr, int indent
 ) {

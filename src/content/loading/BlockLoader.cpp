@@ -86,20 +86,23 @@ template<> void ContentUnitLoader<Block>::loadUnit(
     }
 
     // block model
-    std::string modelTypeName = BlockModelMeta.getNameString(def.model);
+    auto& model = def.model;
+    std::string modelTypeName = BlockModelTypeMeta.getNameString(model.type);
     root.at("model").get(modelTypeName);
-    root.at("model-name").get(def.modelName);
-    if (BlockModelMeta.getItem(modelTypeName, def.model)) {
-        if (def.model == BlockModel::custom && def.customModelRaw == nullptr) {
+    root.at("model-name").get(def.model.name);
+    if (BlockModelTypeMeta.getItem(modelTypeName, model.type)) {
+        if (model.type == BlockModelType::CUSTOM && def.model.customRaw == nullptr) {
             if (root.has("model-primitives")) {
-                def.customModelRaw = root["model-primitives"];
-            } else if (def.modelName.empty()) {
-                throw std::runtime_error(name + ": no 'model-primitives' or 'model-name' found");
+                def.model.customRaw = root["model-primitives"];
+            } else if (def.model.name.empty()) {
+                throw std::runtime_error(
+                    name + ": no 'model-primitives' or 'model-name' found"
+                );
             }
         }
     } else if (!modelTypeName.empty()) {
         logger.error() << "unknown model: " << modelTypeName;
-        def.model = BlockModel::none;
+        model.type = BlockModelType::NONE;
     }
 
     std::string cullingModeName = CullingModeMeta.getNameString(def.culling);
@@ -119,6 +122,8 @@ template<> void ContentUnitLoader<Block>::loadUnit(
         def.rotations = BlockRotProfile::PIPE;
     } else if (profile == BlockRotProfile::PANE_NAME) {
         def.rotations = BlockRotProfile::PANE;
+    } else if (profile == BlockRotProfile::STAIRS_NAME) {
+        def.rotations = BlockRotProfile::STAIRS;
     } else if (profile != "none") {
         logger.error() << "unknown rotation profile " << profile;
         def.rotatable = false;
@@ -156,7 +161,7 @@ template<> void ContentUnitLoader<Block>::loadUnit(
     if (auto found = root.at("emission")) {
         const auto& emissionarr = *found;
         for (size_t i = 0; i < 3; i++) {
-            def.emission[i] = std::clamp(emissionarr[i].asInteger(), static_cast<integer_t>(0), static_cast<integer_t>(15));
+            def.emission[i] = glm::clamp(emissionarr[i].asInteger(), static_cast<integer_t>(0), static_cast<integer_t>(15));
         }
     }
 
@@ -171,9 +176,9 @@ template<> void ContentUnitLoader<Block>::loadUnit(
                 "block " + util::quote(def.name) + ": invalid block size"
             );
         }
-        if (def.model == BlockModel::block &&
+        if (model.type == BlockModelType::BLOCK &&
             (def.size.x != 1 || def.size.y != 1 || def.size.z != 1)) {
-            def.model = BlockModel::aabb;
+            model.type = BlockModelType::AABB;
             def.hitboxes = {AABB(def.size)};
         }
     }

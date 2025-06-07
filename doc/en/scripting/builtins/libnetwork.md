@@ -7,7 +7,8 @@ A library for working with the network.
 ```lua
 -- Performs a GET request to the specified URL.
 -- After receiving the response, passes the text to the callback function.
-network.get(url: str, callback: function(str))
+-- In case of an error, the HTTP response code will be passed to onfailure.
+network.get(url: str, callback: function(str), [optional] onfailure: function(int))
 
 -- Example:
 network.get("https://api.github.com/repos/MihailRis/VoxelEngine-Cpp/releases/latest", function (s)
@@ -15,12 +16,13 @@ network.get("https://api.github.com/repos/MihailRis/VoxelEngine-Cpp/releases/lat
 end)
 
 -- A variant for binary files, with a byte array instead of a string in the response.
-network.get_binary(url: str, callback: function(table|ByteArray))
+network.get_binary(url: str, callback: function(table|ByteArray), [optional] onfailure: function(int))
 
 -- Performs a POST request to the specified URL.
 -- Currently, only `Content-Type: application/json` is supported
 -- After receiving the response, passes the text to the callback function.
-network.post(url: str, data: table, callback: function(str))
+-- In case of an error, the HTTP response code will be passed to onfailure.
+network.post(url: str, data: table, callback: function(str), [optional] onfailure: function(int))
 ```
 
 ## TCP Connections

@@ -91,6 +91,22 @@ const BlockRotProfile BlockRotProfile::PANE {
     4
 };
 
+const BlockRotProfile BlockRotProfile::STAIRS {
+    "stairs",
+    {
+        {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}},    // North
+        {{0, 0, -1}, {0, 1, 0}, {1, 0, 0}},   // East
+        {{-1, 0, 0}, {0, 1, 0}, {0, 0, -1}},  // South
+        {{0, 0, 1}, {0, 1, 0}, {-1, 0, 0}},   // West
+
+        {{-1, 0, 0}, {0, -1, 0}, {0, 0, 1}},
+        {{0, 0, 1}, {0, -1, 0}, {1, 0, 0}},
+        {{1, 0, 0}, {0, -1, 0}, {0, 0, -1}},
+        {{0, 0, -1}, {0, -1, 0}, {-1, 0, 0}},
+    },
+    8
+};
+
 Block::Block(const std::string& name)
     : name(name),
       caption(util::id_to_caption(name)),
@@ -143,7 +159,6 @@ void Block::cloneTo(Block& dst) {
     if (particles) {
         dst.particles = std::make_unique<ParticlesPreset>(*particles);
     }
-    dst.customModelRaw = customModelRaw;
 }
 
 static std::set<std::string, std::less<>> RESERVED_BLOCK_FIELDS {

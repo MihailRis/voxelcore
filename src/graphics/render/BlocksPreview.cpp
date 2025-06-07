@@ -32,17 +32,17 @@ std::unique_ptr<ImageData> BlocksPreview::draw(
                                cache.getRegion(id, 4), cache.getRegion(id, 5)};
 
     glm::vec3 offset(0.1f, 0.5f, 0.1f);
-    switch (def.model) {
-        case BlockModel::none:
+    switch (def.model.type) {
+        case BlockModelType::NONE:
             // something went wrong...
             break;
-        case BlockModel::block:
+        case BlockModelType::BLOCK:
             shader.uniformMatrix("u_apply", glm::translate(glm::mat4(1.0f), offset));
             batch.blockCube(glm::vec3(size * 0.63f), texfaces, 
                             glm::vec4(1.0f), !def.rt.emissive);
             batch.flush();
             break;
-        case BlockModel::aabb:
+        case BlockModelType::AABB:
             {
                 glm::vec3 hitbox {};
                 for (const auto& box : def.hitboxes) {
@@ -60,7 +60,7 @@ std::unique_ptr<ImageData> BlocksPreview::draw(
             }
             batch.flush();
             break;
-        case BlockModel::custom:{
+        case BlockModelType::CUSTOM:{
             glm::vec3 pmul = glm::vec3(size * 0.63f);
             glm::vec3 hitbox = glm::vec3(1.0f);
             glm::vec3 poff = glm::vec3(0.0f, 0.0f, 1.0f);
@@ -78,7 +78,7 @@ std::unique_ptr<ImageData> BlocksPreview::draw(
             }
             break;
         }
-        case BlockModel::xsprite: {
+        case BlockModelType::XSPRITE: {
             shader.uniformMatrix("u_apply", glm::translate(glm::mat4(1.0f), offset));
             glm::vec3 right = glm::normalize(glm::vec3(1.f, 0.f, -1.f));
             batch.sprite(

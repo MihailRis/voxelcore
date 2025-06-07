@@ -46,6 +46,16 @@
     ],
     "buildPresets": [
         {
+            "name": "Debug build",
+            "configurePreset": "default-vs-msvc-windows",
+            "configuration": "Debug"
+        },
+        {
+            "name": "Release build",
+            "configurePreset": "default-vs-msvc-windows",
+            "configuration": "Release"
+        },
+        {
             "name": "default-vs-msvc-windows",
             "configurePreset": "default-vs-msvc-windows",
             "configuration": "Debug"

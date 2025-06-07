@@ -55,7 +55,7 @@ void Image::draw(const DrawContext& pctx, const Assets& assets) {
         0,
         0,
         0,
-        UVRegion(),
+        region,
         false,
         true,
         calcColor()
@@ -75,4 +75,12 @@ const std::string& Image::getTexture() const {
 
 void Image::setTexture(const std::string& name) {
     texture = name;
+}
+
+void Image::setRegion(const UVRegion& region) {
+    this->region = region;
+}
+
+const UVRegion& Image::getRegion() const {
+    return region;
 }

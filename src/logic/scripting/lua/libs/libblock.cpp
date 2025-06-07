@@ -312,7 +312,7 @@ static int l_get_textures(lua::State* L) {
 
 static int l_get_model(lua::State* L) {
     if (auto def = require_block(L)) {
-        return lua::pushlstring(L, BlockModelMeta.getName(def->model));
+        return lua::pushlstring(L, BlockModelTypeMeta.getName(def->model.type));
     }
     return 0;
 }

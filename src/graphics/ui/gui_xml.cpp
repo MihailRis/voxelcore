@@ -19,6 +19,7 @@
 #include "elements/Panel.hpp"
 #include "elements/TextBox.hpp"
 #include "elements/TrackBar.hpp"
+#include "elements/ModelViewer.hpp"
 #include "engine/Engine.hpp"
 #include "frontend/locale.hpp"
 #include "frontend/menu.hpp"
@@ -63,7 +64,7 @@ static runnable create_runnable(
     const std::string& name
 ) {
     if (element.has(name)) {
-        std::string text = element.attr(name).getText();
+        const std::string& text = element.attr(name).getText();
         if (!text.empty()) {
             return scripting::create_runnable(
                 reader.getEnvironment(), text, reader.getFilename()
@@ -180,6 +181,14 @@ static void read_uinode(
         node.listenAction(onclick);
     }
 
+    if (auto onfocus = create_action(reader, element, "onfocus")) {
+        node.listenFocus(onfocus);
+    }
+
+    if (auto ondefocus = create_action(reader, element, "ondefocus")) {
+        node.listenDefocus(ondefocus);
+    }
+
     if (auto ondoubleclick = create_action(reader, element, "ondoubleclick")) {
         node.listenDoubleClick(ondoubleclick);
     }
@@ -279,7 +288,7 @@ static std::wstring parse_inner_text(
 ) {
     std::wstring text = L"";
     if (element.size() == 1) {
-        std::string source = element.sub(0).attr("#").getText();
+        std::string source = element.sub(0).getInnerText();
         util::trim(source);
         text = util::str2wstr_utf8(source);
         if (text[0] == '@') {
@@ -360,6 +369,23 @@ static std::shared_ptr<UINode> read_split_box(
     return splitBox;
 }
 
+static std::shared_ptr<UINode> read_model_viewer(
+    UiXmlReader& reader, const xml::xmlelement& element
+) {
+    auto model = element.attr("src", "").getText();
+    auto viewer = std::make_shared<ModelViewer>(
+        reader.getGUI(), glm::vec2(), model
+    );
+    read_container_impl(reader, element, *viewer);
+    if (element.has("center")) {
+        viewer->setCenter(element.attr("center").asVec3());
+    }
+    if (element.has("cam-rotation")) {
+        viewer->setRotation(glm::radians(element.attr("cam-rotation").asVec3()));
+    }
+    return viewer;
+}
+
 static std::shared_ptr<UINode> read_panel(
     UiXmlReader& reader, const xml::xmlelement& element
 ) {
@@ -379,7 +405,7 @@ static std::shared_ptr<UINode> read_button(
 
     std::shared_ptr<Button> button;
     auto& elements = element.getElements();
-    if (!elements.empty() && elements[0]->getTag() != "#") {
+    if (!elements.empty() && !elements[0]->isText()) {
         auto inner = reader.readUINode(*elements.at(0));
         if (inner != nullptr) {
             button = std::make_shared<Button>(gui, inner, padding);
@@ -536,6 +562,11 @@ static std::shared_ptr<UINode> read_image(
     std::string src = element.attr("src", "").getText();
     auto image = std::make_shared<Image>(reader.getGUI(), src);
     read_uinode(reader, element, *image);
+
+    if (element.has("region")) {
+        auto vec = element.attr("region").asVec4();
+        image->setRegion(UVRegion(vec.x, vec.y, vec.z, vec.w));
+    }
     return image;
 }
 
@@ -757,7 +788,7 @@ static std::shared_ptr<UINode> read_iframe(
     return iframe;
 }
 
-UiXmlReader::UiXmlReader(gui::GUI& gui, const scriptenv& env) : gui(gui), env(env) {
+UiXmlReader::UiXmlReader(gui::GUI& gui, scriptenv&& env) : gui(gui), env(std::move(env)) {
     contextStack.emplace("");
     add("image", read_image);
     add("canvas", read_canvas);
@@ -772,6 +803,7 @@ UiXmlReader::UiXmlReader(gui::GUI& gui, const scriptenv& env) : gui(gui), env(en
     add("trackbar", read_track_bar);
     add("container", read_container);
     add("bindbox", read_input_bind_box);
+    add("modelviewer", read_model_viewer);
     add("inventory", read_inventory);
 }
 
