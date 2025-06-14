@@ -74,6 +74,8 @@ SettingsHandler::SettingsHandler(EngineSettings& settings) {
     builder.add("chunk-max-vertices", &settings.graphics.chunkMaxVertices);
     builder.add("chunk-max-vertices-dense", &settings.graphics.chunkMaxVerticesDense);
     builder.add("chunk-max-renderers", &settings.graphics.chunkMaxRenderers);
+    builder.add("advanced-render", &settings.graphics.advancedRender);
+    builder.add("shadows-quality", &settings.graphics.shadowsQuality);
 
     builder.section("ui");
     builder.add("language", &settings.ui.language);

@@ -60,17 +60,17 @@ void Batch2D::vertex(
     index++;
 }
 
-void Batch2D::texture(const Texture* new_texture){
-    if (currentTexture == new_texture) {
+void Batch2D::texture(const Texture* newTexture){
+    if (currentTexture == newTexture) {
         return;
     }
     flush();
-    currentTexture = new_texture;
-    if (new_texture == nullptr) {
+    currentTexture = newTexture;
+    if (newTexture == nullptr) {
         blank->bind();
         region = blank->getUVRegion();
     } else {
-        new_texture->bind();
+        newTexture->bind();
         region = currentTexture->getUVRegion();
     }
 }

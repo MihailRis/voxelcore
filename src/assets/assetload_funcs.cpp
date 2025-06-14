@@ -132,8 +132,13 @@ assetload::postfunc assetload::posteffect(
             vertexSource,
             fragmentSource
         );
+        bool advanced = false;
+        if (settings) {
+            advanced = dynamic_cast<const PostEffectCfg*>(settings.get())->advanced;
+        }
         assets->store(
-            std::make_shared<PostEffect>(std::move(program), params), name
+            std::make_shared<PostEffect>(advanced, std::move(program), params),
+            name
         );
     };
 }

@@ -71,7 +71,7 @@ void Skybox::drawBackground(
     backShader->uniformMatrix("u_view", camera.getView(false));
     backShader->uniform1f("u_zoom", camera.zoom*camera.getFov()/(M_PI*0.5f));
     backShader->uniform1f("u_ar", float(width)/float(height));
-    backShader->uniform1i("u_cubemap", 1);
+    backShader->uniform1i("u_skybox", 1);
     bind();
     mesh->draw();
     unbind();
@@ -136,8 +136,8 @@ void Skybox::draw(
         batch3d->sprite(pos, glm::vec3(0, 0, 1),
                         up, 1, 1, UVRegion(), tint);
     }
-
-    drawStars(angle, opacity);
+    batch3d->flush();
+    //drawStars(angle, opacity);
 }
 
 void Skybox::refresh(const DrawContext& pctx, float t, float mie, uint quality) {

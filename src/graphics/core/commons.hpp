@@ -69,3 +69,11 @@ public:
 
     virtual void flush() = 0;
 };
+
+class Bindable {
+public:
+    virtual ~Bindable() = default;
+
+    virtual void bind() = 0;
+    virtual void unbind() = 0;
+};

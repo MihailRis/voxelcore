@@ -75,6 +75,10 @@ struct GraphicsSettings {
     IntegerSetting chunkMaxVerticesDense {800'000, 0, 8'000'000};
     /// @brief Limit of chunk renderers count
     IntegerSetting chunkMaxRenderers {6, -4, 32};
+    /// @brief Advanced render pipeline
+    FlagSetting advancedRender {true};
+    /// @brief Shadows quality
+    IntegerSetting shadowsQuality {0, 0, 3};
 };
 
 struct DebugSettings {

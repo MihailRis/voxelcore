@@ -32,6 +32,12 @@ public:
     void uniform3f(const std::string& name, const glm::vec3& xyz);
     void uniform4f(const std::string& name, const glm::vec4& xyzw);
 
+    void uniform1v(const std::string& name, int length, const int* v);
+    void uniform1v(const std::string& name, int length, const float* v);
+    void uniform2v(const std::string& name, int length, const float* v);
+    void uniform3v(const std::string& name, int length, const float* v);
+    void uniform4v(const std::string& name, int length, const float* v);
+
     /// @brief Create shader program using vertex and fragment shaders source.
     /// @param vertexFile vertex shader file name
     /// @param fragmentFile fragment shader file name

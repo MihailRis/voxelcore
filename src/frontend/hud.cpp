@@ -178,6 +178,8 @@ Hud::Hud(Engine& engine, LevelFrontend& frontend, Player& player)
     uicamera = std::make_unique<Camera>(glm::vec3(), 1);
     uicamera->perspective = false;
     uicamera->flipped = true;
+    uicamera->near = -1.0f;
+    uicamera->far = 1.0f;
 
     debugPanel = create_debug_panel(
         engine, frontend.getLevel(), player, allowDebugCheats

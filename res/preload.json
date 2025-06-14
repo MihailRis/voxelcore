@@ -6,10 +6,19 @@
         "lines",
         "entity",
         "background",
-        "skybox_gen"
+        "skybox_gen",
+        "shadows"
     ],
     "post-effects": [
-        "default"
+        "default",
+        {
+            "name": "ssao",
+            "advanced": true
+        },
+        {
+            "name": "deferred_lighting",
+            "advanced": true
+        }
     ],
     "textures": [
         "gui/menubg",

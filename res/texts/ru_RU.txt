@@ -98,6 +98,8 @@ settings.V-Sync=Вертикальная Синхронизация
 settings.Key=Кнопка
 settings.Controls Search Mode=Поиск по привязанной кнопки управления
 settings.Limit Background FPS=Ограничить фоновую частоту кадров
+settings.Advanced render=Продвинутый рендер
+settings.Shadows quality=Качество теней
 
 # Управление
 chunks.reload=Перезагрузить Чанки

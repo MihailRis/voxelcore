@@ -76,6 +76,25 @@ void Shader::uniform4f(const std::string& name, const glm::vec4& xyzw) {
     glUniform4f(getUniformLocation(name), xyzw.x, xyzw.y, xyzw.z, xyzw.w);
 }
 
+void Shader::uniform1v(const std::string& name, int length, const int* v) {
+    glUniform1iv(getUniformLocation(name), length, v);
+}
+
+void Shader::uniform1v(const std::string& name, int length, const float* v) {
+    glUniform1fv(getUniformLocation(name), length, v);
+}
+
+void Shader::uniform2v(const std::string& name, int length, const float* v) {
+    glUniform2fv(getUniformLocation(name), length, v);
+}
+
+void Shader::uniform3v(const std::string& name, int length, const float* v) {
+    glUniform3fv(getUniformLocation(name), length, v);
+}
+
+void Shader::uniform4v(const std::string& name, int length, const float* v) {
+    glUniform4fv(getUniformLocation(name), length, v);
+}
 
 inline auto shader_deleter = [](GLuint* shader) {
     glDeleteShader(*shader);

@@ -98,6 +98,8 @@ inline void source_line(std::stringstream& ss, uint linenum) {
 
 static Value default_value_for(Type type) {
     switch (type) {
+        case Type::INT:
+            return 0;
         case Type::FLOAT:
             return 0.0f;
         case Type::VEC2:
@@ -183,6 +185,8 @@ public:
 
     Value parseDefaultValue(Type type, const std::string& name) {
         switch (type) {
+            case Type::INT:
+                return static_cast<int>(parseNumber(1).asInteger());
             case Type::FLOAT:
                 return static_cast<float>(parseNumber(1).asNumber());
             case Type::VEC2:
@@ -212,8 +216,22 @@ public:
         if (params.find(paramName) != params.end()) {
             throw error("duplicating param " + util::quote(paramName));
         }
+        
         skipWhitespace(false);
-        ss << "uniform " << typeName << " " << paramName << ";\n";
+        int start = pos;
+
+        ss << "uniform " << typeName << " " << paramName;
+
+        bool array = false;
+        if (peekNoJump() == '[') {
+            skip(1);
+            array = true;
+            readUntil(']');
+            skip(1);
+            ss << source.substr(start, pos - start + 1);
+        }
+
+        ss << ";\n";
         
         auto defValue = default_value_for(type);
         // Parse default value
@@ -225,7 +243,7 @@ public:
 
         skipLine();
 
-        params[paramName] = PostEffect::Param(type, std::move(defValue));
+        params[paramName] = PostEffect::Param(type, std::move(defValue), array);
         return false;
     }
 
