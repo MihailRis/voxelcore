@@ -1,7 +1,5 @@
 #pragma once
 
-#include <fstream>
-#include <mutex>
 #include <sstream>
 
 namespace debug {
@@ -27,24 +25,16 @@ namespace debug {
     };
 
     class Logger {
-        static std::mutex mutex;
-        static std::string utcOffset;
-        static std::ofstream file;
-        static unsigned moduleLen;
-
         std::string name;
-
-        static void log(
-            LogLevel level, const std::string& name, const std::string& message
-        );
     public:
         static void init(const std::string& filename);
         static void flush();
 
-        Logger(std::string name);
+        Logger(const std::string& name) : name(name) {
+        }
 
         void log(LogLevel level, std::string message);
-
+        
         LogMessage debug() {
             return LogMessage(this, LogLevel::debug);
         }
@@ -60,7 +50,7 @@ namespace debug {
         LogMessage warning() {
             return LogMessage(this, LogLevel::warning);
         }
-
+        
         /// @brief Print-debugging tool (printed without header)
         LogMessage print() {
             return LogMessage(this, LogLevel::print);
