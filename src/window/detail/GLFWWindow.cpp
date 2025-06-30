@@ -219,6 +219,7 @@ public:
     }
 
     void onKeyCallback(int key, bool pressed) {
+        logger.info() << "key " << key << (pressed ? " pressed" : " released");
         bool prevPressed = keys[key];
         keys[key] = pressed;
         frames[key] = currentFrame;
