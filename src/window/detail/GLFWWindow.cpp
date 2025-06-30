@@ -219,17 +219,13 @@ public:
     }
 
     void onKeyCallback(int key, bool pressed) {
-        logger.info() << "key " << key << (pressed ? " pressed" : " released");
         bool prevPressed = keys[key];
         keys[key] = pressed;
         frames[key] = currentFrame;
         if (pressed && !prevPressed) {
             const auto& callbacks = keyCallbacks.find(static_cast<Keycode>(key));
             if (callbacks != keyCallbacks.end()) {
-                logger.info() << "callbacks found";
                 callbacks->second.notify();
-            } else {
-                logger.info() << "no callbacks found";
             }
         }
         if (pressed) {
