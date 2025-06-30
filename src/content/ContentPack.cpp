@@ -13,7 +13,7 @@
 
 namespace fs = std::filesystem;
 
-ContentPack ContentPack::createCore(const EnginePaths& paths) {
+ContentPack ContentPack::createCore() {
     return ContentPack {
         "core", "Core", ENGINE_VERSION_STRING, "", "", "res:", {}
     };

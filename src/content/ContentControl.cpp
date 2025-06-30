@@ -54,7 +54,7 @@ void ContentControl::resetContent() {
     scripting::cleanup();
     std::vector<PathsRoot> resRoots;
     {
-        auto pack = ContentPack::createCore(paths);
+        auto pack = ContentPack::createCore();
         resRoots.push_back({"core", pack.folder});
         load_configs(input, pack.folder);
     }
@@ -66,8 +66,7 @@ void ContentControl::resetContent() {
     content.reset();
     scripting::on_content_reset();
 
-    contentPacks.clear();
-    contentPacks = manager->getAll(basePacks);
+    setContentPacksRaw(manager->getAll(basePacks));
 
     postContent();
 }
@@ -98,10 +97,8 @@ void ContentControl::loadContent() {
     ContentBuilder contentBuilder;
     corecontent::setup(input, contentBuilder);
 
-    auto corePack = ContentPack::createCore(paths);
-
-    auto allPacks = contentPacks;
-    allPacks.insert(allPacks.begin(), corePack);
+    allPacks = contentPacks;
+    allPacks.insert(allPacks.begin(), ContentPack::createCore());
 
     // Setup filesystem entry points
     std::vector<PathsRoot> resRoots;
@@ -122,14 +119,21 @@ void ContentControl::loadContent() {
     postContent();
 }
 
-std::vector<ContentPack>& ContentControl::getContentPacks() {
+void ContentControl::setContentPacksRaw(std::vector<ContentPack>&& packs) {
+    if (content) {
+        throw std::runtime_error("setContentPacksRaw called with content loaded");
+    }
+    contentPacks = std::move(packs);
+    allPacks = contentPacks;
+    allPacks.insert(allPacks.begin(), ContentPack::createCore());
+}
+
+const std::vector<ContentPack>& ContentControl::getContentPacks() const {
     return contentPacks;
 }
 
-std::vector<ContentPack> ContentControl::getAllContentPacks() {
-    auto packs = contentPacks;
-    packs.insert(packs.begin(), ContentPack::createCore(paths));
-    return packs;
+const std::vector<ContentPack>& ContentControl::getAllContentPacks() const {
+    return allPacks;
 }
 
 PacksManager& ContentControl::scan() {

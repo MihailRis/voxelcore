@@ -73,7 +73,7 @@ struct ContentPack {
         const std::string& name
     );
 
-    static ContentPack createCore(const EnginePaths&);
+    static ContentPack createCore();
 
     static inline io::path getFolderFor(ContentType type) {
         switch (type) {
