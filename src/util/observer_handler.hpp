@@ -30,7 +30,7 @@ public:
 
     ObserverHandler& operator=(ObserverHandler&& handler) noexcept {
         if (destructor) {
-            destructor();
+            // destructor();
         }
         destructor = std::move(handler.destructor);
         return *this;

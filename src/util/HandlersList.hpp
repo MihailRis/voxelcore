@@ -56,9 +56,7 @@ namespace util {
                 orderCopy = order;
                 handlersCopy = handlers;
             }
-            std::cout << "notify " << orderCopy.size() << ":" << handlersCopy.size() << " handlers" << std::endl;
             for (auto it = orderCopy.rbegin(); it != orderCopy.rend(); ++it) {
-                std::cout << "notify " << *it << std::endl;
                 if (handlersCopy.at(*it)(args...)) {
                     break;
                 }
