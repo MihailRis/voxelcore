@@ -9,6 +9,8 @@
 #include "typedefs.hpp"
 #include "util/observer_handler.hpp"
 
+#include <iostream>
+
 namespace util {
     template <class... Types>
     class HandlersList {
@@ -38,6 +40,7 @@ namespace util {
             order.push_back(id);
             return ObserverHandler([this, id]() {
                 std::lock_guard lock(mutex);
+                std::cout << "remove observer handler " << id << " " << this << std::endl;
                 handlers.erase(id);
                 order.erase(
                     std::remove(order.begin(), order.end(), id), order.end()
@@ -53,7 +56,9 @@ namespace util {
                 orderCopy = order;
                 handlersCopy = handlers;
             }
+            std::cout << "notify " << orderCopy.size() << ":" << handlersCopy.size() << " handlers" << std::endl;
             for (auto it = orderCopy.rbegin(); it != orderCopy.rend(); ++it) {
+                std::cout << "notify " << *it << std::endl;
                 if (handlersCopy.at(*it)(args...)) {
                     break;
                 }

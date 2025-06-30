@@ -226,7 +226,10 @@ public:
         if (pressed && !prevPressed) {
             const auto& callbacks = keyCallbacks.find(static_cast<Keycode>(key));
             if (callbacks != keyCallbacks.end()) {
+                logger.info() << "callbacks found";
                 callbacks->second.notify();
+            } else {
+                logger.info() << "no callbacks found";
             }
         }
         if (pressed) {
