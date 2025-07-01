@@ -9,7 +9,9 @@
 #include "data/dv.hpp"
 #include "io/engine_paths.hpp"
 #include "io/io.hpp"
+#include "debug/Logger.hpp"
 
+static debug::Logger logger("content-pack");
 
 namespace fs = std::filesystem;
 
@@ -73,6 +75,8 @@ static void checkContentPackId(const std::string& id, const io::path& folder) {
 }
 
 ContentPack ContentPack::read(const io::path& folder) {
+    logger.info() << "reading pack from " << folder.string();
+
     auto root = io::read_json(folder / PACKAGE_FILENAME);
     ContentPack pack;
     root.at("id").get(pack.id);
