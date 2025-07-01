@@ -149,12 +149,12 @@ void EnginePaths::setProjectFolder(std::filesystem::path folder) {
 }
 
 void EnginePaths::setCurrentWorldFolder(io::path folder) {
-    this->currentWorldFolder = std::move(folder);
     if (folder.empty()) {
         io::remove_device("world");
     } else {
-        io::create_subdevice("world", "user", currentWorldFolder);
+        io::create_subdevice("world", "user", folder);
     }
+    this->currentWorldFolder = std::move(folder);
 }
 
 std::string EnginePaths::mount(const io::path& file) {
