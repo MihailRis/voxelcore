@@ -16,6 +16,9 @@ void PacksManager::scan() {
 
     std::vector<ContentPack> packsList;
     for (auto& folder : sources) {
+        if (!io::exists(folder)) {
+            continue;
+        }
         ContentPack::scanFolder(folder, packsList);
         for (auto& pack : packsList) {
             packs.try_emplace(pack.id, pack);
