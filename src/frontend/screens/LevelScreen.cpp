@@ -133,8 +133,6 @@ void LevelScreen::initializePack(ContentPackRuntime* pack) {
             scriptFile,
             pack->getId() + ":scripts/hud.lua"
         );
-    } else {
-        logger.info() << scriptFile.string() << " not found";
     }
 }
 
