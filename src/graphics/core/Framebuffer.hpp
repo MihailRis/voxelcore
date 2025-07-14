@@ -1,12 +1,13 @@
 #pragma once
 
 #include "typedefs.hpp"
+#include "commons.hpp"
 
 #include <memory>
 
 class Texture;
 
-class Framebuffer {
+class Framebuffer : public Bindable {
     uint fbo;
     uint depth;
     uint width;
@@ -19,10 +20,10 @@ public:
     ~Framebuffer();
 
     /// @brief Use framebuffer
-    void bind();
+    void bind() override;
 
     /// @brief Stop using framebuffer
-    void unbind();
+    void unbind() override;
 
     /// @brief Update framebuffer texture size
     /// @param width new width
@@ -36,4 +37,6 @@ public:
     uint getWidth() const;
     /// @brief Get framebuffer height
     uint getHeight() const;
+
+    uint getFBO() const;
 };

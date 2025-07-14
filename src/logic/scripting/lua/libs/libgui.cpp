@@ -8,6 +8,7 @@
 #include "graphics/ui/elements/Canvas.hpp"
 #include "graphics/ui/elements/CheckBox.hpp"
 #include "graphics/ui/elements/Image.hpp"
+#include "graphics/ui/elements/SelectBox.hpp"
 #include "graphics/ui/elements/InventoryView.hpp"
 #include "graphics/ui/elements/Menu.hpp"
 #include "graphics/ui/elements/Panel.hpp"
@@ -225,6 +226,8 @@ static int p_is_checked(UINode* node, lua::State* L) {
 static int p_get_value(UINode* node, lua::State* L) {
     if (auto bar = dynamic_cast<TrackBar*>(node)) {
         return lua::pushnumber(L, bar->getValue());
+    } else if (auto box = dynamic_cast<SelectBox*>(node)) {
+        return lua::pushstring(L, box->getSelected().value);
     }
     return 0;
 }
@@ -509,6 +512,28 @@ static int p_get_scroll(UINode* node, lua::State* L) {
     return 0;
 }
 
+static int p_get_options(UINode* node, lua::State* L) {
+    if (auto selectbox = dynamic_cast<SelectBox*>(node)) {
+        const auto& options = selectbox->getOptions();
+        size_t size = options.size();
+        lua::createtable(L, size, 0);
+        for (size_t i = 0; i < size; i++) {
+            const auto& option = options[i];
+            lua::createtable(L, 0, 2);
+
+            lua::pushstring(L, option.value);
+            lua::setfield(L, "value");
+
+            lua::pushwstring(L, option.text);
+            lua::setfield(L, "text");
+
+            lua::rawseti(L, i + 1);
+        }
+        return 1;
+    }
+    return 0;
+}
+
 static int l_gui_getattr(lua::State* L) {
     if (!lua::isstring(L, 1)) {
         throw std::runtime_error("document name is not a string");
@@ -595,6 +620,7 @@ static int l_gui_getattr(lua::State* L) {
             {"data", p_get_data},
             {"parent", p_get_parent},
             {"region", p_get_region},
+            {"options", p_get_options},
         };
     auto func = getters.find(attr);
     if (func != getters.end()) {
@@ -706,9 +732,45 @@ static void p_set_region(UINode* node, lua::State* L, int idx) {
         image->setRegion(UVRegion(vec.x, vec.y, vec.z, vec.w));
     }
 }
+static void p_set_options(UINode* node, lua::State* L, int idx) {
+    if (auto selectbox = dynamic_cast<SelectBox*>(node)) {
+        if (!lua::istable(L, idx)) {
+            throw std::runtime_error("options table expected");
+        }
+        std::vector<SelectBox::Option> options;
+        size_t size = lua::objlen(L, idx);
+        for (size_t i = 0; i < size; i++) {
+            lua::rawgeti(L, i + 1, idx);
+            
+            SelectBox::Option option;
+
+            lua::getfield(L, "value");
+            option.value = lua::require_string(L, -1);
+            lua::pop(L);
+
+            lua::getfield(L, "text");
+            option.text = lua::require_wstring(L, -1);
+            lua::pop(L, 2);
+            
+            options.push_back(std::move(option));
+        }
+        selectbox->setOptions(std::move(options));
+    }
+}
 static void p_set_value(UINode* node, lua::State* L, int idx) {
     if (auto bar = dynamic_cast<TrackBar*>(node)) {
         bar->setValue(lua::tonumber(L, idx));
+    } else if (auto selectbox = dynamic_cast<SelectBox*>(node)) {
+        auto value = lua::require_lstring(L, idx);
+        const auto& options = selectbox->getOptions();
+        for (const auto& option : options) {
+            if (option.value == value) {
+                selectbox->setSelected(option);
+                return;
+            }
+        }
+        selectbox->setSelected(SelectBox::Option {
+            std::string(value), util::str2wstr_utf8(value)});
     }
 }
 static void p_set_min(UINode* node, lua::State* L, int idx) {
@@ -842,6 +904,7 @@ static int l_gui_setattr(lua::State* L) {
             {"cursor", p_set_cursor},
             {"focused", p_set_focused},
             {"region", p_set_region},
+            {"options", p_set_options},
         };
     auto func = setters.find(attr);
     if (func != setters.end()) {

@@ -1,3 +1,27 @@
+local function configure_SSAO()
+    -- Temporary using slot to configure built-in SSAO effect
+    local slot = gfx.posteffects.index("core:default")
+    gfx.posteffects.set_effect(slot, "ssao")
+
+    -- Generating random SSAO samples
+    local buffer = Bytearray(0)
+    for i = 0, 63 do
+        local x = math.random() * 2.0 - 1.0
+        local y = math.random() * 2.0 - 1.0
+        local z = math.random() * 2.0
+        local len = math.sqrt(x * x + y * y + z * z)
+        if len > 0 then
+            x = x / len
+            y = y / len
+            z = z / len
+        end
+        Bytearray.append(buffer, byteutil.pack("fff", x, y, z))
+    end
+    gfx.posteffects.set_array(slot, "u_ssaoSamples", Bytearray_as_string(buffer))
+    -- SSAO effect configured, so 'core:default' slot may be reused now 
+    -- for test purposes
+end
+
 function on_hud_open()
     input.add_callback("player.pick", function ()
         if hud.is_paused() or hud.is_inventory_open() then
@@ -55,4 +79,6 @@ function on_hud_open()
             player.set_vel(pid, 0, 1, 0)
         end
     end)
+
+    configure_SSAO()
 end

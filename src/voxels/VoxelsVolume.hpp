@@ -56,6 +56,15 @@ public:
         return voxels[vox_index(bx - x, by - y, bz - z, w, d)].id;
     }
 
+    
+    inline voxel pickBlock(int bx, int by, int bz) const {
+        if (bx < x || by < y || bz < z || bx >= x + w || by >= y + h ||
+            bz >= z + d) {
+            return {BLOCK_VOID, {}};
+        }
+        return voxels[vox_index(bx - x, by - y, bz - z, w, d)];
+    }
+
     inline light_t pickLight(int bx, int by, int bz) const {
         if (bx < x || by < y || bz < z || bx >= x + w || by >= y + h ||
             bz >= z + d) {

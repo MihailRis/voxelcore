@@ -39,17 +39,27 @@ BlocksRenderer::~BlocksRenderer() {
 
 /// Basic vertex add method
 void BlocksRenderer::vertex(
-    const glm::vec3& coord, float u, float v, const glm::vec4& light
+    const glm::vec3& coord,
+    float u,
+    float v,
+    const glm::vec4& light,
+    const glm::vec3& normal,
+    float emission
 ) {
-
     vertexBuffer[vertexCount].position = coord;
 
     vertexBuffer[vertexCount].uv = {u,v};
+
+    vertexBuffer[vertexCount].normal[0] = static_cast<uint8_t>(normal.r * 127 + 128);
+    vertexBuffer[vertexCount].normal[1] = static_cast<uint8_t>(normal.g * 127 + 128);
+    vertexBuffer[vertexCount].normal[2] = static_cast<uint8_t>(normal.b * 127 + 128);
+    vertexBuffer[vertexCount].normal[3] = static_cast<uint8_t>(emission * 255);
 
     vertexBuffer[vertexCount].color[0] = static_cast<uint8_t>(light.r * 255);
     vertexBuffer[vertexCount].color[1] = static_cast<uint8_t>(light.g * 255);
     vertexBuffer[vertexCount].color[2] = static_cast<uint8_t>(light.b * 255);
     vertexBuffer[vertexCount].color[3] = static_cast<uint8_t>(light.a * 255);
+
     vertexCount++;
 }
 
@@ -82,10 +92,10 @@ void BlocksRenderer::face(
     auto Y = axisY * h;
     auto Z = axisZ * d;
     float s = 0.5f;
-    vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, lights[0] * tint);
-    vertex(coord + ( X - Y + Z) * s, region.u2, region.v1, lights[1] * tint);
-    vertex(coord + ( X + Y + Z) * s, region.u2, region.v2, lights[2] * tint);
-    vertex(coord + (-X + Y + Z) * s, region.u1, region.v2, lights[3] * tint);
+    vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, lights[0] * tint, axisZ, 0);
+    vertex(coord + ( X - Y + Z) * s, region.u2, region.v1, lights[1] * tint, axisZ, 0);
+    vertex(coord + ( X + Y + Z) * s, region.u2, region.v2, lights[2] * tint, axisZ, 0);
+    vertex(coord + (-X + Y + Z) * s, region.u1, region.v2, lights[3] * tint, axisZ, 0);
     index(0, 1, 3, 1, 2, 3);
 }
 
@@ -103,7 +113,7 @@ void BlocksRenderer::vertexAO(
         axisX,
         axisY
     );
-    vertex(coord, u, v, light * tint);
+    vertex(coord, u, v, light * tint, axisZ, 0.0f);
 }
 
 void BlocksRenderer::faceAO(
@@ -134,11 +144,12 @@ void BlocksRenderer::faceAO(
         vertexAO(coord + ( X + Y + Z) * s, region.u2, region.v2, tint, axisX, axisY, axisZ);
         vertexAO(coord + (-X + Y + Z) * s, region.u1, region.v2, tint, axisX, axisY, axisZ);
     } else {
+        auto axisZ = glm::normalize(Z);
         glm::vec4 tint(1.0f);
-        vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, tint);
-        vertex(coord + ( X - Y + Z) * s, region.u2, region.v1, tint);
-        vertex(coord + ( X + Y + Z) * s, region.u2, region.v2, tint);
-        vertex(coord + (-X + Y + Z) * s, region.u1, region.v2, tint);
+        vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, tint, axisZ, 1);
+        vertex(coord + ( X - Y + Z) * s, region.u2, region.v1, tint, axisZ, 1);
+        vertex(coord + ( X + Y + Z) * s, region.u2, region.v2, tint, axisZ, 1);
+        vertex(coord + (-X + Y + Z) * s, region.u1, region.v2, tint, axisZ, 1);
     }
     index(0, 1, 2, 0, 2, 3);
 }
@@ -163,10 +174,10 @@ void BlocksRenderer::face(
         d = (1.0f - DIRECTIONAL_LIGHT_FACTOR) + d * DIRECTIONAL_LIGHT_FACTOR;
         tint *= d;
     }
-    vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, tint);
-    vertex(coord + ( X - Y + Z) * s, region.u2, region.v1, tint);
-    vertex(coord + ( X + Y + Z) * s, region.u2, region.v2, tint);
-    vertex(coord + (-X + Y + Z) * s, region.u1, region.v2, tint);
+    vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, tint, Z, lights ? 0 : 1);
+    vertex(coord + ( X - Y + Z) * s, region.u2, region.v1, tint, Z, lights ? 0 : 1);
+    vertex(coord + ( X + Y + Z) * s, region.u2, region.v2, tint, Z, lights ? 0 : 1);
+    vertex(coord + (-X + Y + Z) * s, region.u1, region.v2, tint, Z, lights ? 0 : 1);
     index(0, 1, 2, 0, 2, 3);
 }
 
@@ -198,14 +209,16 @@ void BlocksRenderer::blockXSprite(
     const float w = size.x / 1.41f;
     const glm::vec4 tint (0.8f);
 
-    face({x + xs, y, z + zs}, w, size.y, 0, {-1, 0, 1}, {0, 1, 0}, glm::vec3(),
+    glm::vec3 n(0.0f, 1.0f, 0.0f);
+
+    face({x + xs, y, z + zs}, w, size.y, 0, {-1, 0, 1}, {0, 1, 0}, n,
         texface1, lights2, tint);
-    face({x + xs, y, z + zs}, w, size.y, 0, {1, 0, 1}, {0, 1, 0}, glm::vec3(),
+    face({x + xs, y, z + zs}, w, size.y, 0, {1, 0, 1}, {0, 1, 0}, n,
         texface1, lights1, tint);
 
-    face({x + xs, y, z + zs}, w, size.y, 0, {-1, 0, -1}, {0, 1, 0}, glm::vec3(),
+    face({x + xs, y, z + zs}, w, size.y, 0, {-1, 0, -1}, {0, 1, 0}, n,
         texface2, lights2, tint);
-    face({x + xs, y, z + zs}, w, size.y, 0, {1, 0, -1}, {0, 1, 0}, glm::vec3(),
+    face({x + xs, y, z + zs}, w, size.y, 0, {1, 0, -1}, {0, 1, 0}, n,
         texface2, lights1, tint);
 }
 
@@ -279,21 +292,22 @@ static bool is_aligned(const glm::vec3& v, float e = 1e-6f) {
 }
 
 void BlocksRenderer::blockCustomModel(
-    const glm::ivec3& icoord, const Block* block, ubyte rotation, bool lights, bool ao
+    const glm::ivec3& icoord, const Block& block, blockstate states, bool lights, bool ao
 ) {
+    const auto& variant = block.getVariant(states.userbits);
     glm::vec3 X(1, 0, 0);
     glm::vec3 Y(0, 1, 0);
     glm::vec3 Z(0, 0, 1);
     glm::vec3 coord(icoord);
-    if (block->rotatable) {
-        auto& rotations = block->rotations;
-        CoordSystem orient = rotations.variants[rotation];
+    if (block.rotatable) {
+        auto& rotations = block.rotations;
+        CoordSystem orient = rotations.variants[states.rotation];
         X = orient.axes[0];
         Y = orient.axes[1];
         Z = orient.axes[2];
     }
 
-    const auto& model = cache.getModel(block->rt.id);
+    const auto& model = cache.getModel(block.rt.id);
     for (const auto& mesh : model.meshes) {
         if (vertexCount + mesh.vertices.size() >= capacity) {
             overflow = true;
@@ -315,7 +329,7 @@ void BlocksRenderer::blockCustomModel(
                       0.5f;
             vp = vp.x * X + vp.y * Y + vp.z * Z;
 
-            if (!isOpen(glm::floor(coord + vp + 0.5f + n * 1e-3f), *block) && is_aligned(n)) {
+            if (!isOpen(glm::floor(coord + vp + 0.5f + n * 1e-3f), block, variant) && is_aligned(n)) {
                 continue;
             }
 
@@ -328,7 +342,7 @@ void BlocksRenderer::blockCustomModel(
                 const auto& vcoord = vertex.coord - 0.5f;
 
                 glm::vec4 aoColor {1.0f, 1.0f, 1.0f, 1.0f};
-                if (ao) {
+                if (mesh.shading && ao) {
                     auto p = coord + vcoord.x * X + vcoord.y * Y +
                              vcoord.z * Z + r * 0.5f + t * 0.5f + n * 0.5f;
                     aoColor = pickSoftLight(p.x, p.y, p.z, glm::ivec3(r), glm::ivec3(t));
@@ -337,7 +351,9 @@ void BlocksRenderer::blockCustomModel(
                     coord + vcoord.x * X + vcoord.y * Y + vcoord.z * Z,
                     vertex.uv.x,
                     vertex.uv.y,
-                    glm::vec4(d, d, d, d) * aoColor
+                    mesh.shading ? (glm::vec4(d, d, d, d) * aoColor) : glm::vec4(1, 1, 1, d),
+                    n,
+                    mesh.shading ? 0.0f : 1.0
                 );
                 indexBuffer[indexCount++] = vertexOffset++;
             }
@@ -354,6 +370,7 @@ void BlocksRenderer::blockCube(
     bool lights,
     bool ao
 ) {
+    const auto& variant = block.getVariant(states.userbits);
     glm::ivec3 X(1, 0, 0);
     glm::ivec3 Y(0, 1, 0);
     glm::ivec3 Z(0, 0, 1);
@@ -367,41 +384,41 @@ void BlocksRenderer::blockCube(
     }
 
     if (ao) {
-        if (isOpen(coord + Z, block)) {
+        if (isOpen(coord + Z, block, variant)) {
             faceAO(coord, X, Y, Z, texfaces[5], lights);
         }
-        if (isOpen(coord - Z, block)) {
+        if (isOpen(coord - Z, block, variant)) {
             faceAO(coord, -X, Y, -Z, texfaces[4], lights);
         }
-        if (isOpen(coord + Y, block)) {
+        if (isOpen(coord + Y, block, variant)) {
             faceAO(coord, X, -Z, Y, texfaces[3], lights);
         }
-        if (isOpen(coord - Y, block)) {
+        if (isOpen(coord - Y, block, variant)) {
             faceAO(coord, X, Z, -Y, texfaces[2], lights);
         }
-        if (isOpen(coord + X, block)) {
+        if (isOpen(coord + X, block, variant)) {
             faceAO(coord, -Z, Y, X, texfaces[1], lights);
         }
-        if (isOpen(coord - X, block)) {
+        if (isOpen(coord - X, block, variant)) {
             faceAO(coord, Z, Y, -X, texfaces[0], lights);
         }
     } else {
-        if (isOpen(coord + Z, block)) {
+        if (isOpen(coord + Z, block, variant)) {
             face(coord, X, Y, Z, texfaces[5], pickLight(coord + Z), lights);
         }
-        if (isOpen(coord - Z, block)) {
+        if (isOpen(coord - Z, block, variant)) {
             face(coord, -X, Y, -Z, texfaces[4], pickLight(coord - Z), lights);
         }
-        if (isOpen(coord + Y, block)) {
+        if (isOpen(coord + Y, block, variant)) {
             face(coord, X, -Z, Y, texfaces[3], pickLight(coord + Y), lights);
         }
-        if (isOpen(coord - Y, block)) {
+        if (isOpen(coord - Y, block, variant)) {
             face(coord, X, Z, -Y, texfaces[2], pickLight(coord - Y), lights);
         }
-        if (isOpen(coord + X, block)) {
+        if (isOpen(coord + X, block, variant)) {
             face(coord, -Z, Y, X, texfaces[1], pickLight(coord + X), lights);
         }
-        if (isOpen(coord - X, block)) {
+        if (isOpen(coord - X, block, variant)) {
             face(coord, Z, Y, -X, texfaces[0], pickLight(coord - X), lights);
         }
     }
@@ -471,21 +488,26 @@ void BlocksRenderer::render(
             blockid_t id = vox.id;
             blockstate state = vox.state;
             const auto& def = *blockDefsCache[id];
-            if (id == 0 || def.drawGroup != drawGroup || state.segment) {
+            const auto& variant = def.getVariant(state.userbits);
+            uint8_t variantId = state.userbits;
+            if (id == 0 || variant.drawGroup != drawGroup || state.segment) {
                 continue;
             }
             if (def.translucent) {
                 continue;
             }
             const UVRegion texfaces[6] {
-                cache.getRegion(id, 0), cache.getRegion(id, 1),
-                cache.getRegion(id, 2), cache.getRegion(id, 3),
-                cache.getRegion(id, 4), cache.getRegion(id, 5)
+                cache.getRegion(id, variantId, 0),
+                cache.getRegion(id, variantId, 1),
+                cache.getRegion(id, variantId, 2),
+                cache.getRegion(id, variantId, 3),
+                cache.getRegion(id, variantId, 4),
+                cache.getRegion(id, variantId, 5)
             };
             int x = i % CHUNK_W;
             int y = i / (CHUNK_D * CHUNK_W);
             int z = (i / CHUNK_D) % CHUNK_W;
-            switch (def.model.type) {
+            switch (def.getModel(state.userbits).type) {
                 case BlockModelType::BLOCK:
                     blockCube({x, y, z}, texfaces, def, vox.state, !def.shadeless,
                               def.ambientOcclusion);
@@ -501,8 +523,13 @@ void BlocksRenderer::render(
                     break;
                 }
                 case BlockModelType::CUSTOM: {
-                    blockCustomModel({x, y, z}, &def, vox.state.rotation,
-                                     !def.shadeless, def.ambientOcclusion);
+                    blockCustomModel(
+                        {x, y, z},
+                        def,
+                        vox.state,
+                        !def.shadeless,
+                        def.ambientOcclusion
+                    );
                     break;
                 }
                 default:
@@ -534,21 +561,26 @@ SortingMeshData BlocksRenderer::renderTranslucent(
             blockid_t id = vox.id;
             blockstate state = vox.state;
             const auto& def = *blockDefsCache[id];
-            if (id == 0 || def.drawGroup != drawGroup || state.segment) {
+            uint8_t variantId = state.userbits;
+            const auto& variant = def.getVariant(variantId);
+            if (id == 0 || variant.drawGroup != drawGroup || state.segment) {
                 continue;
             }
             if (!def.translucent) {
                 continue;
             }
             const UVRegion texfaces[6] {
-                cache.getRegion(id, 0), cache.getRegion(id, 1),
-                cache.getRegion(id, 2), cache.getRegion(id, 3),
-                cache.getRegion(id, 4), cache.getRegion(id, 5)
+                cache.getRegion(id, variantId, 0),
+                cache.getRegion(id, variantId, 1),
+                cache.getRegion(id, variantId, 2),
+                cache.getRegion(id, variantId, 3),
+                cache.getRegion(id, variantId, 4),
+                cache.getRegion(id, variantId, 5)
             };
             int x = i % CHUNK_W;
             int y = i / (CHUNK_D * CHUNK_W);
             int z = (i / CHUNK_D) % CHUNK_W;
-            switch (def.model.type) {
+            switch (def.getModel(state.userbits).type) {
                 case BlockModelType::BLOCK:
                     blockCube({x, y, z}, texfaces, def, vox.state, !def.shadeless,
                               def.ambientOcclusion);
@@ -564,7 +596,7 @@ SortingMeshData BlocksRenderer::renderTranslucent(
                     break;
                 }
                 case BlockModelType::CUSTOM: {
-                    blockCustomModel({x, y, z}, &def, vox.state.rotation,
+                    blockCustomModel({x, y, z}, def, vox.state,
                                      !def.shadeless, def.ambientOcclusion);
                     break;
                 }
@@ -655,11 +687,12 @@ void BlocksRenderer::build(const Chunk* chunk, const Chunks* chunks) {
         const voxel& vox = voxels[i];
         blockid_t id = vox.id;
         const auto& def = *blockDefsCache[id];
+        const auto& variant = def.getVariant(vox.state.userbits);
 
-        if (beginEnds[def.drawGroup][0] == 0) {
-            beginEnds[def.drawGroup][0] = i+1;
+        if (beginEnds[variant.drawGroup][0] == 0) {
+            beginEnds[variant.drawGroup][0] = i+1;
         }
-        beginEnds[def.drawGroup][1] = i;
+        beginEnds[variant.drawGroup][1] = i;
     }
     cancelled = false;
 

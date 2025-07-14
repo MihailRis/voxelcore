@@ -12,20 +12,25 @@
 #include <GLFW/glfw3.h>
 
 #include "coders/GLSLExtension.hpp"
+#include "debug/Logger.hpp"
+
+static debug::Logger logger("gl-shader");
 
 namespace fs = std::filesystem;
 
 GLSLExtension* Shader::preprocessor = new GLSLExtension();
 Shader* Shader::used = nullptr;
 
-Shader::Shader(uint id) : id(id){
-}
+Shader::Shader(uint id, Source&& vertexSource, Source&& fragmentSource)
+    : id(id),
+      vertexSource(std::move(vertexSource)),
+      fragmentSource(std::move(fragmentSource)) {}
 
-Shader::~Shader(){
+Shader::~Shader() {
     glDeleteProgram(id);
 }
 
-void Shader::use(){
+void Shader::use() {
     used = this;
     glUseProgram(id);
 }
@@ -40,8 +45,16 @@ uint Shader::getUniformLocation(const std::string& name) {
     return found->second;
 }
 
-void Shader::uniformMatrix(const std::string& name, const glm::mat4& matrix){
-    glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix));
+void Shader::uniformMatrix(const std::string& name, const glm::mat4& matrix) {
+    glUniformMatrix4fv(
+        getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix)
+    );
+}
+
+void Shader::uniformMatrix(const std::string& name, const glm::mat3& matrix) {
+    glUniformMatrix3fv(
+        getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix)
+    );
 }
 
 void Shader::uniform1i(const std::string& name, int x){
@@ -76,8 +89,27 @@ void Shader::uniform4f(const std::string& name, const glm::vec4& xyzw) {
     glUniform4f(getUniformLocation(name), xyzw.x, xyzw.y, xyzw.z, xyzw.w);
 }
 
+void Shader::uniform1v(const std::string& name, int length, const int* v) {
+    glUniform1iv(getUniformLocation(name), length, v);
+}
 
-inline auto shader_deleter = [](GLuint* shader) {
+void Shader::uniform1v(const std::string& name, int length, const float* v) {
+    glUniform1fv(getUniformLocation(name), length, v);
+}
+
+void Shader::uniform2v(const std::string& name, int length, const float* v) {
+    glUniform2fv(getUniformLocation(name), length, v);
+}
+
+void Shader::uniform3v(const std::string& name, int length, const float* v) {
+    glUniform3fv(getUniformLocation(name), length, v);
+}
+
+void Shader::uniform4v(const std::string& name, int length, const float* v) {
+    glUniform4fv(getUniformLocation(name), length, v);
+}
+
+static inline auto shader_deleter = [](GLuint* shader) {
     glDeleteShader(*shader);
     delete shader;
 };
@@ -93,45 +125,73 @@ glshader compile_shader(GLenum type, const GLchar* source, const std::string& fi
     glShaderSource(shader, 1, &source, nullptr);
     glCompileShader(shader);
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success){
+    if (!success) {
         GLchar infoLog[GL_LOG_LEN];
         glGetShaderInfoLog(shader, GL_LOG_LEN, nullptr, infoLog);
         glDeleteShader(shader);
         throw std::runtime_error(
-            "vertex shader compilation failed ("+file+"):\n"+std::string(infoLog)
+            "vertex shader compilation failed (" + file + "):\n" +
+            std::string(infoLog)
         );
-    } 
+    }
     return glshader(new GLuint(shader), shader_deleter); //-V508
 }
 
-std::unique_ptr<Shader> Shader::create(
-    const std::string& vertexFile, 
-    const std::string& fragmentFile,
-    const std::string& vertexCode,
-    const std::string& fragmentCode
+static GLuint compile_program(
+    const Shader::Source& vertexSource, const Shader::Source& fragmentSource
 ) {
+    auto& preprocessor = *Shader::preprocessor;
+
+    auto vertexCode = std::move(
+        preprocessor.process(vertexSource.file, vertexSource.code).code
+    );
+    auto fragmentCode = std::move(
+        preprocessor.process(fragmentSource.file, fragmentSource.code).code
+    );
+
     const GLchar* vCode = vertexCode.c_str();
     const GLchar* fCode = fragmentCode.c_str();
 
-    glshader vertex = compile_shader(GL_VERTEX_SHADER, vCode, vertexFile);
-    glshader fragment = compile_shader(GL_FRAGMENT_SHADER, fCode, fragmentFile);
+    glshader vertex =
+        compile_shader(GL_VERTEX_SHADER, vCode, vertexSource.file);
+    glshader fragment =
+        compile_shader(GL_FRAGMENT_SHADER, fCode, fragmentSource.file);
 
     // Shader Program
     GLint success;
-    GLuint id = glCreateProgram();
-    glAttachShader(id, *vertex);
-    glAttachShader(id, *fragment);
-    glLinkProgram(id);
+    GLuint program = glCreateProgram();
+    glAttachShader(program, *vertex);
+    glAttachShader(program, *fragment);
+    glLinkProgram(program);
 
-    glGetProgramiv(id, GL_LINK_STATUS, &success);
-    if (!success){
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+
+    if (!success) {
         GLchar infoLog[GL_LOG_LEN];
-        glGetProgramInfoLog(id, GL_LOG_LEN, nullptr, infoLog);
+        glGetProgramInfoLog(program, GL_LOG_LEN, nullptr, infoLog);
         throw std::runtime_error(
-            "shader program linking failed:\n"+std::string(infoLog)
+            "shader program linking failed:\n" + std::string(infoLog)
         );
     }
-    return std::make_unique<Shader>(id);
+    return program;
+}
+
+void Shader::recompile() {
+    GLuint newProgram = compile_program(vertexSource, fragmentSource);
+    glDeleteProgram(id);
+    id = newProgram;
+    uniformLocations.clear();
+    logger.info() << "shader " << id << " has been recompiled";
+}
+
+std::unique_ptr<Shader> Shader::create(
+    Source&& vertexSource, Source&& fragmentSource
+) {
+    return std::make_unique<Shader>(
+        compile_program(vertexSource, fragmentSource),
+        std::move(vertexSource),
+        std::move(fragmentSource)
+    );
 }
 
 Shader& Shader::getUsed() {

@@ -23,4 +23,5 @@ static int l_toml_parse(lua::State* L) {
 const luaL_Reg tomllib[] = {
     {"tostring", lua::wrap<l_toml_stringify>},
     {"parse", lua::wrap<l_toml_parse>},
-    {NULL, NULL}};
+    {NULL, NULL}
+};

@@ -27,12 +27,12 @@ std::unique_ptr<ImageData> BlocksPreview::draw(
 ){
     display::clear();
     blockid_t id = def.rt.id;
-    const UVRegion texfaces[6]{cache.getRegion(id, 0), cache.getRegion(id, 1),
-                               cache.getRegion(id, 2), cache.getRegion(id, 3),
-                               cache.getRegion(id, 4), cache.getRegion(id, 5)};
+    const UVRegion texfaces[6]{cache.getRegion(id, 0, 0), cache.getRegion(id, 0, 1),
+                               cache.getRegion(id, 0, 2), cache.getRegion(id, 0, 3),
+                               cache.getRegion(id, 0, 4), cache.getRegion(id, 0, 5)};
 
     glm::vec3 offset(0.1f, 0.5f, 0.1f);
-    switch (def.model.type) {
+    switch (def.defaults.model.type) {
         case BlockModelType::NONE:
             // something went wrong...
             break;

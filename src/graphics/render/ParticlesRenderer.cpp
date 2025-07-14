@@ -117,7 +117,6 @@ void ParticlesRenderer::renderParticles(const Camera& camera, float delta) {
                 light *= 0.9f + (particle.random % 100) * 0.001f;
             }
 
-
             glm::vec3 localRight = right;
             glm::vec3 localUp = preset.globalUpVector ? glm::vec3(0, 1, 0) : up;
             float angle = particle.angle;
@@ -134,10 +133,12 @@ void ParticlesRenderer::renderParticles(const Camera& camera, float delta) {
                 particle.position,
                 localRight,
                 localUp,
+                -camera.front,
                 preset.size * scale,
                 light,
                 glm::vec3(1.0f),
-                particle.region
+                particle.region,
+                preset.lighting ? 0.0f : 1.0f
             );
             if (particle.lifetime <= 0.0f) {
                 iter = vec.erase(iter);

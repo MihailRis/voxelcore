@@ -22,21 +22,30 @@ ContentGfxCache::ContentGfxCache(
     refresh();
 }
 
-void ContentGfxCache::refresh(const Block& def, const Atlas& atlas) {
+static void refresh_variant(
+    const Assets& assets,
+    const Block& def,
+    const Variant& variant,
+    uint8_t variantIndex,
+    std::unique_ptr<UVRegion[]>& sideregions,
+    const Atlas& atlas,
+    const GraphicsSettings& settings,
+    std::unordered_map<blockid_t, model::Model>& models
+) {
     for (uint side = 0; side < 6; side++) {
-        std::string tex = def.textureFaces[side];
-        if (def.culling == CullingMode::OPTIONAL &&
+        std::string tex = variant.textureFaces[side];
+        if (variant.culling == CullingMode::OPTIONAL &&
             !settings.denseRender.get() && atlas.has(tex + "_opaque")) {
             tex = tex + "_opaque";
         }
         if (atlas.has(tex)) {
-            sideregions[def.rt.id * 6 + side] = atlas.get(tex);
+            sideregions[(def.rt.id * 6 + side) * MAX_VARIANTS + variantIndex] = atlas.get(tex);
         } else if (atlas.has(TEXTURE_NOTFOUND)) {
-            sideregions[def.rt.id * 6 + side] = atlas.get(TEXTURE_NOTFOUND);
+            sideregions[(def.rt.id * 6 + side) * MAX_VARIANTS + variantIndex] = atlas.get(TEXTURE_NOTFOUND);
         }
     }
-    if (def.model.type == BlockModelType::CUSTOM) {
-        auto model = assets.require<model::Model>(def.model.name);
+    if (variant.model.type == BlockModelType::CUSTOM) {
+        auto model = assets.require<model::Model>(variant.model.name);
 
         for (auto& mesh : model.meshes) {
             size_t pos = mesh.texture.find(':');
@@ -53,15 +62,25 @@ void ContentGfxCache::refresh(const Block& def, const Atlas& atlas) {
     }
 }
 
+void ContentGfxCache::refresh(const Block& def, const Atlas& atlas) {
+    refresh_variant(assets, def, def.defaults, 0, sideregions, atlas, settings, models);
+    if (def.variants) {
+        const auto& variants = def.variants->variants;
+        for (int i = 1; i < variants.size() - 1; i++) {
+            refresh_variant(assets, def, variants[i], i + 1, sideregions, atlas, settings, models);
+        }
+        def.variants->variants.at(0) = def.defaults;
+    }
+}
+
 void ContentGfxCache::refresh() {
     auto indices = content.getIndices();
-    sideregions = std::make_unique<UVRegion[]>(indices->blocks.count() * 6);
+    sideregions = std::make_unique<UVRegion[]>(indices->blocks.count() * 6 * MAX_VARIANTS);
     const auto& atlas = assets.require<Atlas>("blocks");
 
     const auto& blocks = indices->blocks.getIterable();
     for (blockid_t i = 0; i < blocks.size(); i++) {
-        auto def = blocks[i];
-        refresh(*def, atlas);
+        refresh(*blocks[i], atlas);
     }
 }
 

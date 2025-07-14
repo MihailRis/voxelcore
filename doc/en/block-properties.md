@@ -34,6 +34,7 @@ Block model type from list:
 - "none" - invisible block (air)
 - "X" - grass model (two crossed sprites)
 - "aabb" - model based of block hitbox (complex hitbox will be combined into one). Examples: pipes, bulbs, panels.
+- "custom" - used when specifying custom models via *model-name*
 
 ### *model-name*
 
@@ -62,6 +63,40 @@ Rotation profile (set of available block rotations and behaviour of placing bloc
 - "none" - no rotation available (default profile)
 - "pipe" - wood logs, pipes, pillars
 - "pane" - panels, doors, signs
+- "stairs" - "pane" + flipped variants
+
+## Variants
+
+Some properties can vary dynamically, depending on the variant number stored in the user bits of the block.
+
+Variability parameters are specified in the `state-based` block:
+
+```json
+{
+    ...
+    "state-based": {
+        "offset": 0,
+        "bits": 4,
+        "variants": [
+            {...},
+            ...
+        ]
+    }
+}
+```
+
+- `offset` specifies the bit offset from which the variant index starts. (Default is 0)
+- `bits` specifies the number of bits encoding the variant index. (Default is 4).
+Currently, the maximum number of variants is 16, so specifying more than 4 bits does not make practical sense.
+
+Properties available for variance:
+- model
+- model-name
+- texture
+- texture-faces
+- model-primitives (deprecated)
+
+Variants are managed via `block.set_variant(x, y, z, index)`.
 
 ## Lighting
 

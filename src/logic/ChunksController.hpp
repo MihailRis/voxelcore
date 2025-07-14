@@ -32,6 +32,8 @@ public:
         int64_t maxDuration, int loadDistance, uint padding, Player& player
     ) const;
 
+    bool isInLoadingZone(const Player& player, uint padding, int x, int z) const;
+
     const WorldGenerator* getGenerator() const {
         return generator.get();
     }

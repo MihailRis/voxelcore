@@ -16,7 +16,7 @@ namespace model {
     struct Mesh {
         std::string texture;
         std::vector<Vertex> vertices;
-        bool lighting = true;
+        bool shading = true;
 
         void addPlane(
             const glm::vec3& pos,
@@ -54,14 +54,14 @@ namespace model {
         /// @brief Add mesh to the model
         /// @param texture texture name
         /// @return writeable Mesh
-        Mesh& addMesh(const std::string& texture) {
+        Mesh& addMesh(const std::string& texture, bool shading = true) {
             for (auto& mesh : meshes) {
-                if (mesh.texture == texture) {
+                if (mesh.texture == texture && mesh.shading == shading) {
                     return mesh;
                 }
             }
-            meshes.push_back({texture, {}});
-            return meshes[meshes.size()-1];
+            meshes.push_back({texture, {}, shading});
+            return meshes[meshes.size() - 1];
         }
         /// @brief Remove all empty meshes
         void clean();

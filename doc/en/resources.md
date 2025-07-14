@@ -6,7 +6,9 @@ Resources include:
 - framebuffers
 - and other limited resources
 
-At the moment only **cameras** are implemented.
+At the moment only the following are implemented:
+- camera - **camera**.
+- post-effect - **effect slot**.
 
 The resources requested by the pack are specified through the *resources.json* file in the format:
 ```json

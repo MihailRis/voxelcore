@@ -146,6 +146,7 @@ void PrecipitationRenderer::render(
                     pos,
                     face.right,
                     {0, 1, 0},
+                    glm::cross(glm::vec3(0, 1, 0), face.right),
                     FACE_SIZE,
                     light_at(chunks, pos.x, y, pos.z),
                     glm::vec3(1.0f),

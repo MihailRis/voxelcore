@@ -19,7 +19,10 @@ public:
     bool perspective = true;
     bool flipped = false;
     float near = 0.05f;
-    float far = 1500.0f;
+    float far = 1e4f;
+
+    bool projset = false;
+    glm::mat4 projection;
 
     Camera() {
         updateVectors();
@@ -35,6 +38,8 @@ public:
 
     void setFov(float fov);
     float getFov() const;
+
+    void setProjection(const glm::mat4& matrix);
 
     float getAspectRatio() const;
     void setAspectRatio(float ar);

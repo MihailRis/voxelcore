@@ -60,17 +60,17 @@ void Batch2D::vertex(
     index++;
 }
 
-void Batch2D::texture(const Texture* new_texture){
-    if (currentTexture == new_texture) {
+void Batch2D::texture(const Texture* newTexture){
+    if (currentTexture == newTexture) {
         return;
     }
     flush();
-    currentTexture = new_texture;
-    if (new_texture == nullptr) {
+    currentTexture = newTexture;
+    if (newTexture == nullptr) {
         blank->bind();
         region = blank->getUVRegion();
     } else {
-        new_texture->bind();
+        newTexture->bind();
         region = currentTexture->getUVRegion();
     }
 }
@@ -331,6 +331,15 @@ void Batch2D::rect(
     vertex(v6, glm::vec2(0, 0), r2,g2,b2,1.0f);
     vertex(v9, glm::vec2(0, 0), r2,g2,b2,1.0f);
     vertex(v1, glm::vec2(0, 0), r2,g2,b2,1.0f);
+}
+
+void Batch2D::triangle(float x1, float y1, float x2, float y2, float x3, float y3) {
+    if (index + 3 >= capacity) {
+        flush();
+    }
+    vertex({x1, y1}, {x1, y1}, color.r, color.g, color.b, color.a);
+    vertex({x2, y2}, {x2, y2}, color.r, color.g, color.b, color.a);
+    vertex({x3, y3}, {x3, y3}, color.r, color.g, color.b, color.a);
 }
 
 void Batch2D::sprite(float x, float y, float w, float h, const UVRegion& region, glm::vec4 tint){

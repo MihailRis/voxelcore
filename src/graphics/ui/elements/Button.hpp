@@ -33,8 +33,6 @@ namespace gui {
         virtual void setText(std::wstring text);
         virtual std::wstring getText() const;
 
-        virtual Button* textSupplier(wstringsupplier supplier);
-
         virtual void refresh() override;
     };
 }

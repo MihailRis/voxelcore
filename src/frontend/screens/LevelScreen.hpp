@@ -3,6 +3,7 @@
 #include "Screen.hpp"
 
 #include <memory>
+#include <cstdint>
 
 class Engine;
 class LevelFrontend;

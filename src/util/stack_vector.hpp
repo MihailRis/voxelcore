@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stdexcept>
+
 namespace util {
     template<typename T, int capacity>
     class stack_vector {
@@ -91,6 +93,22 @@ namespace util {
 
         bool full() const {
             return size_ == capacity;
+        }
+
+        auto begin() {
+            return data_;
+        }
+
+        auto end() {
+            return data_ + size_;
+        }
+
+        auto begin() const {
+            return data_;
+        }
+
+        auto end() const {
+            return data_ + size_;
         }
     private:
         T data_[capacity];

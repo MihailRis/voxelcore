@@ -40,8 +40,7 @@ struct LayoutCfg : AssetCfg {
 struct SoundCfg : AssetCfg {
     bool keepPCM;
 
-    SoundCfg(bool keepPCM) : keepPCM(keepPCM) {
-    }
+    SoundCfg(bool keepPCM) : keepPCM(keepPCM) {}
 };
 
 enum class AtlasType {
@@ -51,8 +50,13 @@ enum class AtlasType {
 struct AtlasCfg : AssetCfg {
     AtlasType type;
 
-    AtlasCfg(AtlasType type) : type(type) {
-    }
+    AtlasCfg(AtlasType type) : type(type) {}
+};
+
+struct PostEffectCfg : AssetCfg {
+    bool advanced;
+
+    PostEffectCfg(bool advanced) : advanced(advanced) {}
 };
 
 using aloader_func = std::function<

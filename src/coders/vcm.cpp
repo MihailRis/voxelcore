@@ -19,10 +19,15 @@ static const std::unordered_map<std::string, int> side_indices {
     {"east", 5},
 };
 
+static bool to_boolean(const xml::Attribute& attr) {
+    return attr.getText() != "off";
+}
+
 static void perform_rect(const xmlelement& root, model::Model& model) {
     auto from = root.attr("from").asVec3();
     auto right = root.attr("right").asVec3();
     auto up = root.attr("up").asVec3();
+    bool shading = true;
 
     right *= -1;
     from -= right;
@@ -37,6 +42,10 @@ static void perform_rect(const xmlelement& root, model::Model& model) {
         region.scale(root.attr("region-scale").asVec2());
     }
 
+    if (root.has("shading")) {
+        shading = to_boolean(root.attr("shading"));
+    }
+
     auto flip = root.attr("flip", "").getText();
     if (flip == "h") {
         std::swap(region.u1, region.u2);
@@ -48,7 +57,7 @@ static void perform_rect(const xmlelement& root, model::Model& model) {
         from -= up;
     }
     std::string texture = root.attr("texture", "$0").getText();
-    auto& mesh = model.addMesh(texture);
+    auto& mesh = model.addMesh(texture, shading);
 
     auto normal = glm::cross(glm::normalize(right), glm::normalize(up));
     mesh.addRect(
@@ -75,7 +84,19 @@ static void perform_box(const xmlelement& root, model::Model& model) {
     auto center = (from + to) * 0.5f;
     auto halfsize = (to - from) * 0.5f;
 
+    bool shading = true;
     std::string texfaces[6] {"$0","$1","$2","$3","$4","$5"};
+
+    if (root.has("texture")) {
+        auto texture = root.attr("texture").getText();
+        for (int i = 0; i < 6; i++) {
+            texfaces[i] = texture;
+        }
+    }
+
+    if (root.has("shading")) {
+        shading = to_boolean(root.attr("shading"));
+    }
 
     for (const auto& elem : root.getElements()) {
         if (elem->getTag() == "part") {
@@ -120,7 +141,7 @@ static void perform_box(const xmlelement& root, model::Model& model) {
         }
         bool enabled[6] {};
         enabled[i] = true;
-        auto& mesh = model.addMesh(texfaces[i]);
+        auto& mesh = model.addMesh(texfaces[i], shading);
         mesh.addBox(center, halfsize, regions, enabled);
     }
 }

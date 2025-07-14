@@ -1,3 +1,6 @@
 language = "VCM"
 extensions = ["vcm"]
 line-comment-start = "#"
+keywords = [
+    "on", "off"
+]

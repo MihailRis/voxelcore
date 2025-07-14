@@ -22,6 +22,7 @@ public:
 
     void define(const std::string& name, std::string value);
     void undefine(const std::string& name);
+    void setDefined(const std::string& name, bool defined);
     void addHeader(const std::string& name, ProcessingResult header);
 
     const ProcessingResult& getHeader(const std::string& name) const;
