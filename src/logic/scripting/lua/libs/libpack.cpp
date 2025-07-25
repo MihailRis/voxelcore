@@ -123,8 +123,13 @@ static int l_pack_get_info(
     auto runtime = content ? content->getPackRuntime(pack.id) : nullptr;
     if (runtime) {
         lua::pushboolean(L, runtime->getStats().hasSavingContent());
-        lua::setfield(L, "has_indices");
+    } else {
+        auto stats = pack.loadStats();
+        lua::pushboolean(
+            L, stats.has_value() ? stats->hasSavingContent() : false
+        );
     }
+    lua::setfield(L, "has_indices");
     return 1;
 }
 

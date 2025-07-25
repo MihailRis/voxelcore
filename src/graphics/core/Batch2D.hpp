@@ -117,6 +117,8 @@ public:
         float r4, float g4, float b4, int sh
     );
 
+    void triangle(float x1, float y1, float x2, float y2, float x3, float y3);
+
     void flush() override;
 
     void lineWidth(float width);

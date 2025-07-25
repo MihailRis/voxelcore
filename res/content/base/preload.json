@@ -14,6 +14,7 @@
     ],
     "textures": [
         "misc/moon",
+        "misc/moon_flare",
         "misc/sun",
         "gui/crosshair"
     ]

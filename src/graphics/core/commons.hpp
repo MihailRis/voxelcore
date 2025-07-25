@@ -50,6 +50,17 @@ enum class CursorShape {
     LAST=NOT_ALLOWED
 };
 
+namespace advanced_pipeline {
+    inline constexpr int TARGET_COLOR = 0;
+    inline constexpr int TARGET_SKYBOX = 1;
+    inline constexpr int TARGET_POSITIONS = 2;
+    inline constexpr int TARGET_NORMALS = 3;
+    inline constexpr int TARGET_EMISSION = 4;
+    inline constexpr int TARGET_SSAO = 5;
+    inline constexpr int TARGET_SHADOWS0 = 6;
+    inline constexpr int TARGET_SHADOWS1 = 7;
+}
+
 VC_ENUM_METADATA(CursorShape)
     {"arrow", CursorShape::ARROW},
     {"text", CursorShape::TEXT},
@@ -68,4 +79,12 @@ public:
     virtual ~Flushable() = default;
 
     virtual void flush() = 0;
+};
+
+class Bindable {
+public:
+    virtual ~Bindable() = default;
+
+    virtual void bind() = 0;
+    virtual void unbind() = 0;
 };

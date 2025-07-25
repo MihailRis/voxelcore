@@ -32,10 +32,13 @@ class CameraControl {
     /// @return camera offset
     glm::vec3 updateCameraShaking(const Hitbox& hitbox, float delta);
 
-    /// @brief Update field-of-view effects
+    /// @brief Update field-of-view
     /// @param input player inputs
     /// @param delta delta time
-    void updateFovEffects(const Hitbox& hitbox, PlayerInput input, float delta);
+    /// @param effects movement-related effects
+    void updateFov(
+        const Hitbox& hitbox, PlayerInput input, float delta, bool effects
+    );
 
     /// @brief Switch active player camera
     void switchCamera();

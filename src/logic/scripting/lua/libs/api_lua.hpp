@@ -15,6 +15,7 @@
 
 // Libraries
 extern const luaL_Reg applib[];
+extern const luaL_Reg assetslib[];
 extern const luaL_Reg audiolib[];
 extern const luaL_Reg base64lib[];
 extern const luaL_Reg bjsonlib[];

@@ -28,13 +28,21 @@ std::unique_ptr<Content> ContentBuilder::build() {
         // Generating runtime info
         def.rt.id = blockDefsIndices.size();
         def.rt.emissive = *reinterpret_cast<uint32_t*>(def.emission);
-        def.rt.solid = def.model.type == BlockModelType::BLOCK;
-        def.rt.extended = def.size.x > 1 || def.size.y > 1 || def.size.z > 1;
+
+        if (def.variants) {
+            for (auto& variant : def.variants->variants) {
+                variant.rt.solid = variant.model.type == BlockModelType::BLOCK;
+            }
+            def.defaults = def.variants->variants.at(0);
+        } else {
+            def.defaults.rt.solid = def.defaults.model.type == BlockModelType::BLOCK;
+        }
 
         const float EPSILON = 0.01f;
-        if (def.rt.extended && glm::i8vec3(def.hitboxes[0].size() + EPSILON) == def.size) {
-            def.rt.solid = true;
-        }
+        def.rt.solid =
+            def.obstacle &&
+            (glm::i8vec3(def.hitboxes[0].size() + EPSILON) == def.size);
+        def.rt.extended = def.size.x > 1 || def.size.y > 1 || def.size.z > 1;
 
         if (def.rotatable) {
             for (uint i = 0; i < BlockRotProfile::MAX_COUNT; i++) {
@@ -50,7 +58,7 @@ std::unique_ptr<Content> ContentBuilder::build() {
         }
 
         blockDefsIndices.push_back(&def);
-        groups->insert(def.drawGroup);
+        groups->insert(def.defaults.drawGroup); // FIXME
     }
 
     std::vector<ItemDef*> itemDefsIndices;

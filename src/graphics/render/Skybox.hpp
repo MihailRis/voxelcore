@@ -25,11 +25,12 @@ struct SkyboxVertex {
         {{}, 0}};
 };
 
-struct skysprite {
+struct SkySprite {
     std::string texture;
     float phase;
     float distance;
     bool emissive;
+    float altitude;
 };
 
 class Skybox {
@@ -42,11 +43,13 @@ class Skybox {
 
     std::unique_ptr<Mesh<SkyboxVertex>> mesh;
     std::unique_ptr<Batch3D> batch3d;
-    std::vector<skysprite> sprites;
+    std::vector<SkySprite> sprites;
     int frameid = 0;
 
     float prevMie = -1.0f;
     float prevT = -1.0f;
+    float sunAltitude = 45.0f;
+    glm::mat4 rotation;
 
     void drawStars(float angle, float opacity);
     void drawBackground(

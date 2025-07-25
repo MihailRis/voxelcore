@@ -27,6 +27,12 @@ namespace gui {
 
         virtual void setMinLength(int value);
         int getMinLength() const;
+
+        /// @brief .setSize wrapper automatically applying padding to size
+        /// @param size element size excluding padding
+        void setContentSize(const glm::ivec2& size);
+        /// @return element size excluding padding
+        glm::vec2 getContentSize() const;
     protected:
         int minLength = 0;
         int maxLength = 0;

@@ -89,6 +89,8 @@ namespace gui {
         void updateTooltip(float delta);
         void resetTooltip();
     public:
+        static constexpr int CONTEXT_MENU_ZINDEX = 999;
+
         GUI(Engine& engine);
         ~GUI();
 

@@ -323,7 +323,7 @@ static void reconfig_packs_outside(
         names.erase(std::find(names.begin(), names.end(), id));
     }
     names = manager.assemble(names);
-    contentControl.getContentPacks() = manager.getAll(names);
+    contentControl.setContentPacksRaw(manager.getAll(names));
 }
 
 static void reconfig_packs_inside(

@@ -419,3 +419,7 @@ void Chunks::getVoxels(VoxelsVolume& volume, bool backlight) const {
 void Chunks::saveAndClear() {
     areaMap.clear();
 }
+
+void Chunks::remove(int32_t x, int32_t z) {
+    areaMap.remove(x, z);
+}

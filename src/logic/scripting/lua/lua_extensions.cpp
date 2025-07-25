@@ -1,5 +1,6 @@
 #include <iostream>
 #include <iomanip>
+#include <random>
 
 #include "libs/api_lua.hpp"
 #include "debug/Logger.hpp"
@@ -149,6 +150,15 @@ int l_debug_print(lua::State* L) {
     return 0;
 }
 
+namespace {
+    std::normal_distribution<double> randomFloats(0.0f, 1.0f); 
+    std::default_random_engine generator;
+}
+
+static int l_math_normal_random(lua::State* L) {
+    return lua::pushnumber(L, randomFloats(generator));
+}
+
 void initialize_libs_extends(lua::State* L) {
     if (lua::getglobal(L, "debug")) {
         lua::pushcfunction(L, lua::wrap<l_debug_error>);
@@ -162,6 +172,12 @@ void initialize_libs_extends(lua::State* L) {
 
         lua::pushcfunction(L, lua::wrap<l_debug_print>);
         lua::setfield(L, "print");
+
+        lua::pop(L);
+    }
+    if (lua::getglobal(L, "math")) {
+        lua::pushcfunction(L, lua::wrap<l_math_normal_random>);
+        lua::setfield(L, "normal_random");
 
         lua::pop(L);
     }

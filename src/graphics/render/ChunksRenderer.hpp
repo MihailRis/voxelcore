@@ -50,7 +50,7 @@ class ChunksRenderer {
     std::vector<ChunksSortEntry> indices;
     util::ThreadPool<std::shared_ptr<Chunk>, RendererResult> threadPool;
     const Mesh<ChunkVertex>* retrieveChunk(
-        size_t index, const Camera& camera, Shader& shader, bool culling
+        size_t index, const Camera& camera, bool culling
     );
 public:
     ChunksRenderer(
@@ -72,6 +72,9 @@ public:
     const Mesh<ChunkVertex>* getOrRender(
         const std::shared_ptr<Chunk>& chunk, bool important
     );
+
+    void drawChunksShadowsPass(const Camera& camera, Shader& shader);
+
     void drawChunks(const Camera& camera, Shader& shader);
 
     void drawSortedMeshes(const Camera& camera, Shader& shader);

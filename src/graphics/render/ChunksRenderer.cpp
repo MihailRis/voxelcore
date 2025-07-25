@@ -143,7 +143,7 @@ void ChunksRenderer::update() {
 }
 
 const Mesh<ChunkVertex>* ChunksRenderer::retrieveChunk(
-    size_t index, const Camera& camera, Shader& shader, bool culling
+    size_t index, const Camera& camera, bool culling
 ) {
     auto chunk = chunks.getChunks()[index];
     if (chunk == nullptr) {
@@ -182,13 +182,39 @@ const Mesh<ChunkVertex>* ChunksRenderer::retrieveChunk(
     return mesh;
 }
 
+void ChunksRenderer::drawChunksShadowsPass(
+    const Camera& camera, Shader& shader
+) {
+    const auto& atlas = assets.require<Atlas>("blocks");
+
+    atlas.getTexture()->bind();
+
+    for (const auto& chunk : chunks.getChunks()) {
+        if (chunk == nullptr) {
+            continue;
+        }
+        const auto& found = meshes.find({chunk->x, chunk->z});
+        if (found == meshes.end()) {
+            continue;
+        }
+        auto mesh = found->second.mesh.get();
+        if (mesh) {
+            glm::vec3 coord(
+                chunk->x * CHUNK_W + 0.5f, 0.5f, chunk->z * CHUNK_D + 0.5f
+            );
+            glm::mat4 model = glm::translate(glm::mat4(1.0f), coord);
+            shader.uniformMatrix("u_model", model);
+            mesh->draw();
+        }
+    }
+}
+
 void ChunksRenderer::drawChunks(
     const Camera& camera, Shader& shader
 ) {
     const auto& atlas = assets.require<Atlas>("blocks");
 
     atlas.getTexture()->bind();
-    update();
 
     // [warning] this whole method is not thread-safe for chunks
 
@@ -219,7 +245,7 @@ void ChunksRenderer::drawChunks(
     // TODO: minimize draw calls number
     for (int i = indices.size()-1; i >= 0; i--) {
         auto& chunk = chunks.getChunks()[indices[i].index];
-        auto mesh = retrieveChunk(indices[i].index, camera, shader, culling);
+        auto mesh = retrieveChunk(indices[i].index, camera, culling);
 
         if (mesh) {
             glm::vec3 coord(

@@ -239,13 +239,52 @@ dv::value toml::parse(std::string_view file, std::string_view source) {
     return TomlReader(file, source).read();
 }
 
+static void to_string(std::stringstream& ss, const dv::value& value);
+
+static void list_to_string(std::stringstream& ss, const dv::value& list) {
+    ss << "[";
+    int index = 0;
+    for (const auto& value : list) {
+        if (index > 0) {
+            ss << ", ";
+        }
+        to_string(ss, value);
+        index++;
+    }
+    ss << "]";
+}
+
+static void object_to_string(std::stringstream& ss, const dv::value& object) {
+    ss << "{";
+    int index = 0;
+    for (const auto& [key, value] : object.asObject()) {
+        if (index > 0) {
+            ss << ", ";
+        }
+        ss << key << " = ";
+        to_string(ss, value);
+        index++;
+    }
+    ss << "}";
+}
+
+static void to_string(std::stringstream& ss, const dv::value& value) {
+    if (value.isObject()) {
+        object_to_string(ss, value);
+    } else if (value.isList()) {
+        list_to_string(ss, value);
+    } else {
+        ss << value;
+    }
+}
+
 std::string toml::stringify(const dv::value& root, const std::string& name) {
     std::stringstream ss;
     if (!name.empty()) {
         ss << "[" << name << "]\n";
     }
     for (const auto& [key, value] : root.asObject()) {
-        if (!value.isObject()) {
+        if (!value.isObject() && !value.isList()) {
             ss << key << " = " << value << "\n";
         }
     }
@@ -253,6 +292,15 @@ std::string toml::stringify(const dv::value& root, const std::string& name) {
         if (value.isObject()) {
             ss << "\n" << toml::stringify(value,
                       name.empty() ? key : name + "." + key);
+        } else if (value.isList()) {
+            ss << (name.empty() ? key : name + "." + key) << " = [";
+            for (size_t i = 0; i < value.size(); i++) {
+                if (i > 0) {
+                    ss << ", ";
+                }
+                to_string(ss, value[i]);
+            }
+            ss << "]";
         }
     }
     return ss.str();

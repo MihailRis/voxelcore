@@ -14,12 +14,12 @@ void corecontent::setup(Input& input, ContentBuilder& builder) {
     {
         Block& block = builder.blocks.create(CORE_AIR);
         block.replaceable = true;
-        block.drawGroup = 1;
         block.lightPassing = true;
         block.skyLightPassing = true;
         block.obstacle = false;
         block.selectable = false;
-        block.model.type = BlockModelType::NONE;
+        block.defaults.drawGroup = 1;
+        block.defaults.model.type = BlockModelType::NONE;
         block.pickingItem = CORE_EMPTY;
     }
     {
@@ -37,7 +37,7 @@ void corecontent::setup(Input& input, ContentBuilder& builder) {
     {
         Block& block = builder.blocks.create(CORE_OBSTACLE);
         for (uint i = 0; i < 6; i++) {
-            block.textureFaces[i] = "obstacle";
+            block.defaults.textureFaces[i] = "obstacle";
         }
         block.hitboxes = {AABB()};
         block.breakable = false;
@@ -50,9 +50,9 @@ void corecontent::setup(Input& input, ContentBuilder& builder) {
     {
         Block& block = builder.blocks.create(CORE_STRUCT_AIR);
         for (uint i = 0; i < 6; i++) {
-            block.textureFaces[i] = "struct_air";
+            block.defaults.textureFaces[i] = "struct_air";
         }
-        block.drawGroup = -1;
+        block.defaults.drawGroup = -1;
         block.skyLightPassing = true;
         block.lightPassing = true;
         block.hitboxes = {AABB()};

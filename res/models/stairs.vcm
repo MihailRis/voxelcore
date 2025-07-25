@@ -1,0 +1,4 @@
+@box from (0,0,0) to (1,0.5,1) delete (top,south)
+@box from (0,0.5,0) to (1,1,0.5) delete (bottom,south)
+@rect from (0,0.5,0.5) right (1,0,0) up (0,0,0.5) texture "$2"
+@rect from (0,0,0) right (1,0,0) up (0,1,0) texture "$1"

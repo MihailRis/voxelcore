@@ -25,3 +25,6 @@ end
 print(#arr, arr:get_capacity())
 arr:trim()
 assert(#arr == arr:get_capacity())
+
+arr = Bytearray({0, 2, 7, 1, 16, 75, 25})
+assert(arr[6] == 75)

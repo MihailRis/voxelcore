@@ -22,8 +22,7 @@
             markup="md"
         ></textbox>
     </container>
-    <iframe id="editorRoot" pos="0,30" size-func="-1,gui.get_viewport()[2]-30" 
-            src="core:code_editor">
+    <iframe id="editorRoot" pos="0,30" size-func="-1,gui.get_viewport()[2]-30">
     </iframe>
     <textbox id='prompt' 
              consumer='submit' 

@@ -1,5 +1,6 @@
 #include "assetload_funcs.hpp"
 
+#include <array>
 #include <filesystem>
 #include <iostream>
 #include <stdexcept>
@@ -10,6 +11,7 @@
 #include "coders/imageio.hpp"
 #include "coders/json.hpp"
 #include "coders/obj.hpp"
+#include "coders/vcm.hpp"
 #include "coders/vec3.hpp"
 #include "constants.hpp"
 #include "debug/Logger.hpp"
@@ -74,6 +76,14 @@ static auto process_program(const ResPaths& paths, const std::string& filename) 
     return std::make_pair(vertex, fragment);
 }
 
+static auto read_program(const ResPaths& paths, const std::string& filename) {
+    io::path vertexFile = paths.find(filename + ".glslv");
+    io::path fragmentFile = paths.find(filename + ".glslf");
+    return std::make_pair(
+        io::read_string(vertexFile), io::read_string(fragmentFile)
+    );
+}
+
 assetload::postfunc assetload::shader(
     AssetsLoader*,
     const ResPaths& paths,
@@ -81,21 +91,18 @@ assetload::postfunc assetload::shader(
     const std::string& name,
     const std::shared_ptr<AssetCfg>&
 ) {
-    auto [vertex, fragment] = process_program(paths, filename);
+    auto result = read_program(paths, filename);
+    auto vertex = result.first;
+    auto fragment = result.second;
 
     io::path vertexFile = paths.find(filename + ".glslv");
     io::path fragmentFile = paths.find(filename + ".glslf");
 
-    std::string vertexSource = std::move(vertex.code);
-    std::string fragmentSource = std::move(fragment.code);
-
     return [=](auto assets) {
         assets->store(
             Shader::create(
-                vertexFile.string(),
-                fragmentFile.string(),
-                vertexSource,
-                fragmentSource
+                {vertexFile.string(), vertex},
+                {fragmentFile.string(), fragment}
             ),
             name
         );
@@ -125,13 +132,16 @@ assetload::postfunc assetload::posteffect(
 
     return [=](auto assets) {
         auto program = Shader::create(
-            effectFile.string(),
-            effectFile.string(),
-            vertexSource,
-            fragmentSource
+            {effectFile.string(), vertexSource},
+            {effectFile.string(), fragmentSource}
         );
+        bool advanced = false;
+        if (settings) {
+            advanced = dynamic_cast<const PostEffectCfg*>(settings.get())->advanced;
+        }
         assets->store(
-            std::make_shared<PostEffect>(std::move(program), params), name
+            std::make_shared<PostEffect>(advanced, std::move(program), params),
+            name
         );
     };
 }
@@ -300,7 +310,8 @@ assetload::postfunc assetload::sound(
 
 static void request_textures(AssetsLoader* loader, const model::Model& model) {
     for (auto& mesh : model.meshes) {
-        if (mesh.texture.find('$') == std::string::npos) {
+        if (mesh.texture.find('$') == std::string::npos &&
+            mesh.texture.find(':') == std::string::npos) {
             auto filename = TEXTURES_FOLDER + "/" + mesh.texture;
             loader->add(
                 AssetType::TEXTURE, filename, mesh.texture, nullptr
@@ -337,9 +348,40 @@ assetload::postfunc assetload::model(
         };
     }
     path = paths.find(file + ".obj");
+    if (io::exists(path)) {
+        auto text = io::read_string(path);
+        try {
+            auto model = obj::parse(path.string(), text).release();
+            return [=](Assets* assets) {
+                request_textures(loader, *model);
+                assets->store(std::unique_ptr<model::Model>(model), name);
+            };
+        } catch (const parsing_error& err) {
+            std::cerr << err.errorLog() << std::endl;
+            throw;
+        }
+    }
+
+    std::array<std::string, 2> extensions {
+        ".xml",
+        ".vcm"
+    };
+
+    path = "";
+    for (const auto& ext : extensions) {
+        auto newPath = paths.find(file + ext);
+        if (io::exists(newPath)) {
+            path = std::move(newPath);
+            break;
+        }
+    }
+    if (path.empty()) {
+        throw std::runtime_error("could not to find model " + util::quote(file));
+    }
+
     auto text = io::read_string(path);
     try {
-        auto model = obj::parse(path.string(), text).release();
+        auto model = vcm::parse(path.string(), text).release();
         return [=](Assets* assets) {
             request_textures(loader, *model);
             assets->store(std::unique_ptr<model::Model>(model), name);

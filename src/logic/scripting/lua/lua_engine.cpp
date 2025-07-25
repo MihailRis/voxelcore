@@ -64,6 +64,7 @@ static void create_libs(State* L, StateType stateType) {
         openlib(L, "__vc_app", applib);
     }
     if (stateType == StateType::BASE || stateType == StateType::SCRIPT) {
+        openlib(L, "assets", assetslib);
         openlib(L, "audio", audiolib);
         openlib(L, "console", consolelib);
         openlib(L, "core", corelib);

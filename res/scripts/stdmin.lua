@@ -461,10 +461,12 @@ function file.readlines(path)
     return lines
 end
 
+local _debug_getinfo = debug.getinfo
+
 function debug.count_frames()
     local frames = 1
     while true do
-        local info = debug.getinfo(frames)
+        local info = _debug_getinfo(frames)
         if info then
             frames = frames + 1
         else
@@ -477,7 +479,7 @@ function debug.get_traceback(start)
     local frames = {}
     local n = 2 + (start or 0)
     while true do
-        local info = debug.getinfo(n)
+        local info = _debug_getinfo(n)
         if info then
             table.insert(frames, info)
         else
@@ -567,7 +569,7 @@ end
 
 function require(path)
     if not string.find(path, ':') then
-        local prefix, _ = parse_path(debug.getinfo(2).source)
+        local prefix, _ = parse_path(_debug_getinfo(2).source)
         return require(prefix..':'..path)
     end
     local prefix, file = parse_path(path)

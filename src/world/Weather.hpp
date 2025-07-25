@@ -1,5 +1,6 @@
 #pragma once
 
+#include <glm/glm.hpp>
 #include <string>
 
 #include "presets/WeatherPreset.hpp"
@@ -43,6 +44,11 @@ struct Weather : Serializable {
 
     float thunderRate() const {
         return b.thunderRate * t + a.thunderRate * (1.0f - t);
+    }
+
+    float clouds() const {
+        float sqrtT = glm::sqrt(t);
+        return b.clouds * sqrtT + a.clouds * (1.0f - sqrtT);
     }
 
     dv::value serialize() const override;

@@ -163,6 +163,25 @@ Container for embedding an external document. Content is scaling to the iframe s
 
 - `src` - document id in the format `pack:name` (`pack/layouts/name.xml`)
 
+## *select*
+
+Drop-down list. Options are described by `option` sub-elements, the `value` attribute of which contains the value, the inner text is the text displayed in the UI.
+
+Example of list description:
+
+```xml
+<select selected="entity" width="200"
+        onselect="function(opt) print(opt) end">
+    <option value="block">Block</option>
+    <option value="item">Item</option>
+    <option value="entity">Entity</option>
+</select>
+```
+
+- `width` - minimum content width. Default: 100.
+- `selected` - initially selected value. Default: "".
+- `onselect` - function to which the user-selected value is passed
+
 # Inventory elements
 
 ## *inventory*

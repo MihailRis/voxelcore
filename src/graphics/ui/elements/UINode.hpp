@@ -21,25 +21,33 @@ namespace gui {
 
     using onaction = std::function<void(GUI&)>;
     using onnumberchange = std::function<void(GUI&, double)>;
+    using onstringchange = std::function<void(GUI&, const std::string&)>;
 
-    class ActionsSet {
-        std::unique_ptr<std::vector<onaction>> callbacks;
+    template<typename... Args>
+    class CallbacksSet {
     public:
-        void listen(const onaction& callback) {
+        using Func = std::function<void(Args...)>;
+    private:
+        std::unique_ptr<std::vector<Func>> callbacks;
+    public:
+        void listen(const Func& callback) {
             if (callbacks == nullptr) {
-                callbacks = std::make_unique<std::vector<onaction>>();
+                callbacks = std::make_unique<std::vector<Func>>();
             }
             callbacks->push_back(callback);
         }
 
-        void notify(GUI& gui) {
+        void notify(Args&&... args) {
             if (callbacks) {
                 for (auto& callback : *callbacks) {
-                    callback(gui);
+                    callback(std::forward<Args>(args)...);
                 }
             }
         }
     };
+
+    using ActionsSet = CallbacksSet<GUI&>;
+    using StringCallbacksSet = CallbacksSet<GUI&, const std::string&>;
     
     enum class Align {
         left, center, right,

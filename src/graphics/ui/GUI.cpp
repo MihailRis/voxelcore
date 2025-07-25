@@ -38,6 +38,8 @@ GUI::GUI(Engine& engine)
         std::make_unique<Camera>(glm::vec3(), engine.getWindow().getSize().y);
     uicamera->perspective = false;
     uicamera->flipped = true;
+    uicamera->near = -1.0f;
+    uicamera->far = 1.0f;
 
     menu = std::make_shared<Menu>(*this);
     menu->setId("menu");

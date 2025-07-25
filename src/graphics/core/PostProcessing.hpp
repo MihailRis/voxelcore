@@ -11,6 +11,9 @@ class Framebuffer;
 class DrawContext;
 class ImageData;
 class PostEffect;
+class Camera;
+class GBuffer;
+class Shader;
 
 struct PostProcessingVertex {
     glm::vec2 position;
@@ -24,25 +27,31 @@ struct PostProcessingVertex {
 /// @attention Current implementation does not support multiple render passes 
 /// for multiple effects. Will be implemented in v0.21
 class PostProcessing {
-    /// @brief Main framebuffer (lasy field)
-    std::unique_ptr<Framebuffer> fbo;
-    std::unique_ptr<Framebuffer> fboSecond;
-    /// @brief Fullscreen quad mesh as the post-processing canvas
-    std::unique_ptr<Mesh<PostProcessingVertex>> quadMesh;
-    std::vector<std::shared_ptr<PostEffect>> effectSlots;
 public:
     PostProcessing(size_t effectSlotsCount);
     ~PostProcessing();
 
     /// @brief Prepare and bind framebuffer
     /// @param context graphics context will be modified
-    void use(DrawContext& context);
+    void use(DrawContext& context, bool gbufferPipeline);
+
+    void renderDeferredShading(
+        const DrawContext& context,
+        const Assets& assets,
+        float timer,
+        const Camera& camera
+    );
 
     /// @brief Render fullscreen quad using the passed shader 
     /// with framebuffer texture bound
     /// @param context graphics context
     /// @throws std::runtime_error if use(...) wasn't called before
-    void render(const DrawContext& context, const Assets& assets, float timer);
+    void render(
+        const DrawContext& context,
+        const Assets& assets,
+        float timer,
+        const Camera& camera
+    );
 
     void setEffect(size_t slot, std::shared_ptr<PostEffect> effect);
 
@@ -52,4 +61,24 @@ public:
     std::unique_ptr<ImageData> toImage();
 
     Framebuffer* getFramebuffer() const;
+    void bindDepthBuffer();
+private:
+    void configureEffect(
+        const DrawContext& context,
+        PostEffect& effect,
+        Shader& shader,
+        float timer,
+        const Camera& camera
+    );
+
+    void refreshFbos(uint width, uint height);
+
+    /// @brief Main framebuffer (lasy field)
+    std::unique_ptr<Framebuffer> fbo;
+    std::unique_ptr<Framebuffer> fboSecond;
+    /// @brief Fullscreen quad mesh as the post-processing canvas
+    std::unique_ptr<Mesh<PostProcessingVertex>> quadMesh;
+    std::vector<std::shared_ptr<PostEffect>> effectSlots;
+    std::unique_ptr<GBuffer> gbuffer;
+    uint noiseTexture;
 };
