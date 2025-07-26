@@ -56,6 +56,10 @@ class Player : public Serializable {
     bool infiniteItems = true;
     bool instantDestruction = true;
     bool loadingChunks = true;
+
+    // attributes
+    float maxInteractionDistance = 10.0f;
+
     entityid_t eid = ENTITY_AUTO;
     entityid_t selectedEid = 0;
 
@@ -110,6 +114,9 @@ public:
 
     bool isLoadingChunks() const;
     void setLoadingChunks(bool flag);
+
+    float getMaxInteractionDistance() const;
+    void setMaxInteractionDistance(float distance);
 
     entityid_t getEntity() const;
     void setEntity(entityid_t eid);

@@ -268,6 +268,14 @@ void Player::setLoadingChunks(bool flag) {
     loadingChunks = flag;
 }
 
+float Player::getMaxInteractionDistance() const {
+    return maxInteractionDistance;
+}
+
+void Player::setMaxInteractionDistance(float distance) {
+    maxInteractionDistance = __max(1.0f, __min(200.0f, distance));
+}
+
 entityid_t Player::getEntity() const {
     return eid;
 }
