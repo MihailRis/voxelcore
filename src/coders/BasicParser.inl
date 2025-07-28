@@ -435,19 +435,21 @@ dv::value BasicParser<CharT>::parseNumber(int sign) {
                 static_cast<int64_t>(std::log10(afterdot) + 1)
             )
         );
-        c = source[pos];
 
         double dvalue = (value + (afterdot / (double)expo));
-        if (c == 'e' || c == 'E') {
-            pos++;
-            int s = 1;
-            if (peek() == '-') {
-                s = -1;
+        if (hasNext()){
+            c = source[pos];
+            if (c == 'e' || c == 'E') {
                 pos++;
-            } else if (peek() == '+') {
-                pos++;
+                int s = 1;
+                if (peek() == '-') {
+                    s = -1;
+                    pos++;
+                } else if (peek() == '+') {
+                    pos++;
+                }
+                return sign * dvalue * power(10.0, s * parseSimpleInt(10));
             }
-            return sign * dvalue * power(10.0, s * parseSimpleInt(10));
         }
         return sign * dvalue;
     }

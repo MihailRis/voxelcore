@@ -268,7 +268,7 @@ void main() {
         camera_vector, 					// the camera vector (ray direction of this pixel)
         1e12f, 						    // max dist, essentially the scene depth
         vec3(0.0f),						// scene color, the color of the current pixel being rendered
-        u_lightDir,						// light direction
+        vec3(u_lightDir.x, pow(u_lightDir.y, 3.0), u_lightDir.z),	// light direction
         vec3(40.0*fog),						// light intensity, 40 looks nice
         PLANET_POS,						// position of the planet
         PLANET_RADIUS,                  // radius of the planet in meters

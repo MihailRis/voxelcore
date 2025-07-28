@@ -61,6 +61,12 @@ block.defs_count() -> int
 
 -- Возвращает числовой id предмета, указанного в свойстве *picking-item*.
 block.get_picking_item(id: int) -> int
+
+-- Возвращает индекс варианта блока
+block.get_variant(x: int, y: int, z: int) -> int
+
+-- Устанавливает вариант блока по индексу
+block.set_variant(x: int, y: int, z: int, index: int) -> int
 ```
 
 ### Raycast

@@ -151,6 +151,12 @@ public:
         return std::wstring(source.substr(start, pos - start));
     }
 
+    void emitLineComment(devtools::Location start) {
+        auto string = readUntilEOL();
+        emitToken(TokenTag::COMMENT, std::wstring(string), start);
+        skipLine();
+    }
+
     std::vector<Token> tokenize() {
         skipWhitespace();
         while (hasNext()) {
@@ -229,16 +235,18 @@ public:
             }
             if (is_lua_operator_start(c)) {
                 auto text = parseOperator();
-                if (text == L"--") {
-                    auto string = readUntilEOL();
-                    emitToken(TokenTag::COMMENT, std::wstring(string), start);
-                    skipLine();
+                if (text == syntax.lineComment) {
+                    emitLineComment(start);
                     continue;
                 }
                 emitToken(TokenTag::OPERATOR, std::move(text), start);
                 continue;
             }
             auto text = readUntilWhitespace();
+            if (text.find(syntax.lineComment) == 0) {
+                emitLineComment(start);
+                continue;
+            }
             emitToken(TokenTag::UNEXPECTED, std::wstring(text), start);
         }
         return std::move(tokens);

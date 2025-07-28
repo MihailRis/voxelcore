@@ -64,10 +64,15 @@ function on_sensor_enter(index, oid)
             local odrop = other:get_component("base:drop").dropitem
             if odrop.id == dropitem.id and not odrop.data then
                 local stack = item.stack_size(dropitem.id)
-                local sum = dropitem.count + odrop.count
-                if sum <= stack then
-                    dropitem.count = sum
-                    other:despawn()
+                local sum = (dropitem.count or 0) + (odrop.count or 0)
+                if sum == 0 then
+                    dropitem:despawn();
+                    odrop:despawn();
+                    return
+                elseif sum <= stack then
+                    dropitem.count = 0
+                    odrop.count = sum
+                    entity:despawn()
                 end
             end
         end

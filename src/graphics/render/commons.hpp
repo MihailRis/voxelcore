@@ -14,10 +14,12 @@ struct ChunkVertex {
     glm::vec3 position;
     glm::vec2 uv;
     std::array<uint8_t, 4> color;
+    std::array<uint8_t, 4> normal;
 
     static constexpr VertexAttribute ATTRIBUTES[] = {
         {VertexAttribute::Type::FLOAT, false, 3},
         {VertexAttribute::Type::FLOAT, false, 2},
+        {VertexAttribute::Type::UNSIGNED_BYTE, true, 4},
         {VertexAttribute::Type::UNSIGNED_BYTE, true, 4},
         {{}, 0}};
 };
@@ -45,7 +47,7 @@ struct ChunkMeshData {
 };
 
 struct ChunkMesh {
-    std::unique_ptr<Mesh<ChunkVertex> > mesh;
+    std::unique_ptr<Mesh<ChunkVertex>> mesh;
     SortingMeshData sortingMeshData;
     std::unique_ptr<Mesh<ChunkVertex> > sortedMesh = nullptr;
 };

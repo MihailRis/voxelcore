@@ -12,6 +12,7 @@
 namespace network {
     using OnResponse = std::function<void(std::vector<char>)>;
     using OnReject = std::function<void(int)>;
+    using ConnectCallback = std::function<void(u64id_t, u64id_t)>;
 
     class Requests {
     public:
@@ -64,7 +65,7 @@ namespace network {
     class TcpServer {
     public:
         virtual ~TcpServer() {}
-        virtual void startListen(consumer<u64id_t> handler) = 0;
+        virtual void startListen(ConnectCallback handler) = 0;
         virtual void close() = 0;
         virtual bool isOpen() = 0;
         virtual int getPort() const = 0;
@@ -106,7 +107,7 @@ namespace network {
 
         u64id_t connect(const std::string& address, int port, consumer<u64id_t> callback);
 
-        u64id_t openServer(int port, consumer<u64id_t> handler);
+        u64id_t openServer(int port, ConnectCallback handler);
 
         u64id_t addConnection(const std::shared_ptr<Connection>& connection);
 

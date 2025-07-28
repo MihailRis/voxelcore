@@ -19,6 +19,7 @@ Subsections:
     - [file](scripting/builtins/libfile.md)
     - [gfx.blockwraps](scripting/builtins/libgfx-blockwraps.md)
     - [gfx.particles](particles.md#gfxparticles-library)
+    - [gfx.posteffects](scripting/builtins/libgfx-posteffects.md)
     - [gfx.text3d](3d-text.md#gfxtext3d-library)
     - [gfx.weather](scripting/builtins/libgfx-weather.md)
     - [gui](scripting/builtins/libgui.md)

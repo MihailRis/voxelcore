@@ -40,6 +40,49 @@ static void perform_user_block_fields(
     layout = StructLayout::create(fields);
 }
 
+static void load_variant(
+    Variant& variant, const dv::value& root, const std::string& name
+) {
+    // block texturing
+    if (root.has("texture")) {
+        const auto& texture = root["texture"].asString();
+        for (uint i = 0; i < 6; i++) {
+            variant.textureFaces[i] = texture;
+        }
+    } else if (root.has("texture-faces")) {
+        const auto& texarr = root["texture-faces"];
+        for (uint i = 0; i < 6; i++) {
+            variant.textureFaces[i] = texarr[i].asString();
+        }
+    }
+
+    // block model
+    auto& model = variant.model;
+    std::string modelTypeName = BlockModelTypeMeta.getNameString(model.type);
+    root.at("model").get(modelTypeName);
+    root.at("model-name").get(model.name);
+    if (BlockModelTypeMeta.getItem(modelTypeName, model.type)) {
+        if (model.type == BlockModelType::CUSTOM && model.customRaw == nullptr) {
+            if (root.has("model-primitives")) {
+                model.customRaw = root["model-primitives"];
+            } else if (model.name.empty()) {
+                throw std::runtime_error(
+                    name + ": no 'model-primitives' or 'model-name' found"
+                );
+            }
+        }
+    } else if (!modelTypeName.empty()) {
+        logger.error() << "unknown model: " << modelTypeName;
+        model.type = BlockModelType::NONE;
+    }
+    std::string cullingModeName = CullingModeMeta.getNameString(variant.culling);
+    root.at("culling").get(cullingModeName);
+    if (!CullingModeMeta.getItem(cullingModeName, variant.culling)) {
+        logger.error() << "unknown culling mode: " << cullingModeName;
+    }
+    root.at("draw-group").get(variant.drawGroup);
+}
+
 template<> void ContentUnitLoader<Block>::loadUnit(
     Block& def, const std::string& name, const io::path& file
 ) {
@@ -72,43 +115,34 @@ template<> void ContentUnitLoader<Block>::loadUnit(
 
     root.at("caption").get(def.caption);
 
-    // block texturing
-    if (root.has("texture")) {
-        const auto& texture = root["texture"].asString();
-        for (uint i = 0; i < 6; i++) {
-            def.textureFaces[i] = texture;
-        }
-    } else if (root.has("texture-faces")) {
-        const auto& texarr = root["texture-faces"];
-        for (uint i = 0; i < 6; i++) {
-            def.textureFaces[i] = texarr[i].asString();
-        }
-    }
+    load_variant(def.defaults, root, name);
 
-    // block model
-    auto& model = def.model;
-    std::string modelTypeName = BlockModelTypeMeta.getNameString(model.type);
-    root.at("model").get(modelTypeName);
-    root.at("model-name").get(def.model.name);
-    if (BlockModelTypeMeta.getItem(modelTypeName, model.type)) {
-        if (model.type == BlockModelType::CUSTOM && def.model.customRaw == nullptr) {
-            if (root.has("model-primitives")) {
-                def.model.customRaw = root["model-primitives"];
-            } else if (def.model.name.empty()) {
-                throw std::runtime_error(
-                    name + ": no 'model-primitives' or 'model-name' found"
-                );
+    if (root.has("state-based")) {
+        const auto& stateBased = root["state-based"];
+        if (stateBased.has("variants")) {
+            const auto& variants = stateBased["variants"];
+
+            int offset = 0;
+            int bitsCount = 4;
+            stateBased.at("offset").get(offset);
+            stateBased.at("bits").get(bitsCount);
+            if (offset < 0 || bitsCount <= 0 || offset + bitsCount > 8) {
+                throw std::runtime_error("Invalid state-based bits configuration");
+            }
+
+            def.variants = std::make_unique<Variants>();
+            def.variants->offset = 0;
+            def.variants->mask = 0xF;
+            def.variants->variants.push_back(def.defaults);
+            for (int i = 0; i < variants.size(); i++) {
+                Variant variant = def.defaults;
+                load_variant(variant, variants[i], name);
+                def.variants->variants.push_back(variant);
+            }
+            while (def.variants->variants.size() < BLOCK_MAX_VARIANTS) {
+                def.variants->variants.push_back(def.defaults);
             }
         }
-    } else if (!modelTypeName.empty()) {
-        logger.error() << "unknown model: " << modelTypeName;
-        model.type = BlockModelType::NONE;
-    }
-
-    std::string cullingModeName = CullingModeMeta.getNameString(def.culling);
-    root.at("culling").get(cullingModeName);
-    if (!CullingModeMeta.getItem(cullingModeName, def.culling)) {
-        logger.error() << "unknown culling mode: " << cullingModeName;
     }
 
     root.at("material").get(def.material);
@@ -176,9 +210,11 @@ template<> void ContentUnitLoader<Block>::loadUnit(
                 "block " + util::quote(def.name) + ": invalid block size"
             );
         }
-        if (model.type == BlockModelType::BLOCK &&
+        
+        // should variant modify hitbox?
+        if (def.defaults.model.type == BlockModelType::BLOCK &&
             (def.size.x != 1 || def.size.y != 1 || def.size.z != 1)) {
-            model.type = BlockModelType::AABB;
+            def.defaults.model.type = BlockModelType::AABB;
             def.hitboxes = {AABB(def.size)};
         }
     }
@@ -194,7 +230,6 @@ template<> void ContentUnitLoader<Block>::loadUnit(
     root.at("selectable").get(def.selectable);
     root.at("grounded").get(def.grounded);
     root.at("hidden").get(def.hidden);
-    root.at("draw-group").get(def.drawGroup);
     root.at("picking-item").get(def.pickingItem);
     root.at("surface-replacement").get(def.surfaceReplacement);
     root.at("script-name").get(def.scriptName);

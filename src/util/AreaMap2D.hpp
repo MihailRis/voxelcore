@@ -114,6 +114,17 @@ namespace util {
             return true;
         }
 
+        void remove(TCoord x, TCoord y) {
+            auto lx = x - offsetX;
+            auto ly = y - offsetY;
+            if (lx < 0 || ly < 0 || lx >= sizeX || ly >= sizeY) {
+                return;
+            }
+            if (outCallback)
+                outCallback(x, y, firstBuffer[ly * sizeX + lx]);
+            firstBuffer[ly * sizeX + lx] = T{};
+        }
+
         void setOutCallback(const OutCallback& callback) {
             outCallback = callback;
         }

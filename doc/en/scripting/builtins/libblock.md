@@ -59,6 +59,15 @@ block.is_replaceable_at(x: int, y: int, z: int) -> bool
 
 -- Returns count of available block IDs.
 block.defs_count() -> int
+
+-- Returns the index of the item specified in the *picking-item* property.
+block.get_picking_item(id: int) -> int
+
+-- Returns the block variant index
+block.get_variant(x: int, y: int, z: int) -> int
+
+-- Sets the block variant by index
+block.set_variant(x: int, y: int, z: int, index: int) -> int
 ```
 
 ## Rotation

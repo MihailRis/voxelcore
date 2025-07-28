@@ -147,14 +147,12 @@ void AssetsLoader::processPreload(
         add(tag, path, name);
         return;
     }
+    std::shared_ptr<AssetCfg> config = nullptr;
     map.at("path").get(path);
     switch (tag) {
         case AssetType::SOUND: {
             bool keepPCM = false;
-            add(tag,
-                path,
-                name,
-                std::make_shared<SoundCfg>(map.at("keep-pcm").get(keepPCM)));
+            config = std::make_shared<SoundCfg>(map.at("keep-pcm").get(keepPCM));
             break;
         }
         case AssetType::ATLAS: {
@@ -164,13 +162,19 @@ void AssetsLoader::processPreload(
             if (typeName == "separate") {
                 type = AtlasType::SEPARATE;
             }
-            add(tag, path, name, std::make_shared<AtlasCfg>(type));
+            config = std::make_shared<AtlasCfg>(type);
+            break;
+        }
+        case AssetType::POST_EFFECT: {
+            bool advanced = false;
+            map.at("advanced").get(advanced);
+            config = std::make_shared<PostEffectCfg>(advanced);
             break;
         }
         default:
-            add(tag, path, name);
             break;
     }
+    add(tag, path, name, std::move(config));
 }
 
 void AssetsLoader::processPreloadList(AssetType tag, const dv::value& list) {
@@ -223,6 +227,17 @@ void AssetsLoader::processPreloadConfigs(const Content* content) {
     }
 }
 
+static void add_variant(AssetsLoader& loader, const Variant& variant) {
+    if (!variant.model.name.empty() &&
+        variant.model.name.find(':') == std::string::npos) {
+        loader.add(
+            AssetType::MODEL,
+            MODELS_FOLDER + "/" + variant.model.name,
+            variant.model.name
+        );
+    }
+}
+
 void AssetsLoader::addDefaults(AssetsLoader& loader, const Content* content) {
     loader.processPreloadConfigs(content);
     if (content) {
@@ -257,13 +272,12 @@ void AssetsLoader::addDefaults(AssetsLoader& loader, const Content* content) {
             }
         }
         for (const auto& [_, def] : content->blocks.getDefs()) {
-            if (!def->model.name.empty() &&
-                def->model.name.find(':') == std::string::npos) {
-                loader.add(
-                    AssetType::MODEL,
-                    MODELS_FOLDER + "/" + def->model.name,
-                    def->model.name
-                );
+            if (def->variants) {
+                for (const auto& variant : def->variants->variants) {
+                    add_variant(loader, variant);
+                }
+            } else {
+                add_variant(loader, def->defaults);
             }
         }
         for (const auto& [_, def] : content->items.getDefs()) {

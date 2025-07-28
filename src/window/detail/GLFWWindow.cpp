@@ -96,8 +96,10 @@ static bool initialize_gl(int width, int height) {
         }
     }
 
+#ifndef __APPLE__
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(gl_message_callback, 0);
+#endif
 
     glViewport(0, 0, width, height);
     glClearColor(0.0f, 0.0f, 0.0f, 1);
@@ -228,7 +230,7 @@ public:
                 callbacks->second.notify();
             }
         }
-        if (pressed) {
+        if (pressed && key < MOUSE_KEYS_OFFSET) {
             pressedKeys.push_back(static_cast<Keycode>(key));
         }
     }
@@ -519,6 +521,7 @@ public:
     }
 
     std::unique_ptr<ImageData> takeScreenshot() override {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
         auto data = std::make_unique<ubyte[]>(size.x * size.y * 3);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glReadPixels(0, 0, size.x, size.y, GL_RGB, GL_UNSIGNED_BYTE, data.get());
@@ -668,10 +671,13 @@ std::tuple<
     }
 
     init_gl_extensions_list();
+
+    #ifndef __APPLE__
     if (is_gl_extension_supported("GL_KHR_debug")) {
         glEnable(GL_DEBUG_OUTPUT);
         glDebugMessageCallback(gl_message_callback, nullptr);
     }
+    #endif
 
     glViewport(0, 0, width, height);
     glClearColor(0.0f, 0.0f, 0.0f, 1);

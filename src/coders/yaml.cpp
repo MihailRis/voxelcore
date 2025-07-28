@@ -308,7 +308,7 @@ dv::value Parser::parseObject(dv::value&& object, int indent) {
         object[std::string(name)] = parseFullValue(indent);
         skipEmptyLines();
     }
-    return object;
+    return std::move(object);
 }
 
 dv::value yaml::parse(std::string_view filename, std::string_view source) {

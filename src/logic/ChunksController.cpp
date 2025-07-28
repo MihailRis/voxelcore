@@ -60,8 +60,24 @@ void ChunksController::update(
     }
 }
 
-bool ChunksController::loadVisible(const Player& player, uint padding) const {
+bool ChunksController::isInLoadingZone(
+    const Player& player, uint padding, int x, int z
+) const {
     const auto& chunks = *player.chunks;
+    int sizeX = chunks.getWidth();
+    int sizeY = chunks.getHeight();
+
+    int minDistance = ((sizeX - padding * 2) / 2) * ((sizeY - padding * 2) / 2);
+
+    int lx = (x - chunks.getOffsetX()) - sizeX / 2;
+    int lz = (z - chunks.getOffsetY()) - sizeY / 2;
+    int distance = (lx * lx + lz * lz);
+
+    return distance < minDistance;
+}
+
+bool ChunksController::loadVisible(const Player& player, uint padding) const {
+    auto& chunks = *player.chunks;
     int sizeX = chunks.getWidth();
     int sizeY = chunks.getHeight();
 
@@ -69,9 +85,30 @@ bool ChunksController::loadVisible(const Player& player, uint padding) const {
     int nearZ = 0;
     bool assigned = false;
     int minDistance = ((sizeX - padding * 2) / 2) * ((sizeY - padding * 2) / 2);
+    int maxDistance = ((sizeX) / 2) * ((sizeY) / 2);
+    for (uint z = 0; z < sizeY; z++) {
+        for (uint x = 0; x < sizeX; x++) {
+            int index = z * sizeX + x;
+            int lx = x - sizeX / 2;
+            int lz = z - sizeY / 2;
+            int distance = (lx * lx + lz * lz);
+            auto& chunk = chunks.getChunks()[index];
+            if (chunk != nullptr) {
+                if (distance >= maxDistance) {
+                    chunks.remove(
+                        x + chunks.getOffsetX(), z + chunks.getOffsetY()
+                    );
+                }
+                continue;
+            }
+        }
+    }
     for (uint z = padding; z < sizeY - padding; z++) {
         for (uint x = padding; x < sizeX - padding; x++) {
             int index = z * sizeX + x;
+            int lx = x - sizeX / 2;
+            int lz = z - sizeY / 2;
+            int distance = (lx * lx + lz * lz);
             auto& chunk = chunks.getChunks()[index];
             if (chunk != nullptr) {
                 if (chunk->flags.loaded && !chunk->flags.lighted) {
@@ -81,9 +118,7 @@ bool ChunksController::loadVisible(const Player& player, uint padding) const {
                 }
                 continue;
             }
-            int lx = x - sizeX / 2;
-            int lz = z - sizeY / 2;
-            int distance = (lx * lx + lz * lz);
+
             if (distance < minDistance) {
                 minDistance = distance;
                 nearX = x;

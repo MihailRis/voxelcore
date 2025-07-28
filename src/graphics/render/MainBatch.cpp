@@ -94,39 +94,39 @@ void MainBatch::cube(
     const glm::vec3 Z(0.0f, 0.0f, 1.0f);
 
     quad(
-            coord + Z * size.z * 0.5f,
-            X, Y, glm::vec2(size.x, size.y),
-            (shading ? do_tint(0.8) * tint : tint),
-            glm::vec3(1.0f), texfaces[5]
+        coord + Z * size.z * 0.5f,
+        X, Y, Z, glm::vec2(size.x, size.y),
+        (shading ? do_tint(0.8) * tint : tint),
+        glm::vec3(1.0f), texfaces[5]
     );
     quad(
-            coord - Z * size.z * 0.5f,
-            -X, Y, glm::vec2(size.x, size.y),
-            (shading ? do_tint(0.9f) * tint : tint),
-            glm::vec3(1.0f), texfaces[4]
+        coord - Z * size.z * 0.5f,
+        -X, Y, -Z, glm::vec2(size.x, size.y),
+        (shading ? do_tint(0.9f) * tint : tint),
+        glm::vec3(1.0f), texfaces[4]
     );
     quad(
-            coord + Y * size.y * 0.5f,
-            -X, Z, glm::vec2(size.x, size.z),
-            (shading ? do_tint(1.0f) * tint : tint),
-            glm::vec3(1.0f), texfaces[3]
+        coord + Y * size.y * 0.5f,
+        -X, Z, Y, glm::vec2(size.x, size.z),
+        (shading ? do_tint(1.0f) * tint : tint),
+        glm::vec3(1.0f), texfaces[3]
     );
     quad(
-            coord - Y * size.y * 0.5f,
-            X, Z, glm::vec2(size.x, size.z),
-            (shading ? do_tint(0.7f) * tint : tint),
-            glm::vec3(1.0f), texfaces[2]
+        coord - Y * size.y * 0.5f,
+        X, Z, -Y, glm::vec2(size.x, size.z),
+        (shading ? do_tint(0.7f) * tint : tint),
+        glm::vec3(1.0f), texfaces[2]
     );
     quad(
-            coord + X * size.x * 0.5f,
-            -Z, Y, glm::vec2(size.z, size.y),
-            (shading ? do_tint(0.8f) * tint : tint),
-            glm::vec3(1.0f), texfaces[1]
+        coord + X * size.x * 0.5f,
+        -Z, Y, X, glm::vec2(size.z, size.y),
+        (shading ? do_tint(0.8f) * tint : tint),
+        glm::vec3(1.0f), texfaces[1]
     );
     quad(
-            coord - X * size.x * 0.5f,
-            Z, Y, glm::vec2(size.z, size.y),
-            (shading ? do_tint(0.9f) * tint : tint),
-            glm::vec3(1.0f), texfaces[1]
+        coord - X * size.x * 0.5f,
+        Z, Y, -X, glm::vec2(size.z, size.y),
+        (shading ? do_tint(0.9f) * tint : tint),
+        glm::vec3(1.0f), texfaces[1]
     );
 }

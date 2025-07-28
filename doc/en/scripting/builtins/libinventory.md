@@ -156,7 +156,7 @@ inventory.move(
     [optional] rangeEnd: int
 )
 
--- Decreases the item count in the slot by 1.
+-- Decreases the item count in the slot by specified number.
 inventory.decrement(
     -- inventory id
     invid: int,

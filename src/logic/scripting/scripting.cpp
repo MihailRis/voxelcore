@@ -90,7 +90,7 @@ public:
     }
     
     void update() override {
-        if (id == 0) {
+        if (!alive || id == 0) {
             return;
         }
         if (lua::requireglobal(L, "__vc_resume_coroutine")) {

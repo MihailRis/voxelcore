@@ -26,6 +26,9 @@ TEST(TOML, EncodeDecode) {
         object["score"] = score;
         object["visible"] = visible;
         object["data"] = srcBytes;
+        object["values"] = dv::list({
+            5, 3, std::string("hello"), dv::object({{"number", 1234}})
+        });
 
         text = toml::stringify(object, "");
         std::cout << text << std::endl;

@@ -245,8 +245,25 @@ static int l_get_user_bits(lua::State* L) {
         }
     }
     uint mask = ((1 << bits) - 1) << offset;
-    uint data = (blockstate2int(vox->state) & mask) >> offset;
-    return lua::pushinteger(L, data);
+    return lua::pushinteger(L, (blockstate2int(vox->state) & mask) >> offset);
+}
+
+static int l_get_variant(lua::State* L) {
+    auto x = lua::tointeger(L, 1);
+    auto y = lua::tointeger(L, 2);
+    auto z = lua::tointeger(L, 3);
+
+    auto vox = blocks_agent::get(*level->chunks, x, y, z);
+    if (vox == nullptr) {
+        return lua::pushinteger(L, 0);
+    }
+    const auto& def = content->getIndices()->blocks.require(vox->id);
+    if (def.variants == nullptr) {
+        return lua::pushinteger(L, 0);
+    }
+    return lua::pushinteger(
+        L, (vox->state.userbits >> def.variants->offset) & def.variants->mask
+    );
 }
 
 static int l_set_user_bits(lua::State* L) {
@@ -282,6 +299,43 @@ static int l_set_user_bits(lua::State* L) {
     return 0;
 }
 
+static int l_set_variant(lua::State* L) {
+    auto& chunks = *level->chunks;
+    auto x = lua::tointeger(L, 1);
+    auto y = lua::tointeger(L, 2);
+    auto z = lua::tointeger(L, 3);
+
+    int cx = floordiv<CHUNK_W>(x);
+    int cz = floordiv<CHUNK_D>(z);
+    auto chunk = blocks_agent::get_chunk(chunks, cx, cz);
+    if (chunk == nullptr || y < 0 || y >= CHUNK_H) {
+        return 0;
+    }
+    int lx = x - cx * CHUNK_W;
+    int lz = z - cz * CHUNK_D;
+    auto vox = &chunk->voxels[vox_index(lx, y, lz)];
+    const auto& def = content->getIndices()->blocks.require(vox->id);
+
+    if (def.variants == nullptr) {
+        return 0;
+    }
+
+    auto offset = def.variants->offset;
+    auto mask = def.variants->mask;
+    auto value = (lua::tointeger(L, 4) << offset) & mask;
+
+    if (def.rt.extended) {
+        auto origin = blocks_agent::seek_origin(chunks, {x, y, z}, def, vox->state);
+        vox = blocks_agent::get(chunks, origin.x, origin.y, origin.z);
+        if (vox == nullptr) {
+            return 0;
+        }
+    }
+    vox->state.userbits = (vox->state.userbits & (~mask)) | value;
+    chunk->setModifiedAndUnsaved();
+    return 0;
+}
+
 static int l_is_replaceable_at(lua::State* L) {
     auto x = lua::tointeger(L, 1);
     auto y = lua::tointeger(L, 2);
@@ -302,7 +356,7 @@ static int l_get_textures(lua::State* L) {
     if (auto def = require_block(L)) {
         lua::createtable(L, 6, 0);
         for (size_t i = 0; i < 6; i++) {
-            lua::pushstring(L, def->textureFaces[i]);
+            lua::pushstring(L, def->defaults.textureFaces[i]); // TODO: variant argument
             lua::rawseti(L, i + 1);
         }
         return 1;
@@ -312,7 +366,8 @@ static int l_get_textures(lua::State* L) {
 
 static int l_get_model(lua::State* L) {
     if (auto def = require_block(L)) {
-        return lua::pushlstring(L, BlockModelTypeMeta.getName(def->model.type));
+        // TODO: variant argument
+        return lua::pushlstring(L, BlockModelTypeMeta.getName(def->defaults.model.type));
     }
     return 0;
 }
@@ -652,6 +707,8 @@ const luaL_Reg blocklib[] = {
     {"set_rotation", lua::wrap<l_set_rotation>},
     {"get_user_bits", lua::wrap<l_get_user_bits>},
     {"set_user_bits", lua::wrap<l_set_user_bits>},
+    {"get_variant", lua::wrap<l_get_variant>},
+    {"set_variant", lua::wrap<l_set_variant>},
     {"is_extended", lua::wrap<l_is_extended>},
     {"get_size", lua::wrap<l_get_size>},
     {"is_segment", lua::wrap<l_is_segment>},

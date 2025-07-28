@@ -149,8 +149,12 @@ void EnginePaths::setProjectFolder(std::filesystem::path folder) {
 }
 
 void EnginePaths::setCurrentWorldFolder(io::path folder) {
+    if (folder.empty()) {
+        io::remove_device("world");
+    } else {
+        io::create_subdevice("world", "user", folder);
+    }
     this->currentWorldFolder = std::move(folder);
-    io::create_subdevice("world", "user", currentWorldFolder);
 }
 
 std::string EnginePaths::mount(const io::path& file) {
@@ -192,6 +196,9 @@ std::string EnginePaths::createWriteableDevice(const std::string& name) {
             break;
         }
     }
+    if (name == "core") {
+        folder = "res:";
+    }
     if (folder.emptyOrInvalid()) {
         throw std::runtime_error("pack not found");
     }
@@ -213,6 +220,7 @@ void EnginePaths::cleanup() {
         io::remove_device(entryPoint);
     }
     entryPoints.clear();
+    writeables.clear();
 }
 
 void EnginePaths::setEntryPoints(std::vector<PathsRoot> entryPoints) {

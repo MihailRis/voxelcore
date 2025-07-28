@@ -40,8 +40,10 @@ public:
 
     void loadContent();
 
-    std::vector<ContentPack>& getContentPacks();
-    std::vector<ContentPack> getAllContentPacks();
+    void setContentPacksRaw(std::vector<ContentPack>&& packs);
+
+    const std::vector<ContentPack>& getContentPacks() const;
+    const std::vector<ContentPack>& getAllContentPacks() const;
 
     PacksManager& scan();
 private:
@@ -52,4 +54,5 @@ private:
     std::vector<std::string> basePacks;
     std::unique_ptr<PacksManager> manager;
     std::vector<ContentPack> contentPacks;
+    std::vector<ContentPack> allPacks; // includes 'core'
 };

@@ -1,12 +1,6 @@
 <splitbox id="editorRoot" orientation="horizontal" split-pos="0.3">
     <splitbox split-pos="0.75">
-        <panel interval="2" color="0" padding="2">
-            <textbox pos="2" padding="4,0,4,0" sub-consumer="filter_files" hint="@Filter"></textbox>
-            <panel id="filesList" color="#00000030" interval="6" padding="4"
-                    size-func="-1,-45" pos="2,38">
-                <!-- content is generated in script -->
-            </panel>
-        </panel>
+        <iframe src="core:files_panel"></iframe>
         <panel id="problemsLog"
             color="#00000030" 
             padding="5,15,5,15">
@@ -14,46 +8,49 @@
         </panel>
     </splitbox>
     <splitbox id="editorContainer" split-pos="0.8">
-        <container color="#00000080" 
-                   onclick="document.editor.focused = true document.editor.caret = -1">
-            <container size-func="-1,30" color="#00000020">
-                <image id="lockIcon" src="gui/lock" tooltip="@Read only"
-                        interactive="true" onclick="unlock_access()"
-                        color="#FFFFFF80" size="16" pos="4,6"
-                        hover-color="#1080FF"></image>
-                <panel orientation="horizontal" gravity="top-right" 
-                        size="60,16" padding="8" interval="8" color="0">
-                    <image id="saveIcon" src="gui/save" tooltip="@Save" 
-                        enabled="false" interactive="true" 
-                        hover-color="#1080FF"
-                        onclick="save_current_file()"
-                        color="#FFFFFF80" size="16"></image>
-                    <image id="infoIcon" src="gui/info" tooltip="@editor.info.tooltip" 
-                        enabled="true" interactive="true" 
-                        color="#FFFFFF80" size="16"></image>
-                    <image id="syncIcon" src="gui/play" tooltip="@Run" 
-                        enabled="true" interactive="true" 
-                        hover-color="#1080FF"
-                        onclick="run_current_file()"
-                        color="#FFFFFF80" size="16"></image>
-                </panel>
-                <label id="title" pos="26,8"></label>
+        <splitbox id="codePanel" orientation="horizontal">
+            <container color="#00000080" cursor="text"
+                    onclick="document.editor.focused = true document.editor.caret = -1">
+                <container size-func="-1,30" color="#00000020">
+                    <image id="lockIcon" src="gui/lock" tooltip="@Read only"
+                            interactive="true" onclick="unlock_access()"
+                            color="#FFFFFF80" size="16" pos="4,6"
+                            hover-color="#1080FF"></image>
+                    <panel orientation="horizontal" gravity="top-right" 
+                            size="60,16" padding="8" interval="8" color="0">
+                        <image id="saveIcon" src="gui/save" tooltip="@Save" 
+                            enabled="false" interactive="true" 
+                            hover-color="#1080FF"
+                            onclick="save_current_file()"
+                            color="#FFFFFF80" size="16"></image>
+                        <image id="infoIcon" src="gui/info" tooltip="@editor.info.tooltip" 
+                            enabled="true" interactive="true" 
+                            color="#FFFFFF80" size="16"></image>
+                        <image id="syncIcon" src="gui/play" tooltip="@Run" 
+                            enabled="true" interactive="true" 
+                            hover-color="#1080FF"
+                            onclick="run_current_file()"
+                            color="#FFFFFF80" size="16"></image>
+                    </panel>
+                    <label id="title" pos="26,8"></label>
+                </container>
+                <textbox
+                    id='editor'
+                    pos='0,30'
+                    color='0'
+                    autoresize='true'
+                    margin='0'
+                    padding='5'
+                    multiline='true'
+                    line-numbers='true'
+                    oncontrolkey='on_control_combination'
+                    size-func="-1,40"
+                    text-wrap='false'
+                    scroll-step='50'
+                ></textbox>
             </container>
-            <textbox
-                id='editor'
-                pos='0,30'
-                color='0'
-                autoresize='true'
-                margin='0'
-                padding='5'
-                multiline='true'
-                line-numbers='true'
-                oncontrolkey='on_control_combination'
-                size-func="-1,40"
-                text-wrap='false'
-                scroll-step='50'
-            ></textbox>
-        </container>
+            <modelviewer id="modelviewer" visible="false" center="0.5,0.5,0.5" cam-rotation="45,-45,0"/>
+        </splitbox>
         <splitbox orientation="horizontal" split-pos="0.4">
             <panel id="traceback" padding="4" color="#000000A0">
             </panel>

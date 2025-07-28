@@ -179,7 +179,7 @@ local FFIBytearray = {
             return bytearray_type(buffer, #n, #n)
         elseif t == "table" then
             local capacity = math.max(#n, MIN_CAPACITY)
-            local buffer = malloc(capacity)
+            local buffer = FFI.cast("unsigned char*", malloc(capacity))
             for i=1,#n do
                 buffer[i - 1] = n[i]
             end

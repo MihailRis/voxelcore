@@ -9,6 +9,7 @@
 
 #include "presets/WeatherPreset.hpp"
 #include "world/Weather.hpp"
+#include "window/Camera.hpp"
 
 class Level;
 class Player;
@@ -30,7 +31,15 @@ class PostProcessing;
 class DrawContext;
 class ModelBatch;
 class Assets;
+class ShadowMap;
+class GBuffer;
 struct EngineSettings;
+
+struct CompileTimeShaderSettings {
+    bool advancedRender = false;
+    bool shadows = false;
+    bool ssao = false;
+};
 
 class WorldRenderer {
     Engine& engine;
@@ -44,11 +53,19 @@ class WorldRenderer {
     std::unique_ptr<GuidesRenderer> guides;
     std::unique_ptr<ChunksRenderer> chunks;
     std::unique_ptr<Skybox> skybox;
+    std::unique_ptr<ShadowMap> shadowMap;
+    std::unique_ptr<ShadowMap> wideShadowMap;
     Weather weather {};
+    Camera shadowCamera;
+    Camera wideShadowCamera;
     
     float timer = 0.0f;
     bool debug = false;
     bool lightsDebug = false;
+    bool gbufferPipeline = false;
+    bool shadows = false;
+
+    CompileTimeShaderSettings prevCTShaderSettings {};
 
     /// @brief Render block selection lines
     void renderBlockSelection();
@@ -69,6 +86,14 @@ class WorldRenderer {
         const Camera& camera,
         const EngineSettings& settings,
         float fogFactor
+    );
+
+    void generateShadowsMap(
+        const Camera& camera,
+        const DrawContext& pctx,
+        ShadowMap& shadowMap,
+        Camera& shadowCamera,
+        float scale
     );
 public:
     std::unique_ptr<ParticlesRenderer> particles;
