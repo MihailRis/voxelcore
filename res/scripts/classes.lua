@@ -46,22 +46,66 @@ local Socket = {__index={
     get_address=function(self) return network.__get_address(self.id) end,
 }}
 
-network.tcp_connect = function(address, port, callback)
-    local socket = setmetatable({id=0}, Socket)
-    socket.id = network.__connect(address, port, function(id)
-        callback(socket)
-    end)
-    return socket
-end
-
 local ServerSocket = {__index={
     close=function(self) return network.__closeserver(self.id) end,
     is_open=function(self) return network.__is_serveropen(self.id) end,
     get_port=function(self) return network.__get_serverport(self.id) end,
 }}
 
-network.tcp_open = function(port, handler)
-    return setmetatable({id=network.__open(port, function(id)
+
+local _tcp_server_callbacks = {}
+local _tcp_client_callbacks = {}
+
+network.tcp_open = function (port, handler)
+    local socket = setmetatable({id=network.__open(port)}, ServerSocket)
+
+    _tcp_server_callbacks[socket.id] = function(id)
         handler(setmetatable({id=id}, Socket))
-    end)}, ServerSocket)
+    end
+    return socket
+end
+
+network.tcp_connect = function(address, port, callback)
+    local socket = setmetatable({id=0}, Socket)
+    socket.id = network.__connect(address, port)
+    _tcp_client_callbacks[socket.id] = function() callback(socket) end
+    return socket
+end
+
+network.__process_events = function()
+    local CLIENT_CONNECTED = 1
+    local CONNECTED_TO_SERVER = 2
+
+    local cleaned = false
+    local events = network.__pull_events()
+    for i, event in ipairs(events) do
+        local etype, sid, cid = unpack(event)
+
+        if etype == CLIENT_CONNECTED then
+            local callback = _tcp_server_callbacks[sid]
+            if callback then
+                callback(cid)
+            end
+        elseif etype == CONNECTED_TO_SERVER then
+            local callback = _tcp_client_callbacks[cid]
+            if callback then
+                callback()
+            end
+        end
+
+        -- remove dead servers
+        if not cleaned then
+            for sid, _ in pairs(_tcp_server_callbacks) do
+                if not network.__is_serveropen(sid) then
+                    _tcp_server_callbacks[sid] = nil
+                end
+            end
+            for cid, _ in pairs(_tcp_client_callbacks) do
+                if not network.__is_alive(cid) then
+                    _tcp_client_callbacks[cid] = nil
+                end
+            end
+            cleaned = true
+        end
+    end
 end

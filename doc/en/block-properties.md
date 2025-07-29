@@ -143,6 +143,8 @@ Block is not a physical obstacle if **false**
 
 An array of 6 numbers describing an offset an size of a block hitbox.
 
+The numbers are specified in the range [0.0, 1.0] - i.e. within the block (in the case of an extended block, the hitbox can be larger than one, but must not go beyond the "size" property).
+
 Array *\[0.25, 0.0, 0.5,  0.75, 0.4, 0.3\]* describes hitbox width:
 - offset 0.25m east
 - offset 0.0m up
@@ -150,6 +152,15 @@ Array *\[0.25, 0.0, 0.5,  0.75, 0.4, 0.3\]* describes hitbox width:
 - 0.75m width (from east to west)
 - 0.4m height
 - 0.3m length (from south to north)
+
+For composite hitboxes, the *hitboxes* property is used - an array of hitboxes, for example:
+
+```json
+"hitboxes": [
+  [0, 0, 0, 1, 0.625, 1],
+  [0, 0.6875, 0, 1, 0.3125, 1]
+]
+```
 
 ### *grounded*
 
