@@ -91,50 +91,28 @@ static onaction create_action(
 static void read_uinode(
     const UiXmlReader& reader, const xml::xmlelement& element, UINode& node
 ) {
-    if (element.has("id")) {
-        node.setId(element.attr("id").getText());
-    }
-    if (element.has("class")) {
-        node.setClassname(element.attr("class").getText());
-    }
-    if (element.has("pos")) {
-        node.setPos(element.attr("pos").asVec2());
-    }
-    if (element.has("min-size")) {
-        node.setMinSize(element.attr("min-size").asVec2());
-    }
-    if (element.has("size")) {
-        node.setSize(element.attr("size").asVec2());
-    }
+    node.setName(element.getTag());
+
+    if (element.has("id")) node.setId(element.attr("id").getText());
+    if (element.has("class")) node.setClassname(element.attr("class").getText());
+    if (element.has("pos")) node.setPos(element.attr("pos").asVec2());
+    if (element.has("min-size")) node.setMinSize(element.attr("min-size").asVec2());
+    if (element.has("size")) node.setSize(element.attr("size").asVec2());
+
     if (element.has("color")) {
         glm::vec4 color = element.attr("color").asColor();
-        glm::vec4 hoverColor = color;
-        glm::vec4 pressedColor = color;
-        if (element.has("hover-color")) {
-            hoverColor = node.getHoverColor();
-        }
-        if (element.has("pressed-color")) {
-            pressedColor = node.getPressedColor();
-        }
+
         node.setColor(color);
-        node.setHoverColor(hoverColor);
-        node.setPressedColor(pressedColor);
+        node.setHoverColor(color);
+        node.setPressedColor(color);
     }
-    if (element.has("margin")) {
-        node.setMargin(element.attr("margin").asVec4());
-    }
-    if (element.has("z-index")) {
-        node.setZIndex(element.attr("z-index").asInt());
-    }
-    if (element.has("interactive")) {
-        node.setInteractive(element.attr("interactive").asBool());
-    }
-    if (element.has("visible")) {
-        node.setVisible(element.attr("visible").asBool());
-    }
-    if (element.has("enabled")) {
-        node.setEnabled(element.attr("enabled").asBool());
-    }
+
+    if (element.has("margin")) node.setMargin(element.attr("margin").asVec4());
+    if (element.has("z-index")) node.setZIndex(element.attr("z-index").asInt());
+    if (element.has("interactive")) node.setInteractive(element.attr("interactive").asBool());
+    if (element.has("visible")) node.setVisible(element.attr("visible").asBool());
+    if (element.has("enabled")) node.setEnabled(element.attr("enabled").asBool());
+
     if (element.has("position-func")) {
         node.setPositionFunc(scripting::create_vec2_supplier(
             reader.getEnvironment(),
@@ -149,18 +127,13 @@ static void read_uinode(
             reader.getFilename()
         ));
     }
-    if (element.has("hover-color")) {
-        node.setHoverColor(element.attr("hover-color").asColor());
-    }
-    if (element.has("pressed-color")) {
-        node.setPressedColor(element.attr("pressed-color").asColor());
-    }
+    if (element.has("hover-color")) node.setHoverColor(element.attr("hover-color").asColor());
+    if (element.has("pressed-color")) node.setPressedColor(element.attr("pressed-color").asColor());
+
     const auto& alignName = element.attr("align", "").getText();
     node.setAlign(align_from_string(alignName, node.getAlign()));
 
-    if (element.has("gravity")) {
-        node.setGravity(gravity_from_string(element.attr("gravity").getText()));
-    }
+    if (element.has("gravity"))  node.setGravity(gravity_from_string(element.attr("gravity").getText()));
 
     if (element.has("tooltip")) {
         auto tooltip = util::str2wstr_utf8(element.attr("tooltip").getText());
@@ -196,8 +169,6 @@ static void read_uinode(
     if (auto ondoubleclick = create_action(reader, element, "ondoubleclick")) {
         node.listenDoubleClick(ondoubleclick);
     }
-    
-    node.setName(element.getTag());
 }
 
 static void read_container_impl(

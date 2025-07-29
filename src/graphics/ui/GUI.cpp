@@ -22,8 +22,6 @@
 #include "window/Window.hpp"
 #include "window/input.hpp"
 
-#include "style/StylesheetParser.h"
-
 using namespace gui;
 
 GUI::GUI(Engine& engine)

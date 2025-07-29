@@ -3,6 +3,7 @@
 #include "delegates.hpp"
 #include "graphics/core/commons.hpp"
 #include "window/input.hpp"
+#include "graphics/ui/style/StylesheetParser.hpp"
 
 #include <glm/glm.hpp>
 #include <vector>
@@ -303,5 +304,7 @@ namespace gui {
         void setMustRefresh() {
             mustRefresh = true;
         }
+        void UINode::applyStylesheet(const std::vector<StylesheetRule>& rules);
+        std::unordered_map<std::string, style::value> calculateStylesheet(const std::vector<StylesheetRule>& rules);
     };
 }

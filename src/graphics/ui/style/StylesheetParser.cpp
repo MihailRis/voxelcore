@@ -1,10 +1,10 @@
-#include "StylesheetParser.h"
+#include "StylesheetParser.hpp"
 #include <cctype>
 #include <sstream>
 #include <variant>
 
 // Утилита: trim
-static std::string trim(const std::string& s) {
+std::string trim(const std::string& s) {
     size_t start = s.find_first_not_of(" \t\n\r");
     size_t end = s.find_last_not_of(" \t\n\r");
     return (start == std::string::npos) ? "" : s.substr(start, end - start + 1);
@@ -20,13 +20,6 @@ static std::vector<std::string> splitSelectors(const std::string& sel) {
         if (!t.empty()) result.push_back(t);
     }
     return result;
-}
-
-StyleProperty getStylePropertyType(const std::string& property) {
-    if (property == "color") return StyleProperty::COLOR;
-    if (property == "margin") return StyleProperty::MARGIN;
-    if (property == "z-index") return StyleProperty::Z_INDEX;
-    return StyleProperty::UNKNOWN;
 }
 
 std::vector<StylesheetRule> StylesheetParser::parse(const std::string& source) {
