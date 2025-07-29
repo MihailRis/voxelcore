@@ -94,6 +94,9 @@ static void read_uinode(
     if (element.has("id")) {
         node.setId(element.attr("id").getText());
     }
+    if (element.has("class")) {
+        node.setClassname(element.attr("class").getText());
+    }
     if (element.has("pos")) {
         node.setPos(element.attr("pos").asVec2());
     }
@@ -193,6 +196,8 @@ static void read_uinode(
     if (auto ondoubleclick = create_action(reader, element, "ondoubleclick")) {
         node.listenDoubleClick(ondoubleclick);
     }
+    
+    node.setName(element.getTag());
 }
 
 static void read_container_impl(

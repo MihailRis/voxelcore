@@ -421,3 +421,19 @@ std::shared_ptr<UINode> UINode::find(
     }
     return nullptr;
 }
+
+void UINode::setClassname(std::string _classname) {
+    classname = _classname;
+}
+
+std::string UINode::getClassname() const {
+    return classname;
+}
+
+void UINode::setName(std::string _name) {
+    name = _name;
+}
+
+std::string UINode::getName() const {
+    return name;
+}

@@ -78,6 +78,10 @@ namespace gui {
     private:
         /// @brief element identifier used for direct access in UiDocument
         std::string id = "";
+        /// @brief element name
+        std::string name = "";
+        /// @brief element name
+        std::string classname = "";
         /// @brief element enabled state
         bool enabled = true;
     protected:
@@ -202,7 +206,13 @@ namespace gui {
 
         bool isPressed() const;
         void defocus();
-        bool isFocused() const; 
+        bool isFocused() const;
+
+        void setClassname(std::string _classname);
+        std::string getClassname() const;
+
+        void setName(std::string name);
+        std::string getName() const;
 
         /// @brief Check if element catches all user input when focused
         virtual bool isFocuskeeper() const {return false;}
