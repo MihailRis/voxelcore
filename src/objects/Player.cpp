@@ -277,7 +277,7 @@ float Player::getMaxInteractionDistance() const {
 }
 
 void Player::setMaxInteractionDistance(float distance) {
-    maxInteractionDistance = __max(1.0f, __min(200.0f, distance));
+    maxInteractionDistance = std::max(1.0f, std::min(200.0f, distance));
 }
 
 float Player::getGravityScale() const {
