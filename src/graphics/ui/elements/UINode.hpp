@@ -304,7 +304,7 @@ namespace gui {
         void setMustRefresh() {
             mustRefresh = true;
         }
-        void UINode::applyStylesheet(const std::vector<StylesheetRule>& rules);
+        void applyStylesheet(const std::vector<StylesheetRule>& rules);
         std::unordered_map<std::string, style::value> calculateStylesheet(const std::vector<StylesheetRule>& rules);
     };
 }
