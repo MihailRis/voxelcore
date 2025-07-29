@@ -194,6 +194,34 @@ static int l_set_max_interaction_distance(lua::State* L) {
     return 0;
 }
 
+static int l_get_speed(lua::State* L) {
+    if (auto player = get_player(L, 1)) {
+        return lua::pushnumber(L, player->getSpeed());
+    }
+    return 0;
+}
+
+static int l_set_speed(lua::State* L) {
+    if (auto player = get_player(L, 1)) {
+        player->setSpeed( static_cast<float>(lua::tonumber(L, 2)) );
+    }
+    return 0;
+}
+
+static int l_get_gravity_scale(lua::State* L) {
+    if (auto player = get_player(L, 1)) {
+        return lua::pushnumber(L, player->getGravityScale());
+    }
+    return 0;
+}
+
+static int l_set_gravity_scale(lua::State* L) {
+    if (auto player = get_player(L, 1)) {
+        player->setGravityScale( static_cast<float>(lua::tonumber(L, 2)) );
+    }
+    return 0;
+}
+
 static int l_get_selected_block(lua::State* L) {
     if (auto player = get_player(L, 1)) {
         if (player->selection.vox.id == BLOCK_VOID) {
@@ -343,6 +371,10 @@ const luaL_Reg playerlib[] = {
     {"set_loading_chunks", lua::wrap<l_set_loading_chunks>},
     {"get_max_interaction_distance", lua::wrap<l_get_max_interaction_distance>},
     {"set_max_interaction_distance", lua::wrap<l_set_max_interaction_distance>},
+    {"get_speed", lua::wrap<l_get_speed>},
+    {"set_speed", lua::wrap<l_set_speed>},
+    {"get_gravity_scale", lua::wrap<l_get_gravity_scale>},
+    {"set_gravity_scale", lua::wrap<l_set_gravity_scale>},
     {"set_selected_slot", lua::wrap<l_set_selected_slot>},
     {"get_selected_block", lua::wrap<l_get_selected_block>},
     {"get_selected_entity", lua::wrap<l_get_selected_entity>},

@@ -87,7 +87,7 @@ void Player::updateEntity() {
     }
     hitbox->linearDamping = PLAYER_GROUND_DAMPING;
     hitbox->verticalDamping = flight;
-    hitbox->gravityScale = flight ? 0.0f : 1.0f;
+    hitbox->gravityScale = flight ? 0.0f : gravityScale;
     if (flight || !hitbox->grounded) {
         hitbox->linearDamping = PLAYER_AIR_DAMPING;
     }
@@ -220,6 +220,10 @@ float Player::getSpeed() const {
     return speed;
 }
 
+void Player::setSpeed(float newSpeed) {
+    speed = newSpeed;
+}
+
 bool Player::isSuspended() const {
     return suspended;
 }
@@ -276,6 +280,14 @@ void Player::setMaxInteractionDistance(float distance) {
     maxInteractionDistance = __max(1.0f, __min(200.0f, distance));
 }
 
+float Player::getGravityScale() const {
+    return gravityScale;
+}
+
+void Player::setGravityScale(float scale) {
+    gravityScale = scale;
+}
+
 entityid_t Player::getEntity() const {
     return eid;
 }
@@ -330,6 +342,9 @@ dv::value Player::serialize() const {
     root["rotation"] = dv::to_value(rotation);
     root["spawnpoint"] = dv::to_value(spawnpoint);
 
+    root["speed"] = speed;
+    root["gravity-scale"] = gravityScale;
+    root["max-interaction-distance"] = maxInteractionDistance;
     root["flight"] = flight;
     root["noclip"] = noclip;
     root["suspended"] = suspended;
@@ -363,6 +378,10 @@ void Player::deserialize(const dv::value& src) {
     const auto& sparr = src["spawnpoint"];
     setSpawnPoint(glm::vec3(
         sparr[0].asNumber(), sparr[1].asNumber(), sparr[2].asNumber()));
+    
+    if (src.has("speed")) speed = src["speed"].asNumber();
+    if (src.has("gravity-scale")) gravityScale = src["gravity-scale"].asNumber();
+    if (src.has("max-interaction-distance")) maxInteractionDistance = src["max-interaction-distance"].asNumber();
 
     flight = src["flight"].asBoolean();
     noclip = src["noclip"].asBoolean();

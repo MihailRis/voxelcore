@@ -89,6 +89,27 @@ player.set_loading_chunks(playerid: int, bool)
 
 Getter and setter of the property that determines whether the player is loading chunks.
 
+```lua
+player.get_max_interaction_distance(playerid: int) -> float
+player.set_max_interaction_distance(playerid: int, distance: float)
+```
+
+Getter and setter of the property for max interaction distance.
+
+```lua
+player.get_speed(playerid: int) -> float
+player.set_speed(playerid: int, speed: float)
+```
+
+Getter and setter of the property that determines player speed.
+
+```lua
+player.get_gravity_scale(playerid: int) -> float
+player.set_gravity_scale(playerid: int, scale: float)
+```
+
+Getter and setter of the property that determines gravity scale for player.
+
 ``` lua
 player.set_spawnpoint(playerid: int, x: number, y: number, z: number)
 player.get_spawnpoint(playerid: int) -> number, number, number

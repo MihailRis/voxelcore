@@ -46,6 +46,7 @@ class Player : public Serializable {
     int64_t id;
     std::string name;
     float speed;
+    
     int chosenSlot;
     glm::vec3 position;
     glm::vec3 spawnpoint {};
@@ -59,6 +60,7 @@ class Player : public Serializable {
 
     // attributes
     float maxInteractionDistance = 10.0f;
+    float gravityScale = 1.0f;
 
     entityid_t eid = ENTITY_AUTO;
     entityid_t selectedEid = 0;
@@ -95,7 +97,12 @@ public:
     void setChosenSlot(int index);
 
     int getChosenSlot() const;
+
     float getSpeed() const;
+    void setSpeed(float speed);
+
+    float getGravityScale() const;
+    void setGravityScale(float scale);
 
     bool isSuspended() const;
     void setSuspended(bool flag);
