@@ -237,9 +237,10 @@ void Engine::postUpdate() {
 void Engine::updateFrontend() {
     double delta = time.getDelta();
     updateHotkeys();
-    audio::update(delta);
+    audio::update(delta * time_scale);
     gui->act(delta, window->getSize());
-    screen->update(delta);
+    screen->update(delta * time_scale);
+    
     gui->postAct();
 }
 
@@ -359,6 +360,7 @@ void Engine::onWorldOpen(std::unique_ptr<Level> level, int64_t localPlayer) {
 void Engine::onWorldClosed() {
     logger.info() << "world closed";
     levelConsumer(nullptr, -1);
+    setTimeScale(1.0f);
 }
 
 void Engine::quit() {
@@ -398,6 +400,14 @@ SettingsHandler& Engine::getSettingsHandler() {
 
 Time& Engine::getTime() {
     return time;
+}
+
+float Engine::getTimeScale() const {
+    return time_scale;
+}
+
+void Engine::setTimeScale(float scale) {
+    time_scale = scale;
 }
 
 const CoreParameters& Engine::getCoreParameters() const {
