@@ -118,19 +118,6 @@ void Container::setScrollable(bool flag) {
     scrollable = flag;
 }
 
-std::string stylesheet = R"(
-        label {
-            color: #ff0000;
-        }
-        button:hover {
-            color: #22222288;
-        }
-        button {
-            color: #11111188;
-        }
-    )";
-
-std::vector<StylesheetRule> rules = StylesheetParser::parse(stylesheet);
 
 void Container::draw(const DrawContext& pctx, const Assets& assets) {
     glm::vec2 pos = calcPos();
@@ -147,7 +134,6 @@ void Container::draw(const DrawContext& pctx, const Assets& assets) {
         );
         for (const auto& node : nodes) {
             if (node->isVisible()) {
-                node->applyStylesheet(rules);
                 node->draw(pctx, assets);
             }
         }
