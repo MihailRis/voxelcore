@@ -8,26 +8,26 @@
 
 namespace style {
 
-// --- Конструкторы ---
 
-// Конструктор по умолчанию
-value::value() = default; // Определение, если в .h только декларация
 
-// Конструктор копирования
+
+value::value() = default; 
+
+
 value::value(const value& other) : data(other.data) {
-    // Копируем кэш, если он существует
-    // (Предполагается, что glm::vec* поддерживают копирование)
+    
+    
     if (other.color_cache) {
         color_cache = std::make_unique<glm::vec4>(*other.color_cache);
     }
     color_cache_valid = other.color_cache_valid;
     cached_string_value = other.cached_string_value;
-    // std::cout << "value copy constructor called" << std::endl; // Отладка
+    
 }
 
-// Оператор присваивания копированием
+
 value& value::operator=(const value& other) {
-    // std::cout << "value copy assignment called" << std::endl; // Отладка
+    
     if (this != &other) {
         data = other.data;
         if (other.color_cache) {
@@ -41,30 +41,30 @@ value& value::operator=(const value& other) {
     return *this;
 }
 
-// Move конструктор
+
 value::value(value&& other) noexcept
     : data(std::move(other.data))
     , color_cache(std::move(other.color_cache))
     , color_cache_valid(other.color_cache_valid)
     , cached_string_value(std::move(other.cached_string_value)) {
-    // std::cout << "value move constructor called" << std::endl; // Отладка
-    // other.color_cache_valid = false; // Не обязательно, other будет разрушен
+    
+    
 }
 
-// Move оператор присваивания
+
 value& value::operator=(value&& other) noexcept {
-    // std::cout << "value move assignment called" << std::endl; // Отладка
+    
     if (this != &other) {
         data = std::move(other.data);
         color_cache = std::move(other.color_cache);
         color_cache_valid = other.color_cache_valid;
         cached_string_value = std::move(other.cached_string_value);
-        // other.color_cache_valid = false; // Не обязательно
+        
     }
     return *this;
 }
 
-// Конструкторы от конкретных типов
+
 value::value(std::monostate) : data(std::monostate{}) {}
 value::value(const char* v) : data(std::string(v)) {}
 value::value(std::string v) : data(std::move(v)) {}
@@ -79,7 +79,7 @@ value::value(glm::vec3 v) : data(v) {}
 value::value(glm::vec4 v) : data(v) {}
 
 
-// --- Методы проверки типа ---
+
 
 bool value::isNull() const {
     return std::holds_alternative<std::monostate>(data);
@@ -126,12 +126,12 @@ value::Type value::getType() const {
     if (isVec2()) return Type::Vec2;
     if (isVec3()) return Type::Vec3;
     if (isVec4()) return Type::Vec4;
-    return Type::Null; // На всякий случай
+    return Type::Null; 
 }
 
 
-// --- Методы получения значений (примеры) ---
-// (У вас, вероятно, уже есть полные реализации этих методов)
+
+
 
 int64_t value::asInt(int64_t def) const {
     if (isInteger()) {
@@ -163,23 +163,23 @@ double value::asFloat(double def) const {
     return def;
 }
 
-// ... (остальные методы as... и вспомогательные функции)
 
 
-// --- Фабричные методы ---
+
+
 
 value value::fromString(const std::string& str) {
     if (auto result = tryFromString(str)) {
-        // Теперь это должно работать, так как конструктор копирования определен
+        
         return *result;
     }
-    return value(str); // Возврат как строка, если парсинг не удался
+    return value(str); 
 }
 
 std::optional<value> value::tryFromString(const std::string& str) {
     if (str.empty()) return std::nullopt;
 
-    // Попробуем разные типы по порядку
+    
     if (auto val = parseInt(str)) {
         return value(*val);
     }
@@ -192,19 +192,19 @@ std::optional<value> value::tryFromString(const std::string& str) {
         return value(*val);
     }
 
-    // Проверим, может это цвет?
+    
     if (auto color = parseColor(str)) {
         return value(*color);
     }
 
-    // Если ничего не подошло, возвращаем nullopt
-    // или можно вернуть как строку: return value(str);
+    
+    
     return std::nullopt;
 }
 
 
-// --- Вспомогательные функции для парсинга (примеры) ---
-// (У вас, вероятно, уже есть реализации)
+
+
 
 std::optional<int64_t> value::parseInt(const std::string& str) {
     return parsers::parseInt(str);
@@ -222,7 +222,7 @@ std::optional<glm::vec4> value::parseColor(const std::string& str) {
     return parsers::parseColor(str);
 }
 
-// Реализации утилит из namespace parsers (если они в value.cpp)
+
 namespace parsers {
     std::optional<int64_t> parseInt(const std::string& str) {
         if (str.empty()) return std::nullopt;
@@ -257,11 +257,11 @@ namespace parsers {
 
         std::string hex = str.substr(1);
 
-        // Убираем пробелы (на всякий случай)
+        
         hex.erase(std::remove(hex.begin(), hex.end(), ' '), hex.end());
 
         if (hex.length() == 3) {
-            // #RGB -> #RRGGBB
+            
             std::string expanded;
             for (char c : hex) {
                 expanded += c;
@@ -271,7 +271,7 @@ namespace parsers {
         }
 
         if (hex.length() == 4) {
-            // #RGBA -> #RRGGBBAA
+            
             std::string expanded;
             for (size_t i = 0; i < 4; ++i) {
                 expanded += hex[i];
@@ -281,7 +281,7 @@ namespace parsers {
         }
 
         if (hex.length() == 6) {
-            // #RRGGBB
+            
             try {
                 unsigned int r = std::stoi(hex.substr(0, 2), nullptr, 16);
                 unsigned int g = std::stoi(hex.substr(2, 2), nullptr, 16);
@@ -293,7 +293,7 @@ namespace parsers {
         }
 
         if (hex.length() == 8) {
-            // #RRGGBBAA
+            
             try {
                 unsigned int r = std::stoi(hex.substr(0, 2), nullptr, 16);
                 unsigned int g = std::stoi(hex.substr(2, 2), nullptr, 16);
@@ -307,27 +307,27 @@ namespace parsers {
 
         return std::nullopt;
     }
-} // namespace parsers
+} 
 
 
-// --- Остальные методы ---
-// ... (toString, operator==, Hash и т.д. - реализации должны быть у вас)
+
+
 
 bool value::operator==(const value& other) const {
-    // Простая реализация сравнения
+    
     if (this->getType() != other.getType()) return false;
 
-    // Сравнение конкретных значений
+    
     switch (this->getType()) {
         case Type::Null: return other.isNull();
         case Type::String: return std::get<std::string>(this->data) == std::get<std::string>(other.data);
         case Type::Integer: return std::get<int64_t>(this->data) == std::get<int64_t>(other.data);
-        case Type::Float: return std::abs(std::get<double>(this->data) - std::get<double>(other.data)) < 1e-10; // Точность?
+        case Type::Float: return std::abs(std::get<double>(this->data) - std::get<double>(other.data)) < 1e-10; 
         case Type::Boolean: return std::get<bool>(this->data) == std::get<bool>(other.data);
         case Type::Vec2: return std::get<glm::vec2>(this->data) == std::get<glm::vec2>(other.data);
         case Type::Vec3: return std::get<glm::vec3>(this->data) == std::get<glm::vec3>(other.data);
         case Type::Vec4: return std::get<glm::vec4>(this->data) == std::get<glm::vec4>(other.data);
-        default: return false; // Для не поддерживаемых типов
+        default: return false; 
     }
 }
 
@@ -349,9 +349,9 @@ std::string value::typeName() const {
     }
 }
 
-// Реализация хэш-функции
+
 std::size_t value::Hash::operator()(const value& v) const {
-    // Базовая реализация хэша
+    
     switch (v.getType()) {
         case Type::String:
             return std::hash<std::string>{}(v.asString());
@@ -425,12 +425,12 @@ glm::vec4 value::asVec4(const glm::vec4& def) const {
     if (isVec4()) {
         return std::get<glm::vec4>(data);
     }
-    // Vec3 -> Vec4 (w = 1.0)
+    
     if (isVec3()) {
         auto v3 = std::get<glm::vec3>(data);
         return glm::vec4(v3, 1.0f);
     }
-    // Vec2 -> Vec4 (z=0, w=1)
+    
     if (isVec2()) {
         auto v2 = std::get<glm::vec2>(data);
         return glm::vec4(v2, 0.0f, 1.0f);

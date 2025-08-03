@@ -1,4 +1,4 @@
-// Stylesheet.cpp
+
 #include "Stylesheet.h"
 #include "StyleContext.h"
 #include <sstream>
@@ -7,7 +7,6 @@
 
 namespace style {
 
-// Реализация PropertyID функций
 PropertyID getPropertyID(const std::string& name) {
     static const std::unordered_map<std::string, PropertyID> property_map = {
         {"color", PropertyID::Color},
@@ -86,10 +85,10 @@ std::string getPropertyName(PropertyID id) {
     return (it != property_names.end()) ? it->second : "unknown";
 }
 
-// Реализация Selector
+
 Selector::Selector(Type type, std::string value) 
     : type_(type), value_(std::move(value)) {
-    // Вычисляем специфичность (упрощенная версия CSS-специфичности)
+
     switch (type_) {
         case Type::Universal: specificity_ = 0; break;
         case Type::Tag: specificity_ = 1; break;
@@ -128,7 +127,7 @@ std::size_t Selector::Hash::operator()(const Selector& s) const {
            std::hash<std::string>{}(s.value_);
 }
 
-// Реализация StyleRule
+
 StyleRule::StyleRule(std::vector<Selector> selectors_, 
                      std::unordered_map<PropertyID, value> declarations_)
     : selectors(std::move(selectors_)), declarations(std::move(declarations_)) {
@@ -144,7 +143,7 @@ int StyleRule::getSpecificity() const {
 }
 
 bool StyleRule::matches(const StyleContext& context) const {
-    // Пока поддерживаем только простые селекторы (без комбинаторов)
+
     for (const auto& selector : selectors) {
         if (selector.matches(context)) {
             return true;
@@ -153,7 +152,7 @@ bool StyleRule::matches(const StyleContext& context) const {
     return false;
 }
 
-// Реализация Stylesheet
+
 void Stylesheet::addRule(const StyleRule& rule) {
     rules_.push_back(rule);
 }
@@ -166,18 +165,15 @@ void Stylesheet::addRule(const std::vector<Selector>& selectors,
 std::vector<const StyleRule*> Stylesheet::getMatchingRules(const StyleContext& context) const {
     std::vector<const StyleRule*> matching_rules;
     
-    // Если есть индекс, используем его для ускорения
+
     if (!tag_index_.empty() || !class_index_.empty() || !id_index_.empty()) {
-        // Используем индекс для быстрого поиска
         std::unordered_set<size_t> candidate_indices;
         
-        // Проверяем по тегу
         auto tag_it = tag_index_.find(context.getTag());
         if (tag_it != tag_index_.end()) {
             candidate_indices.insert(tag_it->second.begin(), tag_it->second.end());
         }
         
-        // Проверяем по классам
         for (const auto& cls : context.getClasses()) {
             auto class_it = class_index_.find(cls);
             if (class_it != class_index_.end()) {
@@ -185,20 +181,18 @@ std::vector<const StyleRule*> Stylesheet::getMatchingRules(const StyleContext& c
             }
         }
         
-        // Проверяем по ID
         auto id_it = id_index_.find(context.getID());
         if (id_it != id_index_.end()) {
             candidate_indices.insert(id_it->second.begin(), id_it->second.end());
         }
         
-        // Проверяем кандидатов
         for (size_t index : candidate_indices) {
             if (index < rules_.size() && rules_[index].matches(context)) {
                 matching_rules.push_back(&rules_[index]);
             }
         }
     } else {
-        // Линейный поиск (если индекс не построен)
+
         for (const auto& rule : rules_) {
             if (rule.matches(context)) {
                 matching_rules.push_back(&rule);
@@ -243,14 +237,14 @@ void Stylesheet::buildIndex() {
                     id_index_[selector.getValue()].push_back(i);
                     break;
                 case Selector::Type::Universal:
-                    // Универсальный селектор не индексируем
+
                     break;
             }
         }
     }
 }
 
-// Фабричные методы для селекторов
+
 Selector Stylesheet::createTagSelector(const std::string& tag) {
     return Selector(Selector::Type::Tag, tag);
 }
@@ -267,7 +261,7 @@ Selector Stylesheet::createUniversalSelector() {
     return Selector(Selector::Type::Universal, "*");
 }
 
-// Утилиты для селекторов
+
 namespace selectors {
     Selector tag(const std::string& name) {
         return Selector(Selector::Type::Tag, name);
@@ -286,4 +280,4 @@ namespace selectors {
     }
 }
 
-} // namespace style
+}

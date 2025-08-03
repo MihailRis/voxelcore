@@ -13,7 +13,7 @@ StylesheetParser::ParseResult StylesheetParser::parse(const std::string& css_sou
     column_ = 1;
     
     ParseResult result;
-    result.rules.reserve(16); // Резервируем место для оптимизации
+    result.rules.reserve(16); 
     
     try {
         while (position_ < source_.length()) {
@@ -22,7 +22,7 @@ StylesheetParser::ParseResult StylesheetParser::parse(const std::string& css_sou
             
             if (position_ >= source_.length()) break;
             
-            // Парсим селекторы
+            
             auto selectors = parseSelectorGroup();
             if (selectors.empty()) {
                 return makeError("Expected selector");
@@ -30,22 +30,22 @@ StylesheetParser::ParseResult StylesheetParser::parse(const std::string& css_sou
             
             skipWhitespace();
             
-            // Ожидаем начало блока деклараций
+            
             if (!match('{')) {
                 return makeError("Expected '{' after selector");
             }
             
-            // Парсим блок деклараций
+            
             auto declarations = parseDeclarationBlock();
             
-            // Ожидаем конец блока
+            
             if (!match('}')) {
                 return makeError("Expected '}' after declarations");
             }
-            // ВАЖНО: нужно переместить позицию после найденной скобки
+            
             position_++;
             
-            // Создаем правило
+            
             if (!declarations.empty()) {
                 result.rules.emplace_back(selectors, declarations);
             }
@@ -71,24 +71,24 @@ std::vector<Selector> StylesheetParser::parseSelectorGroup() {
         
         if (position_ >= source_.length()) break;
         
-        // Проверяем, не достигли ли мы конца селектора или блока
+        
         if (peek() == '{' || peek() == '}' || peek() == ';') {
             break;
         }
         
-        // Парсим простой селектор
+        
         Selector selector = parseSimpleSelector();
-        // Добавляем ВСЕ селекторы, включая универсальные *
+        
         selectors.push_back(selector);
         
         skipWhitespace();
         
-        // Если следующий символ не ',', значит группа закончилась
+        
         if (position_ >= source_.length() || source_[position_] != ',') {
             break;
         }
         
-        consume(); // Пропускаем ','
+        consume(); 
         skipWhitespace();
     }
     
@@ -108,19 +108,19 @@ Selector StylesheetParser::parseSimpleSelector() {
             return Selector(Selector::Type::Universal, "*");
             
         case '#': {
-            consume(); // Пропускаем '#'
+            consume(); 
             std::string id = consumeIdentifier();
             if (id.empty()) {
-                return Selector(Selector::Type::Universal, "*"); // fallback
+                return Selector(Selector::Type::Universal, "*"); 
             }
             return Selector(Selector::Type::ID, id);
         }
         
         case '.': {
-            consume(); // Пропускаем '.'
+            consume(); 
             std::string className = consumeIdentifier();
             if (className.empty()) {
-                return Selector(Selector::Type::Universal, "*"); // fallback
+                return Selector(Selector::Type::Universal, "*"); 
             }
             return Selector(Selector::Type::Class, className);
         }
@@ -130,7 +130,7 @@ Selector StylesheetParser::parseSimpleSelector() {
                 std::string tag = consumeIdentifier();
                 return Selector(Selector::Type::Tag, tag);
             }
-            // Если символ не подходит ни под один тип, возвращаем универсальный селектор
+            
             return Selector(Selector::Type::Universal, "*");
         }
     }
@@ -144,7 +144,7 @@ std::unordered_map<PropertyID, value> StylesheetParser::parseDeclarationBlock() 
         
         if (position_ >= source_.length() || peek() == '}') break;
         
-        // Парсим одну декларацию
+        
         auto declaration = parseDeclaration();
         if (declaration.first != PropertyID::Unknown) {
             declarations[declaration.first] = declaration.second;
@@ -152,7 +152,7 @@ std::unordered_map<PropertyID, value> StylesheetParser::parseDeclarationBlock() 
         
         skipWhitespace();
         
-        // Пропускаем ';'
+        
         if (position_ < source_.length() && peek() == ';') {
             consume();
         }
@@ -166,7 +166,7 @@ std::unordered_map<PropertyID, value> StylesheetParser::parseDeclarationBlock() 
 std::pair<PropertyID, value> StylesheetParser::parseDeclaration() {
     skipWhitespace();
     
-    // Парсим имя свойства
+    
     std::string property_name = consumeIdentifier();
     if (property_name.empty()) {
         return {PropertyID::Unknown, value()};
@@ -174,39 +174,39 @@ std::pair<PropertyID, value> StylesheetParser::parseDeclaration() {
     
     skipWhitespace();
     
-    // Ожидаем ':'
+    
     if (!match(':')) {
-        skipUntil(';'); // Пропускаем до конца декларации
+        skipUntil(';'); 
         return {PropertyID::Unknown, value()};
     }
     
     skipWhitespace();
     
-    // Парсим значение
+    
     std::string value_str;
     while (position_ < source_.length() && 
            peek() != ';' && peek() != '}') {
         if (!isWhitespace(peek())) {
             value_str += consume();
         } else {
-            // Сохраняем пробелы в значении, если они важны
+            
             value_str += consume();
         }
     }
     
-    // Преобразуем в PropertyID
+    
     PropertyID prop_id = getPropertyID(property_name);
     if (prop_id == PropertyID::Unknown) {
         return {PropertyID::Unknown, value()};
     }
     
-    // Преобразуем строку значения в value
+    
     value val = value::fromString(value_str);
     
     return {prop_id, val};
 }
 
-// Добавьте этот вспомогательный метод
+
 void StylesheetParser::skipUntil(char delimiter) {
     while (position_ < source_.length() && peek() != delimiter && peek() != '}') {
         consume();
@@ -216,7 +216,7 @@ void StylesheetParser::skipUntil(char delimiter) {
     }
 }
 
-// Вспомогательные методы
+
 void StylesheetParser::skipWhitespace() {
     while (position_ < source_.length() && isWhitespace(peek())) {
         if (peek() == '\n') {
@@ -232,7 +232,7 @@ void StylesheetParser::skipWhitespace() {
 void StylesheetParser::skipComments() {
     while (position_ < source_.length() - 1) {
         if (source_[position_] == '/' && source_[position_ + 1] == '*') {
-            // Найден комментарий /* */
+            
             position_ += 2;
             column_ += 2;
             
@@ -242,24 +242,24 @@ void StylesheetParser::skipComments() {
                     column_ += 2;
                     break;
                 }
-                if (source_[position_] == '\n') {  // Исправлено: source_[position_] вместо peek()
+                if (source_[position_] == '\n') {  
                     line_++;
                     column_ = 1;
                 } else {
                     column_++;
                 }
-                position_++;  // column_ должен обновляться до position_++
+                position_++;  
             }
         } else if (source_[position_] == '/' && source_[position_ + 1] == '/') {
-            // Найден комментарий //
+            
             position_ += 2;
             column_ += 2;
             
-            while (position_ < source_.length() && source_[position_] != '\n') {  // Исправлено
+            while (position_ < source_.length() && source_[position_] != '\n') {  
                 position_++;
                 column_++;
             }
-            // Пропускаем символ новой строки, если он есть
+            
             if (position_ < source_.length() && source_[position_] == '\n') {
                 position_++;
                 line_++;
@@ -334,12 +334,12 @@ std::string StylesheetParser::consumeString() {
     char quote = peek();
     if (quote != '"' && quote != '\'') return "";
     
-    consume(); // Пропускаем открывающую кавычку
+    consume(); 
     
     std::string result;
     while (position_ < source_.length() && peek() != quote) {
         if (peek() == '\\') {
-            consume(); // Пропускаем '\' 
+            consume(); 
             if (position_ < source_.length()) {
                 result += consume();
             }
@@ -349,7 +349,7 @@ std::string StylesheetParser::consumeString() {
     }
     
     if (position_ < source_.length() && peek() == quote) {
-        consume(); // Пропускаем закрывающую кавычку
+        consume(); 
     }
     
     return result;
@@ -361,7 +361,7 @@ std::string StylesheetParser::consumeNumber() {
     });
 }
 
-// Статические утилиты
+
 std::vector<std::string> StylesheetParser::splitSelectors(const std::string& selector_string) {
     std::vector<std::string> selectors;
     std::string current;
@@ -396,7 +396,7 @@ std::pair<std::string, std::string> StylesheetParser::splitDeclaration(const std
     std::string property = declaration.substr(0, colon_pos);
     std::string value = declaration.substr(colon_pos + 1);
     
-    // Убираем пробелы
+    
     property.erase(0, property.find_first_not_of(" \t\r\n"));
     property.erase(property.find_last_not_of(" \t\r\n") + 1);
     
@@ -406,7 +406,7 @@ std::pair<std::string, std::string> StylesheetParser::splitDeclaration(const std
     return {property, value};
 }
 
-// Вспомогательные функции
+
 bool StylesheetParser::isWhitespace(char c) {
     return c == ' ' || c == '\t' || c == '\n' || c == '\r';
 }
@@ -423,7 +423,7 @@ bool StylesheetParser::isNumberChar(char c) {
     return std::isdigit(c) || c == '.' || c == '-' || c == '+';
 }
 
-// Обработка ошибок
+
 StylesheetParser::ParseResult StylesheetParser::makeError(const std::string& message) const {
     ParseResult result;
     result.success = false;
@@ -436,7 +436,7 @@ std::string StylesheetParser::getCurrentPosition() const {
     return "line " + std::to_string(line_) + ", column " + std::to_string(column_);
 }
 
-// Утилиты для внешнего использования
+
 namespace parser {
     StylesheetParser::ParseResult parseCSS(const std::string& css_string) {
         StylesheetParser parser;
@@ -456,9 +456,9 @@ namespace parser {
     }
 }
 
-// Добавим метод в Stylesheet для удобства
+
 bool Stylesheet::parseAndAddRule(const std::string& css_string) {
     return parser::parseAndAddToStylesheet(*this, css_string);
 }
 
-} // namespace style
+} 

@@ -5,7 +5,7 @@
 
 namespace style {
 
-// Реализация конструкторов
+
 StyleContext::StyleContext() : tag_("node") {}
 
 StyleContext::StyleContext(const std::string& tag) 
@@ -33,7 +33,7 @@ StyleContext::StyleContext(gui::UINode& node)
     updateFromUINode();
 }
 
-// Сеттеры
+
 void StyleContext::setTag(const std::string& tag) {
     tag_ = tag;
     selector_cache_valid_ = false;
@@ -44,7 +44,7 @@ void StyleContext::setID(const std::string& id) {
     selector_cache_valid_ = false;
 }
 
-// Работа с классами
+
 void StyleContext::addClass(const std::string& className) {
     classes_.insert(className);
     selector_cache_valid_ = false;
@@ -72,7 +72,7 @@ void StyleContext::clearClasses() {
     selector_cache_valid_ = false;
 }
 
-// Работа с состояниями
+
 void StyleContext::setState(State state, bool enabled) {
     if (enabled) {
         states_.insert(state);
@@ -89,7 +89,7 @@ void StyleContext::clearStates() {
     states_.clear();
 }
 
-// Синхронизация с UINode
+
 void StyleContext::syncWithUINode() {
     if (ui_node_) {
         updateFromUINode();
@@ -99,13 +99,13 @@ void StyleContext::syncWithUINode() {
 void StyleContext::updateFromUINode() {
     if (!ui_node_) return;
 
-    // Обновляем ID из UINode
+    
     id_ = ui_node_->getId();
     
-    // Обновляем классы из classname
+    
     std::string classname = ui_node_->getClassname();
     if (!classname.empty()) {
-        // Разделяем classname на отдельные классы (предполагаем разделение пробелами)
+        
         std::istringstream iss(classname);
         std::string cls;
         classes_.clear();
@@ -116,7 +116,7 @@ void StyleContext::updateFromUINode() {
         }
     }
     
-    // Обновляем состояния на основе свойств UINode
+    
     states_.clear();
     if (!ui_node_->isEnabled()) {
         states_.insert(State::Disabled);
@@ -134,7 +134,7 @@ void StyleContext::updateFromUINode() {
     selector_cache_valid_ = false;
 }
 
-// Утилиты
+
 std::string StyleContext::getSelectorString() const {
     if (selector_cache_valid_) {
         return selector_cache_;
@@ -142,17 +142,17 @@ std::string StyleContext::getSelectorString() const {
 
     std::ostringstream oss;
     
-    // Добавляем тег
+    
     if (!tag_.empty()) {
         oss << tag_;
     }
     
-    // Добавляем ID
+    
     if (!id_.empty()) {
         oss << "#" << id_;
     }
     
-    // Добавляем классы
+    
     for (const auto& cls : classes_) {
         oss << "." << cls;
     }
@@ -188,16 +188,16 @@ bool StyleContext::operator==(const StyleContext& other) const {
 std::size_t StyleContext::Hash::operator()(const StyleContext& ctx) const {
     std::size_t h1 = std::hash<std::string>{}(ctx.tag_);
     std::size_t h2 = std::hash<std::string>{}(ctx.id_);
-    // Простая комбинация хэшей
+    
     return h1 ^ (h2 << 1);
 }
 
 void StyleContext::updateSelectorCache() const {
-    // Реализация кэширования селектора
+    
     selector_cache_valid_ = false;
 }
 
-// Фабричные методы
+
 namespace context {
     std::unique_ptr<StyleContext> create(const std::string& tag) {
         return std::make_unique<StyleContext>(tag);
@@ -223,4 +223,4 @@ namespace context {
     }
 }
 
-} // namespace style
+} 

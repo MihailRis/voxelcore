@@ -9,12 +9,10 @@
 
 namespace style {
 
-// Предварительные объявления
 class StyleContext;
 class ComputedStyle;
 class Selector;
 
-// Идентификаторы свойств для оптимизации
 enum class PropertyID : uint32_t {
     Unknown = 0,
     Color,
@@ -48,7 +46,6 @@ enum class PropertyID : uint32_t {
     FontSize,
     FontWeight,
     TextAlign,
-    // ... добавь больше по мере необходимости
 };
 
 // Получение PropertyID по строке
@@ -68,7 +65,7 @@ public:
 private:
     Type type_;
     std::string value_;
-    int specificity_ = 0; // CSS-специфичность для каскада
+    int specificity_ = 0;
 
 public:
     Selector(Type type, std::string value);
@@ -89,7 +86,6 @@ public:
     };
 };
 
-// Правило стиля
 struct StyleRule {
     std::vector<Selector> selectors;
     std::unordered_map<PropertyID, value> declarations;
@@ -106,7 +102,6 @@ struct StyleRule {
     bool matches(const StyleContext& context) const;
 };
 
-// Основной класс таблицы стилей
 class Stylesheet {
 private:
     std::vector<StyleRule> rules_;
@@ -121,22 +116,18 @@ private:
 
 public:
     Stylesheet() = default;
-    
-    // Добавление правила
+
     void addRule(const StyleRule& rule);
     void addRule(const std::vector<Selector>& selectors, 
                  const std::unordered_map<PropertyID, value>& declarations);
     
-    // Парсинг CSS-подобного правила из строки
     bool parseAndAddRule(const std::string& css_string);
     
-    // Получение всех подходящих правил для контекста
     std::vector<const StyleRule*> getMatchingRules(const StyleContext& context) const;
     
     // Сортировка правил по специфичности (для каскада)
     void sortRulesBySpecificity();
     
-    // Очистка таблицы стилей
     void clear();
     
     // Получение количества правил
@@ -160,15 +151,13 @@ private:
     std::shared_ptr<Selector> getOrCreateSelector(Selector::Type type, const std::string& value) const;
 };
 
-// Утилиты для работы с селекторами
 namespace selectors {
     Selector tag(const std::string& name);
     Selector cls(const std::string& name);  // class
     Selector id(const std::string& name);
     Selector universal();
-    
-    // Комбинирование селекторов
+
     std::vector<Selector> combine(const std::vector<Selector>& a, const std::vector<Selector>& b);
 }
 
-} // namespace style
+}
