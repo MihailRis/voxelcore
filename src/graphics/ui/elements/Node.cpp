@@ -1,6 +1,9 @@
 #pragma once
 
+#include <sstream>
+
 #include "Node.hpp"
+
 
 Node Node::from_xml_node(const xml::Node& xml_node) {
 
@@ -15,6 +18,7 @@ Node Node::from_xml_node(const xml::Node& xml_node) {
     }
     
     Node dom_node(xml_node.getTag(), std::move(attrs));
+    dom_node.root = true;
     
     for (size_t i = 0; i < xml_node.size(); ++i) {
         const xml::Node& child = xml_node.sub(i);
@@ -36,6 +40,7 @@ Node Node::from_xml_string(std::string_view filename, std::string_view source) {
     auto xml_doc = xml::parse(filename, source);
     return from_xml_document(*xml_doc);
 }
+
 
 // Working with childs
 //
@@ -314,4 +319,101 @@ const Node* Node::find_by_path_impl(const std::vector<std::string>& parts, size_
 
 const std::vector<Node>& Node::get_children() const {
     return children;
+}
+
+bool Node::is_root() const {
+    return root;
+}
+
+// Получение ID
+std::optional<std::string> ElementData::getId() const {
+    auto it = attributes.find("id");
+    if (it != attributes.end()) {
+        return it->second;
+    }
+    return std::nullopt;
+}
+
+// Установка ID
+void ElementData::setId(std::string_view id) {
+    if (id.empty()) {
+        attributes.erase("id");
+    } else {
+        attributes["id"] = std::string(id);
+    }
+}
+
+// Получение списка классов
+std::vector<std::string> ElementData::getClassList() const {
+    std::vector<std::string> classes;
+    auto it = attributes.find("class");
+    if (it != attributes.end() && !it->second.empty()) {
+        std::istringstream iss(it->second);
+        std::string cls;
+        while (iss >> cls) {
+            if (!cls.empty()) {
+                classes.push_back(cls);
+            }
+        }
+    }
+    return classes;
+}
+
+// Установка списка классов
+void ElementData::setClassList(const std::vector<std::string>& classes) {
+    if (classes.empty()) {
+        attributes.erase("class");
+        return;
+    }
+
+    std::string class_string;
+    for (size_t i = 0; i < classes.size(); ++i) {
+        if (i > 0) {
+            class_string += " ";
+        }
+        class_string += classes[i];
+    }
+    attributes["class"] = class_string;
+}
+
+// Добавление класса
+void ElementData::addClass(std::string_view className) {
+    if (className.empty()) return;
+
+    auto classes = getClassList();
+    if (std::find(classes.begin(), classes.end(), className) == classes.end()) {
+        classes.push_back(std::string(className));
+        setClassList(classes);
+    }
+}
+
+// Удаление класса
+void ElementData::removeClass(std::string_view className) {
+    if (className.empty()) return;
+
+    auto classes = getClassList();
+    auto it = std::find(classes.begin(), classes.end(), className);
+    if (it != classes.end()) {
+        classes.erase(it);
+        setClassList(classes);
+    }
+}
+
+// Проверка наличия класса
+bool ElementData::hasClass(std::string_view className) const {
+    if (className.empty()) return false;
+    
+    auto classes = getClassList();
+    return std::find(classes.begin(), classes.end(), className) != classes.end();
+}
+
+// Переключение класса
+void ElementData::toggleClass(std::string_view className) {
+    if (className.empty()) return;
+
+    if (hasClass(className)) {
+        removeClass(className);
+    } else {
+        addClass(className);
+    }
 }

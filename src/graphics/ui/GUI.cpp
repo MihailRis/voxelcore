@@ -19,6 +19,7 @@
 #include "graphics/core/LineBatch.hpp"
 #include "graphics/core/Shader.hpp"
 #include "gui_util.hpp"
+#include "style/StyleComputer.hpp"
 #include "style/StylesheetParser.hpp"
 #include "window/Camera.hpp"
 #include "window/Window.hpp"
@@ -59,23 +60,15 @@ GUI::GUI(Engine& engine)
     // Testing new UI Implementation
 
     std::string xmlString = R"(
-<?xml version="1.0" encoding="UTF-8"?>
-<root>
-    <person id="1" name="John" age="25">
-        <address street="Main St" city="NYC"/>
-        <phone>123-456-7890</phone>
-    </person>
-</root>
+<div id="id" style="color: black">
+test
+</div>
 )";
     std::string css_code = R"(
     // comment variant 1
     /* comment variant 2 */
-    div.hover#open:focus + span:hover, button {
+    #id:hover {
         color: red;
-    }
-
-    span {
-        background: white red;
     }
 )";
 
@@ -84,9 +77,10 @@ GUI::GUI(Engine& engine)
     StylesheetParser parser("test.css", css_code);
     style::Stylesheet stylesheet = parser.parse();
 
+    style::StyleComputer computer;
+    computer.set_stylesheets({stylesheet});
+    computer.compute(root);
 }
-
-
 
 GUI::~GUI() = default;
 

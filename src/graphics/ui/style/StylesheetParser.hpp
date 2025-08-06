@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "SelectorParser.hpp"
+#include "DeclarationParser.hpp"
 #include "coders/BasicParser.hpp"
 #include "stylesheet.h"
 
