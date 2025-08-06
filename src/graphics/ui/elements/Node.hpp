@@ -7,8 +7,13 @@
 #include <variant>
 #include <vector>
 
+#include "assets/Assets.hpp"
 #include "coders/xml.hpp"
+#include "graphics/core/Batch2D.hpp"
+#include "graphics/core/DrawContext.hpp"
+#include "graphics/core/Font.hpp"
 #include "graphics/ui/style/Stylesheet.h"
+#include "graphics/ui/layout/LayoutBox.hpp"
 
 using AttributesMap = std::unordered_map<std::string, std::string>;
 
@@ -16,7 +21,9 @@ struct ElementData {
     std::string tag_name;
     AttributesMap attributes;
 
-    ElementData(std::string_view tag, AttributesMap attrs) : tag_name(tag), attributes(std::move(attrs)) {}
+    ElementData(std::string_view tag, AttributesMap attrs)
+        : tag_name(tag), attributes(std::move(attrs)) {
+    }
 
     std::optional<std::string> getId() const;
     void setId(std::string_view id);
@@ -31,8 +38,26 @@ struct ElementData {
 
 struct Text {
     std::string content;
+    std::unique_ptr<FontStylesScheme> styles;
 
     Text(std::string_view text_content) : content(text_content) {
+    }
+    Text(const Text& other) : content(other.content) {
+    }
+    Text& operator=(const Text& other) {
+        if (this != &other) {
+            content = other.content;
+        }
+        return *this;
+    }
+
+    Text(Text&& other) noexcept : content(std::move(other.content)) {
+    }
+    Text& operator=(Text&& other) noexcept {
+        if (this != &other) {
+            content = std::move(other.content);
+        }
+        return *this;
     }
 };
 
@@ -85,6 +110,39 @@ struct Element {
     Element(std::string_view tag, AttributesMap attrs)
         : data(tag, std::move(attrs)) {
     }
+    Element(const Element& other)
+        : data(other.data),
+          state(other.state),
+          style(other.style),
+          state_styles(other.state_styles) {
+    }
+
+    Element& operator=(const Element& other) {
+        if (this != &other) {
+            data = other.data;
+            state = other.state;
+            style = other.style;
+            state_styles = other.state_styles;
+        }
+        return *this;
+    }
+
+    Element(Element&& other) noexcept
+        : data(std::move(other.data)),
+          state(std::move(other.state)),
+          style(std::move(other.style)),
+          state_styles(std::move(other.state_styles)) {
+    }
+
+    Element& operator=(Element&& other) noexcept {
+        if (this != &other) {
+            data = std::move(other.data);
+            state = std::move(other.state);
+            style = std::move(other.style);
+            state_styles = std::move(other.state_styles);
+        }
+        return *this;
+    }
 };
 
 using NodeType = std::variant<Text, Element>;
@@ -103,6 +161,51 @@ struct Node {
         : children(std::move(childs)),
           node_type(Element(tag, std::move(attrs))) {
     }
+
+    Node(const Node& other)
+        : root(other.root),
+          children(other.children),
+          node_type(other.node_type) {
+    }
+
+    Node& operator=(const Node& other) {
+        if (this != &other) {
+            root = other.root;
+            children = other.children;
+            node_type = other.node_type;
+        }
+        return *this;
+    }
+
+    Node(Node&& other) noexcept
+        : root(other.root),
+          children(std::move(other.children)),
+          node_type(std::move(other.node_type)) {
+    }
+
+    Node& operator=(Node&& other) noexcept {
+        if (this != &other) {
+            root = other.root;
+            children = std::move(other.children);
+            node_type = std::move(other.node_type);
+        }
+        return *this;
+    }
+
+    // Layout
+    LayoutBox layout_box;  // Layout данные
+    bool layout_dirty = true;
+    
+    // Методы для работы с layout
+    LayoutBox& get_layout() { return layout_box; }
+    const LayoutBox& get_layout() const { return layout_box; }
+    
+    void mark_layout_dirty() { layout_dirty = true; }
+    void mark_layout_clean() { layout_dirty = false; }
+    bool is_layout_dirty() const { return layout_dirty; }
+
+    // Draw
+    void draw(const DrawContext& ctx, const Assets& assets);
 
     // Working with childs
     void append_child(Node node);
@@ -150,4 +253,9 @@ private:
     const Node* find_by_path_impl(
         const std::vector<std::string>& parts, size_t index
     ) const;
+
+    void draw_text(const DrawContext& ctx, const Assets& assets, Text text);
+    void draw_element(
+        const DrawContext& ctx, const Assets& assets, Element element
+    );
 };

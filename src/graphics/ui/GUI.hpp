@@ -8,6 +8,7 @@
 #include <string>
 #include <glm/glm.hpp>
 #include <unordered_map>
+#include "elements/Node.hpp"
 
 class DrawContext;
 class Assets;
@@ -83,6 +84,8 @@ namespace gui {
         float doubleClickDelay = 0.5f;
         bool doubleClicked = false;
         bool debug = false;
+
+        Node document_root = Node("div");
 
         void actMouse(float delta, const CursorState& cursor);
         void actFocused();

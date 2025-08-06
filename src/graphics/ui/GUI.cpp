@@ -60,26 +60,26 @@ GUI::GUI(Engine& engine)
     // Testing new UI Implementation
 
     std::string xmlString = R"(
-<div id="id" style="color: black">
+<div>
 test
 </div>
 )";
     std::string css_code = R"(
     // comment variant 1
     /* comment variant 2 */
-    #id:hover {
-        color: red;
+    div {
+        padding-left: 100;
     }
 )";
 
-    Node root = Node::from_xml_string("example.xml", xmlString);
+    document_root = Node::from_xml_string("example.xml", xmlString);
 
     StylesheetParser parser("test.css", css_code);
     style::Stylesheet stylesheet = parser.parse();
 
     style::StyleComputer computer;
     computer.set_stylesheets({stylesheet});
-    computer.compute(root);
+    computer.compute(document_root);
 }
 
 GUI::~GUI() = default;
@@ -259,64 +259,9 @@ void GUI::draw(const DrawContext& pctx, const Assets& assets) {
     auto ctx = pctx.sub(batch2D.get());
 
     auto& viewport = ctx.getViewport();
-
-    auto& page = menu->getCurrent();
-    if (page.panel) {
-        menu->setSize(page.panel->getSize());
-        page.panel->refresh();
-        if (auto panel = std::dynamic_pointer_cast<gui::Panel>(page.panel)) {
-            panel->cropToContent();
-        }
-    }
-    menu->setPos((glm::vec2(viewport) - menu->getSize()) / 2.0f);
-    uicamera->setFov(viewport.y);
-    uicamera->setAspectRatio(viewport.x / static_cast<float>(viewport.y));
-
-    auto uishader = assets.get<Shader>("ui");
-    uishader->use();
-    uishader->uniformMatrix("u_projview", uicamera->getProjView());
-
     batch2D->begin();
-    container->draw(ctx, assets);
 
-    if (hover) {
-        engine.getWindow().setCursor(hover->getCursor());
-    }
-    if (hover && debug) {
-        auto pos = hover->calcPos();
-        const auto& id = hover->getId();
-        if (!id.empty()) {
-            auto& font = assets.require<Font>(FONT_DEFAULT);
-            auto text = util::str2wstr_utf8(id);
-            int width = font.calcWidth(text);
-            int height = font.getLineHeight();
-
-            batch2D->untexture();
-            batch2D->setColor(0, 0, 0);
-            batch2D->rect(pos.x, pos.y, width, height);
-
-            batch2D->resetColor();
-            font.draw(*batch2D, text, pos.x, pos.y, nullptr, 0);
-        }
-
-        batch2D->untexture();
-        auto node = hover->getParent();
-        while (node) {
-            auto parentPos = node->calcPos();
-            auto size = node->getSize();
-
-            batch2D->setColor(0, 255, 255);
-            batch2D->lineRect(
-                parentPos.x + 1, parentPos.y, size.x - 2, size.y - 1
-            );
-
-            node = node->getParent();
-        }
-        // debug draw
-        auto size = hover->getSize();
-        batch2D->setColor(0, 255, 0);
-        batch2D->lineRect(pos.x, pos.y, size.x - 1, size.y - 1);
-    }
+    document_root.draw(ctx, assets);
 }
 
 std::shared_ptr<UINode> GUI::getFocused() const {
