@@ -376,7 +376,6 @@ std::size_t value::Hash::operator()(const value& v) const {
         default:
             return 0;
     }
-    return 0;
 }
 
 

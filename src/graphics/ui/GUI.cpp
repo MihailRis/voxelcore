@@ -7,6 +7,7 @@
 #include "assets/Assets.hpp"
 #include "elements/Label.hpp"
 #include "elements/Menu.hpp"
+#include "elements/Node.hpp"
 #include "elements/Panel.hpp"
 #include "elements/UINode.hpp"
 #include "engine/Engine.hpp"
@@ -18,6 +19,7 @@
 #include "graphics/core/LineBatch.hpp"
 #include "graphics/core/Shader.hpp"
 #include "gui_util.hpp"
+#include "style/StylesheetParser.hpp"
 #include "window/Camera.hpp"
 #include "window/Window.hpp"
 #include "window/input.hpp"
@@ -53,7 +55,38 @@ GUI::GUI(Engine& engine)
     store("tooltip", tooltip);
     store("tooltip.label", UINode::find(tooltip, "tooltip.label"));
     container->add(tooltip);
+
+    // Testing new UI Implementation
+
+    std::string xmlString = R"(
+<?xml version="1.0" encoding="UTF-8"?>
+<root>
+    <person id="1" name="John" age="25">
+        <address street="Main St" city="NYC"/>
+        <phone>123-456-7890</phone>
+    </person>
+</root>
+)";
+    std::string css_code = R"(
+    // comment variant 1
+    /* comment variant 2 */
+    div.hover#open:focus + span:hover, button {
+        color: red;
+    }
+
+    span {
+        background: white red;
+    }
+)";
+
+    Node root = Node::from_xml_string("example.xml", xmlString);
+
+    StylesheetParser parser("test.css", css_code);
+    style::Stylesheet stylesheet = parser.parse();
+
 }
+
+
 
 GUI::~GUI() = default;
 
