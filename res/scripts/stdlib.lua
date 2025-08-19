@@ -36,7 +36,6 @@ local function complete_app_lib(app)
     app.set_setting = core.set_setting
     app.tick = function()
         coroutine.yield()
-        network.__process_events()
     end
     app.get_version = core.get_version
     app.get_setting_info = core.get_setting_info
@@ -520,6 +519,8 @@ function __process_post_runnables()
     for _, name in ipairs(dead) do
         __vc_named_coroutines[name] = nil
     end
+
+    network.__process_events()
 end
 
 function time.post_runnable(runnable)
