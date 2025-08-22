@@ -16,7 +16,7 @@ using namespace scripting;
 static int l_save_fragment(lua::State* L) {
     auto fragment = lua::touserdata<lua::LuaVoxelFragment>(L, 1);
     auto file = lua::require_string(L, 2);
-    auto map = fragment->getFragment()->serialize();
+    auto map = fragment->getFragment(0)->serialize();
     auto bytes = json::to_binary(map, true);
     io::write_bytes(file, bytes.data(), bytes.size());
     return 0;
@@ -30,8 +30,14 @@ static int l_create_fragment(lua::State* L) {
 
     auto fragment =
         VoxelFragment::create(*level, pointA, pointB, crop, saveEntities);
+    std::array<std::shared_ptr<VoxelFragment>, 4> fragmentVariants {
+        std::move(fragment)
+    };
+    for (size_t i = 1; i < 4; i++) {
+        fragmentVariants[i] = fragmentVariants[i - 1]->rotated(*content);
+    }
     return lua::newuserdata<lua::LuaVoxelFragment>(
-        L, std::shared_ptr<VoxelFragment>(std::move(fragment))
+        L, std::move(fragmentVariants)
     );
 }
 
@@ -45,7 +51,15 @@ static int l_load_fragment(lua::State* L) {
     auto fragment = std::make_shared<VoxelFragment>();
     fragment->deserialize(map);
     fragment->prepare(*content);
-    return lua::newuserdata<lua::LuaVoxelFragment>(L, std::move(fragment));
+    std::array<std::shared_ptr<VoxelFragment>, 4> fragmentVariants {
+        std::move(fragment)
+    };
+    for (size_t i = 1; i < 4; i++) {
+        fragmentVariants[i] = fragmentVariants[i - 1]->rotated(*content);
+    }
+    return lua::newuserdata<lua::LuaVoxelFragment>(
+        L, std::move(fragmentVariants)
+    );
 }
 
 /// @brief Get a list of all world generators
