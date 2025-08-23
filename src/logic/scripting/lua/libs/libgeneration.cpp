@@ -30,6 +30,7 @@ static int l_create_fragment(lua::State* L) {
 
     auto fragment =
         VoxelFragment::create(*level, pointA, pointB, crop, saveEntities);
+    fragment->prepare(*content);
     std::array<std::shared_ptr<VoxelFragment>, 4> fragmentVariants {
         std::move(fragment)
     };
