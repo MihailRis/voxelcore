@@ -70,7 +70,6 @@ struct ElementState {
     size_t nth_child = 0;
     size_t nth_of_type = 0;
 
-    // Оператор для использования в хэш-таблицах
     bool operator==(const ElementState& other) const {
         return hover == other.hover && focus == other.focus &&
                active == other.active && checked == other.checked &&
@@ -83,7 +82,6 @@ struct ElementStateHash {
     std::size_t operator()(const ElementState& state) const {
         size_t seed = 0;
 
-        // Простая реализация hash_combine
         auto hash_combine = [](size_t& seed, size_t value) {
             seed ^= value + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         };
@@ -169,23 +167,20 @@ struct Node : public std::enable_shared_from_this<Node> {
           node_type(Element(tag, std::move(attrs))) {
     }
 
-    // Копирующий конструктор (глубокое копирование детей)
     Node(const Node& other) : root(other.root), node_type(other.node_type) {
         children.reserve(other.children.size());
         for (const auto& child : other.children) {
             children.push_back(
                 std::make_unique<Node>(*child)
-            );  // клонируем каждого ребенка
+            );
         }
     }
 
-    // Копирующий оператор присваивания
     Node& operator=(const Node& other) {
         if (this != &other) {
             root = other.root;
             node_type = other.node_type;
 
-            // Глубокое копирование детей
             children.clear();
             children.reserve(other.children.size());
             for (const auto& child : other.children) {
@@ -195,14 +190,12 @@ struct Node : public std::enable_shared_from_this<Node> {
         return *this;
     }
 
-    // Перемещающий конструктор
     Node(Node&& other) noexcept
         : root(std::move(other.root)),
           children(std::move(other.children)),
           node_type(std::move(other.node_type)) {
     }
 
-    // Перемещающий оператор присваивания
     Node& operator=(Node&& other) noexcept {
         if (this != &other) {
             root = std::move(other.root);
@@ -289,6 +282,7 @@ private:
         const std::vector<std::string>& parts, size_t index
     ) const;
 
+    glm::vec4 getInheritedTextColor() const;
     void draw_text(const DrawContext& ctx, const Assets& assets, Text text);
     void draw_element(
         const DrawContext& ctx, const Assets& assets, Element element

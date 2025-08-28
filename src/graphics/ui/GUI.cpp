@@ -60,25 +60,27 @@ GUI::GUI(Engine& engine)
     // Testing new UI Implementation
 
     std::string xmlString = R"(
-<div>
-<p>test</p>
-<p>test2</p>
+<div class="main">
+    <span style="">Header</span>
+    <div class="content">
+        <span>Left Col</span>
+        <span>Right Col</span>
+    </div>
 </div>
 )";
     std::string css_code = R"(
     // comment variant 1
     /* comment variant 2 */
-    div {
-        background: #111;
-        width: 200;
-        height: 200;
-        direction: vertical;
+    div.main {
+        background: #111f;
+        direction: row;
     }
 
-    p {
-            background: #222;
-            height: 16;
-        }
+    div.content {
+        background: #222f;
+        direction: column;
+    }
+
 )";
 
     document_root = Node::from_xml_string("example.xml", xmlString);
@@ -87,6 +89,8 @@ GUI::GUI(Engine& engine)
     style::Stylesheet stylesheet = parser.parse();
 
     style::StyleComputer computer;
+    computer.set_inherit_exceptions({"width", "height", "margin", "padding", "direction"});
+
     computer.set_stylesheets({stylesheet});
     computer.compute(*document_root);
 }

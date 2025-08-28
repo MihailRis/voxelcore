@@ -1,18 +1,20 @@
 #include "Layout.hpp"
+#include "assets/Assets.hpp"
+#include "constants.hpp"
 
 #include <variant>
 
 // Основной метод вычисления layout
-void Layout::compute_layout(Node& node, LayoutContext& context) {
+void Layout::compute_layout(Node& node, LayoutContext& context, const Assets& assets) {
     if (!node.is_layout_dirty()) return;
 
     std::visit(
         [&](auto& inner) {
             using T = std::decay_t<decltype(inner)>;
             if constexpr (std::is_same_v<T, Text>) {
-                compute_text_layout(node, inner, context);
+                compute_text_layout(node, inner, context, assets);
             } else if constexpr (std::is_same_v<T, Element>) {
-                compute_element_layout(node, inner, context);
+                compute_element_layout(node, inner, context, assets);
             }
         },
         node.node_type
@@ -23,11 +25,10 @@ void Layout::compute_layout(Node& node, LayoutContext& context) {
 
 // --- Текстовый layout ---
 void Layout::compute_text_layout(
-    Node& node, Text& text, LayoutContext& context
+    Node& node, Text& text, LayoutContext& context, const Assets& assets
 ) {
-    // Вычисляем размеры текста
-    float char_width = node.layout.font_size * 0.6f;
-    float text_width = char_width * static_cast<float>(text.content.size());
+    auto font = assets.get<Font>(FONT_DEFAULT);
+    float text_width = font->calcWidth(util::str2wstr_utf8(text.content), 0,text.content.size());
     float text_height = node.layout.font_size;
 
     node.layout.width = text_width;
@@ -53,7 +54,7 @@ LayoutContext Layout::create_child_context(
 
 // --- Основной layout для элемента ---
 void Layout::compute_element_layout(
-    Node& node, Element& element, LayoutContext& context
+    Node& node, Element& element, LayoutContext& context, const Assets& assets
 ) {
     // 1) Позиционируем элемент
 
@@ -67,25 +68,28 @@ void Layout::compute_element_layout(
                              .asFloat(max_height);  // временно
 
     bool vertical =
-        element.style.get("direction", "horizontal").asString("vertical") ==
-        "vertical";
+        element.style.get("direction", "column").asString("row") ==
+        "row";
 
     // 3) Раскладываем детей по flex
 
     float main_cursor = 0.f;  // основная ось
 
-    LayoutContext child_ctx =
-        create_child_context(node, node.layout.width, node.layout.height);
+    LayoutContext child_ctx;
+    
+    if (vertical) child_ctx = create_child_context(node, node.layout.width, node.layout.height / node.children.size());
+    else child_ctx = create_child_context(node, node.layout.width / node.children.size(), node.layout.height );
+
     for (auto& child : node.children) {
         if (vertical) {
             child->layout.x = node.layout.x;
             child->layout.y = node.layout.y + main_cursor;
-            compute_layout(*child, child_ctx);
+            compute_layout(*child, child_ctx, assets);
             main_cursor += child->layout.height;
         } else {
             child->layout.x = node.layout.x + main_cursor;
             child->layout.y = node.layout.y;
-            compute_layout(*child, child_ctx);
+            compute_layout(*child, child_ctx, assets);
             main_cursor += child->layout.width;
         }
     }

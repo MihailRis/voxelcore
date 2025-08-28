@@ -26,7 +26,7 @@ std::shared_ptr<Node> Node::from_xml_node(const xml::Node& xml_node) {
     for (size_t i = 0; i < xml_node.size(); ++i) {
         const xml::Node& child = xml_node.sub(i);
         auto child_node = from_xml_node(child);
-        child_node->parent = dom_node;   // безопасно, shared_from_this не нужен здесь
+        child_node->parent = dom_node;
         dom_node->children.push_back(std::move(child_node));
     }
 
@@ -53,12 +53,12 @@ void Node::append_child(Node node) {
     auto child_ptr =
         std::make_shared<Node>(std::move(node));
     child_ptr->parent = shared_from_this();
-    children.push_back(std::move(child_ptr));     // добавляем в children
+    children.push_back(std::move(child_ptr));
 }
 
 void Node::prepend_child(Node node) {
     auto child_ptr =
-        std::make_unique<Node>(std::move(node));  // создаём unique_ptr
+        std::make_unique<Node>(std::move(node));
     child_ptr->parent = shared_from_this();
     children.insert(children.begin(), std::move(child_ptr));
 }
@@ -68,7 +68,7 @@ void Node::append_childs(std::vector<Node> nodes) {
 
     for (Node node : nodes) {
         auto child_ptr =
-            std::make_unique<Node>(std::move(node));  // создаём unique_ptr
+            std::make_unique<Node>(std::move(node));
         child_ptr->parent = shared_from_this();
         children.push_back(std::move(child_ptr));
     }
@@ -79,7 +79,7 @@ void Node::insert_child(size_t index, Node node) {
         throw std::out_of_range("Index out of range");
     }
     auto child_ptr =
-        std::make_unique<Node>(std::move(node));  // создаём unique_ptr
+        std::make_unique<Node>(std::move(node));
     child_ptr->parent = shared_from_this();
     children.insert(children.begin() + index, std::move(child_ptr));
 }
@@ -352,7 +352,6 @@ bool Node::is_root() const {
     return root;
 }
 
-// Получение ID
 std::optional<std::string> ElementData::getId() const {
     auto it = attributes.find("id");
     if (it != attributes.end()) {
@@ -361,7 +360,6 @@ std::optional<std::string> ElementData::getId() const {
     return std::nullopt;
 }
 
-// Установка ID
 void ElementData::setId(std::string_view id) {
     if (id.empty()) {
         attributes.erase("id");
@@ -370,7 +368,6 @@ void ElementData::setId(std::string_view id) {
     }
 }
 
-// Получение списка классов
 std::vector<std::string> ElementData::getClassList() const {
     std::vector<std::string> classes;
     auto it = attributes.find("class");
@@ -386,7 +383,6 @@ std::vector<std::string> ElementData::getClassList() const {
     return classes;
 }
 
-// Установка списка классов
 void ElementData::setClassList(const std::vector<std::string>& classes) {
     if (classes.empty()) {
         attributes.erase("class");
@@ -403,7 +399,6 @@ void ElementData::setClassList(const std::vector<std::string>& classes) {
     attributes["class"] = class_string;
 }
 
-// Добавление класса
 void ElementData::addClass(std::string_view className) {
     if (className.empty()) return;
 
@@ -414,7 +409,6 @@ void ElementData::addClass(std::string_view className) {
     }
 }
 
-// Удаление класса
 void ElementData::removeClass(std::string_view className) {
     if (className.empty()) return;
 
@@ -426,7 +420,6 @@ void ElementData::removeClass(std::string_view className) {
     }
 }
 
-// Проверка наличия класса
 bool ElementData::hasClass(std::string_view className) const {
     if (className.empty()) return false;
 
@@ -435,7 +428,6 @@ bool ElementData::hasClass(std::string_view className) const {
            classes.end();
 }
 
-// Переключение класса
 void ElementData::toggleClass(std::string_view className) {
     if (className.empty()) return;
 
@@ -451,7 +443,7 @@ void Node::draw(const DrawContext& ctx, const Assets& assets) {
     context.available_space = ctx.getViewport();
     context.parent_layout = nullptr;
 
-    Layout::compute_layout(*this, context);
+    Layout::compute_layout(*this, context, assets);
 
     draw(ctx, assets, context);
 }
@@ -461,13 +453,8 @@ void Node::draw(
 ) {
     auto batch = ctx.getBatch2D();
     
-    // Создаём под-контекст для локального управления состоянием
     DrawContext childCtx = ctx.sub();
 
-    // Определяем viewport/скиссоры, если нужно (для примера оставим полный размер)
-    // childCtx.setScissors(glm::vec4(layout.x, layout.y, layout.width, layout.height));
-
-    // Сбрасываем батч перед рисованием текущей ноды
     batch->flush();
     batch->untexture();
 
@@ -483,14 +470,39 @@ void Node::draw(
         node_type
     );
 
-    // Рекурсивно рисуем детей в отдельном под-контексте
     for (auto& child : children) {
         child->draw(childCtx, assets, context);
     }
 
-    // Сбрасываем батч после рисования всех детей, чтобы гарантировать корректное состояние OpenGL
     batch->flush();
     batch->untexture();
+}
+
+glm::vec4 Node::getInheritedTextColor() const {
+    // Если у элемента есть явно заданный цвет текста — используем его
+    if (auto* element = std::get_if<Element>(&node_type)) {
+        glm::vec4 color = glm::vec4(1.0f);
+
+        if (element->style.has("color")) {
+            style::value colorStyle = element->style.get("color", "#ffffff");
+            color = colorStyle.asColor();
+        }
+
+        if (has_attribute("color")) {
+            style::value colorAttr = *get_attribute("color");
+            color = colorAttr.asColor(); // конвертация "#RRGGBB" или "#RRGGBBAA" в glm::vec4
+        }
+        
+        return color;
+    }
+
+    // Если родитель есть, рекурсивно спрашиваем его
+     if (auto p = parent.lock()) {
+        return p->getInheritedTextColor();
+    }
+
+    // Базовый цвет по умолчанию
+    return glm::vec4(1.0f);
 }
 
 void Node::draw_text(const DrawContext& ctx, const Assets& assets, Text text) {
@@ -501,10 +513,10 @@ void Node::draw_text(const DrawContext& ctx, const Assets& assets, Text text) {
 
     auto font = assets.get<Font>(FONT_DEFAULT);
 
-    batch->setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+    batch->setColor( getInheritedTextColor() );
     font->draw(
         *batch,
-        util::str2wstr_utf8("A"),
+        util::str2wstr_utf8(get_text()),
         layout.x,
         layout.y,
         text.styles.get(),
@@ -520,6 +532,6 @@ void Node::draw_element(
     batch->flush();
     batch->untexture();
 
-    batch->setColor(element.style.get("background", "#ff0000").asColor());
+    batch->setColor(element.style.get("background", "#0000").asColor());
     batch->rect(layout.x, layout.y, layout.width, layout.height);
 }

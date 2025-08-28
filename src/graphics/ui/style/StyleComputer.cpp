@@ -3,10 +3,10 @@
 #include <algorithm>
 #include <iostream>
 #include <optional>
-#include <type_traits>
-#include <variant>
 #include <queue>
+#include <type_traits>
 #include <utility>
+#include <variant>
 
 #include "DeclarationParser.hpp"
 
@@ -53,12 +53,32 @@ void StyleComputer::compute(Node& node) {
 void StyleComputer::compute_base(Node& node, Node& parent) {
     if (auto* element = std::get_if<Element>(&node.node_type)) {
         if (auto* parent_element = std::get_if<Element>(&parent.node_type)) {
-            element->style = parent_element->style;
-            element->state_styles = parent_element->state_styles;
+            for (auto& [name, value] : parent_element->style.properties) {
+                if (std::find(
+                        inherit_exceptions.begin(),
+                        inherit_exceptions.end(),
+                        name
+                    ) != inherit_exceptions.end())
+                    continue;
+                element->style.set(name, value);
+            }
+
+            for (auto& [state, style] : parent_element->state_styles) {
+                auto& child_state_style = element->state_styles[state];
+                for (auto& [name, value] : style.properties) {
+                    if (std::find(
+                            inherit_exceptions.begin(),
+                            inherit_exceptions.end(),
+                            name
+                        ) != inherit_exceptions.end())
+                        continue;
+                    child_state_style.set(name, value);
+                }
+            }
         }
     }
 
-    compute_base(node);
+    compute_base(node);  // базовые стили
 }
 
 void StyleComputer::compute_base(Node& node) {
@@ -103,8 +123,18 @@ void StyleComputer::compute_base(Node& node) {
 
     // Сохраняем стили в элемент
     if (auto* element = std::get_if<Element>(&node.node_type)) {
-        element->style = std::move(base_style);
-        element->state_styles = std::move(state_styles);
+        // Перебираем все свойства из base_style
+        for (auto& [name, value] : base_style.properties) {
+            element->style.set(name, value);
+        }
+
+        // То же самое для псевдостилей
+        for (auto& [state, style] : state_styles) {
+            auto& target_state_style = element->state_styles[state];
+            for (auto& [name, value] : style.properties) {
+                target_state_style.set(name, value);
+            }
+        }
     }
 }
 
