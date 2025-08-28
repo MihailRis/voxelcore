@@ -51,6 +51,7 @@ void TextsRenderer::renderNote(
     glm::vec3 yvec = note.getAxisY();
 
     int width = font.calcWidth(text, text.length());
+    int height = font.getLineHeight();
     if (preset.displayMode == NoteDisplayMode::Y_FREE_BILLBOARD ||
         preset.displayMode == NoteDisplayMode::XY_FREE_BILLBOARD) {
         xvec = camera.position - pos;
@@ -96,8 +97,11 @@ void TextsRenderer::renderNote(
 
             pos = screenPos / screenPos.w;
         }
-    } else if (!frustum.isBoxVisible(pos - xvec * (width * 0.5f * preset.scale), 
-                                     pos + xvec * (width * 0.5f * preset.scale))) {
+    } else if (!frustum.isBoxVisible(
+                   pos - xvec * (width * 0.5f) * preset.scale,
+                   pos + xvec * (width * 0.5f) * preset.scale +
+                       yvec * static_cast<float>(height) * preset.scale
+               )) {
         return;
     }
     auto color = preset.color;

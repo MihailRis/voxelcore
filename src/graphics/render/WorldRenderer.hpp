@@ -20,6 +20,8 @@ class ChunksRenderer;
 class ParticlesRenderer;
 class BlockWrapsRenderer;
 class PrecipitationRenderer;
+class HandsRenderer;
+class NamedSkeletons;
 class GuidesRenderer;
 class TextsRenderer;
 class Shader;
@@ -52,6 +54,7 @@ class WorldRenderer {
     std::unique_ptr<ModelBatch> modelBatch;
     std::unique_ptr<GuidesRenderer> guides;
     std::unique_ptr<ChunksRenderer> chunks;
+    std::unique_ptr<HandsRenderer> hands;
     std::unique_ptr<Skybox> skybox;
     std::unique_ptr<ShadowMap> shadowMap;
     std::unique_ptr<ShadowMap> wideShadowMap;
@@ -69,8 +72,6 @@ class WorldRenderer {
 
     /// @brief Render block selection lines
     void renderBlockSelection();
-
-    void renderHands(const Camera& camera, float delta);
     
     /// @brief Render lines (selection and debug)
     /// @param camera active camera
@@ -100,6 +101,7 @@ public:
     std::unique_ptr<TextsRenderer> texts;
     std::unique_ptr<BlockWrapsRenderer> blockWraps;
     std::unique_ptr<PrecipitationRenderer> precipitation;
+    std::unique_ptr<NamedSkeletons> skeletons;
 
     static bool showChunkBorders;
     static bool showEntitiesDebug;

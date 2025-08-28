@@ -119,13 +119,13 @@ block.seek_origin(x: int, y: int, z: int) -> int, int, int
 
 Part of a voxel data used for scripting. Size: 8 bit.
 
-```python
+```lua
 block.get_user_bits(x: int, y: int, z: int, offset: int, bits: int) -> int
 ``` 
 
 Get specified bits as an unsigned integer.
 
-```python
+```lua
 block.set_user_bits(x: int, y: int, z: int, offset: int, bits: int, value: int) -> int
 ```
 Set specified bits.
@@ -150,6 +150,21 @@ To use filter `dest` argument must be filled with some value(can be nil), it's d
 The function returns a table with the results or nil if the ray does not hit any block.
 
 The result will use the destination table instead of creating a new one if the optional argument specified.
+
+## Model
+
+Block model information.
+
+```lua
+-- returns block model type (block/aabb/custom/...)
+block.get_model(id: int) -> str
+
+-- returns block model name
+block.model_name(id: int) -> str
+
+-- returns array of 6 textures assigned to sides of block
+block.get_textures(id: int) -> string table
+```
 
 ## Data fields
 

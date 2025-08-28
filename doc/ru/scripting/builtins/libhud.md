@@ -68,4 +68,7 @@ hud.is_inventory_open() -> bool
 
 -- Устанавливает разрешение на паузу. При значении false меню паузы не приостанавливает игру.
 hud.set_allow_pause(flag: bool)
+
+-- Функция, управляющая именованным скелетом 'hand' (см. gfx.skeletons)
+hud.hand_controller: function()
 ```

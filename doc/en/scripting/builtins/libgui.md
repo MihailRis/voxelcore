@@ -103,3 +103,9 @@ gui.load_document(
 ```
 
 Loads a UI document with its script, returns the name of the document if successfully loaded.
+
+```lua
+gui.root: Document
+```
+
+Root UI document

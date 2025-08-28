@@ -101,12 +101,9 @@ static int l_set(lua::State* L) {
     if (static_cast<size_t>(id) >= indices->blocks.count()) {
         return 0;
     }
-    int cx = floordiv<CHUNK_W>(x);
-    int cz = floordiv<CHUNK_D>(z);
-    if (!blocks_agent::get_chunk(*level->chunks, cx, cz)) {
+    if (!blocks_agent::set(*level->chunks, x, y, z, id, int2blockstate(state))) {
         return 0;
     }
-    blocks_agent::set(*level->chunks, x, y, z, id, int2blockstate(state));
 
     auto chunksController = controller->getChunksController();
     if (chunksController == nullptr) {
@@ -360,6 +357,19 @@ static int l_get_textures(lua::State* L) {
             lua::rawseti(L, i + 1);
         }
         return 1;
+    }
+    return 0;
+}
+
+
+static int l_model_name(lua::State* L) {
+    if (auto def = require_block(L)) {
+        // TODO: variant argument
+        const auto& modelName = def->defaults.model.name;
+        if (modelName.empty()) {
+            return lua::pushlstring(L, def->name + ".model");
+        }
+        return lua::pushlstring(L, modelName);
     }
     return 0;
 }
@@ -713,6 +723,7 @@ const luaL_Reg blocklib[] = {
     {"get_size", lua::wrap<l_get_size>},
     {"is_segment", lua::wrap<l_is_segment>},
     {"seek_origin", lua::wrap<l_seek_origin>},
+    {"model_name", lua::wrap<l_model_name>},
     {"get_textures", lua::wrap<l_get_textures>},
     {"get_model", lua::wrap<l_get_model>},
     {"get_hitbox", lua::wrap<l_get_hitbox>},

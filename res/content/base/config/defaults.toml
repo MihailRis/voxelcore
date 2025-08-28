@@ -1,2 +1,3 @@
 generator = "base:demo"
 player-entity = "base:player"
+hand-skeleton = "base:hand"

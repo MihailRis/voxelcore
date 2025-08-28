@@ -1,6 +1,11 @@
 function on_block_broken(id, x, y, z, playerid)
     if gfx then
-        gfx.particles.emit({x+0.5, y+0.5, z+0.5}, 64, {
+        local size = {block.get_size(id)}
+        gfx.particles.emit({
+            x + size[1] * 0.5, 
+            y + size[1] * 0.5, 
+            z + size[1] * 0.5
+        }, 64, {
             lifetime=1.0,
             spawn_interval=0.0001,
             explosion={4, 4, 4},
@@ -8,7 +13,7 @@ function on_block_broken(id, x, y, z, playerid)
             random_sub_uv=0.1,
             size={0.1, 0.1, 0.1},
             spawn_shape="box",
-            spawn_spread={0.4, 0.4, 0.4}
+            spawn_spread=vec3.mul(size, 0.4)
         })
     end
 

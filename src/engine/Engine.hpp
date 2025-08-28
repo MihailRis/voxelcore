@@ -83,6 +83,9 @@ class Engine : public util::ObjectsKeeper {
     void updateHotkeys();
     void loadAssets();
     void loadProject();
+
+    void initializeClient();
+    void onContentLoad();
 public:
     Engine();
     ~Engine();
@@ -177,5 +180,9 @@ public:
 
     devtools::Editor& getEditor() {
         return *editor;
+    }
+
+    const Project& getProject() {
+        return *project;
     }
 };

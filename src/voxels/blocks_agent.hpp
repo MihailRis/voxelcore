@@ -119,7 +119,7 @@ inline bool is_replaceable_at(const Storage& chunks, int32_t x, int32_t y, int32
 /// @param z block position Z
 /// @param id new block id
 /// @param state new block state
-void set(
+bool set(
     Chunks& chunks,
     int32_t x,
     int32_t y,
@@ -135,7 +135,7 @@ void set(
 /// @param z block position Z
 /// @param id new block id
 /// @param state new block state
-void set(
+bool set(
     GlobalChunks& chunks,
     int32_t x,
     int32_t y,

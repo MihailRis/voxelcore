@@ -21,6 +21,9 @@ function on_hud_open()
         local ppos = vec3.add({player.get_pos(pid)}, {0, 0.7, 0})
         local throw_force = vec3.mul(player.get_dir(pid), DROP_FORCE)
         local drop = base_util.drop(ppos, itemid, 1, data, 1.5)
+        if not drop then
+            return
+        end
         local velocity = vec3.add(throw_force, vec3.add(pvel, DROP_INIT_VEL))
         drop.rigidbody:set_vel(velocity)
     end)

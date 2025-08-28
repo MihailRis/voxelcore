@@ -212,6 +212,7 @@ public:
     }
 
     const rigging::SkeletonConfig* getSkeleton(const std::string& id) const;
+    const rigging::SkeletonConfig& requireSkeleton(const std::string& id) const;
     const BlockMaterial* findBlockMaterial(const std::string& id) const;
     const ContentPackRuntime* getPackRuntime(const std::string& id) const;
     ContentPackRuntime* getPackRuntime(const std::string& id);

@@ -1,3 +1,5 @@
+local enable_experimental = core.get_setting("debug.enable-experimental")
+
 ------------------------------------------------
 ------ Extended kit of standard functions ------
 ------------------------------------------------
@@ -36,7 +38,6 @@ local function complete_app_lib(app)
     app.set_setting = core.set_setting
     app.tick = function()
         coroutine.yield()
-        network.__process_events()
     end
     app.get_version = core.get_version
     app.get_setting_info = core.get_setting_info
@@ -169,59 +170,14 @@ function inventory.set_description(invid, slot, description)
     inventory.set_data(invid, slot, "description", description)
 end
 
-------------------------------------------------
-------------------- Events ---------------------
-------------------------------------------------
-events = {
-    handlers = {}
-}
-
-function events.on(event, func)
-    if events.handlers[event] == nil then
-        events.handlers[event] = {}
-    end
-    table.insert(events.handlers[event], func)
+if enable_experimental then
+    require "core:internal/maths_inline"
 end
 
-function events.reset(event, func)
-    if func == nil then
-        events.handlers[event] = nil
-    else
-        events.handlers[event] = {func}
-    end
-end
-
-function events.remove_by_prefix(prefix)
-    for name, handlers in pairs(events.handlers) do
-        local actualname = name
-        if type(name) == 'table' then
-            actualname = name[1]
-        end
-        if actualname:sub(1, #prefix+1) == prefix..':' then
-            events.handlers[actualname] = nil
-        end
-    end
-end
+events = require "core:internal/events"
 
 function pack.unload(prefix)
     events.remove_by_prefix(prefix)
-end
-
-function events.emit(event, ...)
-    local result = nil
-    local handlers = events.handlers[event]
-    if handlers == nil then
-        return nil
-    end
-    for _, func in ipairs(handlers) do
-        local status, newres = xpcall(func, __vc__error, ...)
-        if not status then
-            debug.error("error in event ("..event..") handler: "..newres)
-        else 
-            result = result or newres
-        end
-    end
-    return result
 end
 
 gui_util = require "core:internal/gui_util"
@@ -238,6 +194,7 @@ end
 _GUI_ROOT = Document.new("core:root")
 _MENU = _GUI_ROOT.menu
 menu = _MENU
+gui.root = _GUI_ROOT
 
 ---  Console library extension ---
 console.cheats = {}
@@ -317,11 +274,33 @@ entities.get_all = function(uids)
         return stdcomp.get_all(uids)
     end
 end
+
 local bytearray = require "core:internal/bytearray"
 Bytearray = bytearray.FFIBytearray
 Bytearray_as_string = bytearray.FFIBytearray_as_string
 Bytearray_construct = function(...) return Bytearray(...) end
+
+__vc_scripts_registry = require "core:internal/scripts_registry"
+
+file.open = require "core:internal/stream_providers/file"
+file.open_named_pipe = require "core:internal/stream_providers/named_pipe"
+
+if ffi.os == "Windows" then
+    ffi.cdef[[
+    unsigned long GetCurrentProcessId();
+    ]]
+    
+    os.pid = ffi.C.GetCurrentProcessId()
+else
+    ffi.cdef[[
+    int getpid(void);
+    ]]
+
+    os.pid = ffi.C.getpid()
+end
+
 ffi = nil
+__vc_lock_internal_modules()
 
 math.randomseed(time.uptime() * 1536227939)
 
@@ -450,8 +429,37 @@ function __vc_on_hud_open()
     hud.open_permanent("core:ingame_chat")
 end
 
+local ScheduleGroup_mt = {
+    __index = {
+        publish = function(self, schedule)
+            local id = self._next_schedule
+            self._schedules[id] = schedule
+            self._next_schedule = id + 1
+        end,
+        tick = function(self, dt)
+            for id, schedule in pairs(self._schedules) do
+                schedule:tick(dt)
+            end
+        end,
+        remove = function(self, id)
+            self._schedules[id] = nil
+        end
+    }
+}
+
+local function ScheduleGroup()
+    return setmetatable({
+        _next_schedule = 1,
+        _schedules = {},
+    }, ScheduleGroup_mt)
+end
+
+time.schedules = {}
+
 local RULES_FILE = "world:rules.toml"
 function __vc_on_world_open()
+    time.schedules.world = ScheduleGroup()
+
     if not file.exists(RULES_FILE) then
         return
     end
@@ -459,6 +467,10 @@ function __vc_on_world_open()
     for name, value in pairs(rule_values) do
         _rules.set(name, value)
     end
+end
+
+function __vc_on_world_tick(tps)
+    time.schedules.world:tick(1.0 / tps)
 end
 
 function __vc_on_world_save()
@@ -473,6 +485,7 @@ function __vc_on_world_quit()
     _rules.clear()
     gui_util:__reset_local()
     stdcomp.__reset()
+    file.__close_all_descriptors()
 end
 
 local __vc_coroutines = {}
@@ -558,6 +571,8 @@ function __process_post_runnables()
     for _, name in ipairs(dead) do
         __vc_named_coroutines[name] = nil
     end
+
+    network.__process_events()
 end
 
 function time.post_runnable(runnable)

@@ -47,7 +47,8 @@
         "gui/info",
         "gui/world",
         "gui/hud",
-        "gui/entity"
+        "gui/entity",
+        "gui/half_block"
     ],
     "fonts": [
         {

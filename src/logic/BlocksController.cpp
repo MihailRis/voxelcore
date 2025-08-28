@@ -127,7 +127,7 @@ void BlocksController::update(float delta, uint padding) {
         onBlocksTick(blocksTickClock.getPart(), blocksTickClock.getParts());
     }
     if (worldTickClock.update(delta)) {
-        scripting::on_world_tick();
+        scripting::on_world_tick(worldTickClock.getTickRate());
     }
 }
 

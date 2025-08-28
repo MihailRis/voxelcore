@@ -2,7 +2,7 @@
 
 Библиотека для работы с сетью.
 
-## HTTP-запросы
+## HTTP-Запросы
 
 ```lua
 -- Выполняет GET запрос к указанному URL.
@@ -95,6 +95,65 @@ server:close()
 server:is_open() --> bool
 
 -- Возвращает порт сервера.
+server:get_port() --> int
+```
+
+## UDP-Датаграммы
+
+```lua
+network.udp_connect(
+	address: str,
+	port: int,
+    -- Функция, вызываемая при получении датаграммы с указанного при открытии сокета адреса и порта
+	datagramHandler: function(Bytearray),
+	-- Функция, вызываемая после открытия сокета
+	-- Опциональна, так как в UDP нет handshake
+    [опционально] openCallback: function(WriteableSocket),
+) --> WriteableSocket
+```
+
+Открывает UDP-сокет с привязкой к удалённому адресу и порту
+
+Класс WriteableSocket имеет следующие методы:
+
+```lua
+-- Отправляет датаграмму на адрес и порт, заданные при открытии сокета
+socket:send(table|Bytearray|str)
+
+-- Закрывает сокет
+socket:close()
+
+-- Проверяет открыт ли сокет
+socket:is_open() --> bool
+
+-- Возвращает адрес и порт, на которые привязан сокет
+socket:get_address() --> str, int
+```
+
+```lua
+network.udp_open(
+	port: int,
+	-- Функция, вызываемая при получении датаграмы
+	-- В параметры передаётся адрес и порт отправителя, а также сами данные
+	datagramHandler: function(address: str, port: int, data: Bytearray, server: DatagramServerSocket)
+) --> DatagramServerSocket
+```
+
+Открывает UDP-сервер на указанном порту
+
+Класс DatagramServerSocket имеет следующие методы:
+
+```lua
+-- Отправляет датаграмму на переданный адрес и порт
+server:send(address: str, port: int, data: table|Bytearray|str)
+
+-- Завершает принятие датаграмм
+server:stop()
+
+-- Проверяет возможность принятия датаграмм
+server:is_open() --> bool
+
+-- Возвращает порт, который слушает сервер
 server:get_port() --> int
 ```
 

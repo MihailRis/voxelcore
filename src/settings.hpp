@@ -90,6 +90,8 @@ struct DebugSettings {
     FlagSetting generatorTestMode {false};
     /// @brief Write lights cache
     FlagSetting doWriteLights {true};
+    /// @brief Enable experimental optimizations and features
+    FlagSetting enableExperimental {false};
 };
 
 struct UiSettings {

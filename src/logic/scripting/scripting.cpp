@@ -27,6 +27,7 @@
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"
 #include "world/Level.hpp"
+#include "world/World.hpp"
 #include "interfaces/Process.hpp"
 
 using namespace scripting;
@@ -116,11 +117,47 @@ public:
     }
 };
 
-std::unique_ptr<Process> scripting::start_coroutine(
+class LuaProjectScript : public IClientProjectScript {
+public:
+    LuaProjectScript(lua::State* L, scriptenv env) : L(L), env(std::move(env)) {}
+
+    void onScreenChange(const std::string& name, bool show) override {
+        if (!lua::pushenv(L, *env)) {
+            return;
+        }
+        if (!lua::getfield(L, "on_" + name + (show ? "_setup" : "_clear"))) {
+            lua::pop(L);
+            return;
+        }
+        lua::call_nothrow(L, 0, 0);
+        lua::pop(L);
+    }
+private:
+    lua::State* L;
+    scriptenv env;
+};
+
+std::unique_ptr<IClientProjectScript> scripting::load_client_project_script(
     const io::path& script
 ) {
     auto L = lua::get_main_state();
-    if (lua::getglobal(L, "__vc_start_coroutine")) {
+    auto source = io::read_string(script);
+    auto env = create_environment(nullptr);
+    lua::pushenv(L, *env);
+    if (lua::getglobal(L, "__vc_app")) {
+        lua::setfield(L, "app");
+    }
+    lua::pop(L);
+
+    lua::loadbuffer(L, *env, source, script.name());
+    lua::call(L, 0);
+    return std::make_unique<LuaProjectScript>(L, std::move(env));
+}
+
+std::unique_ptr<Process> scripting::start_coroutine(const io::path& script) {
+    auto L = lua::get_main_state();
+    auto method = "__vc_start_coroutine";
+    if (lua::getglobal(L, method)) {
         auto source = io::read_string(script);
         lua::loadbuffer(L, 0, source, script.name());
         if (lua::call(L, 1)) {
@@ -293,12 +330,20 @@ void scripting::on_world_load(LevelController* controller) {
     } 
     
     for (auto& pack : content_control->getAllContentPacks()) {
-        lua::emit_event(L, pack.id + ":.worldopen");
+        lua::emit_event(L, pack.id + ":.worldopen", [](auto L) {
+            return lua::pushboolean(
+                L, !scripting::level->getWorld()->getInfo().isLoaded
+            );
+        });
     }
 }
 
-void scripting::on_world_tick() {
+void scripting::on_world_tick(int tps) {
     auto L = lua::get_main_state();
+    if (lua::getglobal(L, "__vc_on_world_tick")) {
+        lua::pushinteger(L, tps);
+        lua::call_nothrow(L, 1, 0);
+    } 
     for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldtick");
     }

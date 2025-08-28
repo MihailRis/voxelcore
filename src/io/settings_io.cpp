@@ -86,6 +86,7 @@ SettingsHandler::SettingsHandler(EngineSettings& settings) {
     builder.section("debug");
     builder.add("generator-test-mode", &settings.debug.generatorTestMode);
     builder.add("do-write-lights", &settings.debug.doWriteLights);
+    builder.add("enable-experimental", &settings.debug.enableExperimental);
 }
 
 dv::value SettingsHandler::getValue(const std::string& name) const {

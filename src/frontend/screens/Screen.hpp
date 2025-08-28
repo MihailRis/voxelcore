@@ -13,7 +13,9 @@ protected:
 public:
     Screen(Engine& engine);
     virtual ~Screen();
+    virtual void onOpen() = 0;
     virtual void update(float delta) = 0;
     virtual void draw(float delta) = 0;
     virtual void onEngineShutdown() {};
+    virtual const char* getName() const = 0;
 };

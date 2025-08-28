@@ -45,6 +45,12 @@ namespace {
 
     template <SlotFunc func>
     int wrap_slot(lua::State* L) {
+        if (lua::isnoneornil(L, 1)) {
+            throw std::runtime_error("inventory id is nil");
+        }
+        if (lua::isnoneornil(L, 2)) {
+            throw std::runtime_error("slot index is nil");
+        }
         auto invid = lua::tointeger(L, 1);
         auto slotid = lua::tointeger(L, 2);
         auto& inv = get_inventory(invid);

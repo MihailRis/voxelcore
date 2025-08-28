@@ -1,8 +1,7 @@
 #include "api_lua.hpp"
-
+#include "coders/json.hpp"
 #include "engine/Engine.hpp"
 #include "network/Network.hpp"
-#include "coders/json.hpp"
 
 using namespace scripting;
 
@@ -134,17 +133,58 @@ static int l_send(lua::State* L, network::Network& network) {
     return 0;
 }
 
+static int l_udp_server_send_to(lua::State* L, network::Network& network) {
+    u64id_t id = lua::tointeger(L, 1);
+
+    if (auto server = network.getServer(id)) {
+        if (server->getTransportType() != network::TransportType::UDP)
+            throw std::runtime_error("the server must work on UDP transport");
+
+        const std::string& addr = lua::tostring(L, 2);
+        const int& port = lua::tointeger(L, 3);
+
+        auto udpServer = dynamic_cast<network::UdpServer*>(server);
+
+        if (lua::istable(L, 4)) {
+            lua::pushvalue(L, 4);
+            size_t size = lua::objlen(L, 4);
+            util::Buffer<char> buffer(size);
+            for (size_t i = 0; i < size; i++) {
+                lua::rawgeti(L, i + 1);
+                buffer[i] = lua::tointeger(L, -1);
+                lua::pop(L);
+            }
+            lua::pop(L);
+            udpServer->sendTo(addr, port, buffer.data(), size);
+        } else if (lua::isstring(L, 4)) {
+            auto string = lua::tolstring(L, 4);
+            udpServer->sendTo(addr, port, string.data(), string.length());
+        } else {
+            auto string = lua::bytearray_as_string(L, 4);
+            udpServer->sendTo(addr, port, string.data(), string.length());
+            lua::pop(L);
+        }
+    }
+
+    return 0;
+}
+
 static int l_recv(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
     int length = lua::tointeger(L, 2);
+
     auto connection = engine->getNetwork().getConnection(id);
-    if (connection == nullptr) {
+
+    if (connection == nullptr || connection->getTransportType() != network::TransportType::TCP) {
         return 0;
     }
-    length = glm::min(length, connection->available());
+
+    auto tcpConnection = dynamic_cast<network::TcpConnection*>(connection);
+
+    length = glm::min(length, tcpConnection->available());
     util::Buffer<char> buffer(length);
     
-    int size = connection->recv(buffer.data(), length);
+    int size = tcpConnection->recv(buffer.data(), length);
     if (size == -1) {
         return 0;
     }
@@ -162,38 +202,123 @@ static int l_recv(lua::State* L, network::Network& network) {
 
 static int l_available(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
+
     if (auto connection = network.getConnection(id)) {
-        return lua::pushinteger(L, connection->available());
+        return lua::pushinteger(L, dynamic_cast<network::TcpConnection*>(connection)->available());
     }
+
     return 0;
 }
 
 enum NetworkEventType {
     CLIENT_CONNECTED = 1,
-    CONNECTED_TO_SERVER
+    CONNECTED_TO_SERVER,
+    DATAGRAM
 };
 
 struct NetworkEvent {
     NetworkEventType type;
     u64id_t server;
     u64id_t client;
+
+    NetworkEvent(
+        NetworkEventType type,
+        u64id_t server,
+        u64id_t client
+    ) {
+        this->type = type;
+        this->server = server;
+        this->client = client;
+    }
+
+    virtual ~NetworkEvent() = default;
 };
 
-static std::vector<NetworkEvent> events_queue {};
+enum NetworkDatagramSide {
+    ON_SERVER = 1,
+    ON_CLIENT
+};
 
-static int l_connect(lua::State* L, network::Network& network) {
+struct NetworkDatagramEvent : NetworkEvent {
+    NetworkDatagramSide side;
+    std::string addr;
+    int port;
+    const char* buffer;
+    size_t length;
+
+    NetworkDatagramEvent(
+        NetworkEventType datagram,
+        u64id_t sid,
+        u64id_t cid,
+        NetworkDatagramSide side,
+        const std::string& addr,
+        int port,
+        const char* data,
+        size_t length
+    ) : NetworkEvent(DATAGRAM, sid, cid) {
+        this->side = side;
+        this->addr = addr;
+        this->port = port;
+
+        buffer = data;
+
+        this->length = length;
+    }
+};
+
+static std::vector<std::unique_ptr<NetworkEvent>> events_queue {};
+
+static int l_connect_tcp(lua::State* L, network::Network& network) {
     std::string address = lua::require_string(L, 1);
     int port = lua::tointeger(L, 2);
-    u64id_t id = network.connect(address, port, [](u64id_t cid) {
-        events_queue.push_back({CONNECTED_TO_SERVER, 0, cid});
+    u64id_t id = network.connectTcp(address, port, [](u64id_t cid) {
+        events_queue.push_back(std::make_unique<NetworkEvent>(CONNECTED_TO_SERVER, 0, cid));
     });
     return lua::pushinteger(L, id);
 }
 
-static int l_open(lua::State* L, network::Network& network) {
+static int l_open_tcp(lua::State* L, network::Network& network) {
     int port = lua::tointeger(L, 1);
-    u64id_t id = network.openServer(port, [](u64id_t sid, u64id_t id) {
-        events_queue.push_back({CLIENT_CONNECTED, sid, id});
+    u64id_t id = network.openTcpServer(port, [](u64id_t sid, u64id_t id) {
+        events_queue.push_back(std::make_unique<NetworkEvent>(CLIENT_CONNECTED, sid, id));
+    });
+    return lua::pushinteger(L, id);
+}
+
+static int l_connect_udp(lua::State* L, network::Network& network) {
+    std::string address = lua::require_string(L, 1);
+    int port = lua::tointeger(L, 2);
+    u64id_t id = network.connectUdp(address, port, [](u64id_t cid) {
+        events_queue.push_back(std::make_unique<NetworkEvent>(CONNECTED_TO_SERVER, 0, cid));
+    }, [address, port](
+        u64id_t cid,
+        const char* buffer,
+        size_t length
+    ) {
+        events_queue.push_back(
+            std::make_unique<NetworkDatagramEvent>(
+                DATAGRAM, 0, cid, ON_CLIENT,
+                address, port, buffer, length
+            )
+        );
+    });
+    return lua::pushinteger(L, id);
+}
+
+static int l_open_udp(lua::State* L, network::Network& network) {
+    int port = lua::tointeger(L, 1);
+    u64id_t id = network.openUdpServer(port, [](
+        u64id_t sid,
+        const std::string& addr,
+        int port,
+        const char* buffer,
+        size_t length) {
+        events_queue.push_back(
+            std::make_unique<NetworkDatagramEvent>(
+                DATAGRAM, sid, 0, ON_SERVER,
+                addr, port, buffer, length
+            )
+        );
     });
     return lua::pushinteger(L, id);
 }
@@ -204,7 +329,10 @@ static int l_is_alive(lua::State* L, network::Network& network) {
         return lua::pushboolean(
             L,
             connection->getState() != network::ConnectionState::CLOSED ||
-                connection->available() > 0
+            (
+                connection->getTransportType() == network::TransportType::TCP &&
+                dynamic_cast<network::TcpConnection*>(connection)->available() > 0
+            )
         );
     }
     return lua::pushboolean(L, false);
@@ -256,17 +384,34 @@ static int l_get_total_download(lua::State* L, network::Network& network) {
 
 static int l_pull_events(lua::State* L, network::Network& network) {
     lua::createtable(L, events_queue.size(), 0);
-    for (size_t i = 0; i < events_queue.size(); i++) {
-        lua::createtable(L, 3, 0);
 
-        lua::pushinteger(L, events_queue[i].type);
+    for (size_t i = 0; i < events_queue.size(); i++) {
+        const auto* datagramEvent = dynamic_cast<NetworkDatagramEvent*>(events_queue[i].get());
+
+        lua::createtable(L, datagramEvent ? 7 : 3, 0);
+
+        lua::pushinteger(L, events_queue[i]->type);
         lua::rawseti(L, 1);
 
-        lua::pushinteger(L, events_queue[i].server);
+        lua::pushinteger(L, events_queue[i]->server);
         lua::rawseti(L, 2);
 
-        lua::pushinteger(L, events_queue[i].client);
+        lua::pushinteger(L, events_queue[i]->client);
         lua::rawseti(L, 3);
+
+        if (datagramEvent) {
+            lua::pushstring(L, datagramEvent->addr);
+            lua::rawseti(L, 4);
+
+            lua::pushinteger(L, datagramEvent->port);
+            lua::rawseti(L, 5);
+
+            lua::pushinteger(L, datagramEvent->side);
+            lua::rawseti(L, 6);
+
+            lua::create_bytearray(L, datagramEvent->buffer, datagramEvent->length);
+            lua::rawseti(L, 7);
+        }
         
         lua::rawseti(L, i + 1);
     }
@@ -298,9 +443,12 @@ const luaL_Reg networklib[] = {
     {"get_total_upload", wrap<l_get_total_upload>},
     {"get_total_download", wrap<l_get_total_download>},
     {"__pull_events", wrap<l_pull_events>},
-    {"__open", wrap<l_open>},
+    {"__open_tcp", wrap<l_open_tcp>},
+    {"__open_udp", wrap<l_open_udp>},
     {"__closeserver", wrap<l_closeserver>},
-    {"__connect", wrap<l_connect>},
+    {"__udp_server_send_to", wrap<l_udp_server_send_to>},
+    {"__connect_tcp", wrap<l_connect_tcp>},
+    {"__connect_udp", wrap<l_connect_udp>},
     {"__close", wrap<l_close>},
     {"__send", wrap<l_send>},
     {"__recv", wrap<l_recv>},

@@ -46,6 +46,14 @@ local Socket = {__index={
     get_address=function(self) return network.__get_address(self.id) end,
 }}
 
+
+local WriteableSocket = {__index={
+    send=function(self, ...) return network.__send(self.id, ...) end,
+    close=function(self) return network.__close(self.id) end,
+    is_open=function(self) return network.__is_alive(self.id) end,
+    get_address=function(self) return network.__get_address(self.id) end,
+}}
+
 local ServerSocket = {__index={
     close=function(self) return network.__closeserver(self.id) end,
     is_open=function(self) return network.__is_serveropen(self.id) end,
@@ -53,11 +61,23 @@ local ServerSocket = {__index={
 }}
 
 
+local DatagramServerSocket = {__index={
+    close=function(self) return network.__closeserver(self.id) end,
+    is_open=function(self) return network.__is_serveropen(self.id) end,
+    get_port=function(self) return network.__get_serverport(self.id) end,
+    send=function(self, ...) return network.__udp_server_send_to(self.id, ...) end
+}}
+
 local _tcp_server_callbacks = {}
 local _tcp_client_callbacks = {}
 
+
+local _udp_server_callbacks = {}
+local _udp_client_datagram_callbacks = {}
+local _udp_client_open_callbacks = {}
+
 network.tcp_open = function (port, handler)
-    local socket = setmetatable({id=network.__open(port)}, ServerSocket)
+    local socket = setmetatable({id=network.__open_tcp(port)}, ServerSocket)
 
     _tcp_server_callbacks[socket.id] = function(id)
         handler(setmetatable({id=id}, Socket))
@@ -67,19 +87,66 @@ end
 
 network.tcp_connect = function(address, port, callback)
     local socket = setmetatable({id=0}, Socket)
-    socket.id = network.__connect(address, port)
+
+    socket.id = network.__connect_tcp(address, port)
+
     _tcp_client_callbacks[socket.id] = function() callback(socket) end
     return socket
+end
+
+
+network.udp_open = function (port, datagramHandler)
+    if type(datagramHandler) ~= 'function' then
+        error "udp server cannot be opened without datagram handler"
+    end
+
+    local socket = setmetatable({id=network.__open_udp(port)}, DatagramServerSocket)
+
+    _udp_server_callbacks[socket.id] = function(address, port, data)
+        datagramHandler(address, port, data, socket)
+    end
+
+    return socket
+end
+
+network.udp_connect = function (address, port, datagramHandler, openCallback)
+    if type(datagramHandler) ~= 'function' then
+        error "udp client socket cannot be opened without datagram handler"
+    end
+
+    local socket = setmetatable({id=0}, WriteableSocket)
+    socket.id = network.__connect_udp(address, port)
+
+    _udp_client_datagram_callbacks[socket.id] = datagramHandler
+    _udp_client_open_callbacks[socket.id] = openCallback
+
+    return socket
+end
+
+local function clean(iterable, checkFun, ...)
+    local tables = { ... }
+
+    for id, _ in pairs(iterable) do
+        if not checkFun(id) then
+            for i = 1, #tables do
+                tables[i][id] = nil
+            end
+        end
+    end
 end
 
 network.__process_events = function()
     local CLIENT_CONNECTED = 1
     local CONNECTED_TO_SERVER = 2
+    local DATAGRAM = 3
+
+    local ON_SERVER = 1
+    local ON_CLIENT = 2
 
     local cleaned = false
     local events = network.__pull_events()
     for i, event in ipairs(events) do
-        local etype, sid, cid = unpack(event)
+        local etype, sid, cid, addr, port, side, data = unpack(event)
 
         if etype == CLIENT_CONNECTED then
             local callback = _tcp_server_callbacks[sid]
@@ -87,24 +154,26 @@ network.__process_events = function()
                 callback(cid)
             end
         elseif etype == CONNECTED_TO_SERVER then
-            local callback = _tcp_client_callbacks[cid]
+            local callback = _tcp_client_callbacks[cid] or _udp_client_open_callbacks[cid]
             if callback then
                 callback()
+            end
+        elseif etype == DATAGRAM then
+            if side == ON_CLIENT then
+                _udp_client_datagram_callbacks[cid](data)
+            elseif side == ON_SERVER then
+                _udp_server_callbacks[sid](addr, port, data)
             end
         end
 
         -- remove dead servers
         if not cleaned then
-            for sid, _ in pairs(_tcp_server_callbacks) do
-                if not network.__is_serveropen(sid) then
-                    _tcp_server_callbacks[sid] = nil
-                end
-            end
-            for cid, _ in pairs(_tcp_client_callbacks) do
-                if not network.__is_alive(cid) then
-                    _tcp_client_callbacks[cid] = nil
-                end
-            end
+            clean(_tcp_server_callbacks, network.__is_serveropen, _tcp_server_callbacks)
+            clean(_tcp_client_callbacks, network.__is_alive, _tcp_client_callbacks)
+
+            clean(_udp_server_callbacks, network.__is_serveropen, _udp_server_callbacks)
+            clean(_udp_client_datagram_callbacks, network.__is_alive, _udp_client_open_callbacks, _udp_client_datagram_callbacks)
+
             cleaned = true
         end
     end

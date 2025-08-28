@@ -2,10 +2,13 @@
 
 #include "Engine.hpp"
 #include "debug/Logger.hpp"
+#include "devtools/Project.hpp"
 #include "frontend/screens/MenuScreen.hpp"
 #include "frontend/screens/LevelScreen.hpp"
 #include "window/Window.hpp"
 #include "world/Level.hpp"
+#include "graphics/ui/GUI.hpp"
+#include "graphics/ui/elements/Container.hpp"
 
 static debug::Logger logger("mainloop");
 
@@ -36,6 +39,7 @@ void Mainloop::run() {
     while (!window.isShouldClose()){
         time.update(window.time());
         engine.updateFrontend();
+
         if (!window.isIconified()) {
             engine.renderFrame();
         }

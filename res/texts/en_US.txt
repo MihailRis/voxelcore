@@ -22,6 +22,7 @@ graphics.dense-render.tooltip=Enables transparency in blocks like leaves
 
 # settings
 settings.Controls Search Mode=Search by attached button name
+settings.Conflict=Possible conflicts found
 
 # Bindings
 chunks.reload=Reload Chunks

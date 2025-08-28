@@ -117,18 +117,24 @@ SlotView::SlotView(GUI& gui, SlotLayout layout)
     setTooltipDelay(0.0f);
 }
 // TODO: Refactor
-std::wstring get_caption_string(const ItemStack& stack, const ItemDef& item) {
+static std::wstring get_caption_string(
+    const ItemStack& stack, const ItemDef& item
+) {
     dv::value* caption = stack.getField("caption");
     if (caption != nullptr) {
         return util::pascal_case(
             langs::get(util::str2wstr_utf8(caption->asString()))
         );
     } else {
-        return util::pascal_case(langs::get(util::str2wstr_utf8(item.caption)));
+        return util::pascal_case(
+            langs::get(util::str2wstr_utf8(item.caption))
+        );
     }
 }
 // TODO: Refactor
-std::wstring get_description_string(const ItemStack& stack, const ItemDef& item) {
+static std::wstring get_description_string(
+    const ItemStack& stack, const ItemDef& item
+) {
     dv::value* description = stack.getField("description");
 
     if (description != nullptr) {
@@ -138,17 +144,33 @@ std::wstring get_description_string(const ItemStack& stack, const ItemDef& item)
     }
 }
 
+static bool is_same_tooltip(const ItemStack& stack, const ItemStack& cache) {
+    if (stack.getItemId() != cache.getItemId()) {
+        return false;
+    }
+    auto caption = stack.getField("caption");
+    auto cCaption = cache.getField("caption");
+    auto description = stack.getField("description");
+    auto cDescription = cache.getField("description");
+
+    if (((caption != nullptr) != (cCaption != nullptr)) ||
+        ((description != nullptr) != (cDescription != nullptr))) {
+        return false;
+    }
+    return (caption ? caption->asString() == cCaption->asString() : true) &&
+           (description ? description->asString() == cDescription->asString()
+                        : true);
+}
+
 void SlotView::refreshTooltip(const ItemStack& stack, const ItemDef& item) {
     itemid_t itemid = stack.getItemId();
-    std::wstring caption = get_caption_string(stack, item);
-    std::wstring cached_caption = get_caption_string(cache.stack, item);
-    std::wstring description = get_description_string(stack, item);
-    std::wstring cached_description = get_description_string(cache.stack, item);
 
-    if (itemid == cache.stack.getItemId() && cached_caption == caption && cached_description == description) {
+    if (is_same_tooltip(stack, cache.stack)) {
         return;
     }
     if (itemid) {
+        std::wstring caption = get_caption_string(stack, item);
+        std::wstring description = get_description_string(stack, item);
         if (description.length() > 0) {
             tooltip = caption + L"\n" + description;
         } else {
@@ -228,7 +250,7 @@ void SlotView::draw(const DrawContext& pctx, const Assets& assets) {
         cache.countStr = std::to_wstring(stack.getCount());
     }
     refreshTooltip(stack, item);
-    cache.stack.set(ItemStack(stack.getItemId(), stack.getCount()));
+    cache.stack.set(stack);
 
     glm::vec4 tint(1, 1, 1, isEnabled() ? 1 : 0.5f);
     glm::vec2 pos = calcPos();

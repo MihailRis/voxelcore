@@ -62,5 +62,4 @@ end
 cache_names(block)
 cache_names(item)
 
-local scripts_registry = require "core:internal/scripts_registry"
-scripts_registry.build_registry()
+__vc_scripts_registry.build_registry()

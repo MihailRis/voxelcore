@@ -416,19 +416,20 @@ void ContentLoader::load() {
 
 template <class T>
 static void load_script(const Content& content, T& def) {
-    const auto& name = def.name;
-    size_t pos = name.find(':');
+    const auto& scriptName = def.scriptFile;
+    if (scriptName.empty()) return;
+    size_t pos = scriptName.find(':');
     if (pos == std::string::npos) {
         throw std::runtime_error("invalid content unit name");
     }
-    const auto runtime = content.getPackRuntime(name.substr(0, pos));
+    const auto runtime = content.getPackRuntime(scriptName.substr(0, pos));
     const auto& pack = runtime->getInfo();
     const auto& folder = pack.folder;
     auto scriptfile = folder / ("scripts/" + def.scriptName + ".lua");
     if (io::is_regular_file(scriptfile)) {
         scripting::load_content_script(
             runtime->getEnvironment(),
-            name,
+            def.name,
             scriptfile,
             def.scriptFile,
             def.rt.funcsset

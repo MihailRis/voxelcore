@@ -171,6 +171,9 @@ const Mesh<ChunkVertex>* ChunksRenderer::retrieveChunk(
     if (mesh == nullptr) {
         return nullptr;
     }
+    if (chunk->flags.dirtyHeights) {
+        chunk->updateHeights();
+    }
     if (culling) {
         glm::vec3 min(chunk->x * CHUNK_W, chunk->bottom, chunk->z * CHUNK_D);
         glm::vec3 max(

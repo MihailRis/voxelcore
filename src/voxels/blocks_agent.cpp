@@ -7,7 +7,7 @@
 using namespace blocks_agent;
 
 template <class Storage>
-static inline void set_block(
+static inline bool set_block(
     Storage& chunks,
     int32_t x,
     int32_t y,
@@ -16,14 +16,14 @@ static inline void set_block(
     blockstate state
 ) {
     if (y < 0 || y >= CHUNK_H) {
-        return;
+        return false;
     }
     const auto& indices = chunks.getContentIndices();
     int cx = floordiv<CHUNK_W>(x);
     int cz = floordiv<CHUNK_D>(z);
     Chunk* chunk = get_chunk(chunks, cx, cz);
     if (chunk == nullptr) {
-        return;
+        return false;
     }
     int lx = x - cx * CHUNK_W;
     int lz = z - cz * CHUNK_D;
@@ -60,7 +60,8 @@ static inline void set_block(
     else if (y + 1 > chunk->top)
         chunk->top = y + 1;
     else if (id == 0)
-        chunk->updateHeights();
+        chunk->flags.dirtyHeights = true;
+
 
     if (lx == 0 && (chunk = get_chunk(chunks, cx - 1, cz))) {
         chunk->flags.modified = true;
@@ -74,9 +75,10 @@ static inline void set_block(
     if (lz == CHUNK_D - 1 && (chunk = get_chunk(chunks, cx, cz + 1))) {
         chunk->flags.modified = true;
     }
+    return true;
 }
 
-void blocks_agent::set(
+bool blocks_agent::set(
     Chunks& chunks,
     int32_t x,
     int32_t y,
@@ -84,10 +86,10 @@ void blocks_agent::set(
     uint32_t id,
     blockstate state
 ) {
-    set_block(chunks, x, y, z, id, state);
+    return set_block(chunks, x, y, z, id, state);
 }
 
-void blocks_agent::set(
+bool blocks_agent::set(
     GlobalChunks& chunks,
     int32_t x,
     int32_t y,
@@ -95,7 +97,7 @@ void blocks_agent::set(
     uint32_t id,
     blockstate state
 ) {
-    set_block(chunks, x, y, z, id, state);
+    return set_block(chunks, x, y, z, id, state);
 }
 
 template <class Storage>

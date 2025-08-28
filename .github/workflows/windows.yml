@@ -2,9 +2,9 @@ name: MSVC Build
 
 on:
   push:
-    branches: [ "main", "release-**"]
+    branches: [ "main", "dev", "release-**"]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "dev" ]
 
 jobs:
   build-windows:

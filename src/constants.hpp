@@ -6,7 +6,7 @@
 #include <string>
 
 inline constexpr int ENGINE_VERSION_MAJOR = 0;
-inline constexpr int ENGINE_VERSION_MINOR = 28;
+inline constexpr int ENGINE_VERSION_MINOR = 29;
 
 #ifdef NDEBUG
 inline constexpr bool ENGINE_DEBUG_BUILD = false;
@@ -14,7 +14,7 @@ inline constexpr bool ENGINE_DEBUG_BUILD = false;
 inline constexpr bool ENGINE_DEBUG_BUILD = true;
 #endif // NDEBUG
 
-inline const std::string ENGINE_VERSION_STRING = "0.28";
+inline const std::string ENGINE_VERSION_STRING = "0.29";
 
 /// @brief world regions format version
 inline constexpr uint REGION_FORMAT_VERSION = 3;

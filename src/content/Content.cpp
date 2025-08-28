@@ -63,6 +63,14 @@ const rigging::SkeletonConfig* Content::getSkeleton(const std::string& id
     return found->second.get();
 }
 
+const rigging::SkeletonConfig& Content::requireSkeleton(const std::string& id) const {
+    auto skeleton = getSkeleton(id);
+    if (skeleton == nullptr) {
+        throw std::runtime_error("skeleton '" + id + "' not loaded");
+    }
+    return *skeleton;
+}
+
 const BlockMaterial* Content::findBlockMaterial(const std::string& id) const {
     auto found = blockMaterials.find(id);
     if (found == blockMaterials.end()) {

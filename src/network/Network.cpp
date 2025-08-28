@@ -291,7 +291,7 @@ static std::string to_string(const sockaddr_in& addr, bool port=true) {
     return "";
 }
 
-class SocketConnection : public Connection {
+class SocketTcpConnection : public TcpConnection {
     SOCKET descriptor;
     sockaddr_in addr;
     size_t totalUpload = 0;
@@ -317,10 +317,10 @@ class SocketConnection : public Connection {
         state = ConnectionState::CONNECTED;
     }
 public:
-    SocketConnection(SOCKET descriptor, sockaddr_in addr)
+    SocketTcpConnection(SOCKET descriptor, sockaddr_in addr)
         : descriptor(descriptor), addr(std::move(addr)), buffer(16'384) {}
 
-    ~SocketConnection() {
+    ~SocketTcpConnection() {
         if (state != ConnectionState::CLOSED) {
             shutdown(descriptor, 2);
         }
@@ -442,7 +442,7 @@ public:
         return to_string(addr, false);
     }
 
-    static std::shared_ptr<SocketConnection> connect(
+    static std::shared_ptr<SocketTcpConnection> connect(
         const std::string& address, int port, runnable callback
     ) {
         addrinfo hints {};
@@ -466,7 +466,7 @@ public:
         if (descriptor == -1) {
             throw std::runtime_error("Could not create socket");
         }
-        auto socket = std::make_shared<SocketConnection>(descriptor, std::move(serverAddress));
+        auto socket = std::make_shared<SocketTcpConnection>(descriptor, std::move(serverAddress));
         socket->connect(std::move(callback));
         return socket;
     }
@@ -476,7 +476,7 @@ public:
     }
 };
 
-class SocketTcpSServer : public TcpServer {
+class SocketTcpServer : public TcpServer {
     u64id_t id;
     Network* network;
     SOCKET descriptor;
@@ -486,10 +486,10 @@ class SocketTcpSServer : public TcpServer {
     std::unique_ptr<std::thread> thread = nullptr;
     int port;
 public:
-    SocketTcpSServer(u64id_t id, Network* network, SOCKET descriptor, int port)
+    SocketTcpServer(u64id_t id, Network* network, SOCKET descriptor, int port)
     : id(id), network(network), descriptor(descriptor), port(port) {}
 
-    ~SocketTcpSServer() {
+    ~SocketTcpServer() {
         closeSocket();
     }
 
@@ -510,7 +510,7 @@ public:
                     break;
                 }
                 logger.info() << "client connected: " << to_string(address);
-                auto socket = std::make_shared<SocketConnection>(
+                auto socket = std::make_shared<SocketTcpConnection>(
                     clientDescriptor, address
                 );
                 socket->startClient();
@@ -558,7 +558,7 @@ public:
         return port;
     }
 
-    static std::shared_ptr<SocketTcpSServer> openServer(
+    static std::shared_ptr<SocketTcpServer> openServer(
         u64id_t id, Network* network, int port, ConnectCallback handler
     ) {
         SOCKET descriptor = socket(
@@ -586,7 +586,222 @@ public:
         }
         logger.info() << "opened server at port " << port;
         auto server =
-            std::make_shared<SocketTcpSServer>(id, network, descriptor, port);
+            std::make_shared<SocketTcpServer>(id, network, descriptor, port);
+        server->startListen(std::move(handler));
+        return server;
+    }
+};
+
+class SocketUdpConnection : public UdpConnection {
+    u64id_t id;
+    SOCKET descriptor;
+    sockaddr_in addr{};
+    bool open = true;
+    std::unique_ptr<std::thread> thread;
+    ClientDatagramCallback callback;
+
+    size_t totalUpload = 0;
+    size_t totalDownload = 0;
+    ConnectionState state = ConnectionState::INITIAL;
+
+public:
+    SocketUdpConnection(u64id_t id, SOCKET descriptor, sockaddr_in addr)
+        : id(id), descriptor(descriptor), addr(std::move(addr)) {}
+
+    ~SocketUdpConnection() override {
+        SocketUdpConnection::close();
+    }
+
+    static std::shared_ptr<SocketUdpConnection> connect(
+        u64id_t id,
+        const std::string& address,
+        int port,
+        ClientDatagramCallback handler,
+        runnable callback
+    ) {
+        SOCKET descriptor = socket(AF_INET, SOCK_DGRAM, 0);
+        if (descriptor == -1) {
+            throw std::runtime_error("could not create UDP socket");
+        }
+
+        sockaddr_in serverAddr{};
+        serverAddr.sin_family = AF_INET;
+        if (inet_pton(AF_INET, address.c_str(), &serverAddr.sin_addr) <= 0) {
+            closesocket(descriptor);
+            throw std::runtime_error("invalid UDP address: " + address);
+        }
+        serverAddr.sin_port = htons(port);
+
+        if (::connect(descriptor, (sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
+            auto err = handle_socket_error("UDP connect failed");
+            closesocket(descriptor);
+            throw err;
+        }
+
+        auto socket = std::make_shared<SocketUdpConnection>(id, descriptor, serverAddr);
+        socket->connect(std::move(handler));
+
+        callback();
+
+        return socket;
+    }
+
+    void connect(ClientDatagramCallback handler) override {
+        callback = std::move(handler);
+        state = ConnectionState::CONNECTED;
+
+        thread = std::make_unique<std::thread>([this]() {
+            util::Buffer<char> buffer(16'384);
+            while (open) {
+                int size = recv(descriptor, buffer.data(), buffer.size(), 0);
+                if (size <= 0) {
+                    if (!open) break;
+                    closesocket(descriptor);
+                    state = ConnectionState::CLOSED;
+                    break;
+                }
+                totalDownload += size;
+                if (callback) {
+                    callback(id, buffer.data(), size);
+                }
+            }
+        });
+    }
+
+    int send(const char* buffer, size_t length) override {
+        int len = sendto(descriptor, buffer, length, 0,
+                         (sockaddr*)&addr, sizeof(addr));
+        if (len < 0) {
+            closesocket(descriptor);
+            state = ConnectionState::CLOSED;
+        } else totalUpload += len;
+
+        return len;
+    }
+
+    void close(bool discardAll=false) override {
+        if (!open) return;
+        open = false;
+
+        if (state != ConnectionState::CLOSED) {
+            shutdown(descriptor, 2);
+            closesocket(descriptor);
+        }
+
+        if (thread) {
+            thread->join();
+            thread.reset();
+        }
+        state = ConnectionState::CLOSED;
+    }
+
+    size_t pullUpload() override {
+        size_t s = totalUpload;
+        totalUpload = 0;
+        return s;
+    }
+
+    size_t pullDownload() override {
+        size_t s = totalDownload;
+        totalDownload = 0;
+        return s;
+    }
+
+    [[nodiscard]] int getPort() const override {
+        return ntohs(addr.sin_port);
+    }
+
+    [[nodiscard]] std::string getAddress() const override {
+        return to_string(addr, false);
+    }
+
+    [[nodiscard]] ConnectionState getState() const override {
+        return state;
+    }
+};
+
+class SocketUdpServer : public UdpServer {
+    u64id_t id;
+    Network* network;
+    SOCKET descriptor;
+    bool open = true;
+    std::unique_ptr<std::thread> thread = nullptr;
+    int port;
+    ServerDatagramCallback callback;
+
+public:
+    SocketUdpServer(u64id_t id, Network* network, SOCKET descriptor, int port)
+        : id(id), network(network), descriptor(descriptor), port(port) {}
+
+    ~SocketUdpServer() override {
+        SocketUdpServer::close();
+    }
+
+    void startListen(ServerDatagramCallback handler) {
+        callback = std::move(handler);
+
+        thread = std::make_unique<std::thread>([this]() {
+            util::Buffer<char> buffer(16384);
+            sockaddr_in clientAddr{};
+            socklen_t addrlen = sizeof(clientAddr);
+
+            while (open) {
+                int size = recvfrom(descriptor, buffer.data(), buffer.size(), 0,
+                                    reinterpret_cast<sockaddr*>(&clientAddr), &addrlen);
+                if (size <= 0) {
+                    if (!open) break;
+                    continue;
+                }
+
+                std::string addrStr = to_string(clientAddr, false);
+                int port = ntohs(clientAddr.sin_port);
+
+                callback(id, addrStr, port, buffer.data(), size);
+            }
+        });
+    }
+
+    void sendTo(const std::string& addr, int port, const char* buffer, size_t length) override {
+        sockaddr_in client{};
+        client.sin_family = AF_INET;
+        inet_pton(AF_INET, addr.c_str(), &client.sin_addr);
+        client.sin_port = htons(port);
+
+        sendto(descriptor, buffer, length, 0,
+               reinterpret_cast<sockaddr*>(&client), sizeof(client));
+    }
+
+    void close() override {
+        if (!open) return;
+        open = false;
+        shutdown(descriptor, 2);
+        closesocket(descriptor);
+        if (thread) {
+            thread->join();
+            thread = nullptr;
+        }
+    }
+
+    bool isOpen() override { return open; }
+    int getPort() const override { return port; }
+
+    static std::shared_ptr<SocketUdpServer> openServer(
+        u64id_t id, Network* network, int port, const ServerDatagramCallback& handler
+    ) {
+        SOCKET descriptor = socket(AF_INET, SOCK_DGRAM, 0);
+        if (descriptor == -1) throw std::runtime_error("Could not create UDP socket");
+
+        sockaddr_in address{};
+        address.sin_family = AF_INET;
+        address.sin_addr.s_addr = INADDR_ANY;
+        address.sin_port = htons(port);
+
+        if (bind(descriptor, (sockaddr*)&address, sizeof(address)) < 0) {
+            closesocket(descriptor);
+            throw std::runtime_error("Could not bind UDP port " + std::to_string(port));
+        }
+
+        auto server = std::make_shared<SocketUdpServer>(id, network, descriptor, port);
         server->startListen(std::move(handler));
         return server;
     }
@@ -627,7 +842,7 @@ Connection* Network::getConnection(u64id_t id) {
     return found->second.get();
 }
 
-TcpServer* Network::getServer(u64id_t id) const {
+Server* Network::getServer(u64id_t id) const {
     const auto& found = servers.find(id);
     if (found == servers.end()) {
         return nullptr;
@@ -635,20 +850,38 @@ TcpServer* Network::getServer(u64id_t id) const {
     return found->second.get();
 }
 
-u64id_t Network::connect(const std::string& address, int port, consumer<u64id_t> callback) {
+u64id_t Network::connectTcp(const std::string& address, int port, consumer<u64id_t> callback) {
     std::lock_guard lock(connectionsMutex);
     
     u64id_t id = nextConnection++;
-    auto socket = SocketConnection::connect(address, port, [id, callback]() {
+    auto socket = SocketTcpConnection::connect(address, port, [id, callback]() {
         callback(id);
     });
     connections[id] = std::move(socket);
     return id;
 }
 
-u64id_t Network::openServer(int port, ConnectCallback handler) {
+u64id_t Network::openTcpServer(int port, ConnectCallback handler) {
     u64id_t id = nextServer++;
-    auto server = SocketTcpSServer::openServer(id, this, port, handler);
+    auto server = SocketTcpServer::openServer(id, this, port, handler);
+    servers[id] = std::move(server);
+    return id;
+}
+
+u64id_t Network::connectUdp(const std::string& address, int port, const consumer<u64id_t>& callback, ClientDatagramCallback handler) {
+    std::lock_guard lock(connectionsMutex);
+
+    u64id_t id = nextConnection++;
+    auto socket = SocketUdpConnection::connect(id, address, port, std::move(handler), [id, callback]() {
+        callback(id);
+    });
+    connections[id] = std::move(socket);
+    return id;
+}
+
+u64id_t Network::openUdpServer(int port, const ServerDatagramCallback& handler) {
+    u64id_t id = nextServer++;
+    auto server = SocketUdpServer::openServer(id, this, port, handler);
     servers[id] = std::move(server);
     return id;
 }
@@ -679,7 +912,10 @@ void Network::update() {
             auto socket = socketiter->second.get();
             totalDownload += socket->pullDownload();
             totalUpload += socket->pullUpload();
-            if (socket->available() == 0 && 
+            if (
+                (   socket->getTransportType() == TransportType::UDP ||
+                    dynamic_cast<TcpConnection*>(socket)->available() == 0
+                ) &&
                 socket->getState() == ConnectionState::CLOSED) {
                 socketiter = connections.erase(socketiter);
                 continue;

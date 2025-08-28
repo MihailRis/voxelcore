@@ -171,6 +171,9 @@ block.get_hitbox(id: int, rotation_index: int) -> {vec3, vec3}
 -- возвращает тип модели блока (block/aabb/custom/...)
 block.get_model(id: int) -> str
 
+-- возвращает имя модели блока
+block.model_name(id: int) -> str
+
 -- возвращает массив из 6 текстур, назначенных на стороны блока
 block.get_textures(id: int) -> таблица строк
 ```
