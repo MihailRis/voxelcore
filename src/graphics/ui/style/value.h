@@ -87,7 +87,7 @@ namespace style {
         glm::vec2 asVec2(const glm::vec2& def = {}) const;
         glm::vec3 asVec3(const glm::vec3& def = {}) const;
         glm::vec4 asVec4(const glm::vec4& def = {}) const;
-        glm::vec4 asColor(const glm::vec4& def = {0, 0, 0, 1}) const;
+        glm::vec4 asColor(const glm::vec4& def = {0, 0, 0, 0}) const;
 
         std::string typeName() const;
         std::string toString() const;

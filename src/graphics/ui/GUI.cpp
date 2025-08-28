@@ -61,15 +61,24 @@ GUI::GUI(Engine& engine)
 
     std::string xmlString = R"(
 <div>
-test
+<p>test</p>
+<p>test2</p>
 </div>
 )";
     std::string css_code = R"(
     // comment variant 1
     /* comment variant 2 */
     div {
-        padding-left: 100;
+        background: #111;
+        width: 200;
+        height: 200;
+        direction: vertical;
     }
+
+    p {
+            background: #222;
+            height: 16;
+        }
 )";
 
     document_root = Node::from_xml_string("example.xml", xmlString);
@@ -79,7 +88,7 @@ test
 
     style::StyleComputer computer;
     computer.set_stylesheets({stylesheet});
-    computer.compute(document_root);
+    computer.compute(*document_root);
 }
 
 GUI::~GUI() = default;
@@ -261,7 +270,7 @@ void GUI::draw(const DrawContext& pctx, const Assets& assets) {
     auto& viewport = ctx.getViewport();
     batch2D->begin();
 
-    document_root.draw(ctx, assets);
+    document_root->draw(ctx, assets);
 }
 
 std::shared_ptr<UINode> GUI::getFocused() const {

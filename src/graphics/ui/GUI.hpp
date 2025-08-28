@@ -85,7 +85,7 @@ namespace gui {
         bool doubleClicked = false;
         bool debug = false;
 
-        Node document_root = Node("div");
+        std::shared_ptr<Node> document_root = std::make_shared<Node>("div");;
 
         void actMouse(float delta, const CursorState& cursor);
         void actFocused();

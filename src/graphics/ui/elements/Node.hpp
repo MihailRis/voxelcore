@@ -12,8 +12,8 @@
 #include "graphics/core/Batch2D.hpp"
 #include "graphics/core/DrawContext.hpp"
 #include "graphics/core/Font.hpp"
-#include "graphics/ui/style/Stylesheet.h"
 #include "graphics/ui/layout/LayoutBox.hpp"
+#include "graphics/ui/style/Stylesheet.h"
 
 using AttributesMap = std::unordered_map<std::string, std::string>;
 
@@ -147,9 +147,12 @@ struct Element {
 
 using NodeType = std::variant<Text, Element>;
 
-struct Node {
+struct Node : public std::enable_shared_from_this<Node> {
+
+    std::weak_ptr<Node> parent;
+    std::vector<std::shared_ptr<Node>> children;
+
     bool root = false;
-    std::vector<Node> children;
     NodeType node_type;
 
     Node(std::string_view text) : node_type(Text(text)) {
@@ -157,35 +160,52 @@ struct Node {
     Node(std::string_view tag, AttributesMap attrs)
         : node_type(Element(tag, std::move(attrs))) {
     }
-    Node(std::string_view tag, AttributesMap attrs, std::vector<Node> childs)
+    Node(
+        std::string_view tag,
+        AttributesMap attrs,
+        std::vector<std::shared_ptr<Node>> childs
+    )
         : children(std::move(childs)),
           node_type(Element(tag, std::move(attrs))) {
     }
 
-    Node(const Node& other)
-        : root(other.root),
-          children(other.children),
-          node_type(other.node_type) {
+    // Копирующий конструктор (глубокое копирование детей)
+    Node(const Node& other) : root(other.root), node_type(other.node_type) {
+        children.reserve(other.children.size());
+        for (const auto& child : other.children) {
+            children.push_back(
+                std::make_unique<Node>(*child)
+            );  // клонируем каждого ребенка
+        }
     }
 
+    // Копирующий оператор присваивания
     Node& operator=(const Node& other) {
         if (this != &other) {
             root = other.root;
-            children = other.children;
             node_type = other.node_type;
+
+            // Глубокое копирование детей
+            children.clear();
+            children.reserve(other.children.size());
+            for (const auto& child : other.children) {
+                children.push_back(std::make_unique<Node>(*child));
+            }
         }
         return *this;
     }
 
+    // Перемещающий конструктор
     Node(Node&& other) noexcept
-        : root(other.root),
+        : root(std::move(other.root)),
           children(std::move(other.children)),
           node_type(std::move(other.node_type)) {
     }
 
+    // Перемещающий оператор присваивания
     Node& operator=(Node&& other) noexcept {
         if (this != &other) {
-            root = other.root;
+            root = std::move(other.root);
             children = std::move(other.children);
             node_type = std::move(other.node_type);
         }
@@ -193,19 +213,34 @@ struct Node {
     }
 
     // Layout
-    LayoutBox layout_box;  // Layout данные
+    LayoutBox layout;  // Layout данные
     bool layout_dirty = true;
-    
+
     // Методы для работы с layout
-    LayoutBox& get_layout() { return layout_box; }
-    const LayoutBox& get_layout() const { return layout_box; }
-    
-    void mark_layout_dirty() { layout_dirty = true; }
-    void mark_layout_clean() { layout_dirty = false; }
-    bool is_layout_dirty() const { return layout_dirty; }
+    LayoutBox& get_layout() {
+        return layout;
+    }
+    const LayoutBox& get_layout() const {
+        return layout;
+    }
+
+    void mark_layout_dirty() {
+        layout_dirty = true;
+    }
+    void mark_layout_clean() {
+        layout_dirty = false;
+    }
+    bool is_layout_dirty() const {
+        return layout_dirty;
+    }
 
     // Draw
     void draw(const DrawContext& ctx, const Assets& assets);
+    void draw(
+        const DrawContext& ctx,
+        const Assets& assets,
+        const LayoutContext& context
+    );
 
     // Working with childs
     void append_child(Node node);
@@ -221,7 +256,7 @@ struct Node {
     bool is_text() const;
     bool is_element() const;
     size_t child_count() const;
-    const std::vector<Node>& get_children() const;
+    const std::vector<std::shared_ptr<Node>>& get_children() const;
     bool is_root() const;
 
     // Working with attributes
@@ -240,12 +275,12 @@ struct Node {
     const Node* find_by_path(std::string_view path) const;
 
     // Parse from XML
-    static Node from_xml_string(
+    static std::shared_ptr<Node> from_xml_string(
         std::string_view filename, std::string_view source
     );
-    static Node from_xml_document(const xml::Document& xml_doc);
+    static std::shared_ptr<Node> from_xml_document(const xml::Document& xml_doc);
 private:
-    static Node from_xml_node(const xml::Node& xml_node);
+    static std::shared_ptr<Node> from_xml_node(const xml::Node& xml_node);
 
     Node* find_by_path_impl(
         const std::vector<std::string>& parts, size_t index

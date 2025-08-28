@@ -5,13 +5,13 @@
 #include <sstream>
 #include <variant>
 
+#include "../layout/Layout.hpp"
 #include "constants.hpp"
 #include "util/stringutil.hpp"
-#include "../layout/Layout.hpp"
 
-Node Node::from_xml_node(const xml::Node& xml_node) {
+std::shared_ptr<Node> Node::from_xml_node(const xml::Node& xml_node) {
     if (xml_node.isText()) {
-        return Node(xml_node.getInnerText());
+        return std::make_shared<Node>(xml_node.getInnerText());
     }
 
     AttributesMap attrs;
@@ -20,18 +20,20 @@ Node Node::from_xml_node(const xml::Node& xml_node) {
         attrs[name] = attr.getText();
     }
 
-    Node dom_node(xml_node.getTag(), std::move(attrs));
-    dom_node.root = true;
+    auto dom_node = std::make_shared<Node>(xml_node.getTag(), std::move(attrs));
+    dom_node->root = true;
 
     for (size_t i = 0; i < xml_node.size(); ++i) {
         const xml::Node& child = xml_node.sub(i);
-        dom_node.append_child(from_xml_node(child));
+        auto child_node = from_xml_node(child);
+        child_node->parent = dom_node;   // безопасно, shared_from_this не нужен здесь
+        dom_node->children.push_back(std::move(child_node));
     }
 
     return dom_node;
 }
 
-Node Node::from_xml_document(const xml::Document& xml_doc) {
+std::shared_ptr<Node> Node::from_xml_document(const xml::Document& xml_doc) {
     if (!xml_doc.getRoot()) {
         throw std::runtime_error("XML document has no root element");
     }
@@ -39,7 +41,7 @@ Node Node::from_xml_document(const xml::Document& xml_doc) {
     return from_xml_node(*xml_doc.getRoot());
 }
 
-Node Node::from_xml_string(std::string_view filename, std::string_view source) {
+std::shared_ptr<Node> Node::from_xml_string(std::string_view filename, std::string_view source) {
     auto xml_doc = xml::parse(filename, source);
     return from_xml_document(*xml_doc);
 }
@@ -48,18 +50,27 @@ Node Node::from_xml_string(std::string_view filename, std::string_view source) {
 //
 
 void Node::append_child(Node node) {
-    children.push_back(std::move(node));
+    auto child_ptr =
+        std::make_shared<Node>(std::move(node));
+    child_ptr->parent = shared_from_this();
+    children.push_back(std::move(child_ptr));     // добавляем в children
 }
 
 void Node::prepend_child(Node node) {
-    children.insert(children.begin(), std::move(node));
+    auto child_ptr =
+        std::make_unique<Node>(std::move(node));  // создаём unique_ptr
+    child_ptr->parent = shared_from_this();
+    children.insert(children.begin(), std::move(child_ptr));
 }
 
 void Node::append_childs(std::vector<Node> nodes) {
     children.reserve(children.size() + nodes.size());
 
     for (Node node : nodes) {
-        children.push_back(std::move(node));
+        auto child_ptr =
+            std::make_unique<Node>(std::move(node));  // создаём unique_ptr
+        child_ptr->parent = shared_from_this();
+        children.push_back(std::move(child_ptr));
     }
 }
 
@@ -67,7 +78,10 @@ void Node::insert_child(size_t index, Node node) {
     if (index > children.size()) {
         throw std::out_of_range("Index out of range");
     }
-    children.insert(children.begin() + index, std::move(node));
+    auto child_ptr =
+        std::make_unique<Node>(std::move(node));  // создаём unique_ptr
+    child_ptr->parent = shared_from_this();
+    children.insert(children.begin() + index, std::move(child_ptr));
 }
 
 void Node::remove_child(size_t index) {
@@ -172,7 +186,7 @@ std::vector<Node*> Node::find_by_tag(std::string_view tag) {
     }
 
     for (auto& child : children) {
-        auto child_results = child.find_by_tag(tag);
+        auto child_results = child->find_by_tag(tag);
         result.insert(result.end(), child_results.begin(), child_results.end());
     }
 
@@ -187,7 +201,7 @@ std::vector<const Node*> Node::find_by_tag(std::string_view tag) const {
     }
 
     for (const auto& child : children) {
-        auto child_results = child.find_by_tag(tag);
+        auto child_results = child->find_by_tag(tag);
         result.insert(result.end(), child_results.begin(), child_results.end());
     }
 
@@ -200,7 +214,7 @@ Node* Node::find_first_by_tag(std::string_view tag) {
     }
 
     for (auto& child : children) {
-        if (auto* found = child.find_first_by_tag(tag)) {
+        if (auto* found = child->find_first_by_tag(tag)) {
             return found;
         }
     }
@@ -214,7 +228,7 @@ const Node* Node::find_first_by_tag(std::string_view tag) const {
     }
 
     for (const auto& child : children) {
-        if (const auto* found = child.find_first_by_tag(tag)) {
+        if (const auto* found = child->find_first_by_tag(tag)) {
             return found;
         }
     }
@@ -297,7 +311,7 @@ Node* Node::find_by_path_impl(
         }
 
         for (auto& child : children) {
-            if (auto* found = child.find_by_path_impl(parts, index + 1)) {
+            if (auto* found = child->find_by_path_impl(parts, index + 1)) {
                 return found;
             }
         }
@@ -321,7 +335,7 @@ const Node* Node::find_by_path_impl(
         }
 
         for (const auto& child : children) {
-            if (const auto* found = child.find_by_path_impl(parts, index + 1)) {
+            if (const auto* found = child->find_by_path_impl(parts, index + 1)) {
                 return found;
             }
         }
@@ -330,7 +344,7 @@ const Node* Node::find_by_path_impl(
     return nullptr;
 }
 
-const std::vector<Node>& Node::get_children() const {
+const std::vector<std::shared_ptr<Node>>& Node::get_children() const {
     return children;
 }
 
@@ -433,44 +447,79 @@ void ElementData::toggleClass(std::string_view className) {
 }
 
 void Node::draw(const DrawContext& ctx, const Assets& assets) {
-    Layout::LayoutContext context;
+    LayoutContext context;
     context.available_space = ctx.getViewport();
-    context.parent_position = {0, 0};
     context.parent_layout = nullptr;
 
     Layout::compute_layout(*this, context);
 
+    draw(ctx, assets, context);
+}
+
+void Node::draw(
+    const DrawContext& ctx, const Assets& assets, const LayoutContext& context
+) {
+    auto batch = ctx.getBatch2D();
+    
+    // Создаём под-контекст для локального управления состоянием
+    DrawContext childCtx = ctx.sub();
+
+    // Определяем viewport/скиссоры, если нужно (для примера оставим полный размер)
+    // childCtx.setScissors(glm::vec4(layout.x, layout.y, layout.width, layout.height));
+
+    // Сбрасываем батч перед рисованием текущей ноды
+    batch->flush();
+    batch->untexture();
+
     std::visit(
-        [this, &ctx, &assets, &context](const auto& node_type) {
+        [this, &childCtx, &assets](const auto& node_type) {
             using T = std::decay_t<decltype(node_type)>;
             if constexpr (std::is_same_v<T, Text>) {
-                // Рендеринг текста
-                draw_text(ctx, assets, node_type);
+                draw_text(childCtx, assets, node_type);
             } else if constexpr (std::is_same_v<T, Element>) {
-                // Рендеринг элемента
-                draw_element(ctx, assets, node_type);
+                draw_element(childCtx, assets, node_type);
             }
         },
         node_type
     );
 
-    // Рекурсивно отрисовываем детей
+    // Рекурсивно рисуем детей в отдельном под-контексте
     for (auto& child : children) {
-        child.draw(ctx, assets);
+        child->draw(childCtx, assets, context);
     }
+
+    // Сбрасываем батч после рисования всех детей, чтобы гарантировать корректное состояние OpenGL
+    batch->flush();
+    batch->untexture();
 }
 
 void Node::draw_text(const DrawContext& ctx, const Assets& assets, Text text) {
     auto batch = ctx.getBatch2D();
+
+    batch->flush();
+    batch->untexture();
+
     auto font = assets.get<Font>(FONT_DEFAULT);
 
-    const LayoutBox& layout = get_layout();
-
-    font->draw(*batch, util::str2wstr_utf8(get_text()), layout.position.x, layout.position.y, text.styles.get(), 0);
+    batch->setColor(glm::vec4(1.0f, 1.0f, 1.0f, 1.0f));
+    font->draw(
+        *batch,
+        util::str2wstr_utf8("A"),
+        layout.x,
+        layout.y,
+        text.styles.get(),
+        0
+    );
 }
 
 void Node::draw_element(
     const DrawContext& ctx, const Assets& assets, Element element
 ) {
     auto batch = ctx.getBatch2D();
+
+    batch->flush();
+    batch->untexture();
+
+    batch->setColor(element.style.get("background", "#ff0000").asColor());
+    batch->rect(layout.x, layout.y, layout.width, layout.height);
 }

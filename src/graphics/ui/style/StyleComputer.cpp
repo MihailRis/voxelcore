@@ -44,7 +44,7 @@ void StyleComputer::compute(Node& node) {
 
         if (auto* element = std::get_if<Element>(&current_node->node_type)) {
             for (auto& child : current_node->children) {
-                queue.push({&child, current_node});
+                queue.push({child.get(), current_node});
             }
         }
     }
