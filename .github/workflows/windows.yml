@@ -34,7 +34,7 @@ jobs:
           cmake --preset default-vs-msvc-windows
           cmake --build --preset default-vs-msvc-windows --config Release
       - name: Run tests
-        run: ctest --preset default-vs-msvc-windows
+        run: ctest --preset default-vs-msvc-windows -C Release
       - name: Run engine tests
         run: |
             build/vctest/Release/vctest.exe -e build/Release/VoxelEngine.exe -d dev/tests -u build

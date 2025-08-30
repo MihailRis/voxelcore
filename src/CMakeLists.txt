@@ -1,10 +1,9 @@
 project(VoxelEngineSrc)
 
-file(GLOB_RECURSE headers ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 file(GLOB_RECURSE sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 list(REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 
-add_library(VoxelEngineSrc STATIC ${sources} ${headers})
+add_library(VoxelEngineSrc STATIC ${sources})
 
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
@@ -19,8 +18,11 @@ find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(CURL REQUIRED)
 find_package(glfw3 REQUIRED)
-if(NOT APPLE)
+if(NOT CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     find_package(EnTT REQUIRED)
+endif()
+if(VOXELENGINE_TRACY_PROFILER)
+    find_package(Tracy CONFIG REQUIRED)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
@@ -77,7 +79,7 @@ target_link_libraries(
             luajit::luajit
     PUBLIC glm::glm # Need public for src/delegates.hpp, which including to
                     # main.cpp
-)
+           $<$<BOOL:${VOXELENGINE_TRACY_PROFILER}>:Tracy::TracyClient>)
 
 target_compile_options(
     VoxelEngineSrc
@@ -120,3 +122,8 @@ target_link_options(
     # on Windows to avoid dependence on combinations of platforms and compilers
     # and make it independent
     $<$<PLATFORM_ID:Windows>:$<$<CXX_COMPILER_ID:Clang>:-static>>)
+
+target_compile_definitions(
+    VoxelEngineSrc
+    PUBLIC $<$<BOOL:${VOXELENGINE_TRACY_PROFILER}>:VOXELENGINE_PROFILER
+           VOXELENGINE_PROFILER_GPU TRACY_ENABLE VOXELENGINE_TRACY_PROFILER>)

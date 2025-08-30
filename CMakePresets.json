@@ -42,6 +42,20 @@
                 "VOXELENGINE_BUILD_TESTS": "ON",
                 "VOXELENGINE_BUILD_APPDIR": "ON"
             }
+        },
+        {
+            "name": "profiler-tracy-ninja-gnu-linux",
+            "inherits": "default-ninja-gnu-linux",
+            "cacheVariables": {
+                "VOXELENGINE_TRACY_PROFILER": "ON"
+            }
+        },
+        {
+            "name": "profiler-tracy-vs-msvc-windows",
+            "inherits": "default-vs-msvc-windows",
+            "cacheVariables": {
+                "VOXELENGINE_TRACY_PROFILER": "ON"
+            }
         }
     ],
     "buildPresets": [
@@ -69,12 +83,23 @@
             "name": "default-ninja-clang-macos",
             "configurePreset": "default-ninja-clang-macos",
             "configuration": "Debug"
+        },
+        {
+            "name": "profiler-tracy-vs-msvc-windows",
+            "configurePreset": "profiler-tracy-vs-msvc-windows",
+            "configuration": "RelWithDebInfo"
+        },
+        {
+            "name": "profiler-tracy-ninja-gnu-linux",
+            "configurePreset": "profiler-tracy-ninja-gnu-linux",
+            "configuration": "RelWithDebInfo"
         }
     ],
     "testPresets": [
         {
             "name": "default-vs-msvc-windows",
             "configurePreset": "default-vs-msvc-windows",
+            "configuration": "Debug",
             "output": {
                 "outputOnFailure": true
             }
@@ -82,6 +107,7 @@
         {
             "name": "default-ninja-gnu-linux",
             "configurePreset": "default-ninja-gnu-linux",
+            "configuration": "Debug",
             "output": {
                 "outputOnFailure": true
             }
@@ -89,6 +115,23 @@
         {
             "name": "default-ninja-clang-macos",
             "configurePreset": "default-ninja-clang-macos",
+            "configuration": "Debug",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "profiler-tracy-vs-msvc-windows",
+            "configurePreset": "profiler-tracy-vs-msvc-windows",
+            "configuration": "RelWithDebInfo",
+            "output": {
+                "outputOnFailure": true
+            }
+        },
+        {
+            "name": "profiler-tracy-ninja-gnu-linux",
+            "configurePreset": "profiler-tracy-ninja-gnu-linux",
+            "configuration": "RelWithDebInfo",
             "output": {
                 "outputOnFailure": true
             }

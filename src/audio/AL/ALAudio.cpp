@@ -3,8 +3,9 @@
 #include <string>
 #include <utility>
 
-#include "debug/Logger.hpp"
 #include "alutil.hpp"
+#include "debug/Logger.hpp"
+#include "engine/Profiler.hpp"
 
 static debug::Logger logger("al-audio");
 
@@ -97,7 +98,7 @@ void ALStream::bindSpeaker(speakerid_t speakerid) {
     sp = audio::get_speaker(speakerid);
     if (sp) {
         auto alspeaker = dynamic_cast<ALSpeaker*>(sp);
-        assert(alspeaker != nullptr); // backends must not be mixed
+        assert(alspeaker != nullptr);  // backends must not be mixed
         alspeaker->stream = this;
         alspeaker->duration = source->getTotalDuration();
     }
@@ -115,7 +116,7 @@ void ALStream::unqueueBuffers(uint alsource) {
         AL_CHECK(alSourceUnqueueBuffers(alsource, 1, &bufferqueue));
         unusedBuffers.push(bufferqueue);
 
-        uint bps = source->getBitsPerSample()/ 8;
+        uint bps = source->getBitsPerSample() / 8;
         uint channels = source->getChannels();
 
         ALint bufferSize;
@@ -162,7 +163,8 @@ void ALStream::update(double delta) {
     uint preloaded = enqueueBuffers(alsource);
 
     // alspeaker->stopped is assigned to false at ALSpeaker::play(...)
-    if (p_speaker->isStopped() && !alspeaker->stopped) { //TODO: -V560 false-positive?
+    if (p_speaker->isStopped() &&
+        !alspeaker->stopped) {  // TODO: -V560 false-positive?
         if (preloaded) {
             p_speaker->play();
         } else {
@@ -264,7 +266,7 @@ void ALSpeaker::setPitch(float pitch) {
 }
 
 bool ALSpeaker::isLoop() const {
-    return AL::getSourcei(source, AL_LOOPING) == AL_TRUE; //-V550
+    return AL::getSourcei(source, AL_LOOPING) == AL_TRUE;  //-V550
 }
 
 void ALSpeaker::setLoop(bool loop) {
@@ -346,7 +348,7 @@ void ALSpeaker::setRelative(bool relative) {
 }
 
 bool ALSpeaker::isRelative() const {
-    return AL::getSourcei(source, AL_SOURCE_RELATIVE) == AL_TRUE; //-V550
+    return AL::getSourcei(source, AL_SOURCE_RELATIVE) == AL_TRUE;  //-V550
 }
 
 int ALSpeaker::getPriority() const {
@@ -489,6 +491,7 @@ std::vector<std::string> ALAudio::getAvailableDevices() const {
 void ALAudio::setListener(
     glm::vec3 position, glm::vec3 velocity, glm::vec3 at, glm::vec3 up
 ) {
+    VOXELENGINE_PROFILE;
     ALfloat listenerOri[] = {at.x, at.y, at.z, up.x, up.y, up.z};
 
     AL_CHECK(alListener3f(AL_POSITION, position.x, position.y, position.z));

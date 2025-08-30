@@ -1,18 +1,18 @@
 #include "Shader.hpp"
 
-#include <exception>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <filesystem>
-
-#include <glm/gtc/type_ptr.hpp>
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+#include <exception>
+#include <filesystem>
+#include <fstream>
+#include <glm/gtc/type_ptr.hpp>
+#include <iostream>
+#include <sstream>
+
 #include "coders/GLSLExtension.hpp"
 #include "debug/Logger.hpp"
+#include "engine/ProfilerGpu.hpp"
 
 static debug::Logger logger("gl-shader");
 
@@ -24,18 +24,25 @@ Shader* Shader::used = nullptr;
 Shader::Shader(uint id, Source&& vertexSource, Source&& fragmentSource)
     : id(id),
       vertexSource(std::move(vertexSource)),
-      fragmentSource(std::move(fragmentSource)) {}
+      fragmentSource(std::move(fragmentSource)) {
+}
 
 Shader::~Shader() {
+    VOXELENGINE_PROFILE_GPU("Shader::~Shader");
+
     glDeleteProgram(id);
 }
 
 void Shader::use() {
+    VOXELENGINE_PROFILE_GPU("Shader::use");
+
     used = this;
     glUseProgram(id);
 }
 
 uint Shader::getUniformLocation(const std::string& name) {
+    VOXELENGINE_PROFILE_GPU("Shader::getUniformLocation");
+
     auto found = uniformLocations.find(name);
     if (found == uniformLocations.end()) {
         uint location = glGetUniformLocation(id, name.c_str());
@@ -46,66 +53,94 @@ uint Shader::getUniformLocation(const std::string& name) {
 }
 
 void Shader::uniformMatrix(const std::string& name, const glm::mat4& matrix) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniformMatrix");
+
     glUniformMatrix4fv(
         getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix)
     );
 }
 
 void Shader::uniformMatrix(const std::string& name, const glm::mat3& matrix) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniformMatrix");
+
     glUniformMatrix3fv(
         getUniformLocation(name), 1, GL_FALSE, glm::value_ptr(matrix)
     );
 }
 
-void Shader::uniform1i(const std::string& name, int x){
+void Shader::uniform1i(const std::string& name, int x) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform1i");
+
     glUniform1i(getUniformLocation(name), x);
 }
 
-void Shader::uniform1f(const std::string& name, float x){
+void Shader::uniform1f(const std::string& name, float x) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform1f");
+
     glUniform1f(getUniformLocation(name), x);
 }
 
-void Shader::uniform2f(const std::string& name, float x, float y){
+void Shader::uniform2f(const std::string& name, float x, float y) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform2f");
+
     glUniform2f(getUniformLocation(name), x, y);
 }
 
-void Shader::uniform2f(const std::string& name, const glm::vec2& xy){
+void Shader::uniform2f(const std::string& name, const glm::vec2& xy) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform2f");
     glUniform2f(getUniformLocation(name), xy.x, xy.y);
 }
 
-void Shader::uniform2i(const std::string& name, const glm::ivec2& xy){
+void Shader::uniform2i(const std::string& name, const glm::ivec2& xy) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform2i");
     glUniform2i(getUniformLocation(name), xy.x, xy.y);
 }
 
-void Shader::uniform3f(const std::string& name, float x, float y, float z){
-    glUniform3f(getUniformLocation(name), x,y,z);
+void Shader::uniform3f(const std::string& name, float x, float y, float z) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform3f");
+
+    glUniform3f(getUniformLocation(name), x, y, z);
 }
 
-void Shader::uniform3f(const std::string& name, const glm::vec3& xyz){
+void Shader::uniform3f(const std::string& name, const glm::vec3& xyz) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform3f");
+
     glUniform3f(getUniformLocation(name), xyz.x, xyz.y, xyz.z);
 }
 
 void Shader::uniform4f(const std::string& name, const glm::vec4& xyzw) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform4f");
+
     glUniform4f(getUniformLocation(name), xyzw.x, xyzw.y, xyzw.z, xyzw.w);
 }
 
 void Shader::uniform1v(const std::string& name, int length, const int* v) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform1v");
+
     glUniform1iv(getUniformLocation(name), length, v);
 }
 
 void Shader::uniform1v(const std::string& name, int length, const float* v) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform1v");
+
     glUniform1fv(getUniformLocation(name), length, v);
 }
 
 void Shader::uniform2v(const std::string& name, int length, const float* v) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform2v");
+
     glUniform2fv(getUniformLocation(name), length, v);
 }
 
 void Shader::uniform3v(const std::string& name, int length, const float* v) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform3v");
+
     glUniform3fv(getUniformLocation(name), length, v);
 }
 
 void Shader::uniform4v(const std::string& name, int length, const float* v) {
+    VOXELENGINE_PROFILE_GPU("Shader::uniform4v");
+
     glUniform4fv(getUniformLocation(name), length, v);
 }
 
@@ -119,7 +154,9 @@ inline const uint GL_LOG_LEN = 512;
 // shader should be deleted after shader program linking
 using glshader = std::unique_ptr<GLuint, decltype(shader_deleter)>;
 
-glshader compile_shader(GLenum type, const GLchar* source, const std::string& file) {
+glshader compile_shader(
+    GLenum type, const GLchar* source, const std::string& file
+) {
     GLint success;
     GLuint shader = glCreateShader(type);
     glShaderSource(shader, 1, &source, nullptr);
@@ -134,12 +171,14 @@ glshader compile_shader(GLenum type, const GLchar* source, const std::string& fi
             std::string(infoLog)
         );
     }
-    return glshader(new GLuint(shader), shader_deleter); //-V508
+    return glshader(new GLuint(shader), shader_deleter);  //-V508
 }
 
 static GLuint compile_program(
     const Shader::Source& vertexSource, const Shader::Source& fragmentSource
 ) {
+    VOXELENGINE_PROFILE_GPU("compile_program");
+
     auto& preprocessor = *Shader::preprocessor;
 
     auto vertexCode = std::move(

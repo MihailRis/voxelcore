@@ -4,18 +4,19 @@
 
 #include "debug/Logger.hpp"
 #include "engine/Engine.hpp"
-#include "world/files/WorldFiles.hpp"
+#include "engine/Profiler.hpp"
+#include "lighting/Lighting.hpp"
 #include "maths/voxmaths.hpp"
 #include "objects/Entities.hpp"
-#include "objects/Players.hpp"
 #include "objects/Player.hpp"
+#include "objects/Players.hpp"
 #include "physics/Hitbox.hpp"
-#include "voxels/Chunks.hpp"
 #include "scripting/scripting.hpp"
-#include "lighting/Lighting.hpp"
 #include "settings.hpp"
-#include "world/LevelEvents.hpp"
+#include "voxels/Chunks.hpp"
+#include "world/files/WorldFiles.hpp"
 #include "world/Level.hpp"
+#include "world/LevelEvents.hpp"
 #include "world/World.hpp"
 
 static debug::Logger logger("level-control");
@@ -36,9 +37,8 @@ LevelController::LevelController(
     });
 
     if (clientPlayer) {
-        chunks->lighting = std::make_unique<Lighting>(
-            level->content, *clientPlayer->chunks
-        );
+        chunks->lighting =
+            std::make_unique<Lighting>(level->content, *clientPlayer->chunks);
     }
     blocks = std::make_unique<BlocksController>(
         *level, chunks ? chunks->lighting.get() : nullptr
@@ -69,6 +69,7 @@ LevelController::LevelController(
 }
 
 void LevelController::update(float delta, bool pause) {
+    VOXELENGINE_PROFILE;
     for (const auto& [_, player] : *level->players) {
         if (player->isSuspended()) {
             continue;
@@ -100,13 +101,12 @@ void LevelController::update(float delta, bool pause) {
             if (playerTickClock.update(delta)) {
                 if (player->getId() % playerTickClock.getParts() ==
                     playerTickClock.getPart()) {
-                    
                     const auto& position = player->getPosition();
                     if (player->chunks->get(
-                        std::floor(position.x),
-                        std::floor(position.y),
-                        std::floor(position.z)
-                    )){
+                            std::floor(position.x),
+                            std::floor(position.y),
+                            std::floor(position.z)
+                        )) {
                         scripting::on_player_tick(
                             player.get(), playerTickClock.getTickRate()
                         );

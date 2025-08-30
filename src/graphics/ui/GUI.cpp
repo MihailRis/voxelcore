@@ -10,21 +10,19 @@
 #include "elements/Panel.hpp"
 #include "elements/UINode.hpp"
 #include "engine/Engine.hpp"
+#include "engine/Profiler.hpp"
+#include "engine/ProfilerGpu.hpp"
 #include "frontend/UiDocument.hpp"
 #include "frontend/locale.hpp"
 #include "graphics/core/Batch2D.hpp"
-#include "graphics/core/LineBatch.hpp"
-#include "graphics/core/Shader.hpp"
-#include "graphics/core/Font.hpp"
 #include "graphics/core/DrawContext.hpp"
+#include "graphics/core/Font.hpp"
+#include "graphics/core/LineBatch.hpp"
 #include "graphics/core/Shader.hpp"
 #include "gui_util.hpp"
 #include "window/Camera.hpp"
 #include "window/Window.hpp"
 #include "window/input.hpp"
-
-#include <algorithm>
-#include <utility>
 
 using namespace gui;
 
@@ -50,7 +48,8 @@ GUI::GUI(Engine& engine)
     tooltip = guiutil::create(
         *this,
         "<container color='#000000A0' interactive='false' z-index='999'>"
-            "<label id='tooltip.label' pos='2' autoresize='true' multiline='true' text-wrap='false'></label>"
+        "<label id='tooltip.label' pos='2' autoresize='true' multiline='true' "
+        "text-wrap='false'></label>"
         "</container>"
     );
     store("tooltip", tooltip);
@@ -232,6 +231,9 @@ void GUI::postAct() {
 }
 
 void GUI::draw(const DrawContext& pctx, const Assets& assets) {
+    VOXELENGINE_PROFILE;
+    VOXELENGINE_PROFILE_GPU("GUI::draw");
+
     auto ctx = pctx.sub(batch2D.get());
 
     auto& viewport = ctx.getViewport();
@@ -282,14 +284,16 @@ void GUI::draw(const DrawContext& pctx, const Assets& assets) {
             auto size = node->getSize();
 
             batch2D->setColor(0, 255, 255);
-            batch2D->lineRect(parentPos.x+1, parentPos.y, size.x-2, size.y-1);
+            batch2D->lineRect(
+                parentPos.x + 1, parentPos.y, size.x - 2, size.y - 1
+            );
 
             node = node->getParent();
         }
         // debug draw
         auto size = hover->getSize();
         batch2D->setColor(0, 255, 0);
-        batch2D->lineRect(pos.x, pos.y, size.x-1, size.y-1);
+        batch2D->lineRect(pos.x, pos.y, size.x - 1, size.y - 1);
     }
 }
 

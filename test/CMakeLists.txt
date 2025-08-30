@@ -19,4 +19,4 @@ add_custom_command(
             ${CMAKE_SOURCE_DIR}/res ${CMAKE_CURRENT_BINARY_DIR}/res)
 
 include(GoogleTest)
-gtest_discover_tests(VoxelEngineTest)
+gtest_add_tests(TARGET VoxelEngineTest SOURCES ${sources})

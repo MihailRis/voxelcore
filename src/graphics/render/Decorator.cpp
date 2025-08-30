@@ -1,26 +1,27 @@
 #include "Decorator.hpp"
 
 #include "ParticlesRenderer.hpp"
-#include "WorldRenderer.hpp"
-#include "TextsRenderer.hpp"
 #include "TextNote.hpp"
+#include "TextsRenderer.hpp"
+#include "WorldRenderer.hpp"
 #include "assets/Assets.hpp"
 #include "assets/assets_util.hpp"
+#include "audio/audio.hpp"
 #include "content/Content.hpp"
-#include "voxels/Chunks.hpp"
-#include "voxels/Chunk.hpp"
-#include "voxels/Block.hpp"
-#include "world/Level.hpp"
-#include "window/Camera.hpp"
+#include "engine/Engine.hpp"
+#include "engine/Profiler.hpp"
+#include "io/io.hpp"
+#include "logic/LevelController.hpp"
+#include "maths/util.hpp"
+#include "objects/Entities.hpp"
 #include "objects/Player.hpp"
 #include "objects/Players.hpp"
-#include "objects/Entities.hpp"
-#include "logic/LevelController.hpp"
 #include "util/stringutil.hpp"
-#include "engine/Engine.hpp"
-#include "io/io.hpp"
-#include "audio/audio.hpp"
-#include "maths/util.hpp"
+#include "voxels/Block.hpp"
+#include "voxels/Chunk.hpp"
+#include "voxels/Chunks.hpp"
+#include "window/Camera.hpp"
+#include "world/Level.hpp"
 
 namespace fs = std::filesystem;
 
@@ -46,20 +47,25 @@ Decorator::Decorator(
       player(player),
       renderer(renderer) {
     controller.getBlocksController()->listenBlockInteraction(
-    [this](auto player, const auto& pos, const auto& def, BlockInteraction type) {
-        if (type == BlockInteraction::placing && def.particles) {
-            addParticles(def, pos);
+        [this](
+            auto player, const auto& pos, const auto& def, BlockInteraction type
+        ) {
+            if (type == BlockInteraction::placing && def.particles) {
+                addParticles(def, pos);
+            }
         }
-    });
+    );
     for (const auto& [id, player] : *level.players) {
         if (id == this->player.getId()) {
             continue;
         }
-        playerTexts[id] = renderer.texts->add(std::make_unique<TextNote>(
-            util::str2wstr_utf8(player->getName()),
-            playerNamePreset,
-            player->getPosition()
-        ));
+        playerTexts[id] = renderer.texts->add(
+            std::make_unique<TextNote>(
+                util::str2wstr_utf8(player->getName()),
+                playerNamePreset,
+                player->getPosition()
+            )
+        );
     }
     playerNamePreset.deserialize(engine.getResPaths().readCombinedObject(
         "presets/text3d/player_name.toml"
@@ -69,24 +75,23 @@ Decorator::Decorator(
 void Decorator::addParticles(const Block& def, const glm::ivec3& pos) {
     const auto& found = blockEmitters.find(pos);
     if (found == blockEmitters.end()) {
-        auto treg = util::get_texture_region(
-            assets, def.particles->texture, ""
+        auto treg =
+            util::get_texture_region(assets, def.particles->texture, "");
+        blockEmitters[pos] = renderer.particles->add(
+            std::make_unique<Emitter>(
+                level,
+                glm::vec3 {pos.x + 0.5, pos.y + 0.5, pos.z + 0.5},
+                *def.particles,
+                treg.texture,
+                treg.region,
+                -1
+            )
         );
-        blockEmitters[pos] = renderer.particles->add(std::make_unique<Emitter>(
-            level,
-            glm::vec3{pos.x + 0.5, pos.y + 0.5, pos.z + 0.5},
-            *def.particles,
-            treg.texture,
-            treg.region,
-            -1
-        ));
     }
 }
 
 void Decorator::updateRandom(
-    float delta,
-    const glm::ivec3& areaCenter,
-    const WeatherPreset& weather
+    float delta, const glm::ivec3& areaCenter, const WeatherPreset& weather
 ) {
     util::PseudoRandom random(rand());
 
@@ -94,11 +99,11 @@ void Decorator::updateRandom(
     const auto& indices = *level.content.getIndices();
     const auto& rainSplash = weather.fall.splash;
 
-    auto pos = areaCenter + glm::ivec3(
-        random.rand32() % 12,
-        random.rand32() % 12,
-        random.rand32() % 12
-    );
+    auto pos =
+        areaCenter +
+        glm::ivec3(
+            random.rand32() % 12, random.rand32() % 12, random.rand32() % 12
+        );
     auto vox = chunks.get(pos);
     auto chunk = chunks.getChunkByVoxel(pos);
     if (vox == nullptr || chunk == nullptr) {
@@ -118,20 +123,22 @@ void Decorator::updateRandom(
     float intensity = weather.intensity * weather.fall.maxIntensity;
     if (rainSplash.has_value() && dst2 < 128 &&
         random.randFloat() < glm::pow(intensity, 2.0f)) {
-        auto treg = util::get_texture_region(
-            assets, "particles:rain_splash_0", ""
+        auto treg =
+            util::get_texture_region(assets, "particles:rain_splash_0", "");
+        renderer.particles->add(
+            std::make_unique<Emitter>(
+                level,
+                glm::vec3 {
+                    pos.x + random.randFloat(),
+                    pos.y + 1.1,
+                    pos.z + random.randFloat()
+                },
+                *rainSplash,
+                treg.texture,
+                treg.region,
+                2
+            )
         );
-        renderer.particles->add(std::make_unique<Emitter>(
-            level,
-            glm::vec3 {
-                pos.x + random.randFloat(),
-                pos.y + 1.1,
-                pos.z + random.randFloat()},
-            *rainSplash,
-            treg.texture,
-            treg.region,
-            2
-        ));
     }
     if (random.rand() % 200 < 3 && pos.y < areaCenter.y + 1) {
         auto sound = assets.get<audio::Sound>(weather.fall.noise);
@@ -149,9 +156,7 @@ void Decorator::updateRandom(
 }
 
 void Decorator::update(
-    float delta,
-    const glm::ivec3& areaStart,
-    const glm::ivec3& areaCenter
+    float delta, const glm::ivec3& areaStart, const glm::ivec3& areaCenter
 ) {
     int index = currentIndex;
     currentIndex = (currentIndex + BIG_PRIME) % UPDATE_BLOCKS;
@@ -162,7 +167,7 @@ void Decorator::update(
     int lx = index % UPDATE_AREA_DIAMETER;
     int lz = (index / UPDATE_AREA_DIAMETER) % UPDATE_AREA_DIAMETER;
     int ly = (index / UPDATE_AREA_DIAMETER / UPDATE_AREA_DIAMETER);
-    
+
     glm::ivec3 offset {lx, ly, lz};
     auto pos = areaStart + offset;
 
@@ -175,6 +180,7 @@ void Decorator::update(
 }
 
 void Decorator::updateBlockEmitters(const Camera& camera) {
+    VOXELENGINE_PROFILE;
     const auto& chunks = *player.chunks;
     const auto& indices = *level.content.getIndices();
     auto iter = blockEmitters.begin();
@@ -214,11 +220,13 @@ void Decorator::updateTextNotes() {
             playerTexts.find(id) != playerTexts.end()) {
             continue;
         }
-        playerTexts[id] = renderer.texts->add(std::make_unique<TextNote>(
-            util::str2wstr_utf8(player->getName()),
-            playerNamePreset,
-            player->getPosition()
-        ));
+        playerTexts[id] = renderer.texts->add(
+            std::make_unique<TextNote>(
+                util::str2wstr_utf8(player->getName()),
+                playerNamePreset,
+                player->getPosition()
+            )
+        );
     }
 
     auto textsIter = playerTexts.begin();
@@ -260,11 +268,9 @@ void Decorator::updateRandomSounds(float delta, const Weather& weather) {
 }
 
 void Decorator::update(
-    float delta,
-    const Camera& camera,
-    const Weather& weather
+    float delta, const Camera& camera, const Weather& weather
 ) {
-    updateRandomSounds(delta, weather);    
+    updateRandomSounds(delta, weather);
 
     glm::ivec3 pos = camera.position;
     for (int i = 0; i < ITERATIONS; i++) {
