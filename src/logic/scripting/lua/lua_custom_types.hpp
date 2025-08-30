@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 
 #include "lua_commons.hpp"
 
@@ -17,26 +18,6 @@ namespace lua {
         virtual ~Userdata() {};
         virtual const std::string& getTypeName() const = 0;
     };
-
-    class LuaBytearray : public Userdata {
-        std::vector<ubyte> buffer;
-    public:
-        LuaBytearray(size_t capacity);
-        LuaBytearray(std::vector<ubyte> buffer);
-        LuaBytearray(const ubyte* data, size_t size);
-        virtual ~LuaBytearray();
-
-        const std::string& getTypeName() const override {
-            return TYPENAME;
-        }
-        inline std::vector<ubyte>& data() {
-            return buffer;
-        }
-
-        static int createMetatable(lua::State*);
-        inline static std::string TYPENAME = "Bytearray";
-    };
-    static_assert(!std::is_abstract<LuaBytearray>());
 
     class LuaHeightmap : public Userdata {
         std::shared_ptr<Heightmap> map;
@@ -75,14 +56,16 @@ namespace lua {
     static_assert(!std::is_abstract<LuaHeightmap>());
 
     class LuaVoxelFragment : public Userdata {
-        std::shared_ptr<VoxelFragment> fragment;
+        std::array<std::shared_ptr<VoxelFragment>, 4> fragmentVariants;
     public:
-        LuaVoxelFragment(std::shared_ptr<VoxelFragment> fragment);
+        LuaVoxelFragment(
+            std::array<std::shared_ptr<VoxelFragment>, 4> fragmentVariants
+        );
 
         virtual ~LuaVoxelFragment();
 
-        std::shared_ptr<VoxelFragment> getFragment() const {
-            return fragment;
+        std::shared_ptr<VoxelFragment> getFragment(size_t rotation) const {
+            return fragmentVariants.at(rotation & 0b11);
         }
 
         const std::string& getTypeName() const override {

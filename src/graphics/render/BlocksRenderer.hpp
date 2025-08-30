@@ -1,7 +1,5 @@
 #pragma once
 
-#include <stdlib.h>
-#include <vector>
 #include <memory>
 #include <glm/glm.hpp>
 #include "voxels/voxel.hpp"
@@ -10,32 +8,35 @@
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"
 #include "voxels/VoxelsVolume.hpp"
-#include "graphics/core/MeshData.hpp"
 #include "maths/util.hpp"
 #include "commons.hpp"
 #include "settings.hpp"
 
+template<typename VertexStructure> class Mesh;
 class Content;
-class Mesh;
 class Block;
 class Chunk;
 class Chunks;
 class VoxelsVolume;
-class Chunks;
 class ContentGfxCache;
 struct UVRegion;
 
 class BlocksRenderer {
     static const glm::vec3 SUN_VECTOR;
     const Content& content;
-    std::unique_ptr<float[]> vertexBuffer;
-    std::unique_ptr<int[]> indexBuffer;
+    std::unique_ptr<ChunkVertex[]> vertexBuffer;
+    std::unique_ptr<uint32_t[]> indexBuffer;
+    std::unique_ptr<uint32_t[]> denseIndexBuffer;
+    size_t vertexCount;
     size_t vertexOffset;
-    size_t indexOffset, indexSize;
+    size_t indexCount;
+    size_t denseIndexCount;
     size_t capacity;
     int voxelBufferPadding = 2;
     bool overflow = false;
     bool cancelled = false;
+    bool densePass = false;
+    bool denseRender = false;
     const Chunk* chunk = nullptr;
     std::unique_ptr<VoxelsVolume> voxelsBuffer;
 
@@ -47,8 +48,15 @@ class BlocksRenderer {
 
     SortingMeshData sortingMesh;
 
-    void vertex(const glm::vec3& coord, float u, float v, const glm::vec4& light);
-    void index(int a, int b, int c, int d, int e, int f);
+    void vertex(
+        const glm::vec3& coord,
+        float u,
+        float v,
+        const glm::vec4& light,
+        const glm::vec3& normal,
+        float emission
+    );
+    void index(uint32_t a, uint32_t b, uint32_t c, uint32_t d, uint32_t e, uint32_t f);
 
     void vertexAO(
         const glm::vec3& coord, float u, float v, 
@@ -109,8 +117,8 @@ class BlocksRenderer {
     );
     void blockCustomModel(
         const glm::ivec3& icoord,
-        const Block* block, 
-        ubyte rotation,
+        const Block& block, 
+        blockstate states,
         bool lights,
         bool ao
     );
@@ -118,24 +126,28 @@ class BlocksRenderer {
     bool isOpenForLight(int x, int y, int z) const;
 
     // Does block allow to see other blocks sides (is it transparent)
-    inline bool isOpen(const glm::ivec3& pos, const Block& def) const {
-        auto id = voxelsBuffer->pickBlockId(
+    inline bool isOpen(const glm::ivec3& pos, const Block& def, const Variant& variant) const {
+        auto vox = voxelsBuffer->pickBlock(
             chunk->x * CHUNK_W + pos.x, pos.y, chunk->z * CHUNK_D + pos.z
         );
-        if (id == BLOCK_VOID) {
+        if (vox.id == BLOCK_VOID) {
             return false;
         }
-        const auto& block = *blockDefsCache[id];
-        if (((block.drawGroup != def.drawGroup) && block.drawGroup) || !block.rt.solid) {
+        const auto& block = *blockDefsCache[vox.id];
+        const auto& blockVariant = block.getVariantByBits(vox.state.userbits);
+        uint8_t otherDrawGroup = blockVariant.drawGroup;
+        if ((otherDrawGroup && (otherDrawGroup != variant.drawGroup)) || !blockVariant.rt.solid) {
             return true;
         }
-        if ((def.culling == CullingMode::DISABLED ||
-             (def.culling == CullingMode::OPTIONAL &&
-              settings.graphics.denseRender.get())) &&
-            id == def.rt.id) {
+        if (densePass) {
+            return variant.culling == CullingMode::OPTIONAL;
+        } else if (variant.culling == CullingMode::OPTIONAL) {
+            return false;
+        }
+        if (variant.culling == CullingMode::DISABLED && vox.id == def.rt.id) {
             return true;
         }
-        return !id;
+        return !vox.id;
     }
 
     glm::vec4 pickLight(int x, int y, int z) const;
@@ -143,7 +155,7 @@ class BlocksRenderer {
     glm::vec4 pickSoftLight(const glm::ivec3& coord, const glm::ivec3& right, const glm::ivec3& up) const;
     glm::vec4 pickSoftLight(float x, float y, float z, const glm::ivec3& right, const glm::ivec3& up) const;
     
-    void render(const voxel* voxels, int beginEnds[256][2]);
+    void render(const voxel* voxels, const int beginEnds[256][2]);
     SortingMeshData renderTranslucent(const voxel* voxels, int beginEnds[256][2]);
 public:
     BlocksRenderer(
@@ -158,6 +170,8 @@ public:
     ChunkMesh render(const Chunk* chunk, const Chunks* chunks);
     ChunkMeshData createMesh();
     VoxelsVolume* getVoxelsBuffer() const;
+
+    size_t getMemoryConsumption() const;
 
     bool isCancelled() const {
         return cancelled;

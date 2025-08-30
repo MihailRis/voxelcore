@@ -133,6 +133,8 @@ public:
 
     void saveAndClear();
 
+    void remove(int32_t x, int32_t z);
+
     const std::vector<std::shared_ptr<Chunk>>& getChunks() const {
         return areaMap.getBuffer();
     }

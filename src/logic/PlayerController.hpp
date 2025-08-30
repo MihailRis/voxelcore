@@ -7,6 +7,7 @@
 #include "objects/Player.hpp"
 #include "util/Clock.hpp"
 
+class Input;
 class Engine;
 class Camera;
 class Level;
@@ -31,16 +32,19 @@ class CameraControl {
     /// @return camera offset
     glm::vec3 updateCameraShaking(const Hitbox& hitbox, float delta);
 
-    /// @brief Update field-of-view effects
+    /// @brief Update field-of-view
     /// @param input player inputs
     /// @param delta delta time
-    void updateFovEffects(const Hitbox& hitbox, PlayerInput input, float delta);
+    /// @param effects movement-related effects
+    void updateFov(
+        const Hitbox& hitbox, PlayerInput input, float delta, bool effects
+    );
 
     /// @brief Switch active player camera
     void switchCamera();
 public:
     CameraControl(Player& player, const CameraSettings& settings);
-    void updateMouse(PlayerInput& input);
+    void updateMouse(PlayerInput& input, int windowHeight);
     void update(PlayerInput input, float delta, const Chunks& chunks);
     void refreshPosition();
     void refreshRotation();
@@ -54,11 +58,11 @@ class PlayerController {
     BlocksController& blocksController;
     float interactionTimer = 0.0f;
     
-    void updateKeyboard();
+    void updateKeyboard(const Input& inputEvents);
     void resetKeyboard();
     void updatePlayer(float delta);
     void updateEntityInteraction(entityid_t eid, bool lclick, bool rclick);
-    void updateInteraction(float delta);
+    void updateInteraction(const Input& inputEvents, float delta);
 
     float stepsTimer = 0.0f;
     void onFootstep(const Hitbox& hitbox);
@@ -76,13 +80,15 @@ public:
 
     /// @brief Called after blocks update if not paused
     /// @param delta delta time
-    /// @param input process user input
-    void update(float delta, bool input);
+    /// @param inputEvents nullable window inputs
+    void update(float delta, const Input* inputEvents);
 
     /// @brief Called after whole level update
     /// @param delta delta time
-    /// @param input process user input
+    /// @param inputEvents nullable window inputs
     /// @param pause is game paused
-    void postUpdate(float delta, bool input, bool pause);
+    void postUpdate(
+        float delta, int windowHeight, const Input* inputEvents, bool pause
+    );
     Player* getPlayer();
 };

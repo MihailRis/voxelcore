@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <optional>
 
 #include "typedefs.hpp"
 #include "content_fwd.hpp"
@@ -36,6 +37,16 @@ struct DependencyPack {
     std::string id;
 };
 
+struct ContentPackStats {
+    size_t totalBlocks;
+    size_t totalItems;
+    size_t totalEntities;
+
+    inline bool hasSavingContent() const {
+        return totalBlocks + totalItems + totalEntities > 0;
+    }
+};
+
 struct ContentPack {
     std::string id = "none";
     std::string title = "untitled";
@@ -43,11 +54,12 @@ struct ContentPack {
     std::string creator = "";
     std::string description = "no description";
     io::path folder;
-    std::string path;
     std::vector<DependencyPack> dependencies;
     std::string source = "";
 
     io::path getContentFile() const;
+
+    std::optional<ContentPackStats> loadStats() const;
 
     static inline const std::string PACKAGE_FILENAME = "package.json";
     static inline const std::string CONTENT_FILENAME = "content.json";
@@ -58,14 +70,10 @@ struct ContentPack {
     static const std::vector<std::string> RESERVED_NAMES;
 
     static bool is_pack(const io::path& folder);
-    static ContentPack read(
-        const std::string& path, const io::path& folder
-    );
+    static ContentPack read(const io::path& folder);
 
     static void scanFolder(
-        const std::string& path,
-        const io::path& folder,
-        std::vector<ContentPack>& packs
+        const io::path& folder, std::vector<ContentPack>& packs
     );
 
     static std::vector<std::string> worldPacksList(
@@ -78,7 +86,7 @@ struct ContentPack {
         const std::string& name
     );
 
-    static ContentPack createCore(const EnginePaths&);
+    static ContentPack createCore();
 
     static inline io::path getFolderFor(ContentType type) {
         switch (type) {
@@ -89,16 +97,6 @@ struct ContentPack {
             case ContentType::NONE: return "";
             default: return "";
         }
-    }
-};
-
-struct ContentPackStats {
-    size_t totalBlocks;
-    size_t totalItems;
-    size_t totalEntities;
-
-    inline bool hasSavingContent() const {
-        return totalBlocks + totalItems + totalEntities > 0;
     }
 };
 

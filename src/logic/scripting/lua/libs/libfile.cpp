@@ -1,4 +1,3 @@
-#include <filesystem>
 #include <string>
 #include <set>
 
@@ -17,7 +16,7 @@ using namespace scripting;
 static int l_find(lua::State* L) {
     auto path = lua::require_string(L, 1);
     try {
-        return lua::pushstring(L, engine->getResPaths()->findRaw(path));
+        return lua::pushstring(L, engine->getResPaths().findRaw(path));
     } catch (const std::runtime_error& err) {
         return 0;
     }
@@ -125,14 +124,18 @@ static int l_read_bytes(lua::State* L) {
     if (io::is_regular_file(path)) {
         size_t length = static_cast<size_t>(io::file_size(path));
 
-        auto bytes = io::read_bytes(path, length);
+        auto bytes = io::read_bytes(path);
 
-        lua::createtable(L, length, 0);
-        int newTable = lua::gettop(L);
+        if (lua::gettop(L) < 2 || !lua::toboolean(L, 2)) {
+            lua::create_bytearray(L, std::move(bytes));
+        } else {
+            lua::createtable(L, length, 0);
+            int newTable = lua::gettop(L);
 
-        for (size_t i = 0; i < length; i++) {
-            lua::pushinteger(L, bytes[i]);
-            lua::rawseti(L, i + 1, newTable);
+            for (size_t i = 0; i < length; i++) {
+                lua::pushinteger(L, bytes[i]);
+                lua::rawseti(L, i + 1, newTable);
+            }
         }
         return 1;
     }
@@ -144,22 +147,17 @@ static int l_read_bytes(lua::State* L) {
 static int l_write_bytes(lua::State* L) {
     io::path path = get_writeable_path(L);
 
-    if (auto bytearray = lua::touserdata<lua::LuaBytearray>(L, 2)) {
-        auto& bytes = bytearray->data();
-        return lua::pushboolean(
-            L, io::write_bytes(path, bytes.data(), bytes.size())
-        );
-    }
-
-    std::vector<ubyte> bytes;
-    lua::read_bytes_from_table(L, 2, bytes);
-    return lua::pushboolean(
-        L, io::write_bytes(path, bytes.data(), bytes.size())
+    auto string = lua::bytearray_as_string(L, 2);
+    bool res = io::write_bytes(
+        path, reinterpret_cast<const ubyte*>(string.data()), string.size()
     );
+    lua::pop(L);
+    return lua::pushboolean(L, res);
 }
 
-static int l_list_all_res(lua::State* L, const std::string& path) {
-    auto files = engine->getResPaths()->listdirRaw(path);
+static int l_list_all_res(lua::State* L) {
+    std::string path = lua::require_string(L, 1);
+    auto files = engine->getResPaths().listdirRaw(path);
     lua::createtable(L, files.size(), 0);
     for (size_t i = 0; i < files.size(); i++) {
         lua::pushstring(L, files[i]);
@@ -171,7 +169,7 @@ static int l_list_all_res(lua::State* L, const std::string& path) {
 static int l_list(lua::State* L) {
     std::string dirname = lua::require_string(L, 1);
     if (dirname.find(':') == std::string::npos) {
-        return l_list_all_res(L, dirname);
+        return l_list_all_res(L);
     }
     io::path path = dirname;
     if (!io::is_directory(path)) {
@@ -222,7 +220,7 @@ static int l_read_combined_list(lua::State* L) {
     if (path.find(':') != std::string::npos) {
         throw std::runtime_error("entry point must not be specified");
     }
-    return lua::pushvalue(L, engine->getResPaths()->readCombinedList(path));
+    return lua::pushvalue(L, engine->getResPaths().readCombinedList(path));
 }
 
 static int l_read_combined_object(lua::State* L) {
@@ -230,7 +228,7 @@ static int l_read_combined_object(lua::State* L) {
     if (path.find(':') != std::string::npos) {
         throw std::runtime_error("entry point must not be specified");
     }
-    return lua::pushvalue(L, engine->getResPaths()->readCombinedObject(path));
+    return lua::pushvalue(L, engine->getResPaths().readCombinedObject(path));
 }
 
 static int l_is_writeable(lua::State* L) {
@@ -267,6 +265,7 @@ const luaL_Reg filelib[] = {
     {"isfile", lua::wrap<l_isfile>},
     {"length", lua::wrap<l_length>},
     {"list", lua::wrap<l_list>},
+    {"list_all_res", lua::wrap<l_list_all_res>},
     {"mkdir", lua::wrap<l_mkdir>},
     {"mkdirs", lua::wrap<l_mkdirs>},
     {"read_bytes", lua::wrap<l_read_bytes>},

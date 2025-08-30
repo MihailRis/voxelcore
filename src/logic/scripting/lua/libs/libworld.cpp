@@ -7,6 +7,7 @@
 #include "coders/json.hpp"
 #include "content/Content.hpp"
 #include "content/ContentLoader.hpp"
+#include "content/ContentControl.hpp"
 #include "engine/Engine.hpp"
 #include "world/files/WorldFiles.hpp"
 #include "io/engine_paths.hpp"
@@ -143,7 +144,7 @@ static int l_get_chunk_data(lua::State* L) {
     } else {
         chunkData = compressed_chunks::encode(*chunk);
     }
-    return lua::newuserdata<lua::LuaBytearray>(L, std::move(chunkData));
+    return lua::create_bytearray(L, std::move(chunkData));
 }
 
 static void integrate_chunk_client(Chunk& chunk) {
@@ -174,14 +175,17 @@ static int l_set_chunk_data(lua::State* L) {
 
     int x = static_cast<int>(lua::tointeger(L, 1));
     int z = static_cast<int>(lua::tointeger(L, 2));
-    auto buffer = lua::require_bytearray(L, 3);
+    auto buffer = lua::bytearray_as_string(L, 3);
 
     auto chunk = level->chunks->getChunk(x, z);
     if (chunk == nullptr) {
         return lua::pushboolean(L, false);
     }
     compressed_chunks::decode(
-        *chunk, buffer.data(), buffer.size(), *content->getIndices()
+        *chunk,
+        reinterpret_cast<const ubyte*>(buffer.data()),
+        buffer.size(),
+        *content->getIndices()
     );
     if (controller->getChunksController()->lighting == nullptr) {
         return lua::pushboolean(L, true);
@@ -197,10 +201,16 @@ static int l_save_chunk_data(lua::State* L) {
 
     int x = static_cast<int>(lua::tointeger(L, 1));
     int z = static_cast<int>(lua::tointeger(L, 2));
-    auto buffer = lua::require_bytearray(L, 3);
+    auto buffer = lua::bytearray_as_string(L, 3);
 
     compressed_chunks::save(
-        x, z, std::move(buffer), level->getWorld()->wfile->getRegions()
+        x,
+        z,
+        std::vector(
+            reinterpret_cast<const ubyte*>(buffer.data()),
+            reinterpret_cast<const ubyte*>(buffer.data()) + buffer.size()
+        ),
+        level->getWorld()->wfile->getRegions()
     );
     return 0;
 }
@@ -217,7 +227,7 @@ static int l_reload_script(lua::State* L) {
     if (content == nullptr) {
         throw std::runtime_error("content is not initialized");
     }
-    auto& writeableContent = *engine->getWriteableContent();
+    auto& writeableContent = *content_control->get();
     auto pack = writeableContent.getPackRuntime(packid);
     ContentLoader::loadWorldScript(*pack);
     return 0;

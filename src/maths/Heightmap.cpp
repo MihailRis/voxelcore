@@ -5,17 +5,6 @@
 #include <stdexcept>
 #include <glm/glm.hpp>
 
-std::optional<InterpolationType> InterpolationType_from(std::string_view str) {
-    if (str == "nearest") {
-        return InterpolationType::NEAREST;
-    } else if (str == "linear") {
-        return InterpolationType::LINEAR;
-    } else if (str == "cubic") {
-        return InterpolationType::CUBIC;
-    }
-    return std::nullopt;
-}
-
 static inline float sample_at(
     const float* buffer,
     uint width,

@@ -5,22 +5,21 @@
 #include "content/ContentBuilder.hpp"
 #include "io/io.hpp"
 #include "io/engine_paths.hpp"
-#include "window/Window.hpp"
-#include "window/Events.hpp"
 #include "window/input.hpp"
 #include "voxels/Block.hpp"
+#include "coders/toml.hpp"
 
 // All in-game definitions (blocks, items, etc..)
-void corecontent::setup(ContentBuilder& builder) {
+void corecontent::setup(Input& input, ContentBuilder& builder) {
     {
         Block& block = builder.blocks.create(CORE_AIR);
         block.replaceable = true;
-        block.drawGroup = 1;
         block.lightPassing = true;
         block.skyLightPassing = true;
         block.obstacle = false;
         block.selectable = false;
-        block.model = BlockModel::none;
+        block.defaults.drawGroup = 1;
+        block.defaults.model.type = BlockModelType::NONE;
         block.pickingItem = CORE_EMPTY;
     }
     {
@@ -30,15 +29,15 @@ void corecontent::setup(ContentBuilder& builder) {
 
     auto bindsFile = "res:bindings.toml";
     if (io::is_regular_file(bindsFile)) {
-        Events::loadBindings(
-            bindsFile, io::read_string(bindsFile), BindType::BIND
+        input.getBindings().read(
+            toml::parse(bindsFile, io::read_string(bindsFile)), BindType::BIND
         );
     }
 
     {
         Block& block = builder.blocks.create(CORE_OBSTACLE);
         for (uint i = 0; i < 6; i++) {
-            block.textureFaces[i] = "obstacle";
+            block.defaults.textureFaces[i] = "obstacle";
         }
         block.hitboxes = {AABB()};
         block.breakable = false;
@@ -51,9 +50,9 @@ void corecontent::setup(ContentBuilder& builder) {
     {
         Block& block = builder.blocks.create(CORE_STRUCT_AIR);
         for (uint i = 0; i < 6; i++) {
-            block.textureFaces[i] = "struct_air";
+            block.defaults.textureFaces[i] = "struct_air";
         }
-        block.drawGroup = -1;
+        block.defaults.drawGroup = -1;
         block.skyLightPassing = true;
         block.lightPassing = true;
         block.hitboxes = {AABB()};

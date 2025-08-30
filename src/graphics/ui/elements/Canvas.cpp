@@ -4,7 +4,8 @@
 #include "graphics/core/DrawContext.hpp"
 #include "graphics/core/Texture.hpp"
 
-gui::Canvas::Canvas(ImageFormat inFormat, glm::uvec2 inSize) : UINode(inSize) {
+gui::Canvas::Canvas(GUI& gui, ImageFormat inFormat, glm::uvec2 inSize)
+    : UINode(gui, inSize) {
     auto data = std::make_shared<ImageData>(inFormat, inSize.x, inSize.y);
     mTexture = Texture::from(data.get());
     mData = std::move(data);

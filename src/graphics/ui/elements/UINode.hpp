@@ -19,27 +19,35 @@ namespace gui {
     class GUI;
     class Container;
 
-    using onaction = std::function<void(GUI*)>;
-    using onnumberchange = std::function<void(GUI*, double)>;
+    using onaction = std::function<void(GUI&)>;
+    using onnumberchange = std::function<void(GUI&, double)>;
+    using onstringchange = std::function<void(GUI&, const std::string&)>;
 
-    class ActionsSet {
-        std::unique_ptr<std::vector<onaction>> callbacks;
+    template<typename... Args>
+    class CallbacksSet {
     public:
-        void listen(const onaction& callback) {
+        using Func = std::function<void(Args...)>;
+    private:
+        std::unique_ptr<std::vector<Func>> callbacks;
+    public:
+        void listen(const Func& callback) {
             if (callbacks == nullptr) {
-                callbacks = std::make_unique<std::vector<onaction>>();
+                callbacks = std::make_unique<std::vector<Func>>();
             }
             callbacks->push_back(callback);
         }
 
-        void notify(GUI* gui) {
+        void notify(Args&&... args) {
             if (callbacks) {
                 for (auto& callback : *callbacks) {
-                    callback(gui);
+                    callback(std::forward<Args>(args)...);
                 }
             }
         }
     };
+
+    using ActionsSet = CallbacksSet<GUI&>;
+    using StringCallbacksSet = CallbacksSet<GUI&, const std::string&>;
     
     enum class Align {
         left, center, right,
@@ -64,6 +72,10 @@ namespace gui {
 
     /// @brief Base abstract class for all UI elements
     class UINode : public std::enable_shared_from_this<UINode> {
+    protected:
+        GUI& gui;
+        bool mustRefresh = true;
+    private:
         /// @brief element identifier used for direct access in UiDocument
         std::string id = "";
         /// @brief element enabled state
@@ -111,6 +123,10 @@ namespace gui {
         ActionsSet actions;
         /// @brief 'ondoubleclick' callbacks
         ActionsSet doubleClickCallbacks;
+        /// @brief 'onfocus' callbacks
+        ActionsSet focusCallbacks;
+        /// @brief 'ondefocus' callbacks
+        ActionsSet defocusCallbacks;
         /// @brief element tooltip text
         std::wstring tooltip;
         /// @brief element tooltip delay
@@ -118,13 +134,18 @@ namespace gui {
         /// @brief cursor shape when mouse is over the element
         CursorShape cursor = CursorShape::ARROW;
 
-        UINode(glm::vec2 size);
+        UINode(GUI& gui, glm::vec2 size);
     public:
         virtual ~UINode();
 
         /// @brief Called every frame for all visible elements 
         /// @param delta delta timУ
-        virtual void act(float delta) {};
+        virtual void act(float delta) {
+            if (mustRefresh) {
+                mustRefresh = false;
+                refresh();
+            }
+        };
         virtual void draw(const DrawContext& pctx, const Assets& assets) = 0;
 
         virtual void setVisible(bool flag);
@@ -166,15 +187,17 @@ namespace gui {
         /// @brief Get element z-index
         int getZIndex() const;
 
-        virtual UINode* listenAction(const onaction &action);
-        virtual UINode* listenDoubleClick(const onaction &action);
+        virtual UINode* listenAction(const onaction& action);
+        virtual UINode* listenDoubleClick(const onaction& action);
+        virtual UINode* listenFocus(const onaction& action);
+        virtual UINode* listenDefocus(const onaction& action);
 
-        virtual void onFocus(GUI*) {focused = true;}
-        virtual void doubleClick(GUI*, int x, int y);
-        virtual void click(GUI*, int x, int y);
-        virtual void clicked(GUI*, mousecode button) {}
-        virtual void mouseMove(GUI*, int x, int y) {};
-        virtual void mouseRelease(GUI*, int x, int y);
+        virtual void onFocus();
+        virtual void doubleClick(int x, int y);
+        virtual void click(int x, int y);
+        virtual void clicked(Mousecode button) {}
+        virtual void mouseMove(int x, int y) {};
+        virtual void mouseRelease(int x, int y);
         virtual void scrolled(int value);
 
         bool isPressed() const;
@@ -185,7 +208,7 @@ namespace gui {
         virtual bool isFocuskeeper() const {return false;}
 
         virtual void typed(unsigned int codepoint) {};
-        virtual void keyPressed(keycode key) {};
+        virtual void keyPressed(Keycode key) {};
 
         /// @brief Check if screen position is inside of the element 
         /// @param pos screen position
@@ -222,11 +245,11 @@ namespace gui {
         virtual glm::vec2 calcPos() const;
         virtual void setPos(glm::vec2 pos);
         virtual glm::vec2 getPos() const;
-        virtual glm::vec2 getSize() const;
+        glm::vec2 getSize() const;
         virtual void setSize(glm::vec2 size);
-        virtual glm::vec2 getMinSize() const;
+        glm::vec2 getMinSize() const;
         virtual void setMinSize(glm::vec2 size);
-        virtual glm::vec2 getMaxSize() const;
+        glm::vec2 getMaxSize() const;
         virtual void setMaxSize(glm::vec2 size);
         /// @brief Called in containers when new element added
         virtual void refresh() {};
@@ -266,5 +289,9 @@ namespace gui {
             const std::shared_ptr<UINode>& node,
             const std::string& id
         );
+
+        void setMustRefresh() {
+            mustRefresh = true;
+        }
     };
 }

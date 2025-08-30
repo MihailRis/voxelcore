@@ -171,7 +171,7 @@ void VoxelFragment::prepare(const Content& content) {
 }
 
 void VoxelFragment::place(
-    GlobalChunks& chunks, const glm::ivec3& offset, ubyte rotation
+    GlobalChunks& chunks, const glm::ivec3& offset
 ) {
     auto& structVoxels = getRuntimeVoxels();
     for (int y = 0; y < size.y; y++) {
@@ -209,10 +209,13 @@ std::unique_ptr<VoxelFragment> VoxelFragment::rotated(const Content& content) co
                                     | ((voxel.state.segment & 0b100) >> 2);
                 auto& def = content.blocks.require(blockNames[voxel.id]);
                 if (def.rotations.name == BlockRotProfile::PANE_NAME ||
-                      def.rotations.name == BlockRotProfile::PIPE_NAME){
+                      def.rotations.name == BlockRotProfile::PIPE_NAME) {
                     if (voxel.state.rotation < 4) {
                         voxel.state.rotation = (voxel.state.rotation + 3) & 0b11;
                     }
+                } else if (def.rotations.name == BlockRotProfile::STAIRS_NAME) {
+                    voxel.state.rotation = ((voxel.state.rotation + 3) & 0b11) |
+                                            (voxel.state.rotation & 0b100);
                 }
             }
         }

@@ -3,6 +3,8 @@
 #include "debug/Logger.hpp"
 #include "engine/Engine.hpp"
 #include "io/io.hpp"
+#include "assets/Assets.hpp"
+#include "content/ContentControl.hpp"
 #include "frontend/hud.hpp"
 #include "frontend/UiDocument.hpp"
 #include "graphics/render/WorldRenderer.hpp"
@@ -17,6 +19,7 @@ static debug::Logger logger("scripting-hud");
 
 Hud* scripting::hud = nullptr;
 WorldRenderer* scripting::renderer = nullptr;
+PostProcessing* scripting::post_processing = nullptr;
 
 static void load_script(const std::string& name) {
     auto file = io::path("res:scripts") / name;
@@ -26,9 +29,12 @@ static void load_script(const std::string& name) {
     lua::execute(lua::get_main_state(), 0, src, file.string());
 }
 
-void scripting::on_frontend_init(Hud* hud, WorldRenderer* renderer) {
+void scripting::on_frontend_init(
+    Hud* hud, WorldRenderer* renderer, PostProcessing* postProcessing
+) {
     scripting::hud = hud;
     scripting::renderer = renderer;
+    scripting::post_processing = postProcessing;
 
     auto L = lua::get_main_state();
 
@@ -37,6 +43,7 @@ void scripting::on_frontend_init(Hud* hud, WorldRenderer* renderer) {
     lua::openlib(L, "gfx", "particles", particleslib);
     lua::openlib(L, "gfx", "weather", weatherlib);
     lua::openlib(L, "gfx", "text3d", text3dlib);
+    lua::openlib(L, "gfx", "posteffects", posteffectslib);
 
     load_script("hud_classes.lua");
 
@@ -44,7 +51,7 @@ void scripting::on_frontend_init(Hud* hud, WorldRenderer* renderer) {
         lua::call_nothrow(L, 0, 0);
     }
 
-    for (auto& pack : engine->getAllContentPacks()) {
+    for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(
             lua::get_main_state(),
             pack.id + ":.hudopen",
@@ -56,7 +63,7 @@ void scripting::on_frontend_init(Hud* hud, WorldRenderer* renderer) {
 }
 
 void scripting::on_frontend_render() {
-    for (auto& pack : engine->getAllContentPacks()) {
+    for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(
             lua::get_main_state(),
             pack.id + ":.hudrender",
@@ -67,7 +74,7 @@ void scripting::on_frontend_render() {
 
 void scripting::on_frontend_close() {
     auto L = lua::get_main_state();
-    for (auto& pack : engine->getAllContentPacks()) {
+    for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(
             L,
             pack.id + ":.hudclose",
@@ -83,6 +90,7 @@ void scripting::on_frontend_close() {
 
     scripting::renderer = nullptr;
     scripting::hud = nullptr;
+    scripting::post_processing = nullptr;
 }
 
 void scripting::load_hud_script(
@@ -109,7 +117,7 @@ gui::PageLoaderFunc scripting::create_page_loader() {
         auto func = lua::create_lambda(L);
         return [func](const std::string& name) -> std::shared_ptr<gui::UINode> {
             auto docname = func({name}).asString();
-            return engine->getAssets()->require<UiDocument>(docname).getRoot();
+            return Engine::getInstance().getAssets()->require<UiDocument>(docname).getRoot();
         };
     }
     return nullptr;

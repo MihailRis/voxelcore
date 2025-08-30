@@ -26,12 +26,13 @@ namespace gui {
         }
     protected:
         BasePanel(
+            GUI& gui,
             glm::vec2 size,
             glm::vec4 padding = glm::vec4(0.0f),
             float interval = 2.0f,
             Orientation orientation = Orientation::vertical
         )
-            : Container(std::move(size)),
+            : Container(gui, std::move(size)),
             padding(std::move(padding)),
             interval(interval) {
         }

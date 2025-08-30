@@ -7,7 +7,7 @@
 #include "BlocksController.hpp"
 #include "content/Content.hpp"
 #include "core_defs.hpp"
-#include "engine/Profiler.hpp"
+#include "engine/Engine.hpp"
 #include "items/Inventory.hpp"
 #include "items/ItemDef.hpp"
 #include "items/ItemStack.hpp"
@@ -23,7 +23,6 @@
 #include "voxels/Chunks.hpp"
 #include "voxels/voxel.hpp"
 #include "window/Camera.hpp"
-#include "window/Events.hpp"
 #include "window/Window.hpp"
 #include "window/input.hpp"
 #include "world/Level.hpp"
@@ -61,14 +60,16 @@ void CameraControl::refreshRotation() {
     );
 }
 
-void CameraControl::updateMouse(PlayerInput& input) {
+void CameraControl::updateMouse(PlayerInput& input, int windowHeight) {
     glm::vec3 rotation = player.getRotation();
 
     float sensitivity =
         (input.zoom ? settings.sensitivity.get() / 4.f
                     : settings.sensitivity.get());
 
-    auto d = glm::degrees(Events::delta / (float)Window::height * sensitivity);
+    auto d = glm::degrees(
+        input.delta / static_cast<float>(windowHeight) * sensitivity
+    );
     rotation.x -= d.x;
     rotation.y -= d.y;
 
@@ -124,18 +125,21 @@ glm::vec3 CameraControl::updateCameraShaking(
     return offset;
 }
 
-void CameraControl::updateFovEffects(
-    const Hitbox& hitbox, PlayerInput input, float delta
+void CameraControl::updateFov(
+    const Hitbox& hitbox, PlayerInput input, float delta, bool effects
 ) {
     bool crouch = input.shift && hitbox.grounded && !input.sprint;
 
     float dt = fmin(1.0f, delta * ZOOM_SPEED);
     float zoomValue = 1.0f;
-    if (crouch) {
-        offset += glm::vec3(0.f, CROUCH_SHIFT_Y, 0.f);
-        zoomValue = CROUCH_ZOOM;
-    } else if (input.sprint && (input.moveForward || input.moveBack || input.moveLeft || input.moveRight)) {
-        zoomValue = RUN_ZOOM;
+    if (effects) {
+        if (crouch) {
+            offset += glm::vec3(0.f, CROUCH_SHIFT_Y, 0.f);
+            zoomValue = CROUCH_ZOOM;
+        } else if (input.sprint && (input.moveForward || input.moveBack ||
+                                    input.moveLeft || input.moveRight)) {
+            zoomValue = RUN_ZOOM;
+        }
     }
     if (input.zoom) zoomValue *= C_ZOOM;
     camera->zoom = zoomValue * dt + camera->zoom * (1.0f - dt);
@@ -151,9 +155,7 @@ void CameraControl::switchCamera() {
     auto index = std::distance(
         playerCameras.begin(),
         std::find_if(
-            playerCameras.begin(),
-            playerCameras.end(),
-            [this](auto& ptr) {
+            playerCameras.begin(), playerCameras.end(), [this](auto& ptr) {
                 return ptr.get() == player.currentCamera.get();
             }
         )
@@ -176,9 +178,7 @@ void CameraControl::update(
         if (!input.cheat) {
             offset += updateCameraShaking(*hitbox, delta);
         }
-        if (settings.fovEffects.get()) {
-            updateFovEffects(*hitbox, input, delta);
-        }
+        updateFov(*hitbox, input, delta, settings.fovEffects.get());
     }
     if (input.cameraMode) {
         switchCamera();
@@ -262,10 +262,11 @@ void PlayerController::updateFootsteps(float delta) {
     }
 }
 
-void PlayerController::update(float delta, bool input) {
+void PlayerController::update(float delta, const Input* inputEvents) {
     VOXELENGINE_PROFILE;
-    if (input) {
-        updateKeyboard();
+
+    if (inputEvents) {
+        updateKeyboard(*inputEvents);
         player.updateSelectedEntity();
     } else {
         resetKeyboard();
@@ -273,36 +274,41 @@ void PlayerController::update(float delta, bool input) {
     updatePlayer(delta);
 }
 
-void PlayerController::postUpdate(float delta, bool input, bool pause) {
+void PlayerController::postUpdate(
     VOXELENGINE_PROFILE;
+
+    float delta, int windowHeight, const Input* input, bool pause
+) {
     if (!pause) {
         updateFootsteps(delta);
     }
 
     if (!pause && input) {
-        camControl.updateMouse(this->input);
+        camControl.updateMouse(this->input, windowHeight);
     }
     camControl.refreshRotation();
     player.postUpdate();
     camControl.update(this->input, pause ? 0.0f : delta, *player.chunks);
     if (input) {
-        updateInteraction(delta);
+        updateInteraction(*input, delta);
     } else {
         player.selection = {};
     }
 }
 
-void PlayerController::updateKeyboard() {
-    input.moveForward = Events::active(BIND_MOVE_FORWARD);
-    input.moveBack = Events::active(BIND_MOVE_BACK);
-    input.moveLeft = Events::active(BIND_MOVE_LEFT);
-    input.moveRight = Events::active(BIND_MOVE_RIGHT);
-    input.sprint = Events::active(BIND_MOVE_SPRINT);
-    input.shift = Events::active(BIND_MOVE_CROUCH);
-    input.cheat = Events::active(BIND_MOVE_CHEAT);
-    input.jump = Events::active(BIND_MOVE_JUMP);
-    input.zoom = Events::active(BIND_CAM_ZOOM);
-    input.cameraMode = Events::jactive(BIND_CAM_MODE);
+void PlayerController::updateKeyboard(const Input& inputEvents) {
+    const auto& bindings = inputEvents.getBindings();
+    input.moveForward = bindings.active(BIND_MOVE_FORWARD);
+    input.moveBack = bindings.active(BIND_MOVE_BACK);
+    input.moveLeft = bindings.active(BIND_MOVE_LEFT);
+    input.moveRight = bindings.active(BIND_MOVE_RIGHT);
+    input.sprint = bindings.active(BIND_MOVE_SPRINT);
+    input.shift = bindings.active(BIND_MOVE_CROUCH);
+    input.cheat = bindings.active(BIND_MOVE_CHEAT);
+    input.jump = bindings.active(BIND_MOVE_JUMP);
+    input.zoom = bindings.active(BIND_CAM_ZOOM);
+    input.cameraMode = bindings.jactive(BIND_CAM_MODE);
+    input.delta = inputEvents.getCursor().delta;
 }
 
 void PlayerController::resetKeyboard() {
@@ -315,6 +321,7 @@ void PlayerController::resetKeyboard() {
     input.shift = false;
     input.cheat = false;
     input.jump = false;
+    input.delta = {};
 }
 
 void PlayerController::updatePlayer(float delta) {
@@ -327,26 +334,22 @@ static int determine_rotation(
     if (def && def->rotatable) {
         const std::string& name = def->rotations.name;
         if (name == "pipe") {
-            if (norm.x < 0.0f)
-                return BLOCK_DIR_WEST;
-            if (norm.x > 0.0f)
-                return BLOCK_DIR_EAST;
-            if (norm.y > 0.0f)
-                return BLOCK_DIR_UP;
-            if (norm.y < 0.0f)
-                return BLOCK_DIR_DOWN;
-            if (norm.z > 0.0f)
-                return BLOCK_DIR_NORTH;
-            if (norm.z < 0.0f)
-                return BLOCK_DIR_SOUTH;
-        } else if (name == "pane") {
+            if (norm.x < 0.0f) return BLOCK_DIR_WEST;
+            if (norm.x > 0.0f) return BLOCK_DIR_EAST;
+            if (norm.y > 0.0f) return BLOCK_DIR_UP;
+            if (norm.y < 0.0f) return BLOCK_DIR_DOWN;
+            if (norm.z > 0.0f) return BLOCK_DIR_NORTH;
+            if (norm.z < 0.0f) return BLOCK_DIR_SOUTH;
+        } else if (name == "pane" || name == "stairs") {
+            int verticalBit =
+                (name == "stairs" && (norm.y - camDir.y * 0.5f) < 0.0) ? 4 : 0;
             if (abs(camDir.x) > abs(camDir.z)) {
-                if (camDir.x > 0.0f) return BLOCK_DIR_EAST;
-                if (camDir.x < 0.0f) return BLOCK_DIR_WEST;
+                if (camDir.x > 0.0f) return BLOCK_DIR_EAST | verticalBit;
+                if (camDir.x < 0.0f) return BLOCK_DIR_WEST | verticalBit;
             }
             if (abs(camDir.x) < abs(camDir.z)) {
-                if (camDir.z > 0.0f) return BLOCK_DIR_SOUTH;
-                if (camDir.z < 0.0f) return BLOCK_DIR_NORTH;
+                if (camDir.z > 0.0f) return BLOCK_DIR_SOUTH | verticalBit;
+                if (camDir.z < 0.0f) return BLOCK_DIR_NORTH | verticalBit;
             }
         }
     }
@@ -424,7 +427,7 @@ void PlayerController::processRightClick(
     auto camera = player.fpCamera.get();
 
     blockstate state {};
-    state.rotation = determine_rotation(&def, selection.normal, camera->dir);
+    state.rotation = determine_rotation(&def, selection.normal, camera->front);
 
     if (!input.shift && target.rt.funcsset.oninteract) {
         if (scripting::on_block_interact(
@@ -444,7 +447,8 @@ void PlayerController::processRightClick(
     if (def.obstacle) {
         const auto& hitboxes = def.rt.hitboxes[state.rotation];
         for (const AABB& blockAABB : hitboxes) {
-            if (level.entities->hasBlockingInside(blockAABB.translated(coord)
+            if (level.entities->hasBlockingInside(
+                    blockAABB.translated(coord)
                 )) {
                 return;
             }
@@ -492,21 +496,24 @@ void PlayerController::updateEntityInteraction(
     }
 }
 
-void PlayerController::updateInteraction(float delta) {
+void PlayerController::updateInteraction(
+    const Input& inputEvents, float delta
+) {
     auto indices = level.content.getIndices();
     const auto& selection = player.selection;
 
     if (interactionTimer > 0.0f) {
         interactionTimer -= delta;
     }
-    bool xkey = Events::active(BIND_PLAYER_FAST_INTERACTOIN);
+    const auto& bindings = inputEvents.getBindings();
+    bool xkey = bindings.active(BIND_PLAYER_FAST_INTERACTOIN);
     float maxDistance = xkey ? 200.0f : 10.0f;
     bool longInteraction = interactionTimer <= 0 || xkey;
-    bool lclick = Events::jactive(BIND_PLAYER_DESTROY) ||
-                  (longInteraction && Events::active(BIND_PLAYER_DESTROY));
-    bool lattack = Events::jactive(BIND_PLAYER_ATTACK);
-    bool rclick = Events::jactive(BIND_PLAYER_BUILD) ||
-                  (longInteraction && Events::active(BIND_PLAYER_BUILD));
+    bool lclick = bindings.jactive(BIND_PLAYER_DESTROY) ||
+                  (longInteraction && bindings.active(BIND_PLAYER_DESTROY));
+    bool lattack = bindings.jactive(BIND_PLAYER_ATTACK);
+    bool rclick = bindings.jactive(BIND_PLAYER_BUILD) ||
+                  (longInteraction && bindings.active(BIND_PLAYER_BUILD));
     if (lclick || rclick) {
         interactionTimer = INTERACTION_RELOAD;
     }

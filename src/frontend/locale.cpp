@@ -4,7 +4,6 @@
 
 #include "coders/json.hpp"
 #include "coders/BasicParser.hpp"
-#include "content/ContentPack.hpp"
 #include "io/io.hpp"
 #include "util/stringutil.hpp"
 #include "data/dv.hpp"
@@ -14,9 +13,12 @@ static debug::Logger logger("locale");
 
 namespace fs = std::filesystem;
 using namespace std::literals;
+using namespace langs;
 
-std::unique_ptr<langs::Lang> langs::current;
-std::unordered_map<std::string, langs::LocaleInfo> langs::locales_info;
+namespace {
+    std::unique_ptr<langs::Lang> current;
+    std::unordered_map<std::string, LocaleInfo> locales_info;
+}
 
 langs::Lang::Lang(std::string locale) : locale(std::move(locale)) {
 }
@@ -40,18 +42,10 @@ const std::string& langs::Lang::getId() const {
 /// @brief Language key-value txt files parser
 namespace {
     class Reader : BasicParser<char> {
-        void skipWhitespace() override {
-            BasicParser::skipWhitespace();
-            if (hasNext() && source[pos] == '#') {
-                skipLine();
-                if (hasNext() && is_whitespace(peek())) {
-                    skipWhitespace();
-                }
-            }
-        }
     public:
         Reader(std::string_view file, std::string_view source)
             : BasicParser(file, source) {
+            hashComment = true;
         }
 
         void read(langs::Lang& lang, const std::string &prefix) {
@@ -69,11 +63,11 @@ namespace {
     };
 }
 
-void langs::loadLocalesInfo(const io::path& resdir, std::string& fallback) {
-    auto file = resdir / langs::TEXTS_FOLDER / "langs.json";
+static void load_locales_info(std::string& fallback) {
+    auto file = io::path("res:") / langs::TEXTS_FOLDER / "langs.json";
     auto root = io::read_json(file);
 
-    langs::locales_info.clear();
+    ::locales_info.clear();
     root.at("fallback").get(fallback);
 
     if (auto found = root.at("langs")) {
@@ -88,16 +82,62 @@ void langs::loadLocalesInfo(const io::path& resdir, std::string& fallback) {
                 continue;
             }
             logline << key << " ";
-            langs::locales_info[key] = LocaleInfo {key, name};
+            ::locales_info[key] = LocaleInfo {key, name};
         } 
         logline << "added";
     }
 }
 
-std::string langs::locale_by_envlocale(const std::string& envlocale, const io::path& resdir){
+static void load(
+    const std::string& locale,
+    const std::vector<io::path>& roots,
+    Lang& lang
+) {
+    io::path filename = io::path(TEXTS_FOLDER) / (locale + LANG_FILE_EXT);
+    io::path core_file = io::path("res:") / filename;
+
+    if (io::is_regular_file(core_file)) {
+        std::string text = io::read_string(core_file);
+        Reader reader(core_file.string(), text);
+        reader.read(lang, "");
+    }
+    for (auto root : roots) {
+        io::path file = root / filename;
+        if (io::is_regular_file(file)) {
+            std::string text = io::read_string(file);
+            Reader reader(file.string(), text);
+            reader.read(lang, "");
+        }
+    }
+}
+static void load(
+    const std::string& locale,
+    const std::string& fallback,
+    const std::vector<io::path>& roots
+) {
+    auto lang = std::make_unique<Lang>(locale);
+    load(fallback, roots, *lang.get());
+    if (locale != fallback) {
+        load(locale, roots, *lang.get());
+    }
+    current = std::move(lang);
+}
+
+const std::string& langs::get_current() {
+    if (current == nullptr) {
+        throw std::runtime_error("localization is not initialized");
+    }
+    return current->getId();
+}
+
+const std::unordered_map<std::string, LocaleInfo>& langs::get_locales_info() {
+    return ::locales_info;
+}
+
+std::string langs::locale_by_envlocale(const std::string& envlocale){
     std::string fallback = FALLBACK_DEFAULT;
     if (locales_info.size() == 0) {
-        loadLocalesInfo(resdir, fallback);
+        load_locales_info(fallback);
     }
     if (locales_info.find(envlocale) != locales_info.end()) {
         logger.info() << "locale " << envlocale << " is automatically selected";
@@ -115,49 +155,16 @@ std::string langs::locale_by_envlocale(const std::string& envlocale, const io::p
     }
 }
 
-void langs::load(const io::path& resdir,
-                 const std::string& locale,
-                 const std::vector<ContentPack>& packs,
-                 Lang& lang) {
-    io::path filename = io::path(TEXTS_FOLDER) / (locale + LANG_FILE_EXT);
-    io::path core_file = resdir / filename;
-    
-    if (io::is_regular_file(core_file)) {
-        std::string text = io::read_string(core_file);
-        Reader reader(core_file.string(), text);
-        reader.read(lang, "");
-    }
-    for (auto pack : packs) {
-        io::path file = pack.folder / filename;
-        if (io::is_regular_file(file)) {
-            std::string text = io::read_string(file);
-            Reader reader(file.string(), text);
-            reader.read(lang, "");
-        }
-    }
-}
-
-void langs::load(const io::path& resdir,
-                 const std::string& locale,
-                 const std::string& fallback,
-                 const std::vector<ContentPack>& packs) {
-    auto lang = std::make_unique<Lang>(locale);
-    load(resdir, fallback, packs, *lang.get());
-    if (locale != fallback) {
-        load(resdir, locale, packs, *lang.get());
-    }
-    current = std::move(lang);
-}
-
-void langs::setup(const io::path& resdir,
-                  std::string locale,
-                  const std::vector<ContentPack>& packs) {
+void langs::setup(
+    std::string locale,
+    const std::vector<io::path>& roots
+) {
     std::string fallback = langs::FALLBACK_DEFAULT;
-    langs::loadLocalesInfo(resdir, fallback);
-    if (langs::locales_info.find(locale) == langs::locales_info.end()) {
+    load_locales_info(fallback);
+    if (locales_info.find(locale) == locales_info.end()) {
         locale = fallback;
     }
-    langs::load(resdir, locale, fallback, packs);
+    load(locale, fallback, roots);
 }
 
 const std::wstring& langs::get(const std::wstring& key) {

@@ -61,7 +61,7 @@ int lua::pushvalue(State* L, const dv::value& value) {
             break;
         case value_type::bytes: {
             const auto& bytes = value.asBytes();
-            newuserdata<LuaBytearray>(L, bytes.data(), bytes.size());
+            create_bytearray(L, bytes.data(), bytes.size());
             break;
         }
     }
@@ -128,18 +128,14 @@ dv::value lua::tovalue(State* L, int idx) {
                 return map;
             }
         }
-        case LUA_TUSERDATA: {
-            if (auto bytes = touserdata<LuaBytearray>(L, idx)) {
-                const auto& data = bytes->data();
-                return std::make_shared<dv::objects::Bytes>(data.data(), data.size());
-            }
-            [[fallthrough]];
-        }
-        default:
-            throw std::runtime_error(
-                "lua type " + std::string(lua_typename(L, type)) +
-                " is not supported"
+        default: {
+            auto data = bytearray_as_string(L, idx);
+            auto bytes = std::make_shared<dv::objects::Bytes>(
+                reinterpret_cast<const ubyte*>(data.data()), data.size()
             );
+            pop(L);
+            return bytes;
+        }
     }
 }
 

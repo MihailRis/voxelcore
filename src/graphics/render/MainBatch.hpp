@@ -1,30 +1,48 @@
 #pragma once
 
+#include <array>
 #include <memory>
-#include <stdint.h>
+#include <cstdint>
 #include <glm/glm.hpp>
 
 #include "typedefs.hpp"
 #include "maths/UVRegion.hpp"
+#include "graphics/core/MeshData.hpp"
 
+template<typename VertexStructure>
 class Mesh;
 class Texture;
 class Chunks;
 
+struct MainBatchVertex {
+    glm::vec3 position;
+    glm::vec2 uv;
+    glm::vec3 tint;
+    std::array<uint8_t, 4> color;
+    std::array<uint8_t, 4> normal;
+
+    static constexpr VertexAttribute ATTRIBUTES[] = {
+        {VertexAttribute::Type::FLOAT, false, 3},
+        {VertexAttribute::Type::FLOAT, false, 2},
+        {VertexAttribute::Type::FLOAT, false, 3},
+        {VertexAttribute::Type::UNSIGNED_BYTE, true, 4},
+        {VertexAttribute::Type::UNSIGNED_BYTE, true, 4},
+        {{}, 0}};
+};
+
 class MainBatch {
-    std::unique_ptr<float[]> const buffer;
+    std::unique_ptr<MainBatchVertex[]> const buffer;
     size_t const capacity;
     size_t index;
 
     UVRegion region {0.0f, 0.0f, 1.0f, 1.0f};
 
-    std::unique_ptr<Mesh> mesh;
+    std::unique_ptr<Mesh<MainBatchVertex>> mesh;
     std::unique_ptr<Texture> blank;
 
     const Texture* texture = nullptr;
 public:
     /// xyz, uv, color, compressed lights
-    static inline constexpr uint VERTEX_SIZE = 9;
 
     MainBatch(size_t capacity);
 
@@ -45,77 +63,87 @@ public:
         const glm::vec3& pos,
         const glm::vec2& uv,
         const glm::vec4& light,
-        const glm::vec3& tint
+        const glm::vec3& tint,
+        const glm::vec3& normal,
+        float emission
     ) {
-        float* buffer = this->buffer.get();
-        buffer[index++] = pos.x;
-        buffer[index++] = pos.y;
-        buffer[index++] = pos.z;
-        buffer[index++] = uv.x * region.getWidth() + region.u1;
-        buffer[index++] = uv.y * region.getHeight() + region.v1;
-        buffer[index++] = tint.x;
-        buffer[index++] = tint.y;
-        buffer[index++] = tint.z;
+        MainBatchVertex* buffer = this->buffer.get();
+        buffer[index].position = pos;
+        buffer[index].uv = {uv.x * region.getWidth() + region.u1,uv.y * region.getHeight() + region.v1};
+        buffer[index].tint = tint;
 
-        union {
-            float floating;
-            uint32_t integer;
-        } compressed;
+        buffer[index].color[0] = static_cast<uint8_t>(light.r * 255);
+        buffer[index].color[1] = static_cast<uint8_t>(light.g * 255);
+        buffer[index].color[2] = static_cast<uint8_t>(light.b * 255);
+        buffer[index].color[3] = static_cast<uint8_t>(light.a * 255);
 
-        compressed.integer  = (static_cast<uint32_t>(light.r * 255) & 0xff) << 24;
-        compressed.integer |= (static_cast<uint32_t>(light.g * 255) & 0xff) << 16;
-        compressed.integer |= (static_cast<uint32_t>(light.b * 255) & 0xff) << 8;
-        compressed.integer |= (static_cast<uint32_t>(light.a * 255) & 0xff);
-
-        buffer[index++] = compressed.floating;
+        buffer[index].normal[0] = static_cast<uint8_t>(normal.x * 127 + 128);
+        buffer[index].normal[1] = static_cast<uint8_t>(normal.y * 127 + 128);
+        buffer[index].normal[2] = static_cast<uint8_t>(normal.z * 127 + 128);
+        buffer[index].normal[3] = static_cast<uint8_t>(emission * 255);
+        index++;
     }
 
     inline void quad(
         const glm::vec3& pos,
         const glm::vec3& right,
         const glm::vec3& up,
+        const glm::vec3& normal,
         const glm::vec2& size,
         const glm::vec4& light,
         const glm::vec3& tint,
-        const UVRegion& subregion
+        const UVRegion& subregion,
+        float emission = 0.0f
     ) {
         prepare(6);
         vertex(
             pos - right * size.x * 0.5f - up * size.y * 0.5f,
             {subregion.u1, subregion.v1},
             light,
-            tint
+            tint,
+            normal,
+            emission
         );
         vertex(
             pos + right * size.x * 0.5f - up * size.y * 0.5f,
             {subregion.u2, subregion.v1},
             light,
-            tint
+            tint,
+            normal,
+            emission
         );
         vertex(
             pos + right * size.x * 0.5f + up * size.y * 0.5f,
             {subregion.u2, subregion.v2},
             light,
-            tint
+            tint,
+            normal,
+            emission
         );
 
         vertex(
             pos - right * size.x * 0.5f - up * size.y * 0.5f,
             {subregion.u1, subregion.v1},
             light,
-            tint
+            tint,
+            normal,
+            emission
         );
         vertex(
             pos + right * size.x * 0.5f + up * size.y * 0.5f,
             {subregion.u2, subregion.v2},
             light,
-            tint
+            tint,
+            normal,
+            emission
         );
         vertex(
             pos - right * size.x * 0.5f + up * size.y * 0.5f,
             {subregion.u1, subregion.v2},
             light,
-            tint
+            tint,
+            normal,
+            emission
         );
     }
 

@@ -3,6 +3,7 @@
 #include "coders/json.hpp"
 #include "debug/Logger.hpp"
 #include "util/stringutil.hpp"
+#include "util/type_helpers.hpp"
 #include "lua/lua_engine.hpp"
 
 using namespace scripting;
@@ -58,18 +59,44 @@ key_handler scripting::create_key_handler(
     };
 }
 
-wstringconsumer scripting::create_wstring_consumer(
+template<typename T, int(pushfunc)(lua::State*, remove_const_ref_if_primitive_t<const T&>)>
+std::function<void(const T&)> create_consumer(
     const scriptenv& env, const std::string& src, const std::string& file
 ) {
-    return [=](const std::wstring& x) {
+    return [=](const T& x) {
         if (auto L = process_callback(env, src, file)) {
-            lua::pushwstring(L, x);
+            pushfunc(L, x);
             lua::call_nothrow(L, 1);
         }
     };
 }
 
-wstringsupplier scripting::create_wstring_supplier(
+wstringconsumer scripting::create_wstring_consumer(
+    const scriptenv& env, const std::string& src, const std::string& file
+) {
+    return create_consumer<std::wstring, lua::pushwstring>(env, src, file);
+}
+
+stringconsumer scripting::create_string_consumer(
+    const scriptenv& env, const std::string& src, const std::string& file
+) {
+    return create_consumer<std::string, lua::pushstring>(env, src, file);
+}
+
+boolconsumer scripting::create_bool_consumer(
+    const scriptenv& env, const std::string& src, const std::string& file
+) {
+    return create_consumer<bool, lua::pushboolean>(env, src, file);
+}
+
+doubleconsumer scripting::create_number_consumer(
+    const scriptenv& env, const std::string& src, const std::string& file
+) {
+    return create_consumer<number_t, lua::pushnumber>(env, src, file);
+}
+
+template <typename T, T(tovalueFunc)(lua::State*, int)>
+std::function<T()> create_supplier(
     const scriptenv& env, const std::string& src, const std::string& file
 ) {
     return [=]() {
@@ -77,12 +104,30 @@ wstringsupplier scripting::create_wstring_supplier(
             if (lua::isfunction(L, -1)) {
                 lua::call_nothrow(L, 0);
             }
-            auto str = lua::require_wstring(L, -1);
+            auto str = tovalueFunc(L, -1);
             lua::pop(L);
             return str;
         }
-        return std::wstring();
+        return T {};
     };
+}
+
+wstringsupplier scripting::create_wstring_supplier(
+    const scriptenv& env, const std::string& src, const std::string& file
+) {
+    return create_supplier<std::wstring, lua::require_wstring>(env, src, file);
+}
+
+boolsupplier scripting::create_bool_supplier(
+    const scriptenv& env, const std::string& src, const std::string& file
+) {
+    return create_supplier<bool, lua::toboolean>(env, src, file);
+}
+
+doublesupplier scripting::create_number_supplier(
+    const scriptenv& env, const std::string& src, const std::string& file
+) {
+    return create_supplier<number_t, lua::tonumber>(env, src, file);
 }
 
 wstringchecker scripting::create_wstring_validator(
@@ -94,60 +139,6 @@ wstringchecker scripting::create_wstring_validator(
             if (lua::call_nothrow(L, 1)) return lua::toboolean(L, -1);
         }
         return false;
-    };
-}
-
-boolconsumer scripting::create_bool_consumer(
-    const scriptenv& env, const std::string& src, const std::string& file
-) {
-    return [=](bool x) {
-        if (auto L = process_callback(env, src, file)) {
-            lua::pushboolean(L, x);
-            lua::call_nothrow(L, 1);
-        }
-    };
-}
-
-boolsupplier scripting::create_bool_supplier(
-    const scriptenv& env, const std::string& src, const std::string& file
-) {
-    return [=]() {
-        if (auto L = process_callback(env, src, file)) {
-            if (lua::isfunction(L, -1)) {
-                lua::call_nothrow(L, 0);
-            }
-            bool x = lua::toboolean(L, -1);
-            lua::pop(L);
-            return x;
-        }
-        return false;
-    };
-}
-
-doubleconsumer scripting::create_number_consumer(
-    const scriptenv& env, const std::string& src, const std::string& file
-) {
-    return [=](double x) {
-        if (auto L = process_callback(env, src, file)) {
-            lua::pushnumber(L, x);
-            lua::call_nothrow(L, 1);
-        }
-    };
-}
-
-doublesupplier scripting::create_number_supplier(
-    const scriptenv& env, const std::string& src, const std::string& file
-) {
-    return [=]() {
-        if (auto L = process_callback(env, src, file)) {
-            if (lua::isfunction(L, -1)) {
-                lua::call_nothrow(L, 0);
-            }
-            auto x = lua::tonumber(L, -1);
-            lua::pop(L);
-            return x;
-        }
-        return 0.0;
     };
 }
 

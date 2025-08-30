@@ -26,11 +26,11 @@ namespace util {
             nextid = o.nextid;
         }
 
-        observer_handler add(runnable callback) {
+        ObserverHandler add(runnable callback) {
             std::lock_guard lock(mutex);
             int id = nextid++;
             runnables[id] = std::move(callback);
-            return observer_handler(new int(id), [this](int* id) { //-V508
+            return ObserverHandler(new int(id), [this](int* id) { //-V508
                 std::lock_guard lock(mutex);
                 runnables.erase(*id);
                 delete id;

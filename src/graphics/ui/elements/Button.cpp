@@ -3,17 +3,23 @@
 #include <utility>
 
 #include "Label.hpp"
-#include "graphics/core/DrawContext.hpp"
 #include "graphics/core/Batch2D.hpp"
+#include "graphics/core/DrawContext.hpp"
 
 using namespace gui;
 
-Button::Button(const std::shared_ptr<UINode>& content, glm::vec4 padding)
-    : Panel(glm::vec2(), padding, 0) {
+Button::Button(
+    GUI& gui, const std::shared_ptr<UINode>& content, glm::vec4 padding
+)
+    : Panel(gui, glm::vec2(), padding, 0) {
     glm::vec4 margin = getMargin();
-    setSize(content->getSize()+
-            glm::vec2(padding[0]+padding[2]+margin[0]+margin[2],
-                      padding[1]+padding[3]+margin[1]+margin[3]));
+    setSize(
+        content->getSize() +
+        glm::vec2(
+            padding[0] + padding[2] + margin[0] + margin[2],
+            padding[1] + padding[3] + margin[1] + margin[3]
+        )
+    );
     add(content);
     setScrollable(false);
     setHoverColor(glm::vec4(0.05f, 0.1f, 0.15f, 0.75f));
@@ -22,32 +28,32 @@ Button::Button(const std::shared_ptr<UINode>& content, glm::vec4 padding)
 }
 
 Button::Button(
+    GUI& gui,
     const std::wstring& text,
-    glm::vec4 padding, 
+    glm::vec4 padding,
     const onaction& action,
     glm::vec2 size
-) : Panel(size, padding, 0) 
-{
-    if (size.y < 0.0f) {
-        size = glm::vec2(
-            glm::max(padding.x + padding.z + text.length()*8, size.x),
-            glm::max(padding.y + padding.w + 16, size.y)
-        );
+)
+    : Panel(gui, size, padding, 0.0f) {
+    if (size.x < 0.0f || size.y < 0.0f) {
+        setContentSize({text.length() * 8, 16});
+    } else {
+        setSize(size);
     }
-    setSize(size);
 
     if (action) {
         listenAction(action);
     }
     setScrollable(false);
 
-    label = std::make_shared<Label>(text);
+    label = std::make_shared<Label>(gui, text);
     label->setAlign(Align::center);
-    label->setSize(size-glm::vec2(padding.z+padding.x, padding.w+padding.y));
+    label->setSize(getContentSize());
     label->setInteractive(false);
     add(label);
-    setHoverColor(glm::vec4(0.05f, 0.1f, 0.15f, 0.75f));
-    setPressedColor(glm::vec4(0.0f, 0.0f, 0.0f, 0.95f));
+    
+    setHoverColor({0.05f, 0.1f, 0.15f, 0.75f});
+    setPressedColor({0.0f, 0.0f, 0.0f, 0.95f});
 }
 
 void Button::setText(std::wstring text) {
@@ -63,17 +69,10 @@ std::wstring Button::getText() const {
     return L"";
 }
 
-Button* Button::textSupplier(wstringsupplier supplier) {
-    if (label) {
-        label->textSupplier(std::move(supplier));
-    }
-    return this;
-}
-
 void Button::refresh() {
     Panel::refresh();
     if (label) {
-        label->setSize(size-glm::vec2(padding.z+padding.x, padding.w+padding.y));
+        label->setSize(getContentSize());
     }
 }
 

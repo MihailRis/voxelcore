@@ -16,7 +16,16 @@
 
 class Assets;
 
-enum class AssetType { TEXTURE, SHADER, FONT, ATLAS, LAYOUT, SOUND, MODEL };
+enum class AssetType {
+    TEXTURE,
+    SHADER,
+    FONT,
+    ATLAS,
+    LAYOUT,
+    SOUND,
+    MODEL,
+    POST_EFFECT
+};
 
 namespace assetload {
     /// @brief final work to do in the main thread
@@ -89,6 +98,20 @@ public:
             return nullptr;
         }
         return static_cast<T*>(found->second.get());
+    }
+
+    template <class T>
+    std::shared_ptr<T> getShared(const std::string& name) const {
+        const auto& mapIter = assets.find(typeid(T));
+        if (mapIter == assets.end()) {
+            return nullptr;
+        }
+        const auto& map = mapIter->second;
+        const auto& found = map.find(name);
+        if (found == map.end()) {
+            return nullptr;
+        }
+        return std::static_pointer_cast<T>(found->second);
     }
 
     template <class T>

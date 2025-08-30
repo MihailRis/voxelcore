@@ -13,13 +13,14 @@ using namespace json;
 
 namespace {
     class Parser : BasicParser<char> {
-        dv::value parseList();
-        dv::value parseObject();
-        dv::value parseValue();
-    public:
+        public:
         Parser(std::string_view filename, std::string_view source);
 
         dv::value parse();
+    private:
+        dv::value parseList();
+        dv::value parseObject();
+        dv::value parseValue();
     };
 }
 

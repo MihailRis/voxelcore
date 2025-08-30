@@ -1,5 +1,6 @@
 #include "content/Content.hpp"
 #include "content/ContentLoader.hpp"
+#include "content/ContentControl.hpp"
 #include "items/ItemDef.hpp"
 #include "api_lua.hpp"
 #include "engine/Engine.hpp"
@@ -94,7 +95,7 @@ static int l_reload_script(lua::State* L) {
     if (content == nullptr) {
         throw std::runtime_error("content is not initialized");
     }
-    auto& writeableContent = *engine->getWriteableContent();
+    auto& writeableContent = *content_control->get();
     auto& def = writeableContent.items.require(name);
     ContentLoader::reloadScript(writeableContent, def);
     return 0;

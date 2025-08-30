@@ -4,11 +4,11 @@
 #include "maths/util.hpp"
 #include "assets/Assets.hpp"
 #include "window/Camera.hpp"
-#include "window/Window.hpp"
 #include "maths/FrustumCulling.hpp"
 #include "graphics/core/Font.hpp"
 #include "graphics/core/Batch3D.hpp"
 #include "graphics/core/Shader.hpp"
+#include "graphics/core/DrawContext.hpp"
 #include "presets/NotePreset.hpp"
 #include "constants.hpp"
 
@@ -51,6 +51,7 @@ void TextsRenderer::renderNote(
     glm::vec3 yvec = note.getAxisY();
 
     int width = font.calcWidth(text, text.length());
+    int height = font.getLineHeight();
     if (preset.displayMode == NoteDisplayMode::Y_FREE_BILLBOARD ||
         preset.displayMode == NoteDisplayMode::XY_FREE_BILLBOARD) {
         xvec = camera.position - pos;
@@ -66,6 +67,7 @@ void TextsRenderer::renderNote(
         xvec *= 1.0f + scale;
         yvec *= 1.0f + scale;
     }
+    const auto& viewport = context.getViewport();
     if (preset.displayMode == NoteDisplayMode::PROJECTED) {
         float scale = 1.0f;
         if (glm::abs(preset.perspective) > 0.0001f) {
@@ -84,19 +86,22 @@ void TextsRenderer::renderNote(
             }
             pos /= projpos.w;
             pos.z = 0;
-            xvec = {2.0f/Window::width*scale, 0, 0};
-            yvec = {0, 2.0f/Window::height*scale, 0};
+            xvec = {2.0f / viewport.x * scale, 0, 0};
+            yvec = {0, 2.0f / viewport.y * scale, 0};
         } else {
             auto matrix = camera.getProjView();
             auto screenPos = matrix * glm::vec4(pos, 1.0f);
-            
-            xvec = glm::vec3(2.0f/Window::width*scale, 0, 0);
-            yvec = glm::vec3(0, 2.0f/Window::height*scale, 0);
+
+            xvec = glm::vec3(2.0f / viewport.x * scale, 0, 0);
+            yvec = glm::vec3(0, 2.0f / viewport.y * scale, 0);
 
             pos = screenPos / screenPos.w;
         }
-    } else if (!frustum.isBoxVisible(pos - xvec * (width * 0.5f * preset.scale), 
-                                     pos + xvec * (width * 0.5f * preset.scale))) {
+    } else if (!frustum.isBoxVisible(
+                   pos - xvec * (width * 0.5f) * preset.scale,
+                   pos + xvec * (width * 0.5f) * preset.scale +
+                       yvec * static_cast<float>(height) * preset.scale
+               )) {
         return;
     }
     auto color = preset.color;

@@ -18,11 +18,12 @@ class Inventory;
 class LevelFrontend;
 class UiDocument;
 class DrawContext;
-class Viewport;
 class ImageData;
+class Input;
 
 namespace gui {
     class GUI;
+    class Menu;
     class UINode;
     class Panel;
     class Container;
@@ -71,9 +72,11 @@ public:
 
 class Hud : public util::ObjectsKeeper {
     Engine& engine;
+    Input& input;
     Assets& assets;
-    std::unique_ptr<Camera> uicamera;
     gui::GUI& gui;
+    gui::Menu& menu;
+    std::unique_ptr<Camera> uicamera;
     LevelFrontend& frontend;
     Player& player;
 
@@ -127,7 +130,7 @@ class Hud : public util::ObjectsKeeper {
     std::shared_ptr<gui::InventoryView> createHotbar();
 
     void processInput(bool visible);
-    void updateElementsPosition(const Viewport& viewport);
+    void updateElementsPosition(const glm::uvec2& viewport);
     void updateHotbarControl();
     void cleanup();
 

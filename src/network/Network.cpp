@@ -30,6 +30,9 @@ using SOCKET = int;
 
 using namespace network;
 
+inline constexpr int HTTP_OK = 200;
+inline constexpr int HTTP_BAD_GATEWAY = 502;
+
 static debug::Logger logger("network");
 
 static size_t write_callback(
@@ -149,7 +152,7 @@ public:
             auto message = curl_multi_strerror(res);
             logger.error() << message << " (" << url << ")";
             if (onReject) {
-                onReject(message);
+                onReject(HTTP_BAD_GATEWAY);
             }
             url = "";
         }
@@ -164,7 +167,7 @@ public:
             auto message = curl_multi_strerror(res);
             logger.error() << message << " (" << url << ")";
             if (onReject) {
-                onReject(message);
+                onReject(HTTP_BAD_GATEWAY);
             }
             curl_multi_remove_handle(multiHandle, curl);
             url = "";
@@ -176,7 +179,7 @@ public:
             }
             int response;
             curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &response);
-            if (response == 200) {
+            if (response == HTTP_OK) {
                 long size;
                 if (!curl_easy_getinfo(curl, CURLINFO_REQUEST_SIZE, &size)) {
                     totalUpload += size;
@@ -191,7 +194,7 @@ public:
             } else {
                 logger.error() << "response code " << response << " (" << url << ")";
                 if (onReject) {
-                    onReject(std::to_string(response).c_str());
+                    onReject(response);
                 }
             }
             url = "";
@@ -474,6 +477,7 @@ public:
 };
 
 class SocketTcpSServer : public TcpServer {
+    u64id_t id;
     Network* network;
     SOCKET descriptor;
     std::vector<u64id_t> clients;
@@ -482,14 +486,14 @@ class SocketTcpSServer : public TcpServer {
     std::unique_ptr<std::thread> thread = nullptr;
     int port;
 public:
-    SocketTcpSServer(Network* network, SOCKET descriptor, int port)
-    : network(network), descriptor(descriptor), port(port) {}
+    SocketTcpSServer(u64id_t id, Network* network, SOCKET descriptor, int port)
+    : id(id), network(network), descriptor(descriptor), port(port) {}
 
     ~SocketTcpSServer() {
         closeSocket();
     }
 
-    void startListen(consumer<u64id_t> handler) override {
+    void startListen(ConnectCallback handler) override {
         thread = std::make_unique<std::thread>([this, handler]() {
             while (open) {
                 logger.info() << "listening for connections";
@@ -515,7 +519,7 @@ public:
                     std::lock_guard lock(clientsMutex);
                     clients.push_back(id);
                 }
-                handler(id);
+                handler(this->id, id);
             }
         });
     }
@@ -555,7 +559,7 @@ public:
     }
 
     static std::shared_ptr<SocketTcpSServer> openServer(
-        Network* network, int port, consumer<u64id_t> handler
+        u64id_t id, Network* network, int port, ConnectCallback handler
     ) {
         SOCKET descriptor = socket(
             AF_INET, SOCK_STREAM, 0
@@ -582,7 +586,7 @@ public:
         }
         logger.info() << "opened server at port " << port;
         auto server =
-            std::make_shared<SocketTcpSServer>(network, descriptor, port);
+            std::make_shared<SocketTcpSServer>(id, network, descriptor, port);
         server->startListen(std::move(handler));
         return server;
     }
@@ -642,9 +646,9 @@ u64id_t Network::connect(const std::string& address, int port, consumer<u64id_t>
     return id;
 }
 
-u64id_t Network::openServer(int port, consumer<u64id_t> handler) {
+u64id_t Network::openServer(int port, ConnectCallback handler) {
     u64id_t id = nextServer++;
-    auto server = SocketTcpSServer::openServer(this, port, handler);
+    auto server = SocketTcpSServer::openServer(id, this, port, handler);
     servers[id] = std::move(server);
     return id;
 }

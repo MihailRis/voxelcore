@@ -2,7 +2,6 @@
 
 #include <glm/glm.hpp>
 #include <memory>
-#include <optional>
 
 #include "interfaces/Serializable.hpp"
 #include "settings.hpp"
@@ -18,16 +17,19 @@ struct Hitbox;
 struct EngineSettings;
 
 struct PlayerInput {
-    bool zoom : 1;
-    bool cameraMode : 1;
-    bool moveForward : 1;
-    bool moveBack : 1;
-    bool moveRight : 1;
-    bool moveLeft : 1;
-    bool sprint : 1;
-    bool shift : 1;
-    bool cheat : 1;
-    bool jump : 1;
+    struct {
+        bool zoom : 1;
+        bool cameraMode : 1;
+        bool moveForward : 1;
+        bool moveBack : 1;
+        bool moveRight : 1;
+        bool moveLeft : 1;
+        bool sprint : 1;
+        bool shift : 1;
+        bool cheat : 1;
+        bool jump : 1;
+    };
+    glm::vec2 delta;
 };
 
 struct CursorSelection {

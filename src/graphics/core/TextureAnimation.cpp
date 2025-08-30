@@ -6,6 +6,7 @@
 
 #include "Framebuffer.hpp"
 #include "GLTexture.hpp"
+#include "Texture.hpp"
 #include "engine/Profiler.hpp"
 #include "engine/ProfilerGpu.hpp"
 

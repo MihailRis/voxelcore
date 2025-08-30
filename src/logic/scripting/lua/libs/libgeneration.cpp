@@ -7,6 +7,7 @@
 #include "world/generator/VoxelFragment.hpp"
 #include "content/ContentLoader.hpp"
 #include "content/Content.hpp"
+#include "content/ContentControl.hpp"
 #include "engine/Engine.hpp"
 #include "../lua_custom_types.hpp"
 
@@ -15,7 +16,7 @@ using namespace scripting;
 static int l_save_fragment(lua::State* L) {
     auto fragment = lua::touserdata<lua::LuaVoxelFragment>(L, 1);
     auto file = lua::require_string(L, 2);
-    auto map = fragment->getFragment()->serialize();
+    auto map = fragment->getFragment(0)->serialize();
     auto bytes = json::to_binary(map, true);
     io::write_bytes(file, bytes.data(), bytes.size());
     return 0;
@@ -29,8 +30,15 @@ static int l_create_fragment(lua::State* L) {
 
     auto fragment =
         VoxelFragment::create(*level, pointA, pointB, crop, saveEntities);
+    fragment->prepare(*content);
+    std::array<std::shared_ptr<VoxelFragment>, 4> fragmentVariants {
+        std::move(fragment)
+    };
+    for (size_t i = 1; i < 4; i++) {
+        fragmentVariants[i] = fragmentVariants[i - 1]->rotated(*content);
+    }
     return lua::newuserdata<lua::LuaVoxelFragment>(
-        L, std::shared_ptr<VoxelFragment>(std::move(fragment))
+        L, std::move(fragmentVariants)
     );
 }
 
@@ -44,13 +52,21 @@ static int l_load_fragment(lua::State* L) {
     auto fragment = std::make_shared<VoxelFragment>();
     fragment->deserialize(map);
     fragment->prepare(*content);
-    return lua::newuserdata<lua::LuaVoxelFragment>(L, std::move(fragment));
+    std::array<std::shared_ptr<VoxelFragment>, 4> fragmentVariants {
+        std::move(fragment)
+    };
+    for (size_t i = 1; i < 4; i++) {
+        fragmentVariants[i] = fragmentVariants[i - 1]->rotated(*content);
+    }
+    return lua::newuserdata<lua::LuaVoxelFragment>(
+        L, std::move(fragmentVariants)
+    );
 }
 
 /// @brief Get a list of all world generators
 /// @return A table with the IDs of all world generators
 static int l_get_generators(lua::State* L) {
-    auto packs = engine->getAllContentPacks();
+    auto packs = content_control->getAllContentPacks();
 
     lua::createtable(L, 0, 0);
 
@@ -68,7 +84,7 @@ static int l_get_generators(lua::State* L) {
 /// @return The ID of the default world generator
 static int l_get_default_generator(lua::State* L) {
     // content is not initialized yet
-    auto combined = engine->getResPaths()->readCombinedObject(
+    auto combined = engine->getResPaths().readCombinedObject(
         EnginePaths::CONFIG_DEFAULTS.string()
     );
     return lua::pushstring(L, combined["generator"].asString());

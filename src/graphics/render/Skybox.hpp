@@ -6,22 +6,31 @@
 #include <glm/glm.hpp>
 #include "typedefs.hpp"
 #include "maths/fastmaths.hpp"
+#include "graphics/core/MeshData.hpp"
 
-class Mesh;
+template<typename VertexStructure> class Mesh;
 class Shader;
 class Assets;
 class Camera;
 class Batch3D;
-class Shader;
 class Cubemap;
 class Framebuffer;
 class DrawContext;
 
-struct skysprite {
+struct SkyboxVertex {
+    glm::vec2 position;
+
+    static constexpr VertexAttribute ATTRIBUTES[] {
+        {VertexAttribute::Type::FLOAT, false, 2}, 
+        {{}, 0}};
+};
+
+struct SkySprite {
     std::string texture;
     float phase;
     float distance;
     bool emissive;
+    float altitude;
 };
 
 class Skybox {
@@ -32,13 +41,15 @@ class Skybox {
     FastRandom random;
     glm::vec3 lightDir;
 
-    std::unique_ptr<Mesh> mesh;
+    std::unique_ptr<Mesh<SkyboxVertex>> mesh;
     std::unique_ptr<Batch3D> batch3d;
-    std::vector<skysprite> sprites;
+    std::vector<SkySprite> sprites;
     int frameid = 0;
 
     float prevMie = -1.0f;
     float prevT = -1.0f;
+    float sunAltitude = 45.0f;
+    glm::mat4 rotation;
 
     void drawStars(float angle, float opacity);
     void drawBackground(

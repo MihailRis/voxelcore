@@ -9,7 +9,7 @@ class Texture;
 namespace gui {
     class Canvas final : public UINode {
     public:
-        explicit Canvas(ImageFormat inFormat, glm::uvec2 inSize);
+        explicit Canvas(GUI& gui, ImageFormat inFormat, glm::uvec2 inSize);
 
         ~Canvas() override = default;
 

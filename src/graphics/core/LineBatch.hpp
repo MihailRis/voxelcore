@@ -5,12 +5,24 @@
 #include <glm/glm.hpp>
 
 #include "commons.hpp"
+#include "MeshData.hpp"
 
+template<typename VertexStructure>
 class Mesh;
 
+struct LineVertex {
+    glm::vec3 position;
+    glm::vec4 color;
+
+    static constexpr VertexAttribute ATTRIBUTES[] {
+        {VertexAttribute::Type::FLOAT, false, 3},
+        {VertexAttribute::Type::FLOAT, false, 4},
+        {{}, 0}};
+};
+
 class LineBatch : public Flushable {
-    std::unique_ptr<Mesh> mesh;
-    std::unique_ptr<float[]> buffer;
+    std::unique_ptr<Mesh<LineVertex>> mesh;
+    std::unique_ptr<LineVertex[]> buffer;
     size_t index;
     size_t capacity;
 public:

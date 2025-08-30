@@ -2,10 +2,10 @@
 
 #include "maths/aabb.hpp"
 #include "typedefs.hpp"
+#include "util/EnumMetadata.hpp"
 
 #include <set>
 #include <string>
-#include <optional>
 #include <functional>
 #include <glm/glm.hpp>
 
@@ -41,8 +41,11 @@ enum class BodyType {
     STATIC, KINEMATIC, DYNAMIC
 };
 
-std::optional<BodyType> BodyType_from(std::string_view str);
-std::string to_string(BodyType type);
+VC_ENUM_METADATA(BodyType)
+    {"static", BodyType::STATIC},
+    {"kinematic", BodyType::KINEMATIC},
+    {"dynamic", BodyType::DYNAMIC},
+VC_ENUM_END
 
 struct Hitbox {
     BodyType type;

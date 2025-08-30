@@ -1,0 +1,12 @@
+language = "Lua"
+extensions = ["lua"]
+line-comment = "--"
+multiline-comment-start = "[==["
+multiline-comment-end = "]==]"
+multiline-string-start = "[["
+multiline-string-end = "]]"
+keywords = [
+    "and", "break", "do", "else", "elseif", "end", "false", "for", "function", 
+    "if", "in", "local", "nil", "not", "or", "repeat", "return", "then", "true",
+    "until", "while"
+]

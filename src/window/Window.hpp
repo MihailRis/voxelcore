@@ -2,67 +2,60 @@
 
 #include <glm/glm.hpp>
 #include <memory>
-#include <stack>
-#include <vector>
 
 #include "graphics/core/commons.hpp"
 #include "typedefs.hpp"
 
 class ImageData;
+class Input;
 struct DisplaySettings;
-struct GLFWwindow;
-struct GLFWmonitor;
 
 class Window {
-    static GLFWwindow* window;
-    static DisplaySettings* settings;
-    static std::stack<glm::vec4> scissorStack;
-    static glm::vec4 scissorArea;
-    static bool fullscreen;
-    static int framerate;
-    static double prevSwap;
-    static CursorShape cursor;
-
-    static bool tryToMaximize(GLFWwindow* window, GLFWmonitor* monitor);
 public:
-    static int posX;
-    static int posY;
-    static uint width;
-    static uint height;
-    static int initialize(DisplaySettings* settings);
-    static void terminate();
+    Window(glm::ivec2 size) : size(std::move(size)) {}
 
-    static void viewport(int x, int y, int width, int height);
-    static void setCursorMode(int mode);
-    static bool isShouldClose();
-    static void setShouldClose(bool flag);
-    static void swapBuffers();
-    static void setFramerate(int interval);
-    static void toggleFullscreen();
-    static bool isFullscreen();
-    static bool isMaximized();
-    static bool isFocused();
-    static bool isIconified();
+    virtual ~Window() = default;
+    virtual void swapBuffers() = 0;
 
-    static void pushScissor(glm::vec4 area);
-    static void popScissor();
-    static void resetScissor();
+    virtual bool isMaximized() const = 0;
+    virtual bool isFocused() const = 0;
+    virtual bool isIconified() const = 0;
 
-    static void setCursor(CursorShape shape);
+    virtual bool isShouldClose() const = 0;
+    virtual void setShouldClose(bool flag) = 0;
 
-    static void clear();
-    static void clearDepth();
-    static void setBgColor(glm::vec3 color);
-    static void setBgColor(glm::vec4 color);
-    static double time();
-    static const char* getClipboardText();
-    static void setClipboardText(const char* text);
-    static DisplaySettings* getSettings();
-    static void setIcon(const ImageData* image);
+    virtual void setCursor(CursorShape shape) = 0;
+    virtual void toggleFullscreen() = 0;
+    virtual bool isFullscreen() const = 0;
 
-    static glm::vec2 size() {
-        return glm::vec2(width, height);
+    virtual void setIcon(const ImageData* image) = 0;
+
+    virtual void pushScissor(glm::vec4 area) = 0;
+    virtual void popScissor() = 0;
+    virtual void resetScissor() = 0;
+
+    virtual double time() = 0;
+
+    virtual void setFramerate(int framerate) = 0;
+
+    // todo: move somewhere
+    virtual std::unique_ptr<ImageData> takeScreenshot() = 0;
+
+    const glm::ivec2& getSize() const {
+        return size;
     }
 
-    static std::unique_ptr<ImageData> takeScreenshot();
+    static std::tuple<
+        std::unique_ptr<Window>,
+        std::unique_ptr<Input>
+    > initialize(DisplaySettings* settings, std::string title);
+protected:
+    glm::ivec2 size;
+};
+
+namespace display {
+    void clear();
+    void clearDepth();
+    void setBgColor(glm::vec3 color);
+    void setBgColor(glm::vec4 color);
 };

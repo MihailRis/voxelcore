@@ -115,4 +115,29 @@ namespace util {
     std::string format_data_size(size_t size);
 
     std::pair<std::string, std::string> split_at(std::string_view view, char c);
+
+    template <typename CharT>
+    std::vector<std::basic_string<CharT>> split_by_n(
+        const std::basic_string<CharT>& str, size_t n
+    ) {
+        std::vector<std::basic_string<CharT>> result;
+        for (size_t i = 0; i < str.length(); i += n) {
+            result.push_back(str.substr(i, n));
+        }
+        return result;
+    }
+
+    template <typename CharT>
+    std::basic_string<CharT> join(
+        const std::vector<std::basic_string<CharT>>& strings, CharT delimiter
+    ) {
+        std::basic_stringstream<CharT> ss;
+        for (size_t i = 0; i < strings.size(); ++i) {
+            ss << strings[i];
+            if (i != strings.size() - 1) {
+                ss << delimiter;
+            }
+        }
+        return ss.str();
+    }
 }

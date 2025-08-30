@@ -31,10 +31,13 @@ namespace {
 }
 
 template<typename CharT>
-void BasicParser<CharT>::skipWhitespace() {
+void BasicParser<CharT>::skipWhitespaceBasic(bool newline) {
     while (hasNext()) {
-        char next = source[pos];
+        CharT next = source[pos];
         if (next == '\n') {
+            if (!newline) {
+                break;
+            }
             line++;
             linestart = ++pos;
             continue;
@@ -43,6 +46,67 @@ void BasicParser<CharT>::skipWhitespace() {
             pos++;
         } else {
             break;
+        }
+    }
+}
+
+template<typename CharT>
+void BasicParser<CharT>::skipWhitespace(bool newline) {
+    if (hashComment) {
+        skipWhitespaceHashComment(newline);
+        return;
+    } else if (clikeComment) {
+        skipWhitespaceCLikeComment(newline);
+        return;
+    }
+    skipWhitespaceBasic(newline);
+}
+
+template<typename CharT>
+void BasicParser<CharT>::skipWhitespaceHashComment(bool newline) {
+    skipWhitespaceBasic(newline);
+    if (hasNext() && source[pos] == '#') {
+        if (!newline) {
+            readUntilEOL();
+            return;
+        }
+        skipLine();
+        if (hasNext() && (is_whitespace(source[pos]) || source[pos] == '#')) {
+            skipWhitespaceHashComment(newline);
+        }
+    }
+}
+
+template<typename CharT>
+void BasicParser<CharT>::skipWhitespaceCLikeComment(bool newline) {
+    skipWhitespaceBasic(newline);
+    if (hasNext() && source[pos] == '/' && pos + 1 < source.length()) {
+        pos++;
+        switch (source[pos]) {
+            case '*':
+                pos++;
+                while (hasNext()) {
+                    if (source[pos] == '/' && source[pos-1] == '*') {
+                        pos++;
+                        skipWhitespace();
+                        return;
+                    }
+                    pos++;
+                }
+                break;
+            case '/':
+                if (!newline) {
+                    readUntilEOL();
+                    return;
+                }
+                skipLine();
+                if (hasNext() && (is_whitespace(source[pos]) || source[pos] == '/')) {
+                    skipWhitespaceCLikeComment(newline);
+                }
+                break;
+            default:
+                pos--;
+                break;
         }
     }
 }
@@ -74,6 +138,12 @@ void BasicParser<CharT>::skipLine() {
 }
 
 template<typename CharT>
+void BasicParser<CharT>::skipEmptyLines() {
+    skipWhitespace();
+    pos = linestart;
+}
+
+template<typename CharT>
 bool BasicParser<CharT>::skipTo(const std::basic_string<CharT>& substring) {
     size_t idx = source.find(substring, pos);
     if (idx == std::string::npos) {
@@ -97,6 +167,9 @@ size_t BasicParser<CharT>::remain() const {
 
 template<typename CharT>
 bool BasicParser<CharT>::isNext(const std::basic_string<CharT>& substring) {
+    if (substring.empty()) {
+        return false;
+    }
     if (source.length() - pos < substring.length()) {
         return false;
     }
@@ -240,8 +313,11 @@ std::basic_string_view<CharT> BasicParser<CharT>::readUntilWhitespace() {
 template <typename CharT>
 std::basic_string_view<CharT> BasicParser<CharT>::readUntilEOL() {
     int start = pos;
-    while (hasNext() && source[pos] != '\r' && source[pos] != '\n') {
+    while (hasNext() && source[pos] != '\n') {
         pos++;
+    }
+    if (pos > start && source[pos - 1] == '\r') {
+        return source.substr(start, pos - start - 1);
     }
     return source.substr(start, pos - start);
 }
@@ -359,19 +435,21 @@ dv::value BasicParser<CharT>::parseNumber(int sign) {
                 static_cast<int64_t>(std::log10(afterdot) + 1)
             )
         );
-        c = source[pos];
 
         double dvalue = (value + (afterdot / (double)expo));
-        if (c == 'e' || c == 'E') {
-            pos++;
-            int s = 1;
-            if (peek() == '-') {
-                s = -1;
+        if (hasNext()){
+            c = source[pos];
+            if (c == 'e' || c == 'E') {
                 pos++;
-            } else if (peek() == '+') {
-                pos++;
+                int s = 1;
+                if (peek() == '-') {
+                    s = -1;
+                    pos++;
+                } else if (peek() == '+') {
+                    pos++;
+                }
+                return sign * dvalue * power(10.0, s * parseSimpleInt(10));
             }
-            return sign * dvalue * power(10.0, s * parseSimpleInt(10));
         }
         return sign * dvalue;
     }

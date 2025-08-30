@@ -4,19 +4,12 @@
 #include "gl_util.hpp"
 #include "maths/UVRegion.hpp"
 
-#include <GL/glew.h>
-
 #include <cmath>
 
-inline constexpr uint B2D_VERTEX_SIZE = 8;
 
 Batch2D::Batch2D(size_t capacity) : capacity(capacity), color(1.0f){
-    const VertexAttribute attrs[] = {
-        {2}, {2}, {4}, {0}
-    };
-
-    buffer = std::make_unique<float[]>(capacity * B2D_VERTEX_SIZE);
-    mesh = std::make_unique<Mesh>(buffer.get(), 0, attrs);
+    buffer = std::make_unique<Batch2DVertex[]>(capacity );
+    mesh = std::make_unique<Mesh<Batch2DVertex>>(buffer.get(), 0);
     index = 0;
 
     const ubyte pixels[] = {
@@ -51,41 +44,33 @@ void Batch2D::vertex(
     float u, float v,
     float r, float g, float b, float a
 ) {
-    buffer[index++] = x;
-    buffer[index++] = y;
-    buffer[index++] = u * region.getWidth() + region.u1;
-    buffer[index++] = v * region.getHeight() + region.v1;
-    buffer[index++] = r;
-    buffer[index++] = g;
-    buffer[index++] = b;
-    buffer[index++] = a;
+    buffer[index].position = {x, y};
+    buffer[index].uv = {u * region.getWidth() + region.u1, v * region.getHeight() + region.v1};
+    buffer[index].color = {r, g, b, a};
+    index++;
 }
 void Batch2D::vertex(
     glm::vec2 point,
     glm::vec2 uvpoint,
     float r, float g, float b, float a
 ) {
-    buffer[index++] = point.x;
-    buffer[index++] = point.y;
-    buffer[index++] = uvpoint.x * region.getWidth() + region.u1;
-    buffer[index++] = uvpoint.y * region.getHeight() + region.v1;
-    buffer[index++] = r;
-    buffer[index++] = g;
-    buffer[index++] = b;
-    buffer[index++] = a;
+    buffer[index].position = point;
+    buffer[index].uv = {uvpoint.x * region.getWidth() + region.u1, uvpoint.y * region.getHeight() + region.v1};
+    buffer[index].color = {r, g, b, a};
+    index++;
 }
 
-void Batch2D::texture(const Texture* new_texture){
-    if (currentTexture == new_texture) {
+void Batch2D::texture(const Texture* newTexture){
+    if (currentTexture == newTexture) {
         return;
     }
     flush();
-    currentTexture = new_texture;
-    if (new_texture == nullptr) {
+    currentTexture = newTexture;
+    if (newTexture == nullptr) {
         blank->bind();
         region = blank->getUVRegion();
     } else {
-        new_texture->bind();
+        newTexture->bind();
         region = currentTexture->getUVRegion();
     }
 }
@@ -99,14 +84,14 @@ void Batch2D::setRegion(UVRegion region) {
 }
 
 void Batch2D::point(float x, float y, float r, float g, float b, float a){
-    if (index + 6*B2D_VERTEX_SIZE >= capacity)
+    if (index + 6 >= capacity)
         flush();
     setPrimitive(DrawPrimitive::point);
     vertex(x, y, 0, 0, r,g,b,a);
 }
 
 void Batch2D::line(float x1, float y1, float x2, float y2, float r, float g, float b, float a){
-    if (index + 6*B2D_VERTEX_SIZE >= capacity) {
+    if (index + 6 >= capacity) {
         flush();
     }
     setPrimitive(DrawPrimitive::line);
@@ -119,7 +104,7 @@ void Batch2D::rect(float x, float y, float w, float h){
     const float g = color.g;
     const float b = color.b;
     const float a = color.a;
-    if (index + 6*B2D_VERTEX_SIZE >= capacity) {
+    if (index + 6 >= capacity) {
         flush();
     }
     setPrimitive(DrawPrimitive::triangle);
@@ -142,7 +127,7 @@ void Batch2D::rect(
     bool flippedY,
     glm::vec4 tint
 ) {
-    if (index + 6 * B2D_VERTEX_SIZE >= capacity) {
+    if (index + 6  >= capacity) {
         flush();
     }
     setPrimitive(DrawPrimitive::triangle);
@@ -230,14 +215,14 @@ void Batch2D::rect(
 }
 
 void Batch2D::lineRect(float x, float y, float w, float h) {
-    if (index + 8 * B2D_VERTEX_SIZE >= capacity) {
+    if (index + 8  >= capacity) {
         flush();
     }
     setPrimitive(DrawPrimitive::line);
 
     vertex(x, y, 0.0f, 0.0f, color.r, color.g, color.b, color.a);
     vertex(x, y+h, 0.0f, 1.0f, color.r, color.g, color.b, color.a);
-    
+
     vertex(x, y+h, 0.0f, 1.0f, color.r, color.g, color.b, color.a);
     vertex(x+w, y+h, 1.0f, 1.0f, color.r, color.g, color.b, color.a);
 
@@ -253,7 +238,7 @@ void Batch2D::rect(
     float u, float v, float tx, float ty,
     float r, float g, float b, float a
 ){
-    if (index + 6*B2D_VERTEX_SIZE >= capacity) {
+    if (index + 6 >= capacity) {
         flush();
     }
     setPrimitive(DrawPrimitive::triangle);
@@ -271,7 +256,7 @@ void Batch2D::parallelogram(
     float u, float v, float tx, float ty,
     float r, float g, float b, float a
 ){
-    if (index + 6*B2D_VERTEX_SIZE >= capacity) {
+    if (index + 6 >= capacity) {
         flush();
     }
     setPrimitive(DrawPrimitive::triangle);
@@ -292,7 +277,7 @@ void Batch2D::rect(
     float r3, float g3, float b3,
     float r4, float g4, float b4, int sh
 ){
-    if (index + 30*B2D_VERTEX_SIZE >= capacity) {
+    if (index + 30 >= capacity) {
         flush();
     }
     setPrimitive(DrawPrimitive::triangle);
@@ -348,6 +333,15 @@ void Batch2D::rect(
     vertex(v1, glm::vec2(0, 0), r2,g2,b2,1.0f);
 }
 
+void Batch2D::triangle(float x1, float y1, float x2, float y2, float x3, float y3) {
+    if (index + 3 >= capacity) {
+        flush();
+    }
+    vertex({x1, y1}, {x1, y1}, color.r, color.g, color.b, color.a);
+    vertex({x2, y2}, {x2, y2}, color.r, color.g, color.b, color.a);
+    vertex({x3, y3}, {x3, y3}, color.r, color.g, color.b, color.a);
+}
+
 void Batch2D::sprite(float x, float y, float w, float h, const UVRegion& region, glm::vec4 tint){
     rect(x, y, w, h, region.u1, region.v1, region.u2-region.u1, region.v2-region.v1, tint.r, tint.g, tint.b, tint.a);
 }
@@ -378,7 +372,7 @@ void Batch2D::sprite(
 void Batch2D::flush() {
     if (index == 0)
         return;
-    mesh->reload(buffer.get(), index / B2D_VERTEX_SIZE);
+    mesh->reload(buffer.get(), index);
     mesh->draw(gl::to_glenum(primitive));
     index = 0;
 }

@@ -1,11 +1,26 @@
-local _ffi = ffi
-ffi = nil
-
 -- Lua has no parallelizm, also _set_data does not call any lua functions so
 -- may be reused one global ffi buffer per lua_State
 local canvas_ffi_buffer
 local canvas_ffi_buffer_size = 0
 
+local ipairs_mt_supported = false
+for i, _ in ipairs(setmetatable({l={1}}, {
+    __ipairs=function(self) return ipairs(self.l) end})) do
+    ipairs_mt_supported = true
+end
+
+if not ipairs_mt_supported then
+    local raw_ipairs = ipairs
+    ipairs = function(t)
+        local metatable = getmetatable(t)
+        if metatable and metatable.__ipairs then
+            return metatable.__ipairs(t)
+        end
+        return raw_ipairs(t)
+    end
+end
+
+local _ffi = ffi
 function __vc_Canvas_set_data(self, data)
     if type(data) == "cdata" then
         self:_set_data(tostring(_ffi.cast("uintptr_t", data)))
@@ -446,10 +461,12 @@ function file.readlines(path)
     return lines
 end
 
+local _debug_getinfo = debug.getinfo
+
 function debug.count_frames()
     local frames = 1
     while true do
-        local info = debug.getinfo(frames)
+        local info = _debug_getinfo(frames)
         if info then
             frames = frames + 1
         else
@@ -462,7 +479,7 @@ function debug.get_traceback(start)
     local frames = {}
     local n = 2 + (start or 0)
     while true do
-        local info = debug.getinfo(n)
+        local info = _debug_getinfo(n)
         if info then
             table.insert(frames, info)
         else
@@ -552,7 +569,7 @@ end
 
 function require(path)
     if not string.find(path, ':') then
-        local prefix, _ = parse_path(debug.getinfo(2).source)
+        local prefix, _ = parse_path(_debug_getinfo(2).source)
         return require(prefix..':'..path)
     end
     local prefix, file = parse_path(path)
@@ -625,3 +642,6 @@ function file.join(a, b)
     end
     return a .. "/" .. b
 end
+
+bit.compile = require "core:bitwise/compiler"
+bit.execute = require "core:bitwise/executor"

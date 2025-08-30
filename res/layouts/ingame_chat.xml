@@ -1,5 +1,5 @@
 <panel size="300,0" margin="0,0,0,70" max-length='300' min-length='0'
-       size-func="gui.get_viewport()[1]/2,-1"
+       size-func="gui.get_viewport()[1]/2,0"
        padding="0"
        min-size="0"
        color="0"

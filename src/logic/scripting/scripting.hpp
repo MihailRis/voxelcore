@@ -2,7 +2,6 @@
 
 #include <glm/glm.hpp>
 #include <memory>
-#include <string>
 #include <vector>
 
 #include "io/fwd.hpp"
@@ -15,6 +14,7 @@ class Engine;
 class Content;
 struct ContentPack;
 class ContentIndices;
+class ContentControl;
 class Level;
 class Block;
 class Chunk;
@@ -39,6 +39,7 @@ namespace scripting {
     extern Engine* engine;
     extern const Content* content;
     extern const ContentIndices* indices;
+    extern ContentControl* content_control;
     extern Level* level;
     extern BlocksController* blocks;
     extern LevelController* controller;
@@ -48,6 +49,7 @@ namespace scripting {
     void initialize(Engine* engine);
 
     void on_content_load(Content* content);
+    void on_content_reset();
 
     bool register_event(
         int env, const std::string& name, const std::string& id
@@ -56,6 +58,7 @@ namespace scripting {
 
     scriptenv get_root_environment();
     scriptenv create_pack_environment(const ContentPack& pack);
+    scriptenv create_environment(const scriptenv& parent);
     scriptenv create_doc_environment(
         const scriptenv& parent, const std::string& name
     );

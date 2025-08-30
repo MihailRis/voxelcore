@@ -1,11 +1,12 @@
 #include <memory>
 #include <vector>
+#include <sstream>
 
 #include "api_lua.hpp"
-#include "coders/png.hpp"
 #include "constants.hpp"
+#include "assets/Assets.hpp"
 #include "content/Content.hpp"
-#include "debug/Logger.hpp"
+#include "content/ContentControl.hpp"
 #include "engine/Engine.hpp"
 #include "io/engine_paths.hpp"
 #include "io/io.hpp"
@@ -17,8 +18,6 @@
 #include "logic/LevelController.hpp"
 #include "util/listutil.hpp"
 #include "util/platform.hpp"
-#include "window/Events.hpp"
-#include "window/Window.hpp"
 #include "world/Level.hpp"
 #include "world/generator/WorldGenerator.hpp"
 
@@ -31,7 +30,7 @@ static int l_get_version(lua::State* L) {
 }
 
 static int l_load_content(lua::State* L) {
-    engine->loadContent();
+    content_control->loadContent();
     return 0;
 }
 
@@ -39,7 +38,7 @@ static int l_reset_content(lua::State* L) {
     if (level != nullptr) {
         throw std::runtime_error("world must be closed before");
     }
-    engine->resetContent();
+    content_control->resetContent();
     return 0;
 }
 
@@ -225,39 +224,6 @@ static int l_get_setting_info(lua::State* L) {
     throw std::runtime_error("unsupported setting type");
 }
 
-static void load_texture(
-    const ubyte* bytes, size_t size, const std::string& destname
-) {
-    try {
-        engine->getAssets()->store(png::load_texture(bytes, size), destname);
-    } catch (const std::runtime_error& err) {
-        debug::Logger logger("lua.corelib");
-        logger.error() << err.what();
-    }
-}
-
-static int l_load_texture(lua::State* L) {
-    if (lua::istable(L, 1)) {
-        lua::pushvalue(L, 1);
-        size_t size = lua::objlen(L, 1);
-        util::Buffer<ubyte> buffer(size);
-        for (size_t i = 0; i < size; i++) {
-            lua::rawgeti(L, i + 1);
-            buffer[i] = lua::tointeger(L, -1);
-            lua::pop(L);
-        }
-        lua::pop(L);
-        load_texture(buffer.data(), buffer.size(), lua::require_string(L, 2));
-    } else if (auto bytes = lua::touserdata<lua::LuaBytearray>(L, 1)) {
-        load_texture(
-            bytes->data().data(),
-            bytes->data().size(),
-            lua::require_string(L, 2)
-        );
-    }
-    return 0;
-}
-
 static int l_open_folder(lua::State* L) {
     platform::open_folder(io::resolve(lua::require_string(L, 1)));
     return 0;
@@ -320,6 +286,5 @@ const luaL_Reg corelib[] = {
     {"open_folder", lua::wrap<l_open_folder>},
     {"quit", lua::wrap<l_quit>},
     {"capture_output", lua::wrap<l_capture_output>},
-    {"__load_texture", lua::wrap<l_load_texture>},
     {NULL, NULL}
 };

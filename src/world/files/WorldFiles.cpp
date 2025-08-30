@@ -1,3 +1,4 @@
+#define VC_ENABLE_REFLECTION
 #include "WorldFiles.hpp"
 
 #include <cassert>
@@ -182,8 +183,9 @@ bool WorldFiles::readResourcesData(const Content& content) {
     }
     auto root = io::read_json(file);
     for (const auto& [key, arr] : root.asObject()) {
-        if (auto resType = ResourceType_from(key)) {
-            read_resources_data(content, arr, *resType);
+        ResourceType type;
+        if (ResourceTypeMeta.getItem(key, type)) {
+            read_resources_data(content, arr, type);
         } else {
             logger.warning() << "unknown resource type: " << key;
         }

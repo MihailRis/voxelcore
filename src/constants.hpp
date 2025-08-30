@@ -6,7 +6,7 @@
 #include <string>
 
 inline constexpr int ENGINE_VERSION_MAJOR = 0;
-inline constexpr int ENGINE_VERSION_MINOR = 27;
+inline constexpr int ENGINE_VERSION_MINOR = 28;
 
 #ifdef NDEBUG
 inline constexpr bool ENGINE_DEBUG_BUILD = false;
@@ -14,7 +14,7 @@ inline constexpr bool ENGINE_DEBUG_BUILD = false;
 inline constexpr bool ENGINE_DEBUG_BUILD = true;
 #endif // NDEBUG
 
-inline const std::string ENGINE_VERSION_STRING = "0.27";
+inline const std::string ENGINE_VERSION_STRING = "0.28";
 
 /// @brief world regions format version
 inline constexpr uint REGION_FORMAT_VERSION = 3;
@@ -68,5 +68,6 @@ inline const std::string LAYOUTS_FOLDER = "layouts";
 inline const std::string SOUNDS_FOLDER = "sounds";
 inline const std::string MODELS_FOLDER = "models";
 inline const std::string SKELETONS_FOLDER = "skeletons";
+inline const std::string POST_EFFECTS_FOLDER = "shaders/effects";
 
 inline const std::string FONT_DEFAULT = "normal";

@@ -7,7 +7,7 @@
 
 PacksManager::PacksManager() = default;
 
-void PacksManager::setSources(std::vector<std::pair<std::string, io::path>> sources) {
+void PacksManager::setSources(std::vector<io::path> sources) {
     this->sources = std::move(sources);
 }
 
@@ -15,8 +15,8 @@ void PacksManager::scan() {
     packs.clear();
 
     std::vector<ContentPack> packsList;
-    for (auto& [path, folder] : sources) {
-        ContentPack::scanFolder(path, folder, packsList);
+    for (auto& folder : sources) {
+        ContentPack::scanFolder(folder, packsList);
         for (auto& pack : packsList) {
             packs.try_emplace(pack.id, pack);
         }

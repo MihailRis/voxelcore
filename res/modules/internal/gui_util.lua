@@ -60,6 +60,17 @@ function Element.new(docname, name)
         end,
         __newindex=function(self, k, v)
             gui.setattr(self.docname, self.name, k, v)
+        end,
+        __ipairs=function(self)
+            local i = 0
+            return function()
+                i = i + 1
+                local elem = gui.getattr(self.docname, self.name, i)
+                if elem == nil then
+                    return
+                end
+                return i, elem
+            end
         end
     })
 end
@@ -102,6 +113,7 @@ end
 setmetatable(RadioGroup, RadioGroup)
 
 gui_util.Document = Document
+gui_util.Element = Element
 gui_util.RadioGroup = RadioGroup
 
 return gui_util

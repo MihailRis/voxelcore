@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <climits>
 
+#include "data/dv.hpp"
+
 using namespace data;
 
 TEST(StructLayout, ReadWrite) {

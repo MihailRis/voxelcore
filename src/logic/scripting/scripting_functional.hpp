@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <string>
 
-#include "data/dv.hpp"
+#include "data/dv_fwd.hpp"
 #include "delegates.hpp"
 #include "typedefs.hpp"
 
@@ -18,6 +18,12 @@ namespace scripting {
     );
 
     key_handler create_key_handler(
+        const scriptenv& env,
+        const std::string& src,
+        const std::string& file = "[string]"
+    );
+
+    stringconsumer create_string_consumer(
         const scriptenv& env,
         const std::string& src,
         const std::string& file = "[string]"

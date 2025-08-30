@@ -8,15 +8,20 @@
 
 using namespace lua;
 
-LuaVoxelFragment::LuaVoxelFragment(std::shared_ptr<VoxelFragment> fragment)
-    : fragment(std::move(fragment)) {}
+LuaVoxelFragment::LuaVoxelFragment(
+    std::array<std::shared_ptr<VoxelFragment>, 4> fragmentVariants
+)
+    : fragmentVariants(std::move(fragmentVariants)) {
+}
 
 LuaVoxelFragment::~LuaVoxelFragment() {
 }
 
 static int l_crop(lua::State* L) {
     if (auto fragment = touserdata<LuaVoxelFragment>(L, 1)) {
-        fragment->getFragment()->crop();
+        for (size_t i = 0; i < 4; i++) {
+            fragment->getFragment(i)->crop();
+        }
     }
     return 0;
 }
@@ -24,9 +29,9 @@ static int l_crop(lua::State* L) {
 static int l_place(lua::State* L) {
     if (auto fragment = touserdata<LuaVoxelFragment>(L, 1)) {
         auto offset = tovec3(L, 2);
-        int rotation = tointeger(L, 3) & 0b11;
-        fragment->getFragment()->place(
-            *scripting::level->chunks, offset, rotation 
+        int rotation = tointeger(L, 3);
+        fragment->getFragment(rotation)->place(
+            *scripting::level->chunks, offset 
         );
     }
     return 0;
@@ -50,7 +55,7 @@ static int l_meta_index(lua::State* L) {
     if (isstring(L, 2)) {
         auto fieldname = tostring(L, 2);
         if (!std::strcmp(fieldname, "size")) {
-            return pushivec(L, fragment->getFragment()->getSize());
+            return pushivec(L, fragment->getFragment(0)->getSize());
         } else {
             auto found = methods.find(tostring(L, 2));
             if (found != methods.end()) {

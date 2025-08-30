@@ -1,6 +1,6 @@
 # Documentation
 
-Documentation for release 0.27.
+Documentation for release 0.28.
 
 ## Sections
 
@@ -11,6 +11,7 @@ Documentation for release 0.27.
 - [Console](console.md)
 - [Content-packs](content-packs.md)
 - [Engine usage recommendations](engine-use-recommendations.md)
+- [Entity properties](entity-properties.md)
 - [Item properties](item-properties.md)
 - [Particles](particles.md)
 - [Resources (resources.json)](resources.md)

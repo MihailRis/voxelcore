@@ -96,6 +96,7 @@ int platform::get_process_id() {
 
 void platform::open_folder(const std::filesystem::path& folder) {
     if (!std::filesystem::is_directory(folder)) {
+        logger.warning() << folder << " is not a directory or does not exist";
         return;
     }
 #ifdef __APPLE__

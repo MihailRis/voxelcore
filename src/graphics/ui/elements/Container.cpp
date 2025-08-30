@@ -8,7 +8,7 @@
 
 using namespace gui;
 
-Container::Container(glm::vec2 size) : UINode(size) {
+Container::Container(GUI& gui, glm::vec2 size) : UINode(gui, size) {
     actualLength = size.y;
     setColor(glm::vec4());
 }
@@ -41,8 +41,8 @@ std::shared_ptr<UINode> Container::getAt(const glm::vec2& pos) {
     return UINode::getAt(pos);
 }
 
-void Container::mouseMove(GUI* gui, int x, int y) {
-    UINode::mouseMove(gui, x, y);
+void Container::mouseMove(int x, int y) {
+    UINode::mouseMove(x, y);
     if (!scrollable) {
         return;
     }
@@ -65,12 +65,13 @@ void Container::mouseMove(GUI* gui, int x, int y) {
     prevScrollY = y;
 }
 
-void Container::mouseRelease(GUI* gui, int x, int y) {
-    UINode::mouseRelease(gui, x, y);
+void Container::mouseRelease(int x, int y) {
+    UINode::mouseRelease(x, y);
     prevScrollY = -1;
 }
 
 void Container::act(float delta) {
+    UINode::act(delta);
     for (const auto& node : nodes) {
         if (node->isVisible()) {
             node->act(delta);
@@ -162,7 +163,13 @@ void Container::add(const std::shared_ptr<UINode>& node) {
     nodes.push_back(node);
     node->setParent(this);
     node->reposition();
-    refresh();
+    mustRefresh = true;
+
+    auto parent = getParent();
+    while (parent) {
+        parent->setMustRefresh();
+        parent = parent->getParent();
+    }
 }
 
 void Container::add(const std::shared_ptr<UINode>& node, glm::vec2 pos) {
@@ -202,7 +209,6 @@ void Container::listenInterval(float interval, ontimeout callback, int repeat) {
 
 void Container::setSize(glm::vec2 size) {
     if (size == getSize()) {
-        refresh();
         return;
     }
     UINode::setSize(size);

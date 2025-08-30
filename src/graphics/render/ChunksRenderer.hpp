@@ -1,6 +1,5 @@
 #pragma once
 
-#include <queue>
 #include <memory>
 #include <vector>
 #include <unordered_map>
@@ -9,12 +8,10 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
 
-#include "voxels/Block.hpp"
 #include "util/ThreadPool.hpp"
-#include "graphics/core/MeshData.hpp"
 #include "commons.hpp"
 
-class Mesh;
+template<typename VertexStructure> class Mesh;
 class Chunk;
 class Level;
 class Camera;
@@ -52,8 +49,8 @@ class ChunksRenderer {
     std::unordered_map<glm::ivec2, bool> inwork;
     std::vector<ChunksSortEntry> indices;
     util::ThreadPool<std::shared_ptr<Chunk>, RendererResult> threadPool;
-    const Mesh* retrieveChunk(
-        size_t index, const Camera& camera, Shader& shader, bool culling
+    const Mesh<ChunkVertex>* retrieveChunk(
+        size_t index, const Camera& camera, bool culling
     );
 public:
     ChunksRenderer(
@@ -66,15 +63,20 @@ public:
     );
     virtual ~ChunksRenderer();
 
-    const Mesh* render(
+    const Mesh<ChunkVertex>* render(
         const std::shared_ptr<Chunk>& chunk, bool important
     );
     void unload(const Chunk* chunk);
     void clear();
 
-    const Mesh* getOrRender(
+    const Mesh<ChunkVertex>* getOrRender(
         const std::shared_ptr<Chunk>& chunk, bool important
     );
+
+    void drawChunksShadowsPass(
+        const Camera& camera, Shader& shader, const Camera& playerCamera
+    );
+
     void drawChunks(const Camera& camera, Shader& shader);
 
     void drawSortedMeshes(const Camera& camera, Shader& shader);

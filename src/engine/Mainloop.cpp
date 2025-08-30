@@ -16,6 +16,7 @@ Mainloop::Mainloop(Engine& engine) : engine(engine) {
 
 void Mainloop::run() {
     auto& time = engine.getTime();
+    auto& window = engine.getWindow();
 
     engine.setLevelConsumer([this](auto level, int64_t localPlayer) {
         if (level == nullptr) {
@@ -24,9 +25,11 @@ void Mainloop::run() {
             // create and go to menu screen
             engine.setScreen(std::make_shared<MenuScreen>(engine));
         } else {
-            engine.setScreen(std::make_shared<LevelScreen>(
-                engine, std::move(level), localPlayer
-            ));
+            engine.setScreen(
+                std::make_shared<LevelScreen>(
+                    engine, std::move(level), localPlayer
+                )
+            );
         }
     });
 
@@ -34,13 +37,13 @@ void Mainloop::run() {
     engine.setScreen(std::make_shared<MenuScreen>(engine));
 
     logger.info() << "main loop started";
-    while (!Window::isShouldClose()) {
+    while (!window.isShouldClose()) {
         VOXELENGINE_PROFILE;
         VOXELENGINE_PROFILE_GPU("Mainloop::run");
 
-        time.update(Window::time());
+        time.update(window.time());
         engine.updateFrontend();
-        if (!Window::isIconified()) {
+        if (!window.isIconified()) {
             engine.renderFrame();
         }
         engine.postUpdate();

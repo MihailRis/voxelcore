@@ -32,11 +32,11 @@ jobs:
           # install EnTT
           git clone https://github.com/skypjack/entt.git
           cd entt/build
-          cmake -DCMAKE_BUILD_TYPE=Release -DENTT_INSTALL=on ..
+          cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DENTT_INSTALL=on ..
           sudo make install
           cd ../..
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_APPDIR=1 -DVOXELENGINE_BUILD_TESTS=ON
+        run: cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_APPDIR=1 -DVOXELENGINE_BUILD_TESTS=ON
       - name: Build
         run: cmake --build build -t install
       - name: Run tests

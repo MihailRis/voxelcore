@@ -9,12 +9,18 @@
 #include <glm/glm.hpp>
 #include <unordered_map>
 
-class Viewport;
 class DrawContext;
 class Assets;
 class Camera;
 class Batch2D;
-class LineBatch;
+struct CursorState;
+class Engine;
+class Input;
+class Window;
+
+namespace devtools {
+    class Editor;
+}
 
 /*
  Some info about padding and margin.
@@ -56,6 +62,8 @@ namespace gui {
 
     /// @brief The main UI controller
     class GUI {
+        Engine& engine;
+        Input& input;
         std::unique_ptr<Batch2D> batch2D;
         std::shared_ptr<Container> container;
         std::shared_ptr<UINode> hover;
@@ -76,12 +84,14 @@ namespace gui {
         bool doubleClicked = false;
         bool debug = false;
 
-        void actMouse(float delta);
+        void actMouse(float delta, const CursorState& cursor);
         void actFocused();
         void updateTooltip(float delta);
         void resetTooltip();
     public:
-        GUI();
+        static constexpr int CONTEXT_MENU_ZINDEX = 999;
+
+        GUI(Engine& engine);
         ~GUI();
 
         void setPageLoader(PageLoaderFunc pageLoader);
@@ -101,7 +111,7 @@ namespace gui {
         /// @brief Main input handling and logic update method 
         /// @param delta delta time
         /// @param viewport window size
-        void act(float delta, const Viewport& viewport);
+        void act(float delta, const glm::uvec2& viewport);
 
         /// @brief Draw all visible elements on main container 
         /// @param pctx parent graphics context
@@ -152,5 +162,10 @@ namespace gui {
         float getDoubleClickDelay() const;
 
         void toggleDebug();
+        const Input& getInput() const;
+        Input& getInput();
+        Window& getWindow();
+        devtools::Editor& getEditor();
+        Engine& getEngine();
     };
 }
