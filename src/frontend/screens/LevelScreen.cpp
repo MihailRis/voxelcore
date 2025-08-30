@@ -18,6 +18,7 @@
 #include "graphics/core/TextureAnimation.hpp"
 #include "graphics/render/Decorator.hpp"
 #include "graphics/render/WorldRenderer.hpp"
+#include "graphics/ui/GUI.hpp"
 #include "graphics/ui/elements/Menu.hpp"
 #include "io/io.hpp"
 #include "logic/LevelController.hpp"

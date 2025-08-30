@@ -2,6 +2,9 @@
 
 #include <GL/glew.h>
 
+#include "engine/ProfilerGpu.hpp"
+#include "gl_util.hpp"
+
 Cubemap::Cubemap(uint width, uint height, ImageFormat imageFormat)
     : Texture(0, width, height) {
     VOXELENGINE_PROFILE_GPU("Cubemap::Cubemap");

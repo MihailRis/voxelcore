@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "Mainloop.hpp"
+#include "ServerMainloop.hpp"
 #include "assets/AssetsLoader.hpp"
 #include "audio/audio.hpp"
 #include "coders/GLSLExtension.hpp"
@@ -42,7 +43,6 @@
 #include "window/Window.hpp"
 #include "window/input.hpp"
 #include "world/Level.hpp"
-
 
 static debug::Logger logger("engine");
 

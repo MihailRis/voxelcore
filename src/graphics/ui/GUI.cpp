@@ -10,6 +10,8 @@
 #include "elements/Panel.hpp"
 #include "elements/UINode.hpp"
 #include "engine/Engine.hpp"
+#include "engine/Profiler.hpp"
+#include "engine/ProfilerGpu.hpp"
 #include "frontend/UiDocument.hpp"
 #include "frontend/locale.hpp"
 #include "graphics/core/Batch2D.hpp"
@@ -21,7 +23,6 @@
 #include "window/Camera.hpp"
 #include "window/Window.hpp"
 #include "window/input.hpp"
-
 
 using namespace gui;
 

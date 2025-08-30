@@ -8,6 +8,7 @@
 #include "content/Content.hpp"
 #include "core_defs.hpp"
 #include "engine/Engine.hpp"
+#include "engine/Profiler.hpp"
 #include "items/Inventory.hpp"
 #include "items/ItemDef.hpp"
 #include "items/ItemStack.hpp"
@@ -275,10 +276,10 @@ void PlayerController::update(float delta, const Input* inputEvents) {
 }
 
 void PlayerController::postUpdate(
-    VOXELENGINE_PROFILE;
-
     float delta, int windowHeight, const Input* input, bool pause
 ) {
+    VOXELENGINE_PROFILE;
+
     if (!pause) {
         updateFootsteps(delta);
     }
