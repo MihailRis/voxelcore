@@ -60,7 +60,6 @@ class Player : public Serializable {
 
     // attributes
     float maxInteractionDistance = 10.0f;
-    float gravityScale = 1.0f;
 
     entityid_t eid = ENTITY_AUTO;
     entityid_t selectedEid = 0;

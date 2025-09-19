@@ -21,13 +21,6 @@
 
 static debug::Logger logger("player");
 
-constexpr float CROUCH_SPEED_MUL = 0.35f;
-constexpr float RUN_SPEED_MUL = 1.5f;
-constexpr float PLAYER_GROUND_DAMPING = 10.0f;
-constexpr float PLAYER_AIR_DAMPING = 8.0f;
-constexpr float FLIGHT_SPEED_MUL = 4.0f;
-constexpr float CHEAT_SPEED_MUL = 5.0f;
-constexpr float JUMP_FORCE = 8.0f;
 constexpr int SPAWN_ATTEMPTS_PER_UPDATE = 64;
 
 Player::Player(
@@ -82,18 +75,6 @@ void Player::updateEntity() {
                           "will be respawned";
         eid = ENTITY_AUTO;
     }
-
-    auto hitbox = getHitbox();
-    if (hitbox == nullptr) {
-        return;
-    }
-    hitbox->linearDamping = PLAYER_GROUND_DAMPING;
-    hitbox->verticalDamping = flight;
-    hitbox->gravityScale = flight ? 0.0f : gravityScale;
-    if (flight || !hitbox->grounded) {
-        hitbox->linearDamping = PLAYER_AIR_DAMPING;
-    }
-    hitbox->type = noclip ? BodyType::KINEMATIC : BodyType::DYNAMIC;
 }
 
 Hitbox* Player::getHitbox() {
@@ -167,10 +148,6 @@ float Player::getSpeed() const {
     return speed;
 }
 
-void Player::setSpeed(float newSpeed) {
-    speed = newSpeed;
-}
-
 bool Player::isSuspended() const {
     return suspended;
 }
@@ -225,14 +202,6 @@ float Player::getMaxInteractionDistance() const {
 
 void Player::setMaxInteractionDistance(float distance) {
     maxInteractionDistance = std::max(1.0f, std::min(200.0f, distance));
-}
-
-float Player::getGravityScale() const {
-    return gravityScale;
-}
-
-void Player::setGravityScale(float scale) {
-    gravityScale = scale;
 }
 
 entityid_t Player::getEntity() const {
