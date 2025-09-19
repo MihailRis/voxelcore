@@ -266,10 +266,9 @@ void Engine::postUpdate() {
 void Engine::updateFrontend() {
     double delta = time.getDelta();
     updateHotkeys();
-    audio::update(delta * time_scale);
+    audio::update(delta);
     gui->act(delta, window->getSize());
-    screen->update(delta * time_scale);
-    
+    screen->update(delta);
     gui->postAct();
 }
 
@@ -438,14 +437,6 @@ SettingsHandler& Engine::getSettingsHandler() {
 
 Time& Engine::getTime() {
     return time;
-}
-
-float Engine::getTimeScale() const {
-    return time_scale;
-}
-
-void Engine::setTimeScale(float scale) {
-    time_scale = scale;
 }
 
 const CoreParameters& Engine::getCoreParameters() const {

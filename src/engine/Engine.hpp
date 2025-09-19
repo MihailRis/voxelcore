@@ -75,7 +75,6 @@ class Engine : public util::ObjectsKeeper {
     Time time;
     OnWorldOpen levelConsumer;
     bool quitSignal = false;
-    float time_scale = 1.0f;
     
     void loadControls();
     void loadSettings();
@@ -148,9 +147,6 @@ public:
     SettingsHandler& getSettingsHandler();
 
     Time& getTime();
-
-    float getTimeScale() const;
-    void setTimeScale(float scale);
 
     const CoreParameters& getCoreParameters() const;
 
