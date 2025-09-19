@@ -78,12 +78,13 @@ bool platform::openURL(const std::string& url) {
         nullptr, L"open", wurl.c_str(), nullptr, nullptr, SW_SHOWNORMAL
     );
 
-    return reinterpret_cast<int>(result) > 32;
+    return reinterpret_cast<intptr_t>(result) > 32;
 }
 
 #else // _WIN32
 
 #include <unistd.h>
+#include <sys/wait.h>
 #include "frontend/locale.hpp"
 
 void platform::configure_encoding() {
