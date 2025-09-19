@@ -200,13 +200,13 @@ const std::string& Label::getURL() const {
 
 void Label::setURL(std::string url) {
     this->url = std::move(url);
-    setInteractive(!this->url.empty());
+    setInteractive(!this->getURL().empty());
 
     listenAction([this](GUI& gui) {
         Engine& engine = gui.getEngine();
 
         std::wstring msg =
-            L"Открыть ссылку?\n" + util::str2wstr_utf8(this->url);
+            L"Открыть ссылку?\n" + util::str2wstr_utf8(this->getURL());
 
         guiutil::confirm(
             engine,
@@ -214,7 +214,7 @@ void Label::setURL(std::string url) {
             [this, &engine]() {
                 auto& gui = engine.getGUI();
                 auto menu = gui.getMenu();
-                openURL(this->url);
+                openURL(this->getURL());
                 menu->back();
             },
             [this, &engine]() {
