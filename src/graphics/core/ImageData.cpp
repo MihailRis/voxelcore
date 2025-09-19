@@ -1,5 +1,6 @@
 #include "ImageData.hpp"
 
+#include <glm/glm.hpp>
 #include <assert.h>
 #include <stdexcept>
 #include <cstring>
@@ -181,6 +182,41 @@ void ImageData::drawLine(int x1, int y1, int x2, int y2, const glm::ivec4& color
             break;
         case ImageFormat::rgba8888:
             draw_line<4>(*this, x1, y1, x2, y2, color);
+            break;
+        default:
+            break;
+    }
+}
+
+template<uint channels>
+static void draw_rect(ImageData& image, int dstX, int dstY, int width, int height, const glm::ivec4& color) {
+    ubyte* data = image.getData();
+    int imageWidth = image.getWidth();
+    int imageHeight = image.getHeight();
+
+    int x1 = glm::min(glm::max(dstX, 0), imageWidth - 1);
+    int y1 = glm::min(glm::max(dstY, 0), imageHeight - 1);
+
+    int x2 = glm::min(glm::max(dstX + width, 0), imageWidth - 1);
+    int y2 = glm::min(glm::max(dstY + height, 0), imageHeight - 1);
+
+    for (int y = y1; y <= y2; y++) {
+        for (int x = x1; x <= x2; x++) {
+            int index = (y * imageWidth + x) * channels;
+            for (int i = 0; i < channels; i++) {
+                data[index + i] = color[i];
+            }
+        }
+    }
+}
+
+void ImageData::drawRect(int x, int y, int width, int height, const glm::ivec4& color) {
+    switch (format) {
+        case ImageFormat::rgb888:
+            draw_rect<3>(*this, x, y, width, height, color);
+            break;
+        case ImageFormat::rgba8888:
+            draw_rect<4>(*this, x, y, width, height, color);
             break;
         default:
             break;

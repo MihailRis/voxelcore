@@ -13,9 +13,9 @@ end
 function refresh()
     document.list:clear()
     
-    local available = pack.get_available()
-    local infos = pack.get_info(available)
-    for _, name in ipairs(available) do
+    local allpacks = table.merge(pack.get_available(), pack.get_installed())
+    local infos = pack.get_info(allpacks)
+    for _, name in ipairs(allpacks) do
         local info = infos[name]
         local scripts_dir = info.path.."/scripts/app"
         if not file.exists(scripts_dir) then

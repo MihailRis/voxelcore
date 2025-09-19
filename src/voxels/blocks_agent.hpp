@@ -24,6 +24,21 @@ struct AABB;
 
 namespace blocks_agent {
 
+struct BlockRegisterEvent {
+    enum class Type : uint16_t {
+        REGISTER_UPDATING,
+        UNREGISTER_UPDATING,
+    };
+    Type type;
+    blockid_t id;
+    glm::ivec3 coord;
+};
+
+std::vector<BlockRegisterEvent> pull_register_events();
+
+void on_chunk_present(const ContentIndices& indices, const Chunk& chunk);
+void on_chunk_remove(const ContentIndices& indices, const Chunk& chunk);
+
 /// @brief Get specified chunk.
 /// @tparam Storage 
 /// @param chunks 
@@ -191,7 +206,7 @@ static constexpr inline uint8_t segment_to_int(int sx, int sy, int sz) {
 /// @param y origin position Y
 /// @param z origin position Z
 template <class Storage>
-inline void repair_segments(
+inline void restore_segments(
     Storage& chunks, const Block& def, blockstate state, int x, int y, int z
 ) {
     const auto& rotation = def.rotations.variants[state.rotation];

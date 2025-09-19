@@ -668,3 +668,5 @@ end
 
 bit.compile = require "core:bitwise/compiler"
 bit.execute = require "core:bitwise/executor"
+
+random.Random = require "core:internal/random_generator"

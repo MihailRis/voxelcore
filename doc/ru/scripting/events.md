@@ -47,6 +47,13 @@ function on_blocks_tick(tps: int)
 Вызывается tps (20) раз в секунду. Используйте 1/tps вместо `time.delta()`.
 
 ```lua
+function on_block_tick(x, y, z, tps: number)
+```
+
+Вызывается tps (20 / tick-interval) раз в секунду для конкретного блока.
+Используйте 1/tps вместо `time.delta()`.
+
+```lua
 function on_player_tick(playerid: int, tps: int)
 ```
 

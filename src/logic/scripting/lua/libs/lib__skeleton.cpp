@@ -91,7 +91,7 @@ static int l_set_texture(lua::State* L) {
 }
 
 static int l_index(lua::State* L) {
-    if (auto skeleton= get_skeleton(L)) {
+    if (auto skeleton = get_skeleton(L)) {
         if (auto bone = skeleton->config->find(lua::require_string(L, 2))) {
             return lua::pushinteger(L, bone->getIndex());
         }

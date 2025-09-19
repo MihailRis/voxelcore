@@ -110,6 +110,21 @@ function vec3.dot(a, b)
     return a[1] * b[1] + a[2] * b[2] + a[3] * b[3]
 end
 
+function vec3.mix(a, b, t, dest)
+    if dest then
+        dest[1] = a[1] * (1.0 - t) + b[1] * t
+        dest[2] = a[2] * (1.0 - t) + b[2] * t
+        dest[3] = a[3] * (1.0 - t) + b[3] * t
+        return dest
+    else
+        return {
+            a[1] * (1.0 - t) + b[1] * t,
+            a[2] * (1.0 - t) + b[2] * t,
+            a[3] * (1.0 - t) + b[3] * t,
+        }
+    end
+end
+
 -- =================================================== --
 -- ====================== vec2 ======================= --
 -- =================================================== --
@@ -209,4 +224,17 @@ end
 
 function vec2.dot(a, b)
     return a[1] * b[1] + a[2] * b[2]
+end
+
+function vec2.mix(a, b, t, dest)
+    if dest then
+        dest[1] = a[1] * (1.0 - t) + b[1] * t
+        dest[2] = a[2] * (1.0 - t) + b[2] * t
+        return dest
+    else
+        return {
+            a[1] * (1.0 - t) + b[1] * t,
+            a[2] * (1.0 - t) + b[2] * t,
+        }
+    end
 end

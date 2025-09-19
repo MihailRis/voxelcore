@@ -23,4 +23,5 @@ function on_menu_setup()
     menubg = gui.root.menubg
     controller.resize_menu_bg()
     menu.page = "main"
+    menu.visible = true
 end

@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <set>
 
 #include "data/dv.hpp"
 #include "maths/UVRegion.hpp"
@@ -47,6 +48,7 @@ struct BlockFuncsSet {
     bool onreplaced : 1;
     bool oninteract : 1;
     bool randupdate : 1;
+    bool onblocktick : 1;
     bool onblockstick : 1;
 };
 
@@ -261,6 +263,8 @@ public:
 
     std::unique_ptr<Variants> variants;
 
+    std::vector<std::string> tags;
+
     /// @brief Runtime indices (content indexing results)
     struct {
         /// @brief block runtime integer id
@@ -285,6 +289,8 @@ public:
         itemid_t pickingItem = 0;
 
         blockid_t surfaceReplacement = 0;
+
+        std::set<int> tags;
     } rt {};
 
     Block(const std::string& name);

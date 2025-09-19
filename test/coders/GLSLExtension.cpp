@@ -11,7 +11,7 @@ TEST(GLSLExtension, processing) {
             "float sum(float a, float b) {\n"
             "    return a + b;\n"
             "}\n",
-            true
+            true, {}
         )
     );
     try {
@@ -27,7 +27,7 @@ TEST(GLSLExtension, processing) {
             "    vec4 color = texture(u_screen, v_uv);\n"
             "    return mix(color, 1.0 - color, p_intensity);\n"
             "}\n",
-        false);
+        false, {});
         std::cout << processed.code << std::endl;
     } catch (const parsing_error& err) {
         std::cerr << err.errorLog() << std::endl;

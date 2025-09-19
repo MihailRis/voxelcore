@@ -33,4 +33,7 @@ item.emission(itemid: int) -> str
 
 -- Returns the value of the `uses` property
 item.uses(itemid: int) -> int
+
+-- Checks if an item has specified tag
+item.has_tag(itemid: int, tag: str) -> bool
 ```

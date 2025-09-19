@@ -11,6 +11,9 @@ local Schedule = {
             self._next_interval = id + 1
             return id
         end,
+        set_timeout = function(self, ms, callback)
+            self:set_interval(ms, callback, 1)
+        end,
         tick = function(self, dt)
             local timer = self._timer + dt
             for id, interval in pairs(self._intervals) do

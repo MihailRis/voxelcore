@@ -3,72 +3,123 @@
 #include "engine/Engine.hpp"
 #include "network/Network.hpp"
 
+#include <variant>
+#include <utility>
+
 using namespace scripting;
 
-static int l_get(lua::State* L, network::Network& network) {
-    std::string url(lua::require_lstring(L, 1));
+enum NetworkEventType {
+    CLIENT_CONNECTED = 1,
+    CONNECTED_TO_SERVER,
+    DATAGRAM,
+    RESPONSE,
+};
 
-    lua::pushvalue(L, 2);
-    auto onResponse = lua::create_lambda_nothrow(L);
+struct ConnectionEventDto {
+    u64id_t server;
+    u64id_t client;
+};
 
-    network::OnReject onReject = nullptr;
-    if (lua::gettop(L) >= 3) {
-        lua::pushvalue(L, 3);
-        auto callback = lua::create_lambda_nothrow(L);
-        onReject = [callback](int code) {
-            callback({code});
-        };
+struct ResponseEventDto {
+    int status;
+    bool binary;
+    int requestId;
+    std::vector<char> bytes;
+};
+
+enum NetworkDatagramSide {
+    ON_SERVER = 1,
+    ON_CLIENT
+};
+
+struct NetworkDatagramEventDto {
+    NetworkDatagramSide side;
+    u64id_t server;
+    u64id_t client;
+    std::string addr;
+    int port;
+    std::vector<char> buffer;
+};
+
+struct NetworkEvent {
+    using Payload = std::variant<
+        ConnectionEventDto,
+        ResponseEventDto,
+        NetworkDatagramEventDto
+    >;
+    NetworkEventType type;
+
+    Payload payload;
+
+    NetworkEvent(
+        NetworkEventType type,
+        Payload payload
+    ) : type(type), payload(std::move(payload)) {}
+
+    virtual ~NetworkEvent() = default;
+};
+
+static std::vector<NetworkEvent> events_queue {};
+static std::mutex events_queue_mutex;
+
+static void push_event(NetworkEvent&& event) {
+    std::lock_guard lock(events_queue_mutex);
+    events_queue.push_back(std::move(event));
+}
+
+static std::vector<std::string> read_headers(lua::State* L, int index) {
+    std::vector<std::string> headers;
+    if (lua::istable(L, index)) {
+        int len = lua::objlen(L, index);    
+        for (int i = 1; i <= len; i++) {
+            lua::rawgeti(L, i, index);
+            headers.push_back(lua::tostring(L, -1));
+            lua::pop(L);
+        }
     }
+    return headers;
+}
 
-    network.get(url, [onResponse](std::vector<char> bytes) {
-        engine->postRunnable([=]() {
-            onResponse({std::string(bytes.data(), bytes.size())});
-        });
-    }, std::move(onReject));
-    return 0;
+static int request_id = 1;
+
+static int perform_get(lua::State* L, network::Network& network, bool binary) {
+    std::string url(lua::require_lstring(L, 1));
+    auto headers = read_headers(L, 2);
+
+    int currentRequestId = request_id++;
+
+    network.get(
+        url,
+        [currentRequestId, binary](std::vector<char> bytes) {
+            push_event(NetworkEvent(
+                RESPONSE,
+                ResponseEventDto {
+                    200, binary, currentRequestId, std::move(bytes)}
+            ));
+        },
+        [currentRequestId, binary](int code, std::vector<char> bytes) {
+            push_event(NetworkEvent(
+                RESPONSE,
+                ResponseEventDto {
+                    code, binary, currentRequestId, std::move(bytes)}
+            ));
+        },
+        std::move(headers)
+    );
+    return lua::pushinteger(L, currentRequestId);
+}
+
+static int l_get(lua::State* L, network::Network& network) {
+    return perform_get(L, network, false);
 }
 
 static int l_get_binary(lua::State* L, network::Network& network) {
-    std::string url(lua::require_lstring(L, 1));
-
-    lua::pushvalue(L, 2);
-    auto onResponse = lua::create_lambda_nothrow(L);
-
-    network::OnReject onReject = nullptr;
-    if (lua::gettop(L) >= 3) {
-        lua::pushvalue(L, 3);
-        auto callback = lua::create_lambda_nothrow(L);
-        onReject = [callback](int code) {
-            callback({code});
-        };
-    }
-
-    network.get(url, [onResponse](std::vector<char> bytes) {
-        auto buffer = std::make_shared<util::Buffer<ubyte>>(
-            reinterpret_cast<const ubyte*>(bytes.data()), bytes.size()
-        );
-        engine->postRunnable([=]() {
-            onResponse({buffer});
-        });
-    }, std::move(onReject));
-    return 0;
+    return perform_get(L, network, true);
 }
 
 static int l_post(lua::State* L, network::Network& network) {
     std::string url(lua::require_lstring(L, 1));
     auto data = lua::tovalue(L, 2);
-
-    lua::pushvalue(L, 3);
-    auto onResponse = lua::create_lambda_nothrow(L);
-
-    network::OnReject onReject = nullptr;
-    if (lua::gettop(L) >= 4) {
-        lua::pushvalue(L, 4);
-        auto callback = lua::create_lambda_nothrow(L);
-        onReject = [callback](int code) {
-            callback({code});
-        };
-    }
 
     std::string string;
     if (data.isString()) {
@@ -77,15 +128,29 @@ static int l_post(lua::State* L, network::Network& network) {
         string = json::stringify(data, false);
     }
 
-    engine->getNetwork().post(url, string, [onResponse](std::vector<char> bytes) {
-        auto buffer = std::make_shared<util::Buffer<ubyte>>(
-            reinterpret_cast<const ubyte*>(bytes.data()), bytes.size()
-        );
-        engine->postRunnable([=]() {
-            onResponse({std::string(bytes.data(), bytes.size())});
-        });
-    }, std::move(onReject));
-    return 0;
+    auto headers = read_headers(L, 3);
+    int currentRequestId = request_id++;
+
+    engine->getNetwork().post(
+        url,
+        string,
+        [currentRequestId](std::vector<char> bytes) {
+            push_event(NetworkEvent(
+                RESPONSE,
+                ResponseEventDto {
+                    200, false, currentRequestId, std::move(bytes)}
+            ));
+        },
+        [currentRequestId](int code, std::vector<char> bytes) {
+            push_event(NetworkEvent(
+                RESPONSE,
+                ResponseEventDto {
+                    code, false, currentRequestId, std::move(bytes)}
+            ));
+        },
+        std::move(headers)
+    );
+    return lua::pushinteger(L, currentRequestId);
 }
 
 static int l_close(lua::State* L, network::Network& network) {
@@ -210,69 +275,14 @@ static int l_available(lua::State* L, network::Network& network) {
     return 0;
 }
 
-enum NetworkEventType {
-    CLIENT_CONNECTED = 1,
-    CONNECTED_TO_SERVER,
-    DATAGRAM
-};
-
-struct NetworkEvent {
-    NetworkEventType type;
-    u64id_t server;
-    u64id_t client;
-
-    NetworkEvent(
-        NetworkEventType type,
-        u64id_t server,
-        u64id_t client
-    ) {
-        this->type = type;
-        this->server = server;
-        this->client = client;
-    }
-
-    virtual ~NetworkEvent() = default;
-};
-
-enum NetworkDatagramSide {
-    ON_SERVER = 1,
-    ON_CLIENT
-};
-
-struct NetworkDatagramEvent : NetworkEvent {
-    NetworkDatagramSide side;
-    std::string addr;
-    int port;
-    const char* buffer;
-    size_t length;
-
-    NetworkDatagramEvent(
-        NetworkEventType datagram,
-        u64id_t sid,
-        u64id_t cid,
-        NetworkDatagramSide side,
-        const std::string& addr,
-        int port,
-        const char* data,
-        size_t length
-    ) : NetworkEvent(DATAGRAM, sid, cid) {
-        this->side = side;
-        this->addr = addr;
-        this->port = port;
-
-        buffer = data;
-
-        this->length = length;
-    }
-};
-
-static std::vector<std::unique_ptr<NetworkEvent>> events_queue {};
-
 static int l_connect_tcp(lua::State* L, network::Network& network) {
     std::string address = lua::require_string(L, 1);
     int port = lua::tointeger(L, 2);
     u64id_t id = network.connectTcp(address, port, [](u64id_t cid) {
-        events_queue.push_back(std::make_unique<NetworkEvent>(CONNECTED_TO_SERVER, 0, cid));
+        push_event(NetworkEvent(
+            CONNECTED_TO_SERVER,
+            ConnectionEventDto {0, cid}
+        ));
     });
     return lua::pushinteger(L, id);
 }
@@ -280,7 +290,10 @@ static int l_connect_tcp(lua::State* L, network::Network& network) {
 static int l_open_tcp(lua::State* L, network::Network& network) {
     int port = lua::tointeger(L, 1);
     u64id_t id = network.openTcpServer(port, [](u64id_t sid, u64id_t id) {
-        events_queue.push_back(std::make_unique<NetworkEvent>(CLIENT_CONNECTED, sid, id));
+        push_event(NetworkEvent(
+            CLIENT_CONNECTED,
+            ConnectionEventDto {sid, id}
+        ));
     });
     return lua::pushinteger(L, id);
 }
@@ -289,18 +302,22 @@ static int l_connect_udp(lua::State* L, network::Network& network) {
     std::string address = lua::require_string(L, 1);
     int port = lua::tointeger(L, 2);
     u64id_t id = network.connectUdp(address, port, [](u64id_t cid) {
-        events_queue.push_back(std::make_unique<NetworkEvent>(CONNECTED_TO_SERVER, 0, cid));
+        push_event(NetworkEvent(
+            CONNECTED_TO_SERVER,
+            ConnectionEventDto {0, cid}
+        ));
     }, [address, port](
         u64id_t cid,
         const char* buffer,
         size_t length
     ) {
-        events_queue.push_back(
-            std::make_unique<NetworkDatagramEvent>(
-                DATAGRAM, 0, cid, ON_CLIENT,
-                address, port, buffer, length
-            )
-        );
+        push_event(NetworkEvent(
+            DATAGRAM,
+            NetworkDatagramEventDto {
+                ON_CLIENT, 0, cid,
+                address, port, std::vector<char>(buffer, buffer + length)
+            }
+        ));
     });
     return lua::pushinteger(L, id);
 }
@@ -313,10 +330,13 @@ static int l_open_udp(lua::State* L, network::Network& network) {
         int port,
         const char* buffer,
         size_t length) {
-        events_queue.push_back(
-            std::make_unique<NetworkDatagramEvent>(
-                DATAGRAM, sid, 0, ON_SERVER,
-                addr, port, buffer, length
+        push_event(
+            NetworkEvent(
+                DATAGRAM,
+                NetworkDatagramEventDto {
+                    ON_SERVER, sid, 0,
+                    addr, port, std::vector<char>(buffer, buffer + length)
+                }
             )
         );
     });
@@ -383,39 +403,78 @@ static int l_get_total_download(lua::State* L, network::Network& network) {
 }
 
 static int l_pull_events(lua::State* L, network::Network& network) {
-    lua::createtable(L, events_queue.size(), 0);
+    std::vector<NetworkEvent> local_queue;
+    {
+        std::lock_guard lock(events_queue_mutex);
+        local_queue.swap(events_queue);
+    }
 
-    for (size_t i = 0; i < events_queue.size(); i++) {
-        const auto* datagramEvent = dynamic_cast<NetworkDatagramEvent*>(events_queue[i].get());
+    lua::createtable(L, local_queue.size(), 0);
 
-        lua::createtable(L, datagramEvent ? 7 : 3, 0);
+    for (size_t i = 0; i < local_queue.size(); i++) {
+        lua::createtable(L, 7, 0);
 
-        lua::pushinteger(L, events_queue[i]->type);
-        lua::rawseti(L, 1);
+        const auto& event = local_queue[i];
+        switch (event.type) {
+            case CLIENT_CONNECTED:
+            case CONNECTED_TO_SERVER: {
+                const auto& dto = std::get<ConnectionEventDto>(event.payload);
+                lua::pushinteger(L, event.type);
+                lua::rawseti(L, 1);
 
-        lua::pushinteger(L, events_queue[i]->server);
-        lua::rawseti(L, 2);
+                lua::pushinteger(L, dto.server);
+                lua::rawseti(L, 2);
 
-        lua::pushinteger(L, events_queue[i]->client);
-        lua::rawseti(L, 3);
+                lua::pushinteger(L, dto.client);
+                lua::rawseti(L, 3);
+                break;
+            }
+            case DATAGRAM: {
+                const auto& dto = std::get<NetworkDatagramEventDto>(event.payload);
+                lua::pushinteger(L, event.type);
+                lua::rawseti(L, 1);
 
-        if (datagramEvent) {
-            lua::pushstring(L, datagramEvent->addr);
-            lua::rawseti(L, 4);
+                lua::pushinteger(L, dto.server);
+                lua::rawseti(L, 2);
 
-            lua::pushinteger(L, datagramEvent->port);
-            lua::rawseti(L, 5);
+                lua::pushinteger(L, dto.client);
+                lua::rawseti(L, 3);
 
-            lua::pushinteger(L, datagramEvent->side);
-            lua::rawseti(L, 6);
+                lua::pushstring(L, dto.addr);
+                lua::rawseti(L, 4);
 
-            lua::create_bytearray(L, datagramEvent->buffer, datagramEvent->length);
-            lua::rawseti(L, 7);
+                lua::pushinteger(L, dto.port);
+                lua::rawseti(L, 5);
+
+                lua::pushinteger(L, dto.side);
+                lua::rawseti(L, 6);
+
+                lua::create_bytearray(L, dto.buffer.data(), dto.buffer.size());
+                lua::rawseti(L, 7);
+                break;
+            }
+            case RESPONSE: {
+                const auto& dto = std::get<ResponseEventDto>(event.payload);
+                lua::pushinteger(L, event.type);
+                lua::rawseti(L, 1);
+
+                lua::pushinteger(L, dto.status);
+                lua::rawseti(L, 2);
+
+                lua::pushinteger(L, dto.requestId);
+                lua::rawseti(L, 3);
+
+                if (dto.binary) {
+                    lua::create_bytearray(L, dto.bytes.data(), dto.bytes.size());
+                } else {
+                    lua::pushlstring(L, std::string_view(dto.bytes.data(), dto.bytes.size()));
+                }
+                lua::rawseti(L, 4);
+                break;
+            }
         }
-        
         lua::rawseti(L, i + 1);
     }
-    events_queue.clear();
     return 1;
 }
 
@@ -437,9 +496,9 @@ int wrap(lua_State* L) {
 }
 
 const luaL_Reg networklib[] = {
-    {"get", wrap<l_get>},
-    {"get_binary", wrap<l_get_binary>},
-    {"post", wrap<l_post>},
+    {"__get", wrap<l_get>},
+    {"__get_binary", wrap<l_get_binary>},
+    {"__post", wrap<l_post>},
     {"get_total_upload", wrap<l_get_total_upload>},
     {"get_total_download", wrap<l_get_total_download>},
     {"__pull_events", wrap<l_pull_events>},

@@ -30,6 +30,11 @@ If prefix is not specified, '!' level will be used.
 
 Example: '~randutil' - weak dependency 'randutil'.
 
+Dependency version is indicated after '@' symbol and have operators to restrict acceptable versions.
+If version is not specified, '\*' (any) version will be used.
+
+Example: 'randutil@>=1.0' - dependency 'randutil' which requires version 1.0 or newer.
+
 Example:
 ```json
 {

@@ -20,21 +20,28 @@ public:
         io::path folder,
         const std::string& message
     );
-
+    
     std::string getPackId() const;
     io::path getFolder() const;
 };
 
+enum class DependencyVersionOperator {
+    EQUAL, GREATHER, LESS,
+    GREATHER_OR_EQUAL, LESS_OR_EQUAL
+};
+
 enum class DependencyLevel {
-    required,  // dependency must be installed
-    optional,  // dependency will be installed if found
-    weak,      // only affects packs order
+    REQUIRED,  // dependency must be installed
+    OPTIONAL,  // dependency will be installed if found
+    WEAK,      // only affects packs order
 };
 
 /// @brief Content-pack that should be installed earlier the dependent
 struct DependencyPack {
     DependencyLevel level;
     std::string id;
+    std::string version;
+    std::string op;
 };
 
 struct ContentPackStats {

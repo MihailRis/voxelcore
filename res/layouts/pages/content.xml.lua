@@ -176,18 +176,105 @@ function place_pack(panel, packinfo, callback, position_func)
     end
 end
 
+local Version = {};
+
+function Version.matches_pattern(version)
+    for _, letter in string.gmatch(version, "%.+") do
+        if type(letter) ~= "number" or letter ~= "." then
+            return false;
+        end
+
+        local t = string.split(version, ".");
+
+        return #t == 2 or #t == 3;
+    end
+end
+
+function Version.__equal(ver1, ver2)
+    return ver1[1] == ver2[1] and ver1[2] == ver2[2] and ver1[3] == ver2[3];
+end
+
+function Version.__more(ver1, ver2)
+    if ver1[1] ~= ver2[1] then return ver1[1] > ver2[1] end;
+    if ver1[2] ~= ver2[2] then return ver1[2] > ver2[2] end;
+    return ver1[3] > ver2[3];
+end
+
+function Version.__less(ver1, ver2)
+    return Version.__more(ver2, ver1);
+end
+
+function Version.__more_or_equal(ver1, ver2)
+    return not Version.__less(ver1, ver2);
+end
+
+function Version.__less_or_equal(ver1, ver2)
+    return not Version.__more(ver1, ver2);
+end
+
+function Version.compare(op, ver1, ver2)
+    ver1 = string.split(ver1, ".");
+    ver2 = string.split(ver2, ".");
+
+    if op == "=" then return Version.__equal(ver1, ver2);
+    elseif op == ">" then return Version.__more(ver1, ver2);
+    elseif op == "<" then return Version.__less(ver1, ver2);
+    elseif op == ">=" then return Version.__more_or_equal(ver1, ver2);
+    elseif op == "<=" then return Version.__less_or_equal(ver1, ver2);
+    else return false; end
+end
+
+function Version.parse(version)    
+    local op = string.sub(version, 1, 2);
+    if op == ">=" or op == "=>" then
+        return ">=", string.sub(version, #op + 1);
+    elseif op == "<=" or op == "=<" then
+        return "<=", string.sub(version, #op + 1);
+    end
+
+    op = string.sub(version, 1, 1);
+    if op == ">" or op == "<" then
+        return op, string.sub(version, #op + 1);
+    end
+
+    return "=", version;
+end
+
+local function compare_version(dependent_version, actual_version)
+    if Version.matches_pattern(dependent_version) and Version.matches_pattern(actual_version) then
+        local op, dep_ver = Version.parse_version(dependent_version);
+        Version.compare(op, dep_ver, actual_version);
+    elseif dependent_version == "*" or dependent_version == actual_version then
+        return true;
+    else
+        return false;
+    end
+end
+
 function check_dependencies(packinfo)
     if packinfo.dependencies == nil then
         return
     end
     for i,dep in ipairs(packinfo.dependencies) do
-        local depid = dep:sub(2,-1)
-        if dep:sub(1,1) == '!' then 
+        local depid, depver = unpack(string.split(dep:sub(2,-1), "@"))
+
+        if dep:sub(1,1) == '!' then
             if not table.has(packs_all, depid) then
                 return string.format(
                     "%s (%s)", gui.str("error.dependency-not-found"), depid
                 )
             end
+
+            
+            local dep_pack = pack.get_info(depid);
+            
+            if not compare_version(depver, dep_pack.version) then
+                local op, ver = Version.parse(depver);
+
+                print(string.format("%s: %s !%s %s (%s)", gui.str("error.dependency-version-not-met"), dep_pack.version, op, ver, depid));
+                return string.format("%s: %s != %s (%s)", gui.str("error.dependency-version-not-met"), dep_pack.version, ver, depid);
+            end
+
             if table.has(packs_installed, packinfo.id) then
                 table.insert(required, depid)
             end

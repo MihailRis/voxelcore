@@ -6,27 +6,36 @@ local names = {
     "shadeless", "ambient-occlusion", "breakable", "selectable", "grounded",
     "hidden", "draw-group", "picking-item", "surface-replacement", "script-name",
     "ui-layout", "inventory-size", "tick-interval", "overlay-texture",
-    "translucent", "fields", "particles", "icon-type", "icon", "placing-block", 
+    "translucent", "fields", "particles", "icon-type", "icon", "placing-block",
     "stack-size", "name", "script-file", "culling"
 }
 for name, _ in pairs(user_props) do
     table.insert(names, name)
 end
--- remove undefined properties
-for id, blockprops in pairs(block.properties) do
-    for propname, value in pairs(blockprops) do
-        if not table.has(names, propname) then
-            blockprops[propname] = nil
+
+-- remove undefined properties and build tags set
+local function process_properties(properties)
+    for id, props in pairs(properties) do
+        local tags_set = nil
+        for propname, value in pairs(props) do
+            if propname == "tags" then
+                if #value > 0 then
+                    tags_set = tags_set or {}
+                end
+                for _, tag in ipairs(value) do
+                    tags_set[tag] = true
+                end
+            end
+            if not table.has(names, propname) then
+                props[propname] = nil
+            end
         end
+        props.tags_set = tags_set
     end
 end
-for id, itemprops in pairs(item.properties) do
-    for propname, value in pairs(itemprops) do
-        if not table.has(names, propname) then
-            itemprops[propname] = nil
-        end
-    end
-end
+
+process_properties(block.properties)
+process_properties(item.properties)
 
 local function make_read_only(t)
     setmetatable(t, {
@@ -56,6 +65,15 @@ local function cache_names(library)
 
     function library.index(name)
         return indices[name]
+    end
+
+    function library.has_tag(id, tag)
+        local tags_set = library.properties[id].tags_set
+        if tags_set then
+            return tags_set[tag]
+        else
+            return false
+        end
     end
 end
 

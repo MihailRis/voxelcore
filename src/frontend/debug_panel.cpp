@@ -12,12 +12,14 @@
 #include "graphics/render/WorldRenderer.hpp"
 #include "graphics/render/ParticlesRenderer.hpp"
 #include "graphics/render/ChunksRenderer.hpp"
+#include "graphics/render/DebugLinesRenderer.hpp"
 #include "logic/scripting/scripting.hpp"
 #include "network/Network.hpp"
 #include "objects/Player.hpp"
 #include "objects/Players.hpp"
 #include "objects/Entities.hpp"
 #include "objects/EntityDef.hpp"
+#include "objects/Entity.hpp"
 #include "physics/Hitbox.hpp"
 #include "util/stringutil.hpp"
 #include "voxels/Block.hpp"
@@ -42,6 +44,7 @@ static std::shared_ptr<Label> create_label(GUI& gui, wstringsupplier supplier) {
 }
 
 // TODO: move to xml
+// TODO: move to xml finally
 // TODO: move to xml finally
 // TODO: move to xml finally
 std::shared_ptr<UINode> create_debug_panel(
@@ -257,6 +260,18 @@ std::shared_ptr<UINode> create_debug_panel(
         });
         checkbox->setConsumer([=](bool checked) {
             WorldRenderer::showEntitiesDebug = checked;
+        });
+        panel->add(checkbox);
+    }
+    {
+        auto checkbox = std::make_shared<FullCheckBox>(
+            gui, L"Show Paths", glm::vec2(400, 24)
+        );
+        checkbox->setSupplier([=]() {
+            return DebugLinesRenderer::showPaths;
+        });
+        checkbox->setConsumer([=](bool checked) {
+            DebugLinesRenderer::showPaths = checked;
         });
         panel->add(checkbox);
     }

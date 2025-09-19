@@ -4,6 +4,7 @@
 
 #include "frontend/hud.hpp"
 #include "objects/Entities.hpp"
+#include "objects/Entity.hpp"
 #include "world/Level.hpp"
 #include "logic/LevelController.hpp"
 #include "api_lua.hpp"

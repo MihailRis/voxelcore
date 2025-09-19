@@ -7,6 +7,7 @@ world.convert-block-layouts=Blocks fields have changes! Convert world files?
 pack.remove-confirm=Do you want to erase all pack(s) content from the world forever?
 error.pack-not-found=Could not to find pack
 error.dependency-not-found=Dependency pack is not found
+error.dependency-version-not-met=Dependency pack version is not met.
 world.delete-confirm=Do you want to delete world forever?
 world.generators.default=Default
 world.generators.flat=Flat

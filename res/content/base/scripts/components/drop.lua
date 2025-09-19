@@ -8,6 +8,9 @@ timer = 0.3
 
 local def_index = entity:def_index()
 dropitem = ARGS
+if dropitem.item then
+    dropitem.id = item.index(dropitem.item)
+end
 if dropitem then 
     timer = dropitem.pickup_delay or timer
 end

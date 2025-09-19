@@ -79,12 +79,19 @@ local function complete_app_lib(app)
         coroutine.yield()
     end
 
-    function app.sleep_until(predicate, max_ticks)
+    function app.sleep_until(predicate, max_ticks, max_time)
         max_ticks = max_ticks or 1e9
+        max_time = max_time or 1e9
         local ticks = 0
-        while ticks < max_ticks and not predicate() do
+        local start_time = os.clock()
+        while ticks < max_ticks and
+            os.clock() - start_time < max_time
+            and not predicate() do
             app.tick()
             ticks = ticks + 1
+        end
+        if os.clock() - start_time >= max_time then
+            error("timeout")
         end
         if ticks == max_ticks then
             error("max ticks exceed")
@@ -174,6 +181,7 @@ if enable_experimental then
     require "core:internal/maths_inline"
 end
 
+asserts = require "core:internal/asserts"
 events = require "core:internal/events"
 
 function pack.unload(prefix)
@@ -429,6 +437,8 @@ function __vc_on_hud_open()
     hud.open_permanent("core:ingame_chat")
 end
 
+local Schedule = require "core:schedule"
+
 local ScheduleGroup_mt = {
     __index = {
         publish = function(self, schedule)
@@ -440,10 +450,11 @@ local ScheduleGroup_mt = {
             for id, schedule in pairs(self._schedules) do
                 schedule:tick(dt)
             end
+            self.common:tick(dt)
         end,
         remove = function(self, id)
             self._schedules[id] = nil
-        end
+        end,
     }
 }
 
@@ -451,6 +462,7 @@ local function ScheduleGroup()
     return setmetatable({
         _next_schedule = 1,
         _schedules = {},
+        common = Schedule()
     }, ScheduleGroup_mt)
 end
 
@@ -527,15 +539,18 @@ function start_coroutine(chunk, name)
     local co = coroutine.create(function()
         local status, error = xpcall(chunk, function(err)
             local fullmsg = "error: "..string.match(err, ": (.+)").."\n"..debug.traceback()
-            gui.alert(fullmsg, function()
-                if world.is_open() then
-                    __vc_app.close_world()
-                else
-                    __vc_app.reset_content()
-                    menu:reset()
-                    menu.page = "main"
-                end
-            end)
+            
+            if hud then
+                gui.alert(fullmsg, function()
+                    if world.is_open() then
+                        __vc_app.close_world()
+                    else
+                        __vc_app.reset_content()
+                        menu:reset()
+                        menu.page = "main"
+                    end
+                end)
+            end
             return fullmsg
         end)
         if not status then
@@ -573,6 +588,8 @@ function __process_post_runnables()
     end
 
     network.__process_events()
+    block.__process_register_events()
+    block.__perform_ticks(time.delta())
 end
 
 function time.post_runnable(runnable)

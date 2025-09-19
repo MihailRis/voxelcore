@@ -88,7 +88,6 @@ public:
 
     void teleport(glm::vec3 position);
     void updateEntity();
-    void updateInput(PlayerInput& input, float delta);
     void updateSelectedEntity();
     void postUpdate();
 

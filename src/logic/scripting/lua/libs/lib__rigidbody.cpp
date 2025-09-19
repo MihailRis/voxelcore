@@ -62,6 +62,15 @@ static int l_set_gravity_scale(lua::State* L) {
 static int l_is_vdamping(lua::State* L) {
     if (auto entity = get_entity(L, 1)) {
         return lua::pushboolean(
+            L, entity->getRigidbody().hitbox.verticalDamping > 0.0
+        );
+    }
+    return 0;
+}
+
+static int l_get_vdamping(lua::State* L) {
+    if (auto entity = get_entity(L, 1)) {
+        return lua::pushnumber(
             L, entity->getRigidbody().hitbox.verticalDamping
         );
     }
@@ -70,7 +79,11 @@ static int l_is_vdamping(lua::State* L) {
 
 static int l_set_vdamping(lua::State* L) {
     if (auto entity = get_entity(L, 1)) {
-        entity->getRigidbody().hitbox.verticalDamping = lua::toboolean(L, 2);
+        if (lua::isboolean(L, 2)) {
+            entity->getRigidbody().hitbox.verticalDamping = lua::toboolean(L, 2);
+        } else {
+            entity->getRigidbody().hitbox.verticalDamping = lua::tonumber(L, 2);
+        }
     }
     return 0;
 }
@@ -144,6 +157,7 @@ const luaL_Reg rigidbodylib[] = {
     {"get_linear_damping", lua::wrap<l_get_linear_damping>},
     {"set_linear_damping", lua::wrap<l_set_linear_damping>},
     {"is_vdamping", lua::wrap<l_is_vdamping>},
+    {"get_vdamping", lua::wrap<l_get_vdamping>},
     {"set_vdamping", lua::wrap<l_set_vdamping>},
     {"is_grounded", lua::wrap<l_is_grounded>},
     {"is_crouching", lua::wrap<l_is_crouching>},

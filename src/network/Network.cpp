@@ -57,6 +57,7 @@ struct Request {
     long maxSize;
     bool followLocation = false;
     std::string data;
+    std::vector<std::string> headers;
 };
 
 class CurlRequests : public Requests {
@@ -86,10 +87,18 @@ public:
         const std::string& url,
         OnResponse onResponse,
         OnReject onReject,
+        std::vector<std::string> headers,
         long maxSize
     ) override {
         Request request {
-            RequestType::GET, url, onResponse, onReject, maxSize, false, ""};
+            RequestType::GET,
+            url,
+            onResponse,
+            onReject,
+            maxSize,
+            true,
+            "",
+            std::move(headers)};
         processRequest(std::move(request));
     }
 
@@ -98,10 +107,18 @@ public:
         const std::string& data,
         OnResponse onResponse,
         OnReject onReject=nullptr,
+        std::vector<std::string> headers = {},
         long maxSize=0
     ) override {
         Request request {
-            RequestType::POST, url, onResponse, onReject, maxSize, false, ""};
+            RequestType::POST,
+            url,
+            onResponse,
+            onReject,
+            maxSize,
+            false,
+            "",
+            std::move(headers)};
         request.data = data;
         processRequest(std::move(request));
     }
@@ -121,6 +138,10 @@ public:
         curl_easy_setopt(curl, CURLOPT_POST, request.type == RequestType::POST);
         
         curl_slist* hs = NULL;
+        
+        for (const auto& header : request.headers) {
+            hs = curl_slist_append(hs, header.c_str());
+        }
 
         switch (request.type) {
             case RequestType::GET:
@@ -152,7 +173,7 @@ public:
             auto message = curl_multi_strerror(res);
             logger.error() << message << " (" << url << ")";
             if (onReject) {
-                onReject(HTTP_BAD_GATEWAY);
+                onReject(HTTP_BAD_GATEWAY, {});
             }
             url = "";
         }
@@ -167,7 +188,7 @@ public:
             auto message = curl_multi_strerror(res);
             logger.error() << message << " (" << url << ")";
             if (onReject) {
-                onReject(HTTP_BAD_GATEWAY);
+                onReject(HTTP_BAD_GATEWAY, {});
             }
             curl_multi_remove_handle(multiHandle, curl);
             url = "";
@@ -192,9 +213,14 @@ public:
                     onResponse(std::move(buffer));
                 }
             } else {
-                logger.error() << "response code " << response << " (" << url << ")";
+                logger.error()
+                    << "response code " << response << " (" << url << ")"
+                    << (buffer.empty()
+                            ? ""
+                            : std::to_string(buffer.size()) + " byte(s)");
+                totalDownload += buffer.size();
                 if (onReject) {
-                    onReject(response);
+                    onReject(response, std::move(buffer));
                 }
             }
             url = "";
@@ -569,10 +595,12 @@ public:
         }
         int opt = 1;
         int flags = SO_REUSEADDR;
-#       ifndef _WIN32
+#       if !defined(_WIN32) && !defined(__APPLE__)
             flags |= SO_REUSEPORT;
 #       endif
         if (setsockopt(descriptor, SOL_SOCKET, flags, (const char*)&opt, sizeof(opt))) {
+            logger.error() << "setsockopt(SO_REUSEADDR) failed with errno: "
+             << errno << "(" << std::strerror(errno) << ")";
             closesocket(descriptor);
             throw std::runtime_error("setsockopt");
         }
@@ -621,19 +649,19 @@ public:
     ) {
         SOCKET descriptor = socket(AF_INET, SOCK_DGRAM, 0);
         if (descriptor == -1) {
-            throw std::runtime_error("could not create UDP socket");
+            throw std::runtime_error("could not create udp socket");
         }
 
         sockaddr_in serverAddr{};
         serverAddr.sin_family = AF_INET;
         if (inet_pton(AF_INET, address.c_str(), &serverAddr.sin_addr) <= 0) {
             closesocket(descriptor);
-            throw std::runtime_error("invalid UDP address: " + address);
+            throw std::runtime_error("invalid udp address: " + address);
         }
         serverAddr.sin_port = htons(port);
 
         if (::connect(descriptor, (sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
-            auto err = handle_socket_error("UDP connect failed");
+            auto err = handle_socket_error("udp connect failed");
             closesocket(descriptor);
             throw err;
         }
@@ -722,7 +750,6 @@ public:
 
 class SocketUdpServer : public UdpServer {
     u64id_t id;
-    Network* network;
     SOCKET descriptor;
     bool open = true;
     std::unique_ptr<std::thread> thread = nullptr;
@@ -731,13 +758,13 @@ class SocketUdpServer : public UdpServer {
 
 public:
     SocketUdpServer(u64id_t id, Network* network, SOCKET descriptor, int port)
-        : id(id), network(network), descriptor(descriptor), port(port) {}
+        : id(id), descriptor(descriptor), port(port) {}
 
     ~SocketUdpServer() override {
         SocketUdpServer::close();
     }
 
-    void startListen(ServerDatagramCallback handler) {
+    void startListen(ServerDatagramCallback handler) override {
         callback = std::move(handler);
 
         thread = std::make_unique<std::thread>([this]() {
@@ -789,7 +816,7 @@ public:
         u64id_t id, Network* network, int port, const ServerDatagramCallback& handler
     ) {
         SOCKET descriptor = socket(AF_INET, SOCK_DGRAM, 0);
-        if (descriptor == -1) throw std::runtime_error("Could not create UDP socket");
+        if (descriptor == -1) throw std::runtime_error("could not create udp socket");
 
         sockaddr_in address{};
         address.sin_family = AF_INET;
@@ -798,7 +825,7 @@ public:
 
         if (bind(descriptor, (sockaddr*)&address, sizeof(address)) < 0) {
             closesocket(descriptor);
-            throw std::runtime_error("Could not bind UDP port " + std::to_string(port));
+            throw std::runtime_error("could not bind udp port " + std::to_string(port));
         }
 
         auto server = std::make_shared<SocketUdpServer>(id, network, descriptor, port);
@@ -817,9 +844,10 @@ void Network::get(
     const std::string& url,
     OnResponse onResponse,
     OnReject onReject,
+    std::vector<std::string> headers,
     long maxSize
 ) {
-    requests->get(url, onResponse, onReject, maxSize);
+    requests->get(url, onResponse, onReject, std::move(headers), maxSize);
 }
 
 void Network::post(
@@ -827,9 +855,12 @@ void Network::post(
     const std::string& fieldsData,
     OnResponse onResponse,
     OnReject onReject,
+    std::vector<std::string> headers,
     long maxSize
 ) {
-    requests->post(url, fieldsData, onResponse, onReject, maxSize);
+    requests->post(
+        url, fieldsData, onResponse, onReject, std::move(headers), maxSize
+    );
 }
 
 Connection* Network::getConnection(u64id_t id) {

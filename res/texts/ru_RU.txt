@@ -32,6 +32,7 @@ devtools.output=Вывод
 
 error.pack-not-found=Не удалось найти пакет
 error.dependency-not-found=Используемая зависимость не найдена
+error.dependency-version-not-met=Версия зависимости не соответствует необходимой
 pack.remove-confirm=Удалить весь поставляемый паком/паками контент из мира (безвозвратно)?
 
 # Подсказки

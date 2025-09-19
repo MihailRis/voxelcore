@@ -118,21 +118,58 @@ ContentPack ContentPack::read(const io::path& folder) {
         const auto& dependencies = *found;
         for (const auto& elem : dependencies) {
             std::string depName = elem.asString();
-            auto level = DependencyLevel::required;
+            auto level = DependencyLevel::REQUIRED;
             switch (depName.at(0)) {
                 case '!':
                     depName = depName.substr(1);
                     break;
                 case '?':
                     depName = depName.substr(1);
-                    level = DependencyLevel::optional;
+                    level = DependencyLevel::OPTIONAL;
                     break;
                 case '~':
                     depName = depName.substr(1);
-                    level = DependencyLevel::weak;
+                    level = DependencyLevel::WEAK;
                     break;
             }
-            pack.dependencies.push_back({level, depName});
+
+            std::string depVer = "*";
+            std::string depVerOperator = "=";
+
+            size_t versionPos = depName.rfind("@");
+            if (versionPos != std::string::npos) {
+                depVer = depName.substr(versionPos + 1);
+                depName = depName.substr(0, versionPos);
+
+                if (depVer.size() >= 2) {
+                    std::string op = depVer.substr(0, 2);
+                    std::uint8_t op_size = 0;
+
+                    // Two symbol operators
+                    if (op == ">=" || op == "=>" || op == "<=" || op == "=<") {
+                        op_size = 2;
+                        depVerOperator = op;
+                    }
+
+                    // One symbol operators
+                    else {
+                        op = depVer.substr(0, 1);
+
+                        if (op == ">" || op == "<") {
+                            op_size = 1;
+                            depVerOperator = op;
+                        }
+                    }
+
+                    depVer = depVer.substr(op_size);
+                } else {
+                    if (depVer == ">" || depVer == "<"){
+                        depVer = "*";
+                    }
+                }
+            }
+            
+            pack.dependencies.push_back({level, depName, depVer, depVerOperator});
         }
     }
 

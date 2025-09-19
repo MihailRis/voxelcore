@@ -20,6 +20,22 @@ Example:
 ]
 ```
 
+You can pass values ​​in ARGS from the entity configuration.
+They will be passed both when creating a new entity and when loading a saved one.
+The `args` list is used for this:
+
+```json
+"components": [
+    {
+        "name": "base:drop",
+        "args": {
+            "item": "base:stone.item",
+            "count": 1
+        }
+    }
+]
+```
+
 The components code should be in `scripts/components`.
 
 ## Physics

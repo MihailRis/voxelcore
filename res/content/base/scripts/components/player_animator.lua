@@ -1,11 +1,10 @@
 local tsf = entity.transform
 local body = entity.rigidbody
 local rig = entity.skeleton
+local mob = entity:require_component("core:mob")
 
 local itemid = 0
-local headIndex = rig:index("head")
 local itemIndex = rig:index("item")
-local bodyIndex = rig:index("body")
 
 local function refresh_model(id)
     itemid = id
@@ -18,10 +17,11 @@ function on_render()
     if pid == -1 then
         return
     end
-    
-    local rx, ry, rz = player.get_rot(pid, pid ~= hud.get_player())
-    rig:set_matrix(headIndex, mat4.rotate({1, 0, 0}, ry))
-    rig:set_matrix(bodyIndex, mat4.rotate({0, 1, 0}, rx))
+
+    local rx, _, _ = player.get_rot(pid, pid ~= hud.get_player())
+
+    local dir = vec2.rotate({0, -1}, -rx)
+    mob.set_dir({dir[1], 0, dir[2]})
 
     local invid, slotid = player.get_inventory(pid)
     local id, _ = inventory.get(invid, slotid)

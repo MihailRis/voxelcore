@@ -83,9 +83,13 @@ SettingsHandler::SettingsHandler(EngineSettings& settings) {
     builder.add("language", &settings.ui.language);
     builder.add("world-preview-size", &settings.ui.worldPreviewSize);
 
+    builder.section("pathfinding");
+    builder.add("steps-per-async-agent", &settings.pathfinding.stepsPerAsyncAgent);
+
     builder.section("debug");
     builder.add("generator-test-mode", &settings.debug.generatorTestMode);
     builder.add("do-write-lights", &settings.debug.doWriteLights);
+    builder.add("do-trace-shaders", &settings.debug.doTraceShaders);
     builder.add("enable-experimental", &settings.debug.enableExperimental);
 }
 

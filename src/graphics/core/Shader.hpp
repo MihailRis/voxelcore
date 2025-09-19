@@ -4,6 +4,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 #include <unordered_map>
 #include <glm/glm.hpp>
 
@@ -50,7 +51,7 @@ public:
     void uniform4v(const std::string& name, int length, const float* v);
 
     /// @brief Re-preprocess source code and re-compile shader program
-    void recompile();
+    void recompile(const std::vector<std::string>& defines);
 
     /// @brief Create shader program using vertex and fragment shaders source.
     /// @return linked shader program containing vertex and fragment shaders

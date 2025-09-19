@@ -4,6 +4,8 @@
 #include "engine/Engine.hpp"
 #include "objects/Entities.hpp"
 #include "objects/EntityDef.hpp"
+#include "objects/Entity.hpp"
+#include "objects/Rigidbody.hpp"
 #include "objects/Player.hpp"
 #include "objects/rigging.hpp"
 #include "physics/Hitbox.hpp"

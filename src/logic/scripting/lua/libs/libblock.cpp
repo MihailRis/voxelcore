@@ -698,6 +698,34 @@ static int l_reload_script(lua::State* L) {
     return 0;
 }
 
+static int l_has_tag(lua::State* L) {
+    if (auto def = require_block(L)) {
+        auto tag = lua::require_string(L, 2);
+        const auto& tags = def->rt.tags;
+        return lua::pushboolean(L, tags.find(content->getTagIndex(tag)) != tags.end());
+    }
+    return 0;
+}
+
+static int l_pull_register_events(lua::State* L) {
+    auto events = blocks_agent::pull_register_events();
+    if (events.empty())
+        return 0;
+
+    lua::createtable(L, events.size() * 4, 0);
+    for (int i = 0; i < events.size(); i++) {
+        const auto& event = events[i];
+        lua::pushinteger(L, static_cast<int>(event.type) | event.id << 16);
+        lua::rawseti(L, i * 4 + 1);
+
+        for (int j = 0; j < 3; j++) {
+            lua::pushinteger(L, event.coord[j]);
+            lua::rawseti(L, i * 4 + j + 2);
+        }
+    }
+    return 1;
+}
+
 const luaL_Reg blocklib[] = {
     {"index", lua::wrap<l_index>},
     {"name", lua::wrap<l_get_def>},
@@ -737,5 +765,7 @@ const luaL_Reg blocklib[] = {
     {"get_field", lua::wrap<l_get_field>},
     {"set_field", lua::wrap<l_set_field>},
     {"reload_script", lua::wrap<l_reload_script>},
+    {"has_tag", lua::wrap<l_has_tag>},
+    {"__pull_register_events", lua::wrap<l_pull_register_events>},
     {NULL, NULL}
 };

@@ -6,9 +6,15 @@
 
 ```lua
 -- Выполняет GET запрос к указанному URL.
--- После получения ответа, передаёт текст в функцию callback.
--- В случае ошибки в onfailure будет передан HTTP-код ответа.
-network.get(url: str, callback: function(str), [опционально] onfailure: function(int))
+network.get(
+    url: str,
+    -- Функция, вызываемая при получении ответа
+    callback: function(str),
+    -- Обработчик ошибок
+    [опционально] onfailure: function(int, str),
+    -- Список дополнительных заголовков запроса
+    [опционально] headers: table<str>
+)
 
 -- Пример:
 network.get("https://api.github.com/repos/MihailRis/VoxelEngine-Cpp/releases/latest", function (s)
@@ -16,13 +22,28 @@ network.get("https://api.github.com/repos/MihailRis/VoxelEngine-Cpp/releases/lat
 end)
 
 -- Вариант для двоичных файлов, с массивом байт вместо строки в ответе.
-network.get_binary(url: str, callback: function(table|ByteArray), [опционально] onfailure: function(int))
+network.get_binary(
+    url: str,
+    callback: function(ByteArray),
+    [опционально] onfailure: function(int, Bytearray),
+    [опционально] headers: table<str>
+)
 
 -- Выполняет POST запрос к указанному URL.
 -- На данный момент реализована поддержка только `Content-Type: application/json`
 -- После получения ответа, передаёт текст в функцию callback.
 -- В случае ошибки в onfailure будет передан HTTP-код ответа.
-network.post(url: str, data: table, callback: function(str), [опционально] onfailure: function(int))
+network.post(
+    url: str,
+    -- Тело запроса в виде таблицы, конвертируемой в JSON или строки
+    body: table|str,
+    -- Функция, вызываемая при получении ответа
+    callback: function(str),
+    -- Обработчик ошибок
+    [опционально] onfailure: function(int, str),
+    -- Список дополнительных заголовков запроса
+    [опционально] headers: table<str>
+)
 ```
 
 ## TCP-Соединения

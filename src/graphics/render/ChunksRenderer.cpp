@@ -187,7 +187,7 @@ const Mesh<ChunkVertex>* ChunksRenderer::retrieveChunk(
     return mesh;
 }
 
-void ChunksRenderer::drawChunksShadowsPass(
+void ChunksRenderer::drawShadowsPass(
     const Camera& camera, Shader& shader, const Camera& playerCamera
 ) {
     Frustum frustum;

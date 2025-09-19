@@ -25,7 +25,7 @@ void PhysicsSolver::step(
     entityid_t entity
 ) {
     float dt = delta / static_cast<float>(substeps);
-    float linearDamping = hitbox.linearDamping;
+    float linearDamping = hitbox.linearDamping * hitbox.friction;
     float s = 2.0f/BLOCK_AABB_GRID;
 
     const glm::vec3& half = hitbox.halfsize;
@@ -45,11 +45,6 @@ void PhysicsSolver::step(
             colisionCalc(chunks, hitbox, vel, pos, half, 
                          (prevGrounded && gravityScale > 0.0f) ? 0.5f : 0.0f);
         }
-        vel.x *= glm::max(0.0f, 1.0f - dt * linearDamping);
-        if (hitbox.verticalDamping) {
-            vel.y *= glm::max(0.0f, 1.0f - dt * linearDamping);
-        }
-        vel.z *= glm::max(0.0f, 1.0f - dt * linearDamping);
 
         pos += vel * dt + gravity * gravityScale * dt * dt * 0.5f;
         if (hitbox.grounded && pos.y < py) {
@@ -89,6 +84,12 @@ void PhysicsSolver::step(
             hitbox.grounded = true;
         }
     }
+    vel.x /= 1.0f + delta * linearDamping;
+    vel.z /= 1.0f + delta * linearDamping;
+    if (hitbox.verticalDamping > 0.0f) {
+        vel.y /= 1.0f + delta * linearDamping * hitbox.verticalDamping;
+    }
+
     AABB aabb;
     aabb.a = hitbox.position - hitbox.halfsize;
     aabb.b = hitbox.position + hitbox.halfsize;
