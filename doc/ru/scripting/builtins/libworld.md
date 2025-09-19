@@ -26,12 +26,6 @@ world.set_day_time_speed(value: number)
 -- Возвращает скорость скорость смены времени суток.
 world.get_day_time_speed() -> number
 
--- Возвращает множитель времени.
-world.get_time_scale() -> number
-
--- Устанавливает множитель времени.
-world.set_time_scale(scale: number)
-
 -- Возвращает суммарное время, прошедшее в мире.
 world.get_total_time() -> number
 

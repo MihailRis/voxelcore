@@ -97,20 +97,6 @@ player.set_max_interaction_distance(playerid: int, distance: float)
 Геттер и сеттер свойства, определяющего максимальную дистанцию взаимодействия.
 
 ```lua
-player.get_speed(playerid: int) -> float
-player.set_speed(playerid: int, speed: float)
-```
-
-Геттер и сеттер свойства, определяющего скорость игрока.
-
-```lua
-player.get_gravity_scale(playerid: int) -> float
-player.set_gravity_scale(playerid: int, scale: float)
-```
-
-Геттер и сеттер свойства, определяющий множитель гравитации.
-
-```lua
 player.set_spawnpoint(playerid: int, x: number, y: number, z: number) 
 player.get_spawnpoint(playerid: int) -> number, number, number
 ```

@@ -101,17 +101,6 @@ static int l_get_day_time_speed(lua::State* L) {
     return lua::pushnumber(L, require_world_info().daytimeSpeed);
 }
 
-static int l_set_time_scale(lua::State* L) {
-    auto value = lua::tonumber(L, 1);
-    require_world_info().timeScale = std::abs(value);
-    engine->setTimeScale(std::abs(value));
-    return 0;
-}
-
-static int l_get_time_scale(lua::State* L) {
-    return lua::pushnumber(L, require_world_info().timeScale);
-}
-
 static int l_get_seed(lua::State* L) {
     return lua::pushinteger(L, require_world_info().seed);
 }
@@ -252,8 +241,6 @@ const luaL_Reg worldlib[] = {
     {"set_day_time", lua::wrap<l_set_day_time>},
     {"set_day_time_speed", lua::wrap<l_set_day_time_speed>},
     {"get_day_time_speed", lua::wrap<l_get_day_time_speed>},
-    {"set_time_scale", lua::wrap<l_set_time_scale>},
-    {"get_time_scale", lua::wrap<l_get_time_scale>},
     {"get_seed", lua::wrap<l_get_seed>},
     {"get_generator", lua::wrap<l_get_generator>},
     {"is_day", lua::wrap<l_is_day>},

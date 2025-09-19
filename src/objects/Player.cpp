@@ -21,6 +21,13 @@
 
 static debug::Logger logger("player");
 
+constexpr float CROUCH_SPEED_MUL = 0.35f;
+constexpr float RUN_SPEED_MUL = 1.5f;
+constexpr float PLAYER_GROUND_DAMPING = 10.0f;
+constexpr float PLAYER_AIR_DAMPING = 8.0f;
+constexpr float FLIGHT_SPEED_MUL = 4.0f;
+constexpr float CHEAT_SPEED_MUL = 5.0f;
+constexpr float JUMP_FORCE = 8.0f;
 constexpr int SPAWN_ATTEMPTS_PER_UPDATE = 64;
 
 Player::Player(
@@ -282,8 +289,6 @@ dv::value Player::serialize() const {
     root["rotation"] = dv::to_value(rotation);
     root["spawnpoint"] = dv::to_value(spawnpoint);
 
-    root["speed"] = speed;
-    root["gravity-scale"] = gravityScale;
     root["max-interaction-distance"] = maxInteractionDistance;
     root["flight"] = flight;
     root["noclip"] = noclip;
@@ -319,8 +324,6 @@ void Player::deserialize(const dv::value& src) {
     setSpawnPoint(glm::vec3(
         sparr[0].asNumber(), sparr[1].asNumber(), sparr[2].asNumber()));
     
-    if (src.has("speed")) speed = src["speed"].asNumber();
-    if (src.has("gravity-scale")) gravityScale = src["gravity-scale"].asNumber();
     if (src.has("max-interaction-distance")) maxInteractionDistance = src["max-interaction-distance"].asNumber();
 
     flight = src["flight"].asBoolean();
