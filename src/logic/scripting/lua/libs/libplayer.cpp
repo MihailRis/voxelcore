@@ -181,14 +181,14 @@ static int l_set_loading_chunks(lua::State* L) {
     return 0;
 }
 
-static int l_get_max_interaction_distance(lua::State* L) {
+static int l_get_interaction_distance(lua::State* L) {
     if (auto player = get_player(L, 1)) {
         return lua::pushnumber(L, player->getMaxInteractionDistance());
     }
     return 0;
 }
 
-static int l_set_max_interaction_distance(lua::State* L) {
+static int l_set_interaction_distance(lua::State* L) {
     if (auto player = get_player(L, 1)) {
         player->setMaxInteractionDistance( static_cast<float>(lua::tonumber(L, 2)) );
     }
@@ -342,8 +342,8 @@ const luaL_Reg playerlib[] = {
     {"set_instant_destruction", lua::wrap<l_set_instant_destruction>},
     {"is_loading_chunks", lua::wrap<l_is_loading_chunks>},
     {"set_loading_chunks", lua::wrap<l_set_loading_chunks>},
-    {"get_max_interaction_distance", lua::wrap<l_get_max_interaction_distance>},
-    {"set_max_interaction_distance", lua::wrap<l_set_max_interaction_distance>},
+    {"get_interaction_distance", lua::wrap<l_get_interaction_distance>},
+    {"set_interaction_distance", lua::wrap<l_set_interaction_distance>},
     {"set_selected_slot", lua::wrap<l_set_selected_slot>},
     {"get_selected_block", lua::wrap<l_get_selected_block>},
     {"get_selected_entity", lua::wrap<l_get_selected_entity>},
