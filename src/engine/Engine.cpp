@@ -399,7 +399,6 @@ void Engine::onWorldOpen(std::unique_ptr<Level> level, int64_t localPlayer) {
 void Engine::onWorldClosed() {
     logger.info() << "world closed";
     levelConsumer(nullptr, -1);
-    setTimeScale(1.0f);
 }
 
 void Engine::quit() {

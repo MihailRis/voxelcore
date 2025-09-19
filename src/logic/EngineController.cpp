@@ -155,7 +155,6 @@ static void load_world(
         auto& settings = engine.getSettings();
 
         auto level = World::load(worldFiles, settings, *content, packs);
-        engine.setTimeScale(level->getWorld()->getInfo().timeScale);
         engine.onWorldOpen(std::move(level), localPlayer);
     });
 }
