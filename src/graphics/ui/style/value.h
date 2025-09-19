@@ -80,7 +80,7 @@ namespace style {
         Type getType() const;
 
         int64_t asInt(int64_t def = 0) const;
-        double asFloat(double def = 0.0) const;
+        double asDouble(double def = 0.0) const;
         float asFloat(float def = 0.0f) const;
         bool asBool(bool def = false) const;
         std::string asString(const std::string& def = "") const;

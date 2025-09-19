@@ -517,21 +517,58 @@ void Node::draw_text(const DrawContext& ctx, const Assets& assets, Text text) {
     font->draw(
         *batch,
         util::str2wstr_utf8(get_text()),
-        layout.x,
-        layout.y,
+        layout.position.x,
+        layout.position.y,
         text.styles.get(),
         0
     );
 }
 
+void roundedBorder(Batch2D* batch, float x, float y, float w, float h, float radius, float width) {
+    // Нарисовать 4 полоски
+    batch->roundedRect(x, y, w, h, radius);
+}
+
+
 void Node::draw_element(
     const DrawContext& ctx, const Assets& assets, Element element
 ) {
     auto batch = ctx.getBatch2D();
-
     batch->flush();
     batch->untexture();
 
-    batch->setColor(element.style.get("background", "#0000").asColor());
-    batch->rect(layout.x, layout.y, layout.width, layout.height);
+    // --- Вычисляем стили ---
+    glm::vec4 bgColor = element.style.get("background", "#0000").asColor();
+    glm::vec4 borderColor = element.style.get("border-color", "#0000").asColor();
+    float borderWidth = element.style.get("border-width", 0.0f).asFloat();
+    float borderRadius = element.style.get("border-radius", 0.0f).asFloat();
+
+    float x = layout.position.x;
+    float y = layout.position.y;
+    float w = layout.size.x;
+    float h = layout.size.y;
+
+    // --- Рисуем фон ---
+    if (bgColor.a > 0.0f) {
+        batch->setColor(bgColor);
+
+        if (borderRadius > 0.0f) {
+            // Нужно реализовать rect с радиусом
+            roundedBorder(batch, x, y, w, h, borderRadius, borderWidth);
+        } else {
+            batch->rect(x, y, w, h);
+        }
+    }
+
+    // --- Рисуем бордер ---
+    if (borderWidth > 0.0f && borderColor.a > 0.0f) {
+        batch->setColor(borderColor);
+
+        if (borderRadius > 0.0f) {
+            roundedBorder(batch, x, y, w, h, borderRadius, borderWidth);
+        } else {
+            batch->lineRect(x, y, w, h);
+            // Если borderWidth > 1, можно рисовать несколько lineRect с шагом
+        }
+    }
 }

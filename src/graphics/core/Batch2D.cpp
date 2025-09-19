@@ -3,6 +3,7 @@
 #include "Texture.hpp"
 #include "gl_util.hpp"
 #include "maths/UVRegion.hpp"
+#include <glm/glm.hpp>
 
 #include <cmath>
 
@@ -341,6 +342,66 @@ void Batch2D::triangle(float x1, float y1, float x2, float y2, float x3, float y
     vertex({x2, y2}, {x2, y2}, color.r, color.g, color.b, color.a);
     vertex({x3, y3}, {x3, y3}, color.r, color.g, color.b, color.a);
 }
+
+void Batch2D::roundedRect(float x, float y, float w, float h, float radius, float borderWidth) {
+    if (radius <= 0.0f) {
+        if (borderWidth <= 0.0f) {
+            rect(x, y, w, h); // просто заполненный
+        } else {
+            // Нарисовать бордер как 4 линии
+            lineRect(x, y, w, h);
+            // Если borderWidth > 1, можно рисовать несколько слоёв
+        }
+        return;
+    }
+
+    int segments = 8; // количество треугольников на угол
+    float angleStep = HALF_PI / segments;
+
+    if (borderWidth <= 0.0f) {
+        // --- Заполненный прямоугольник с radius ---
+        rect(x + radius, y, w - 2*radius, h);
+        rect(x, y + radius, radius, h - 2*radius);
+        rect(x + w - radius, y + radius, radius, h - 2*radius);
+
+        for (int i = 0; i < segments; ++i) {
+            float theta0 = i * angleStep;
+            float theta1 = (i + 1) * angleStep;
+
+            // Верхний левый угол
+            triangle(x + radius, y + radius,
+                     x + radius - radius * cos(theta0), y + radius - radius * sin(theta0),
+                     x + radius - radius * cos(theta1), y + radius - radius * sin(theta1));
+
+            // Верхний правый угол
+            triangle(x + w - radius, y + radius,
+                     x + w - radius + radius * cos(theta0), y + radius - radius * sin(theta0),
+                     x + w - radius + radius * cos(theta1), y + radius - radius * sin(theta1));
+
+            // Нижний левый угол
+            triangle(x + radius, y + h - radius,
+                     x + radius - radius * cos(theta0), y + h - radius + radius * sin(theta0),
+                     x + radius - radius * cos(theta1), y + h - radius + radius * sin(theta1));
+
+            // Нижний правый угол
+            triangle(x + w - radius, y + h - radius,
+                     x + w - radius + radius * cos(theta0), y + h - radius + radius * sin(theta0),
+                     x + w - radius + radius * cos(theta1), y + h - radius + radius * sin(theta1));
+        }
+    } else {
+        // --- Нарисовать только бордер с толщиной ---
+        // Можно аппроксимировать как 4 полоски + дуги
+        // Верхняя полоса
+        roundedRect(x, y, w, borderWidth, radius);
+        // Нижняя полоса
+        roundedRect(x, y + h - borderWidth, w, borderWidth, radius);
+        // Левая полоса
+        roundedRect(x, y + borderWidth, borderWidth, h - 2*borderWidth, radius);
+        // Правая полоса
+        roundedRect(x + w - borderWidth, y + borderWidth, borderWidth, h - 2*borderWidth, radius);
+    }
+}
+
 
 void Batch2D::sprite(float x, float y, float w, float h, const UVRegion& region, glm::vec4 tint){
     rect(x, y, w, h, region.u1, region.v1, region.u2-region.u1, region.v2-region.v1, tint.r, tint.g, tint.b, tint.a);

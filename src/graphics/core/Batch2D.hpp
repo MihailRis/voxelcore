@@ -7,6 +7,9 @@
 #include "maths/UVRegion.hpp"
 #include "MeshData.hpp"
 
+constexpr float PI = 3.14159265358979323846f;
+constexpr float HALF_PI = PI / 2.0f;
+
 template<typename VertexStructure>
 class Mesh;
 class Texture;
@@ -122,4 +125,6 @@ public:
     void flush() override;
 
     void lineWidth(float width);
+
+    void roundedRect(float x, float y, float w, float h, float radius, float borderWidth = 0.0f);
 };

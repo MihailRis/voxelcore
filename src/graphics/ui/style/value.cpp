@@ -138,7 +138,7 @@ namespace style {
         return def;
     }
 
-    double value::asFloat(double def) const {
+    double value::asDouble(double def) const {
         if (isFloat()) {
             return std::get<double>(data);
         }

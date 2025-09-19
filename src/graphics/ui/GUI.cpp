@@ -61,11 +61,12 @@ GUI::GUI(Engine& engine)
 
     std::string xmlString = R"(
 <div class="main">
-    <span style="">Header</span>
-    <div class="content">
-        <span>Left Col</span>
-        <span>Right Col</span>
-    </div>
+    <span style = "background: #555;">
+        <text>Left</text>
+    </span>
+    <span style = "background: #555;">
+        <text>Right</text>
+    </span>
 </div>
 )";
     std::string css_code = R"(
@@ -73,12 +74,19 @@ GUI::GUI(Engine& engine)
     /* comment variant 2 */
     div.main {
         background: #111f;
-        direction: row;
+        align-x: center;
+        align-y: center;
     }
 
-    div.content {
-        background: #222f;
-        direction: column;
+    span {
+        width: 100;
+        height: 100;
+        align-x: center;
+        align-y: center;
+
+        border-width: 1;
+        border-color: #ff0000;
+        border-radius: 15;
     }
 
 )";
@@ -89,7 +97,7 @@ GUI::GUI(Engine& engine)
     style::Stylesheet stylesheet = parser.parse();
 
     style::StyleComputer computer;
-    computer.set_inherit_exceptions({"width", "height", "margin", "padding", "direction"});
+    computer.set_inherit_exceptions({"width", "height", "margin", "padding", "direction", "align-x", "align-y", "border-width","border-color", "border-radius"});
 
     computer.set_stylesheets({stylesheet});
     computer.compute(*document_root);
