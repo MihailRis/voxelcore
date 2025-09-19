@@ -3,11 +3,26 @@
 #include <utility>
 
 #include "assets/Assets.hpp"
-#include "graphics/core/DrawContext.hpp"
 #include "graphics/core/Batch2D.hpp"
+#include "graphics/core/DrawContext.hpp"
 #include "graphics/core/Font.hpp"
 #include "graphics/ui/markdown.hpp"
 #include "util/stringutil.hpp"
+#include "engine/Engine.hpp"
+#include "graphics/ui/gui_util.hpp"
+#include "graphics/ui/GUI.hpp"
+#include "graphics/ui/elements/Menu.hpp"
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <windows.h>
+#include <shellapi.h>
+#else
+#include <unistd.h>   // fork, execlp
+#include <sys/types.h>
+#include <sys/wait.h> // waitpid
+#endif
 
 using namespace gui;
 
@@ -44,7 +59,7 @@ void LabelCache::update(std::wstring_view text, bool multiline, bool wrap) {
     if (font == nullptr) {
         wrap = false;
     }
-    
+
     if (multiline) {
         size_t len = 0;
         for (size_t i = 0; i < text.length(); i++, len++) {
@@ -84,8 +99,8 @@ void LabelCache::update(std::wstring_view text, bool multiline, bool wrap) {
 }
 
 Label::Label(GUI& gui, const std::string& text, std::string fontName)
-  : UINode(gui, glm::vec2(text.length() * 8, 16)),
-    text(util::str2wstr_utf8(text)), 
+    : UINode(gui, glm::vec2(text.length() * 8, 16)),
+      text(util::str2wstr_utf8(text)),
     fontName(std::move(fontName))
 {
     setInteractive(false);
@@ -94,8 +109,8 @@ Label::Label(GUI& gui, const std::string& text, std::string fontName)
 
 
 Label::Label(GUI& gui, const std::wstring& text, std::string fontName)
-  : UINode(gui, glm::vec2(text.length() * 8, 16)), 
-    text(text), 
+    : UINode(gui, glm::vec2(text.length() * 8, 16)),
+      text(text),
     fontName(std::move(fontName))
 {
     setInteractive(false);
@@ -118,7 +133,7 @@ glm::vec2 Label::calcSize() {
         );
     }
     return glm::vec2 (
-        cache.font->calcWidth(view), 
+        cache.font->calcWidth(view),
         lineHeight * cache.lines.size() + font->getYOffset()
     );
 }
@@ -142,6 +157,75 @@ void Label::setText(std::wstring text) {
 
 const std::wstring& Label::getText() const {
     return text;
+}
+
+bool openURL(const std::string& url) {
+    if (url.empty()) return false;
+
+#ifdef _WIN32
+    // UTF-8 → UTF-16
+    int wlen = MultiByteToWideChar(CP_UTF8, 0, url.c_str(), -1, nullptr, 0);
+    if (wlen <= 0) return false;
+
+    std::wstring wurl(wlen, L'\0');
+    MultiByteToWideChar(CP_UTF8, 0, url.c_str(), -1, &wurl[0], wlen);
+
+    HINSTANCE result = ShellExecuteW(
+        nullptr, L"open", wurl.c_str(), nullptr, nullptr, SW_SHOWNORMAL
+    );
+
+    return reinterpret_cast<int>(result) > 32;
+
+#else
+    pid_t pid = fork();
+    if (pid == 0) {
+    #ifdef __APPLE__
+        execlp("open", "open", url.c_str(), (char*)nullptr);
+    #else
+        execlp("xdg-open", "xdg-open", url.c_str(), (char*)nullptr);
+    #endif
+        _exit(127); // если execlp не сработал
+    } else if (pid > 0) {
+        int status = 0;
+        waitpid(pid, &status, 0);
+        return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+    }
+    return false;
+#endif
+}
+
+const std::string& Label::getURL() const {
+    return url;
+}
+
+void Label::setURL(std::string url) {
+    this->url = std::move(url);
+    setInteractive(!this->url.empty());
+
+    listenAction([this](GUI& gui) {
+        Engine& engine = gui.getEngine();
+
+        std::wstring msg =
+            L"Открыть ссылку?\n" + util::str2wstr_utf8(this->url);
+
+        guiutil::confirm(
+            engine,
+            msg,
+            [this, &engine]() {
+                auto& gui = engine.getGUI();
+                auto menu = gui.getMenu();
+                openURL(this->url);
+                menu->back();
+            },
+            [this, &engine]() {
+                auto& gui = engine.getGUI();
+                auto menu = gui.getMenu();
+                menu->back();
+            },
+            L"Да",
+            L"Нет"
+        );
+    });
 }
 
 void Label::setFontName(std::string name) {
