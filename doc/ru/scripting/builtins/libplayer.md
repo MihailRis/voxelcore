@@ -90,8 +90,8 @@ player.set_loading_chunks(playerid: int, bool)
 Геттер и сеттер свойства, определяющего, прогружает ли игрок чанки вокруг.
 
 ```lua
-player.get_max_interaction_distance(playerid: int) -> float
-player.set_max_interaction_distance(playerid: int, distance: float)
+player.get_interaction_distance(playerid: int) -> float
+player.set_interaction_distance(playerid: int, distance: float)
 ```
 
 Геттер и сеттер свойства, определяющего максимальную дистанцию взаимодействия.

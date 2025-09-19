@@ -27,13 +27,6 @@ world.set_day_time_speed(value: number)
 -- Returns the day time cycle speed.
 world.get_day_time_speed() -> number
 
-
--- Returns the time scale.
-world.get_time_scale() -> number
-
--- Sets the specified time scale.
-world.set_time_scale(scale: number)
-
 -- Returns total time passed in the world.
 world.get_total_time() -> number
 
