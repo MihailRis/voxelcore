@@ -12,17 +12,8 @@
 #include "graphics/ui/gui_util.hpp"
 #include "graphics/ui/GUI.hpp"
 #include "graphics/ui/elements/Menu.hpp"
-
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
-#include <shellapi.h>
-#else
-#include <unistd.h>   // fork, execlp
-#include <sys/types.h>
-#include <sys/wait.h> // waitpid
-#endif
+#include "util/platform.hpp"
+#include "frontend/locale.hpp"
 
 using namespace gui;
 
@@ -159,41 +150,6 @@ const std::wstring& Label::getText() const {
     return text;
 }
 
-bool openURL(const std::string& url) {
-    if (url.empty()) return false;
-
-#ifdef _WIN32
-    // UTF-8 → UTF-16
-    int wlen = MultiByteToWideChar(CP_UTF8, 0, url.c_str(), -1, nullptr, 0);
-    if (wlen <= 0) return false;
-
-    std::wstring wurl(wlen, L'\0');
-    MultiByteToWideChar(CP_UTF8, 0, url.c_str(), -1, &wurl[0], wlen);
-
-    HINSTANCE result = ShellExecuteW(
-        nullptr, L"open", wurl.c_str(), nullptr, nullptr, SW_SHOWNORMAL
-    );
-
-    return reinterpret_cast<int>(result) > 32;
-
-#else
-    pid_t pid = fork();
-    if (pid == 0) {
-    #ifdef __APPLE__
-        execlp("open", "open", url.c_str(), (char*)nullptr);
-    #else
-        execlp("xdg-open", "xdg-open", url.c_str(), (char*)nullptr);
-    #endif
-        _exit(127); // если execlp не сработал
-    } else if (pid > 0) {
-        int status = 0;
-        waitpid(pid, &status, 0);
-        return WIFEXITED(status) && WEXITSTATUS(status) == 0;
-    }
-    return false;
-#endif
-}
-
 const std::string& Label::getURL() const {
     return url;
 }
@@ -205,25 +161,21 @@ void Label::setURL(std::string url) {
     listenAction([this](GUI& gui) {
         Engine& engine = gui.getEngine();
 
-        std::wstring msg =
-            L"Открыть ссылку?\n" + util::str2wstr_utf8(this->getURL());
+        std::wstring msg = langs::get(L"Are you sure you want to open the link:") + L"\n"
+                    + util::str2wstr_utf8(this->getURL()) 
+                    + std::wstring(L"?");
+        
+        auto menu = gui.getMenu();
 
         guiutil::confirm(
             engine,
             msg,
-            [this, &engine]() {
-                auto& gui = engine.getGUI();
-                auto menu = gui.getMenu();
-                openURL(this->getURL());
-                menu->back();
-            },
-            [this, &engine]() {
-                auto& gui = engine.getGUI();
-                auto menu = gui.getMenu();
-                menu->back();
-            },
-            L"Да",
-            L"Нет"
+            [this, menu]() {
+                platform::openURL(this->getURL());
+                if (!menu->back()) {
+                    menu->reset();
+                }
+            }
         );
     });
 }

@@ -24,6 +24,7 @@ Save=Saqlash
 Grant %{0} pack modification permission?=%{0} to‘plamini o‘zgartirish ruxsatini berilsinmi?
 Error at line %{0}=%{0}-qatorida xatolik
 Run=Ishga tushirish
+Are you sure you want to open the link: =Haqiqatan ham havolani ochmoqchimisiz: 
 
 editor.info.tooltip=CTRL+S - Saqlash\nCTRL+R - Ishga tushirish\nCTRL+Z - Bekor qilish\nCTRL+Y - Qayta bajarish
 devtools.traceback=Chaqiruvlar steki (so`nggisidan boshlab)

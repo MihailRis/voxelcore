@@ -103,9 +103,14 @@ void guiutil::confirm(
 
     panel->setGravity(Gravity::center_center);
     container->add(panel);
-
     panel->setColor(glm::vec4(0.0f, 0.0f, 0.0f, 0.5f));
-    panel->add(std::make_shared<Label>(gui, text));
+
+    auto label = std::make_shared<Label>(gui, text);
+    label->setSize(glm::vec2(600, 50));
+    label->setMultiline(true);
+    label->setTextWrapping(true);
+
+    panel->add(label);
     auto subpanel = std::make_shared<Panel>(gui, glm::vec2(600, 53));
     subpanel->setColor(glm::vec4(0));
 
