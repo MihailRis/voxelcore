@@ -349,7 +349,10 @@ std::basic_string<CharT> BasicParser<CharT>::parseXmlName() {
 }
 
 template <typename CharT>
-int64_t BasicParser<CharT>::parseSimpleInt(int base) {
+int64_t BasicParser<CharT>::parseSimpleInt(int base, size_t maxLength) {
+    if (maxLength == 0) return 0;
+
+    size_t start = pos;
     CharT c = peek();
     int index = hexchar2int(c);
     if (index == -1 || index >= base) {
@@ -357,7 +360,7 @@ int64_t BasicParser<CharT>::parseSimpleInt(int base) {
     }
     int64_t value = index;
     pos++;
-    while (hasNext()) {
+    while (hasNext() && pos - start < maxLength) {
         c = source[pos];
         while (c == '_') {
             c = source[++pos];
@@ -476,7 +479,7 @@ std::basic_string<CharT> BasicParser<CharT>::parseString(
                 continue;
             }
             if (c == 'u' || c == 'x') {
-                int codepoint = parseSimpleInt(16);
+                int codepoint = parseSimpleInt(16, c == 'u' ? 4 : 2);
                 ubyte bytes[4];
                 int size = util::encode_utf8(codepoint, bytes);
                 CharT chars[4];

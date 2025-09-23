@@ -10,6 +10,7 @@
 #include "lighting/Lightmap.hpp"
 #include "maths/voxmaths.hpp"
 #include "objects/Entities.hpp"
+#include "objects/Entity.hpp"
 #include "voxels/blocks_agent.hpp"
 #include "typedefs.hpp"
 #include "world/LevelEvents.hpp"

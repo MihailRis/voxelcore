@@ -297,3 +297,29 @@ Methods are used to manage the overwriting of properties when extending a block 
 ### `property_name@append`
 
 Adds elements to the end of the list instead of completely overwriting it.
+
+## Tags
+
+Tags allow you to designate general properties of blocks. Names should be formatted as `prefix:tag_name`.
+The prefix is ​​optional, but helps avoid unwanted logical collisions. Example:
+
+```json
+{
+    "tags": [
+        "core:ore",
+        "base_survival:food",
+    ]
+}
+```
+
+Block tags can also be added from other packs using the `your_pack:tags.toml` file. Example:
+
+```toml
+"prefix:tag_name" = [
+    "random_pack:some_block",
+    "another_pack:item",
+]
+"other_prefix:other_tag_name" = [
+    # ...
+]
+``

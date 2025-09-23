@@ -60,6 +60,17 @@ static std::unique_ptr<ImageData> load_icon() {
     return nullptr;
 }
 
+static std::unique_ptr<scripting::IClientProjectScript> load_client_project_script() {
+    io::path scriptFile = "project:project_client.lua";
+    if (io::exists(scriptFile)) {
+        logger.info() << "starting project script";
+        return scripting::load_client_project_script(scriptFile);
+    } else {
+        logger.warning() << "project script does not exists";
+    }
+    return nullptr;
+}
+
 Engine::Engine() = default;
 Engine::~Engine() = default;
 
@@ -70,6 +81,74 @@ Engine& Engine::getInstance() {
         instance = std::make_unique<Engine>();
     }
     return *instance;
+}
+
+void Engine::onContentLoad() {
+    editor->loadTools();
+    langs::setup(langs::get_current(), paths.resPaths.collectRoots());
+    
+    if (isHeadless()) {
+        return;
+    }
+    for (auto& pack : content->getAllContentPacks()) {
+        auto configFolder = pack.folder / "config";
+        auto bindsFile = configFolder / "bindings.toml";
+        if (io::is_regular_file(bindsFile)) {
+            input->getBindings().read(
+                toml::parse(
+                    bindsFile.string(), io::read_string(bindsFile)
+                ),
+                BindType::BIND
+            );
+        }
+    }
+    loadAssets();
+}
+
+void Engine::initializeClient() {
+    std::string title = project->title;
+    if (title.empty()) {
+        title = "VoxelCore v" +
+                        std::to_string(ENGINE_VERSION_MAJOR) + "." +
+                        std::to_string(ENGINE_VERSION_MINOR);
+    }
+    if (ENGINE_DEBUG_BUILD) {
+        title += " [debug]";
+    }
+    auto [window, input] = Window::initialize(&settings.display, title);
+    if (!window || !input){
+        throw initialize_error("could not initialize window");
+    }
+    window->setFramerate(settings.display.framerate.get());
+
+    time.set(window->time());
+    if (auto icon = load_icon()) {
+        icon->flipY();
+        window->setIcon(icon.get());
+    }
+    this->window = std::move(window);
+    this->input = std::move(input);
+
+    loadControls();
+
+    gui = std::make_unique<gui::GUI>(*this);
+    if (ENGINE_DEBUG_BUILD) {
+        menus::create_version_label(*gui);
+    }
+    keepAlive(settings.display.fullscreen.observe(
+        [this](bool value) {
+            if (value != this->window->isFullscreen()) {
+                this->window->toggleFullscreen();
+            }
+        },
+        true
+    ));
+    keepAlive(settings.debug.doTraceShaders.observe(
+        [](bool value) {
+            Shader::preprocessor->setTraceOutput(value);
+        },
+        true
+    ));
 }
 
 void Engine::initialize(CoreParameters coreParameters) {
@@ -100,78 +179,28 @@ void Engine::initialize(CoreParameters coreParameters) {
 
     controller = std::make_unique<EngineController>(*this);
     if (!params.headless) {
-        std::string title = project->title;
-        if (title.empty()) {
-            title = "VoxelCore v" +
-                            std::to_string(ENGINE_VERSION_MAJOR) + "." +
-                            std::to_string(ENGINE_VERSION_MINOR);
-        }
-        if (ENGINE_DEBUG_BUILD) {
-            title += " [debug]";
-        }
-        auto [window, input] = Window::initialize(&settings.display, title);
-        if (!window || !input){
-            throw initialize_error("could not initialize window");
-        }
-        window->setFramerate(settings.display.framerate.get());
-
-        time.set(window->time());
-        if (auto icon = load_icon()) {
-            icon->flipY();
-            window->setIcon(icon.get());
-        }
-        this->window = std::move(window);
-        this->input = std::move(input);
-
-        loadControls();
-
-        gui = std::make_unique<gui::GUI>(*this);
-        if (ENGINE_DEBUG_BUILD) {
-            menus::create_version_label(*gui);
-        }
-        keepAlive(settings.display.fullscreen.observe(
-            [this](bool value) {
-                if (value != this->window->isFullscreen()) {
-                    this->window->toggleFullscreen();
-                }
-            },
-            true
-        ));
+        initializeClient();
     }
     audio::initialize(!params.headless, settings.audio);
 
-    bool langNotSet = settings.ui.language.get() == "auto";
-    if (langNotSet) {
+    if (settings.ui.language.get() == "auto") {
         settings.ui.language.set(
             langs::locale_by_envlocale(platform::detect_locale())
         );
     }
     content = std::make_unique<ContentControl>(*project, paths, *input, [this]() {
-        editor->loadTools();
-        langs::setup(langs::get_current(), paths.resPaths.collectRoots());
-        if (!isHeadless()) {
-            for (auto& pack : content->getAllContentPacks()) {
-                auto configFolder = pack.folder / "config";
-                auto bindsFile = configFolder / "bindings.toml";
-                if (io::is_regular_file(bindsFile)) {
-                    input->getBindings().read(
-                        toml::parse(
-                            bindsFile.string(), io::read_string(bindsFile)
-                        ),
-                        BindType::BIND
-                    );
-                }
-            }
-            loadAssets();
-        }
+        onContentLoad();
     });
     scripting::initialize(this);
+
     if (!isHeadless()) {
         gui->setPageLoader(scripting::create_page_loader());
     }
     keepAlive(settings.ui.language.observe([this](auto lang) {
         langs::setup(lang, paths.resPaths.collectRoots());
     }, true));
+
+    project->clientScript = load_client_project_script();
 }
 
 void Engine::loadSettings() {
@@ -286,6 +315,7 @@ void Engine::close() {
     audio::close();
     network.reset();
     clearKeepedObjects();
+    project.reset();
     scripting::close();
     logger.info() << "scripting finished";
     if (!params.headless) {
@@ -345,10 +375,19 @@ void Engine::loadProject() {
 }
 
 void Engine::setScreen(std::shared_ptr<Screen> screen) {
+    if (project->clientScript && this->screen) {
+        project->clientScript->onScreenChange(this->screen->getName(), false);
+    }
     // reset audio channels (stop all sources)
     audio::reset_channel(audio::get_channel_index("regular"));
     audio::reset_channel(audio::get_channel_index("ambient"));
     this->screen = std::move(screen);
+    if (this->screen) {
+        this->screen->onOpen();
+    }
+    if (project->clientScript && this->screen) {
+        project->clientScript->onScreenChange(this->screen->getName(), true);
+    }
 }
 
 void Engine::onWorldOpen(std::unique_ptr<Level> level, int64_t localPlayer) {

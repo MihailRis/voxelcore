@@ -26,6 +26,8 @@ entity:get_uid() -> int
 entity:get_component(name: str) -> component or nil
 -- Checks for the presence of a component by name
 entity:has_component(name: str) -> bool
+-- Retrieves a component by name. Throws an exception if it does not exist
+entity:require_component(name: str) -> component
 
 -- Enables/disables the component
 entity:set_enabled(name: str, enable: bool)
@@ -84,19 +86,21 @@ body:get_size() -> vec3
 body:set_size(size: vec3)
 
 -- Returns the gravity multiplier
-body:get_gravity_scale() -> vec3
+body:get_gravity_scale() -> number
 -- Sets the gravity multiplier
-body:set_gravity_scale(scale: vec3)
+body:set_gravity_scale(scale: number)
 
 -- Returns the linear velocity attenuation multiplier (used to simulate air resistance and friction)
 body:get_linear_damping() -> number
 -- Sets the linear velocity attenuation multiplier
 body:set_linear_damping(value: number)
 
--- Checks if vertical velocity attenuation is enabled
+-- Checks if vertical damping is enabled
 body:is_vdamping() -> bool
--- Enables/disables vertical velocity attenuation
-body:set_vdamping(enabled: bool)
+-- Returns the vertical damping multiplier
+body:get_vdamping() -> number
+-- Enables/disables vertical damping / sets vertical damping multiplier
+body:set_vdamping(enabled: bool | number)
 
 -- Checks if the entity is on the ground
 body:is_grounded() -> bool
@@ -187,6 +191,12 @@ function on_update(tps: int)
 ```
 
 Called every entities tick (currently 20 times per second).
+
+```lua
+function on_physics_update(delta: number)
+```
+
+Called after each physics step
 
 ```lua
 function on_render(delta: number)

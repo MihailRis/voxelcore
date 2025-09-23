@@ -810,6 +810,85 @@ void TextBox::stepDefaultUp(bool shiftPressed, bool breakSelection) {
     }
 }
 
+static int calc_indent(int linestart, std::wstring_view input) {
+    int indent = 0;
+    while (linestart + indent < input.length() &&
+           input[linestart + indent] == L' ')
+        indent++;
+    return indent;
+}
+
+void TextBox::onTab(bool shiftPressed) {
+    std::wstring indentStr = L"    ";
+
+    if (!shiftPressed && getSelectionLength() == 0) {
+        paste(indentStr);
+        return;
+    }
+    if (getSelectionLength() == 0) {
+        selectionStart = caret;
+        selectionEnd = caret;
+        selectionOrigin = caret;
+    }
+
+    int lineA = getLineAt(selectionStart);
+    int lineB = getLineAt(selectionEnd);
+    int caretLine = getLineAt(caret);
+
+    size_t lineAStart = getLinePos(lineA);
+    size_t lineBStart = getLinePos(lineB);
+    size_t caretLineStart = getLinePos(caretLine);
+    size_t caretIndent = calc_indent(caretLineStart, input);
+    size_t aIndent = calc_indent(lineAStart, input);
+    size_t bIndent = calc_indent(lineBStart, input);
+
+    int lastSelectionStart = selectionStart;
+    int lastSelectionEnd = selectionEnd;
+    size_t lastCaret = caret;
+    
+    auto combination = history->beginCombination();
+
+    resetSelection();
+
+    for (int line = lineA; line <= lineB; line++) {
+        size_t linestart = getLinePos(line);
+        int indent = calc_indent(linestart, input);
+        
+        if (shiftPressed) {
+            if (indent >= indentStr.length()) {
+                setCaret(linestart);
+                select(linestart, linestart + indentStr.length());
+                eraseSelected();
+            }
+        } else {
+            setCaret(linestart);
+            paste(indentStr);
+        }
+        refreshLabel(); // todo: replace with textbox cache
+    }
+
+    int linestart = getLinePos(caretLine);
+    int linestartA = getLinePos(lineA);
+    int linestartB = getLinePos(lineB);
+    int la = lastSelectionStart - lineAStart;
+    int lb = lastSelectionEnd - lineBStart;
+    if (shiftPressed) {
+        setCaret(lastCaret - caretLineStart + linestart - std::min<int>(caretIndent, indentStr.length()));
+        selectionStart = la + linestartA - std::min<int>(std::min<int>(la, aIndent), indentStr.length());
+        selectionEnd = lb + linestartB - std::min<int>(std::min<int>(lb, bIndent), indentStr.length());
+    } else {
+        setCaret(lastCaret - caretLineStart + linestart + indentStr.length());
+        selectionStart = la + linestartA + indentStr.length();
+        selectionEnd = lb + linestartB + indentStr.length();
+    }
+    if (selectionOrigin == lastSelectionStart) {
+        selectionOrigin = selectionStart;
+    } else {
+        selectionOrigin = selectionEnd;
+    }
+    historian->sync();
+}
+
 void TextBox::refreshSyntax() {
     if (!syntax.empty()) {
         const auto& processor = gui.getEditor().getSyntaxProcessor();
@@ -868,7 +947,7 @@ void TextBox::performEditingKeyboardEvents(Keycode key) {
             }
         }
     } else if (key == Keycode::TAB) {
-        paste(L"    ");
+        onTab(shiftPressed);
     } else if (key == Keycode::LEFT) {
         stepLeft(shiftPressed, breakSelection);
     } else if (key == Keycode::RIGHT) {

@@ -11,7 +11,7 @@ namespace util {
         stack_vector(const stack_vector<T, capacity>& other)
             : size_(other.size_) {
             for (int i = 0; i < size_; ++i) {
-                new (&data_[i]) T(data_[i]);
+                new (&data_[i]) T(other.data_[i]);
             }
         }
 

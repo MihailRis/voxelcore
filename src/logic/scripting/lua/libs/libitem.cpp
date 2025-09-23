@@ -57,6 +57,13 @@ static int l_caption(lua::State* L) {
     return 0;
 }
 
+static int l_description(lua::State* L) {
+    if (auto def = get_item_def(L, 1)) {
+        return lua::pushstring(L, def->description);
+    }
+    return 0;
+}
+
 static int l_placing_block(lua::State* L) {
     if (auto def = get_item_def(L, 1)) {
         return lua::pushinteger(L, def->rt.placingBlock);
@@ -101,6 +108,30 @@ static int l_reload_script(lua::State* L) {
     return 0;
 }
 
+static int l_has_tag(lua::State* L) {
+    if (auto def = get_item_def(L, 1)) {
+        auto tag = lua::require_string(L, 2);
+        const auto& tags = def->rt.tags;
+        return lua::pushboolean(L, tags.find(content->getTagIndex(tag)) != tags.end());
+    }
+    return 0;
+}
+
+static int l_get_tags(lua::State* L) {
+    if (auto def = get_item_def(L,  1)) {
+        if (def->tags.empty())  {
+            return 0;
+        }
+        lua::createtable(L, 0, def->tags.size());
+        for (const auto& tag : def->tags) {
+            lua::pushboolean(L, true);
+            lua::setfield(L, tag);
+        }
+        return 1;
+    }
+    return 0;
+}
+
 const luaL_Reg itemlib[] = {
     {"index", lua::wrap<l_index>},
     {"name", lua::wrap<l_name>},
@@ -108,10 +139,13 @@ const luaL_Reg itemlib[] = {
     {"defs_count", lua::wrap<l_defs_count>},
     {"icon", lua::wrap<l_get_icon>},
     {"caption", lua::wrap<l_caption>},
+    {"description", lua::wrap<l_description>},
     {"placing_block", lua::wrap<l_placing_block>},
     {"model_name", lua::wrap<l_model_name>},
     {"emission", lua::wrap<l_emission>},
     {"uses", lua::wrap<l_uses>},
     {"reload_script", lua::wrap<l_reload_script>},
+    {"has_tag", lua::wrap<l_has_tag>},
+    {"__get_tags", lua::wrap<l_get_tags>},
     {NULL, NULL}
 };

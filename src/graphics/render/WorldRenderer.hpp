@@ -20,7 +20,9 @@ class ChunksRenderer;
 class ParticlesRenderer;
 class BlockWrapsRenderer;
 class PrecipitationRenderer;
-class GuidesRenderer;
+class HandsRenderer;
+class NamedSkeletons;
+class LinesRenderer;
 class TextsRenderer;
 class Shader;
 class Frustum;
@@ -31,8 +33,9 @@ class PostProcessing;
 class DrawContext;
 class ModelBatch;
 class Assets;
-class ShadowMap;
+class Shadows;
 class GBuffer;
+class DebugLinesRenderer;
 struct EngineSettings;
 
 struct CompileTimeShaderSettings {
@@ -50,27 +53,22 @@ class WorldRenderer {
     std::unique_ptr<LineBatch> lineBatch;
     std::unique_ptr<Batch3D> batch3d;
     std::unique_ptr<ModelBatch> modelBatch;
-    std::unique_ptr<GuidesRenderer> guides;
-    std::unique_ptr<ChunksRenderer> chunks;
+    std::unique_ptr<ChunksRenderer> chunksRenderer;
+    std::unique_ptr<HandsRenderer> hands;
     std::unique_ptr<Skybox> skybox;
-    std::unique_ptr<ShadowMap> shadowMap;
-    std::unique_ptr<ShadowMap> wideShadowMap;
+    std::unique_ptr<Shadows> shadowMapping;
+    std::unique_ptr<DebugLinesRenderer> debugLines;
     Weather weather {};
-    Camera shadowCamera;
-    Camera wideShadowCamera;
     
     float timer = 0.0f;
     bool debug = false;
     bool lightsDebug = false;
     bool gbufferPipeline = false;
-    bool shadows = false;
 
     CompileTimeShaderSettings prevCTShaderSettings {};
 
     /// @brief Render block selection lines
     void renderBlockSelection();
-
-    void renderHands(const Camera& camera, float delta);
     
     /// @brief Render lines (selection and debug)
     /// @param camera active camera
@@ -88,18 +86,25 @@ class WorldRenderer {
         float fogFactor
     );
 
-    void generateShadowsMap(
-        const Camera& camera,
-        const DrawContext& pctx,
-        ShadowMap& shadowMap,
-        Camera& shadowCamera,
-        float scale
+    /// @brief Render opaque pass
+    /// @param context graphics context
+    /// @param camera active camera
+    /// @param settings engine settings
+    void renderOpaque(
+        const DrawContext& context, 
+        const Camera& camera, 
+        const EngineSettings& settings,
+        float delta,
+        bool pause,
+        bool hudVisible
     );
 public:
     std::unique_ptr<ParticlesRenderer> particles;
     std::unique_ptr<TextsRenderer> texts;
     std::unique_ptr<BlockWrapsRenderer> blockWraps;
     std::unique_ptr<PrecipitationRenderer> precipitation;
+    std::unique_ptr<NamedSkeletons> skeletons;
+    std::unique_ptr<LinesRenderer> lines;
 
     static bool showChunkBorders;
     static bool showEntitiesDebug;
@@ -107,26 +112,13 @@ public:
     WorldRenderer(Engine& engine, LevelFrontend& frontend, Player& player);
     ~WorldRenderer();
 
-    void draw(
+    void renderFrame(
         const DrawContext& context, 
         Camera& camera, 
         bool hudVisible,
         bool pause,
         float delta,
         PostProcessing& postProcessing
-    );
-
-    /// @brief Render level without diegetic interface
-    /// @param context graphics context
-    /// @param camera active camera
-    /// @param settings engine settings
-    void renderLevel(
-        const DrawContext& context, 
-        const Camera& camera, 
-        const EngineSettings& settings,
-        float delta,
-        bool pause,
-        bool hudVisible
     );
 
     void clear();

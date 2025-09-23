@@ -65,12 +65,21 @@ namespace scripting {
 
     void process_post_runnables();
 
-    std::unique_ptr<Process> start_coroutine(
+    class IClientProjectScript {
+    public:
+        virtual ~IClientProjectScript() {}
+
+        virtual void onScreenChange(const std::string& name, bool show) = 0;
+    };
+
+    std::unique_ptr<IClientProjectScript> load_client_project_script(
         const io::path& script
     );
 
+    std::unique_ptr<Process> start_coroutine(const io::path& script);
+
     void on_world_load(LevelController* controller);
-    void on_world_tick();
+    void on_world_tick(int tps);
     void on_world_save();
     void on_world_quit();
     void cleanup();
@@ -130,6 +139,7 @@ namespace scripting {
     void on_entity_fall(const Entity& entity);
     void on_entity_save(const Entity& entity);
     void on_entities_update(int tps, int parts, int part);
+    void on_entities_physics_update(float delta);
     void on_entities_render(float delta);
     void on_sensor_enter(const Entity& entity, size_t index, entityid_t oid);
     void on_sensor_exit(const Entity& entity, size_t index, entityid_t oid);

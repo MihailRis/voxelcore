@@ -20,21 +20,21 @@
 
 using namespace scripting;
 
-static inline const Block* require_block(lua::State* L) {
+static inline const Block* get_block_def(lua::State* L) {
     auto indices = content->getIndices();
     auto id = lua::tointeger(L, 1);
     return indices->blocks.get(id);
 }
 
 static inline int l_get_def(lua::State* L) {
-    if (auto def = require_block(L)) {
+    if (auto def = get_block_def(L)) {
         return lua::pushstring(L, def->name);
     }
     return 0;
 }
 
 static int l_material(lua::State* L) {
-    if (auto def = require_block(L)) {
+    if (auto def = get_block_def(L)) {
         return lua::pushstring(L, def->material);
     }
     return 0;
@@ -59,14 +59,14 @@ static int l_index(lua::State* L) {
 }
 
 static int l_is_extended(lua::State* L) {
-    if (auto def = require_block(L)) {
+    if (auto def = get_block_def(L)) {
         return lua::pushboolean(L, def->rt.extended);
     }
     return 0;
 }
 
 static int l_get_size(lua::State* L) {
-    if (auto def = require_block(L)) {
+    if (auto def = get_block_def(L)) {
         return lua::pushivec_stack(L, glm::ivec3(def->size));
     }
     return 0;
@@ -101,12 +101,9 @@ static int l_set(lua::State* L) {
     if (static_cast<size_t>(id) >= indices->blocks.count()) {
         return 0;
     }
-    int cx = floordiv<CHUNK_W>(x);
-    int cz = floordiv<CHUNK_D>(z);
-    if (!blocks_agent::get_chunk(*level->chunks, cx, cz)) {
+    if (!blocks_agent::set(*level->chunks, x, y, z, id, int2blockstate(state))) {
         return 0;
     }
-    blocks_agent::set(*level->chunks, x, y, z, id, int2blockstate(state));
 
     auto chunksController = controller->getChunksController();
     if (chunksController == nullptr) {
@@ -346,14 +343,14 @@ static int l_is_replaceable_at(lua::State* L) {
 }
 
 static int l_caption(lua::State* L) {
-    if (auto def = require_block(L)) {
+    if (auto def = get_block_def(L)) {
         return lua::pushstring(L, def->caption);
     }
     return 0;
 }
 
 static int l_get_textures(lua::State* L) {
-    if (auto def = require_block(L)) {
+    if (auto def = get_block_def(L)) {
         lua::createtable(L, 6, 0);
         for (size_t i = 0; i < 6; i++) {
             lua::pushstring(L, def->defaults.textureFaces[i]); // TODO: variant argument
@@ -364,8 +361,21 @@ static int l_get_textures(lua::State* L) {
     return 0;
 }
 
+
+static int l_model_name(lua::State* L) {
+    if (auto def = get_block_def(L)) {
+        // TODO: variant argument
+        const auto& modelName = def->defaults.model.name;
+        if (modelName.empty()) {
+            return lua::pushlstring(L, def->name + ".model");
+        }
+        return lua::pushlstring(L, modelName);
+    }
+    return 0;
+}
+
 static int l_get_model(lua::State* L) {
-    if (auto def = require_block(L)) {
+    if (auto def = get_block_def(L)) {
         // TODO: variant argument
         return lua::pushlstring(L, BlockModelTypeMeta.getName(def->defaults.model.type));
     }
@@ -373,7 +383,7 @@ static int l_get_model(lua::State* L) {
 }
 
 static int l_get_hitbox(lua::State* L) {
-    if (auto def = require_block(L)) {
+    if (auto def = get_block_def(L)) {
         size_t rotation = lua::tointeger(L, 2);
         if (def->rotatable) {
             rotation %= def->rotations.MAX_COUNT;
@@ -394,14 +404,14 @@ static int l_get_hitbox(lua::State* L) {
 }
 
 static int l_get_rotation_profile(lua::State* L) {
-    if (auto def = require_block(L)) {
+    if (auto def = get_block_def(L)) {
         return lua::pushstring(L, def->rotations.name);
     }
     return 0;
 }
 
 static int l_get_picking_item(lua::State* L) {
-    if (auto def = require_block(L)) {
+    if (auto def = get_block_def(L)) {
         return lua::pushinteger(L, def->rt.pickingItem);
     }
     return 0;
@@ -688,6 +698,49 @@ static int l_reload_script(lua::State* L) {
     return 0;
 }
 
+static int l_has_tag(lua::State* L) {
+    if (auto def = get_block_def(L)) {
+        auto tag = lua::require_string(L, 2);
+        const auto& tags = def->rt.tags;
+        return lua::pushboolean(L, tags.find(content->getTagIndex(tag)) != tags.end());
+    }
+    return 0;
+}
+
+static int l_get_tags(lua::State* L) {
+    if (auto def = get_block_def(L)) {
+        if (def->tags.empty())  {
+            return 0;
+        }
+        lua::createtable(L, 0, def->tags.size());
+        for (const auto& tag : def->tags) {
+            lua::pushboolean(L, true);
+            lua::setfield(L, tag);
+        }
+        return 1;
+    }
+    return 0;
+}
+
+static int l_pull_register_events(lua::State* L) {
+    auto events = blocks_agent::pull_register_events();
+    if (events.empty())
+        return 0;
+
+    lua::createtable(L, events.size() * 4, 0);
+    for (int i = 0; i < events.size(); i++) {
+        const auto& event = events[i];
+        lua::pushinteger(L, static_cast<int>(event.type) | event.id << 16);
+        lua::rawseti(L, i * 4 + 1);
+
+        for (int j = 0; j < 3; j++) {
+            lua::pushinteger(L, event.coord[j]);
+            lua::rawseti(L, i * 4 + j + 2);
+        }
+    }
+    return 1;
+}
+
 const luaL_Reg blocklib[] = {
     {"index", lua::wrap<l_index>},
     {"name", lua::wrap<l_get_def>},
@@ -713,6 +766,7 @@ const luaL_Reg blocklib[] = {
     {"get_size", lua::wrap<l_get_size>},
     {"is_segment", lua::wrap<l_is_segment>},
     {"seek_origin", lua::wrap<l_seek_origin>},
+    {"model_name", lua::wrap<l_model_name>},
     {"get_textures", lua::wrap<l_get_textures>},
     {"get_model", lua::wrap<l_get_model>},
     {"get_hitbox", lua::wrap<l_get_hitbox>},
@@ -726,5 +780,8 @@ const luaL_Reg blocklib[] = {
     {"get_field", lua::wrap<l_get_field>},
     {"set_field", lua::wrap<l_set_field>},
     {"reload_script", lua::wrap<l_reload_script>},
+    {"has_tag", lua::wrap<l_has_tag>},
+    {"__get_tags", lua::wrap<l_get_tags>},
+    {"__pull_register_events", lua::wrap<l_pull_register_events>},
     {NULL, NULL}
 };

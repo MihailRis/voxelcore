@@ -32,7 +32,7 @@ protected:
     void goBack(size_t count = 1);
     void reset();
 
-    int64_t parseSimpleInt(int base);
+    int64_t parseSimpleInt(int base, size_t maxLength = 0xFFFFFFFF);
     dv::value parseNumber(int sign);
     dv::value parseNumber();
     StringT parseString(CharT chr, bool closeRequired = true);

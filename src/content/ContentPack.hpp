@@ -1,13 +1,14 @@
 #pragma once
 
+#include "typedefs.hpp"
+#include "content_fwd.hpp"
+#include "io/io.hpp"
+#include "util/EnumMetadata.hpp"
+
 #include <stdexcept>
 #include <string>
 #include <vector>
 #include <optional>
-
-#include "typedefs.hpp"
-#include "content_fwd.hpp"
-#include "io/io.hpp"
 
 class EnginePaths;
 
@@ -20,21 +21,36 @@ public:
         io::path folder,
         const std::string& message
     );
-
+    
     std::string getPackId() const;
     io::path getFolder() const;
 };
 
+enum class VersionOperator {
+    EQUAL, GREATHER, LESS,
+    GREATHER_OR_EQUAL, LESS_OR_EQUAL
+};
+
+VC_ENUM_METADATA(VersionOperator)
+    {"=", VersionOperator::EQUAL},
+    {">", VersionOperator::GREATHER},
+    {"<", VersionOperator::LESS},
+    {">=", VersionOperator::GREATHER_OR_EQUAL},
+    {"<=", VersionOperator::LESS_OR_EQUAL},
+VC_ENUM_END
+
 enum class DependencyLevel {
-    required,  // dependency must be installed
-    optional,  // dependency will be installed if found
-    weak,      // only affects packs order
+    REQUIRED,  // dependency must be installed
+    OPTIONAL,  // dependency will be installed if found
+    WEAK,      // only affects packs order
 };
 
 /// @brief Content-pack that should be installed earlier the dependent
 struct DependencyPack {
     DependencyLevel level;
     std::string id;
+    std::string version;
+    VersionOperator op;
 };
 
 struct ContentPackStats {

@@ -85,11 +85,20 @@ struct GraphicsSettings {
     IntegerSetting denseRenderDistance {56, 0, 10'000};
 };
 
+struct PathfindingSettings {
+    /// @brief Max visited blocks by an agent per async tick
+    IntegerSetting stepsPerAsyncAgent {128, 1, 2048};
+};
+
 struct DebugSettings {
     /// @brief Turns off chunks saving/loading
     FlagSetting generatorTestMode {false};
     /// @brief Write lights cache
     FlagSetting doWriteLights {true};
+    /// @brief Write preprocessed shaders code to user:export
+    FlagSetting doTraceShaders {false};
+    /// @brief Enable experimental optimizations and features
+    FlagSetting enableExperimental {false};
 };
 
 struct UiSettings {
@@ -109,4 +118,5 @@ struct EngineSettings {
     DebugSettings debug;
     UiSettings ui;
     NetworkSettings network;
+    PathfindingSettings pathfinding;
 };

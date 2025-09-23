@@ -16,7 +16,7 @@ TEST(curltest, curltest) {
             auto view = std::string_view(data.data(), data.size());
             auto value = json::parse(view);
             std::cout << value << std::endl;
-        }, [](auto){}
+        }, [](auto, auto){}
     );
     std::cout << "upload: " << network->getTotalUpload() << " B" << std::endl;
     std::cout << "download: " << network->getTotalDownload() << " B" << std::endl;

@@ -48,8 +48,8 @@ namespace lua {
         return true;
     }
 
-    template <int n>
-    inline int pushvec(lua::State* L, const glm::vec<n, float>& vec) {
+    template <int n, typename T = float>
+    inline int pushvec(lua::State* L, const glm::vec<n, T>& vec) {
         createtable(L, n, 0);
         for (int i = 0; i < n; i++) {
             pushnumber(L, vec[i]);
@@ -161,8 +161,8 @@ namespace lua {
         }
         return 1;
     }
-    template <int n>
-    inline int setvec(lua::State* L, int idx, glm::vec<n, float> vec) {
+    template <int n, typename T = float>
+    inline int setvec(lua::State* L, int idx, glm::vec<n, T> vec) {
         pushvalue(L, idx);
         for (int i = 0; i < n; i++) {
             pushnumber(L, vec[i]);
@@ -305,15 +305,15 @@ namespace lua {
         setglobal(L, name);
     }
 
-    template <int n>
-    inline glm::vec<n, float> tovec(lua::State* L, int idx) {
+    template <int n, typename T = float>
+    inline glm::vec<n, T> tovec(lua::State* L, int idx) {
         pushvalue(L, idx);
         if (!istable(L, idx) || objlen(L, idx) < n) {
             throw std::runtime_error(
                 "value must be an array of " + std::to_string(n) + " numbers"
             );
         }
-        glm::vec<n, float> vec;
+        glm::vec<n, T> vec;
         for (int i = 0; i < n; i++) {
             rawgeti(L, i + 1);
             vec[i] = tonumber(L, -1);
@@ -455,7 +455,7 @@ namespace lua {
 
     inline bool getfield(lua::State* L, const std::string& name, int idx = -1) {
         lua_getfield(L, idx, name.c_str());
-        if (isnil(L, idx)) {
+        if (isnoneornil(L, -1)) {
             pop(L);
             return false;
         }

@@ -45,8 +45,7 @@ public:
 
     /// @brief Place fragment to the world
     /// @param offset target location
-    /// @param rotation rotation index
-    void place(GlobalChunks& chunks, const glm::ivec3& offset, ubyte rotation);
+    void place(GlobalChunks& chunks, const glm::ivec3& offset);
 
     /// @brief Create structure copy rotated 90 deg. clockwise
     std::unique_ptr<VoxelFragment> rotated(const Content& content) const;

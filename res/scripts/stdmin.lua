@@ -20,6 +20,18 @@ if not ipairs_mt_supported then
     end
 end
 
+function await(co)
+    local res, err
+    while coroutine.status(co) ~= 'dead' do
+        coroutine.yield()
+        res, err = coroutine.resume(co)
+        if err then
+            return res, err
+        end
+    end
+    return res, err
+end
+
 local _ffi = ffi
 function __vc_Canvas_set_data(self, data)
     if type(data) == "cdata" then
@@ -538,6 +550,8 @@ function reload_module(name)
     end
 end
 
+local internal_locked = false
+
 -- Load script with caching
 --
 -- path - script path `contentpack:filename`. 
@@ -546,6 +560,11 @@ end
 -- nocache - ignore cached script, load anyway
 function __load_script(path, nocache)
     local packname, filename = parse_path(path)
+
+    if internal_locked and (packname == "res" or packname == "core") 
+       and filename:starts_with("modules/internal") then
+        error("access to core:internal modules outside of [core]")
+    end
 
     -- __cached_scripts used in condition because cached result may be nil
     if not nocache and __cached_scripts[path] ~= nil then
@@ -565,6 +584,10 @@ function __load_script(path, nocache)
         package.loaded[path] = result
     end
     return result
+end
+
+function __vc_lock_internal_modules()
+    internal_locked = true
 end
 
 function require(path)
@@ -645,3 +668,5 @@ end
 
 bit.compile = require "core:bitwise/compiler"
 bit.execute = require "core:bitwise/executor"
+
+random.Random = require "core:internal/random_generator"

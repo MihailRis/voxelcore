@@ -14,6 +14,7 @@ Chunk::Chunk(int xpos, int zpos) : x(xpos), z(zpos) {
 }
 
 void Chunk::updateHeights() {
+    flags.dirtyHeights = false;
     for (uint i = 0; i < CHUNK_VOL; i++) {
         if (voxels[i].id != 0) {
             bottom = i / (CHUNK_D * CHUNK_W);

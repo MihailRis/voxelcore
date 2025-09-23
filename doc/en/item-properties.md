@@ -18,6 +18,14 @@ Name of the item model. The model will be loaded automatically.
 Default value is `packid:itemname.model`.
 If the model is not specified, an automatic one will be generated.
 
+### Caption and Description
+`caption` - name of item in inventory
+`description` - item description in inventory
+
+this props allow to use `md`
+
+*see [Text Styles](/doc/en/text-styles.md)*
+
 ## Behaviour
 
 ### *placing-block*
@@ -58,3 +66,29 @@ Property status is displayed in the inventory interface. Display method is defin
 - `number` - number
 - `relation` - current value to initial value (x/y)
 - `vbar` - vertical scale (used by default)
+
+## Tags
+
+Tags allow you to designate general properties of items. Names should be formatted as `prefix:tag_name`.
+The prefix is ​​optional, but helps avoid unwanted logical collisions. Example:
+
+```json
+{
+    "tags": [
+        "core:fuel",
+        "base_survival:poison",
+    ]
+}
+```
+
+Tags can also be added to items from other packs using the `your_pack:tags.toml` file. Example
+
+```toml
+"prefix:tag_name" = [
+    "random_pack:item",
+    "another_pack:some_block",
+]
+"other_prefix:other_tag_name" = [
+    # ...
+]
+```

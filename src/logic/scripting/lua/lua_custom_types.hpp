@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 
 #include "lua_commons.hpp"
 
@@ -55,14 +56,16 @@ namespace lua {
     static_assert(!std::is_abstract<LuaHeightmap>());
 
     class LuaVoxelFragment : public Userdata {
-        std::shared_ptr<VoxelFragment> fragment;
+        std::array<std::shared_ptr<VoxelFragment>, 4> fragmentVariants;
     public:
-        LuaVoxelFragment(std::shared_ptr<VoxelFragment> fragment);
+        LuaVoxelFragment(
+            std::array<std::shared_ptr<VoxelFragment>, 4> fragmentVariants
+        );
 
         virtual ~LuaVoxelFragment();
 
-        std::shared_ptr<VoxelFragment> getFragment() const {
-            return fragment;
+        std::shared_ptr<VoxelFragment> getFragment(size_t rotation) const {
+            return fragmentVariants.at(rotation & 0b11);
         }
 
         const std::string& getTypeName() const override {

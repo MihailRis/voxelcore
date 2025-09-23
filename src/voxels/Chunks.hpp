@@ -28,7 +28,7 @@ class Chunks {
     const ContentIndices& indices;
 
     void eraseSegments(const Block& def, blockstate state, int x, int y, int z);
-    void repairSegments(
+    void restoreSegments(
         const Block& def, blockstate state, int x, int y, int z
     );
     void setRotationExtended(

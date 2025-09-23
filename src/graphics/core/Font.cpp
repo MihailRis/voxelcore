@@ -57,6 +57,14 @@ static inline void draw_glyph(
     const FontStyle& style
 ) {
     for (int i = 0; i <= style.bold; i++) {
+        glm::vec4 color;
+
+        if (style.color == glm::vec4(1, 1, 1, 1)) {
+            color = batch.getColor();
+        } else {
+            color = style.color;
+        }
+
         batch.sprite(
             pos.x + (offset.x + i / (right.x/glyphInterval/2.0f)) * right.x,
             pos.y + offset.y * right.y,
@@ -65,7 +73,7 @@ static inline void draw_glyph(
             -0.15f * style.italic,
             16,
             c,
-            batch.getColor() * style.color
+            color
         );
     }
 }
@@ -81,6 +89,15 @@ static inline void draw_glyph(
     const FontStyle& style
 ) {
     for (int i = 0; i <= style.bold; i++) {
+        glm::vec4 color;
+
+        if (style.color == glm::vec4(1, 1, 1, 1)) {
+            color = batch.getColor();
+        } else {
+            color = style.color;
+        }
+        
+
         batch.sprite(
             pos + right * (offset.x + i) + up * offset.y,
             up, right / glyphInterval,
@@ -88,7 +105,7 @@ static inline void draw_glyph(
             0.5f,
             16,
             c,
-            batch.getColor() * style.color
+            color
         );
     }
 }

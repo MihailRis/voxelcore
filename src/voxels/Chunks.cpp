@@ -171,10 +171,10 @@ void Chunks::eraseSegments(
     blocks_agent::erase_segments(*this, def, state, x, y, z);
 }
 
-void Chunks::repairSegments(
+void Chunks::restoreSegments(
     const Block& def, blockstate state, int x, int y, int z
 ) {
-    blocks_agent::repair_segments(*this, def, state, x, y, z);
+    blocks_agent::restore_segments(*this, def, state, x, y, z);
 }
 
 bool Chunks::checkReplaceability(

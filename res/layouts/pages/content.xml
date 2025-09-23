@@ -31,11 +31,11 @@
         size='32' margin='0,0,425,64' gravity='bottom-right'  
         color='#FFFFFF50' hover-color='#FFFFFF10'/>  
   
-    <panel id='packs_add' pos='485,34' size='440,507' color='0' max-length='455' scrollable='true'>  
+    <panel id='packs_add' pos='485,34' size='440,455' color='0' max-length='455' scrollable='true'>  
         <!-- content is generated in script -->  
     </panel>  
   
-    <panel id='packs_cur' pos='15,34' size='440,507' color='0' max-length='455' scrollable='true'>  
+    <panel id='packs_cur' pos='15,34' size='440,455' color='0' max-length='455' scrollable='true'>  
         <!-- content is generated in script -->  
     </panel>  
 </container>

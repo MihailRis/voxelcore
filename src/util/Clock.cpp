@@ -10,7 +10,7 @@ Clock::Clock(int tickRate, int tickParts)
 
 bool Clock::update(float delta) {
     tickTimer += delta;
-    float delay = 1.0f / float(tickRate);
+    float delay = 1.0f / static_cast<float>(tickRate);
     if (tickTimer > delay || tickPartsUndone) {
         if (tickPartsUndone) {
             tickPartsUndone--;

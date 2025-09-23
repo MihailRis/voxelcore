@@ -71,8 +71,8 @@ static auto process_program(const ResPaths& paths, const std::string& filename) 
 
     auto& preprocessor = *Shader::preprocessor;
 
-    auto vertex = preprocessor.process(vertexFile, vertexSource);
-    auto fragment = preprocessor.process(fragmentFile, fragmentSource);
+    auto vertex = preprocessor.process(vertexFile, vertexSource, false, {});
+    auto fragment = preprocessor.process(fragmentFile, fragmentSource, false, {});
     return std::make_pair(vertex, fragment);
 }
 
@@ -121,7 +121,7 @@ assetload::postfunc assetload::posteffect(
 
     auto& preprocessor = *Shader::preprocessor;
     preprocessor.addHeader(
-        "__effect__", preprocessor.process(effectFile, effectSource, true)
+        "__effect__", preprocessor.process(effectFile, effectSource, true, {})
     );
 
     auto [vertex, fragment] = process_program(paths, SHADERS_FOLDER + "/effect");

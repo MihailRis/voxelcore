@@ -23,7 +23,7 @@ Bone::Bone(
     std::string name,
     std::string model,
     std::vector<std::unique_ptr<Bone>> bones,
-    glm::vec3 offset
+    const glm::vec3& offset
 )
     : index(index),
       name(std::move(name)),
@@ -50,6 +50,39 @@ Skeleton::Skeleton(const SkeletonConfig* config)
     const auto& bones = config->getBones();
     for (size_t i = 0; i < bones.size(); i++) {
         flags[i].visible = true;
+    }
+}
+
+dv::value Skeleton::serialize(bool saveTextures, bool savePose) const {
+    auto root = dv::object();
+    if (saveTextures) {
+        auto& map = root.object("textures");
+        for (auto& [slot, texture] : textures) {
+            map[slot] = texture;
+        }
+    }
+    if (savePose) {
+        auto& list = root.list("pose");
+        for (auto& mat : pose.matrices) {
+            list.add(dv::to_value(mat));
+        }
+    }
+    return root;
+}
+
+void Skeleton::deserialize(const dv::value& root) {
+    if (auto found = root.at("textures")) {
+        auto& texturesmap = *found;
+        for (auto& [slot, _] : texturesmap.asObject()) {
+            texturesmap.at(slot).get(textures[slot]);
+        }
+    }
+    if (auto found = root.at("pose")) {
+        auto& posearr = *found;
+        auto& matrices = pose.matrices;
+        for (size_t i = 0; i < std::min(matrices.size(), posearr.size()); i++) {
+            dv::get_mat(posearr[i], pose.matrices[i]);
+        }
     }
 }
 

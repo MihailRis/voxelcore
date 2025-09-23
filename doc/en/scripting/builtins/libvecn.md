@@ -100,6 +100,13 @@ vecn.length(a: vector)
 
 ```
 
+#### Distance - *vecn.distance(...)*
+
+```lua
+-- returns the distance between two vectors
+vecn.distance(a: vector, b: vector)
+```
+
 #### Absolute value - *vecn.abs(...)*
 
 ```lua
@@ -136,6 +143,16 @@ vecn.pow(v: vector, exponent: number, dst: vector)
 vecn.dot(a: vector, b: vector)
 ```
 
+#### Mixing - *vecn.mix(...)*
+
+```lua
+-- returns vector a * (1.0 - t) + b * t
+vecn.mix(a: vector, b: vector, t: number)
+
+-- writes to dst vector a * (1.0 - t) + b * t
+vecn.mix(a: vector, b: vector, t: number, dst: vector)
+```
+
 #### Convert to string - *vecn.tostring(...)*
 > [!WARNING]
 > Returns only if the content is a vector
@@ -160,6 +177,12 @@ vec2.angle(v: vec2)
 
 -- returns the direction angle of the vector {x, y} in degrees [0, 360]
 vec2.angle(x: number, y: number)
+
+-- returns the vector rotated by an angle in degrees counterclockwise
+vec2.rotate(v: vec2, angle: number) -> vec2
+
+-- writes the vector rotated by an angle in degrees counterclockwise to dst
+vec2.rotate(v: vec2, angle: number, dst: vec2) -> vec2
 ```
 
 
@@ -188,6 +211,10 @@ print("mul: " .. vec3.tostring(result_mul)) -- {10, 40, 80}
 local result_mul_scal = vec3.mul(v1_3d, scal)
 print("mul_scal: " .. vec3.tostring(result_mul_scal)) -- {6, 12, 12}
 
+-- calculating distance between vectors
+local result_distance = vec3.distance(v1_3d, v2_3d)
+print("distance: " .. result_distance) -- 43
+
 -- vector normalization
 local result_norm = vec3.normalize(v1_3d)
 print("norm: " .. vec3.tostring(result_norm)) -- {0.333, 0.667, 0.667}
@@ -211,3 +238,7 @@ print("pow: " .. vec3.tostring(result_pow)) -- {1, 4, 4}
 -- scalar product of vectors
 local result_dot = vec3.dot(v1_3d, v2_3d)
 print("dot: " ..result_dot) -- 250
+
+-- mixing vectors
+local result_mix = vec3.mix(v1_3d, v2_3d, 0.25)
+print("mix: " .. vec3.tostring(result_mix)) -- {3.25, 6.5, 11.5}

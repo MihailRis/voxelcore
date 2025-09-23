@@ -10,6 +10,9 @@ item.index(name: str) -> int
 -- Возвращает название предмета, отображаемое в интерфейсе.
 item.caption(itemid: int) -> str
 
+-- Возвращает описание предмета, отображаемое в интерфейсе.
+item.description(itemid: int) -> str
+
 -- Возвращает максимальный размер стопки для предмета.
 item.stack_size(itemid: int) -> int
 
@@ -30,6 +33,9 @@ item.emission(itemid: int) -> str
 
 -- Возвращает значение свойства `uses`
 item.uses(itemid: int) -> int
+
+-- Проверяет наличие тега у предмета
+item.has_tag(itemid: int, tag: str) -> bool
 ```
 
 

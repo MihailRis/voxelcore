@@ -30,7 +30,18 @@ template<> void ContentUnitLoader<EntityDef>::loadUnit(
 
     if (auto found = root.at("components")) {
         for (const auto& elem : *found) {
-            def.components.emplace_back(elem.asString());
+            std::string name;
+            dv::value params;
+            if (elem.isObject()) {
+                name = elem["name"].asString();
+                if (elem.has("args")) {
+                    params = elem["args"];
+                }
+            } else {
+                name = elem.asString();
+            }
+            def.components.push_back(ComponentInstance {
+                    std::move(name), std::move(params)});
         }
     }
     if (auto found = root.at("hitbox")) {

@@ -31,6 +31,8 @@ static int l_mousecode(lua::State* L) {
 }
 
 static int l_add_callback(lua::State* L) {
+    if (engine->isHeadless())
+        return 0;
     std::string bindname = lua::require_string(L, 1);
     size_t pos = bindname.find(':');
 
@@ -75,10 +77,14 @@ static int l_add_callback(lua::State* L) {
 }
 
 static int l_get_mouse_pos(lua::State* L) {
+    if (engine->isHeadless())
+        return 0;
     return lua::pushvec2(L, engine->getInput().getCursor().pos);
 }
 
 static int l_get_bindings(lua::State* L) {
+    if (engine->isHeadless())
+        return 0;
     const auto& bindings = engine->getInput().getBindings().getAll();
     lua::createtable(L, bindings.size(), 0);
 
@@ -92,18 +98,24 @@ static int l_get_bindings(lua::State* L) {
 }
 
 static int l_get_binding_text(lua::State* L) {
+    if (engine->isHeadless())
+        return 0;
     auto bindname = lua::require_string(L, 1);
     const auto& bind = engine->getInput().getBindings().require(bindname);
     return lua::pushstring(L, bind.text());
 }
 
 static int l_is_active(lua::State* L) {
+    if (engine->isHeadless())
+        return 0;
     auto bindname = lua::require_string(L, 1);
     auto& bind = engine->getInput().getBindings().require(bindname);
     return lua::pushboolean(L, bind.active());
 }
 
 static int l_is_pressed(lua::State* L) {
+    if (engine->isHeadless())
+        return 0;
     std::string code = lua::require_string(L, 1);
     size_t sep = code.find(':');
     if (sep == std::string::npos) {
@@ -136,6 +148,8 @@ static void reset_pack_bindings(const io::path& packFolder) {
 }
 
 static int l_reset_bindings(lua::State*) {
+    if (engine->isHeadless())
+        return 0;
     reset_pack_bindings("res:");
     for (const auto& pack : content_control->getContentPacks()) {
         reset_pack_bindings(pack.folder);
@@ -144,6 +158,8 @@ static int l_reset_bindings(lua::State*) {
 }
 
 static int l_set_enabled(lua::State* L) {
+    if (engine->isHeadless())
+        return 0;
     std::string bindname = lua::require_string(L, 1);
     bool enabled = lua::toboolean(L, 2);
     engine->getInput().getBindings().require(bindname).enabled = enabled;
@@ -161,4 +177,5 @@ const luaL_Reg inputlib[] = {
     {"is_pressed", lua::wrap<l_is_pressed>},
     {"reset_bindings", lua::wrap<l_reset_bindings>},
     {"set_enabled", lua::wrap<l_set_enabled>},
-    {NULL, NULL}};
+    {NULL, NULL}
+};

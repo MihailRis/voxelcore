@@ -38,9 +38,11 @@ extern const luaL_Reg mat4lib[];
 extern const luaL_Reg networklib[];
 extern const luaL_Reg packlib[];
 extern const luaL_Reg particleslib[]; // gfx.particles
+extern const luaL_Reg pathfindinglib[];
 extern const luaL_Reg playerlib[];
 extern const luaL_Reg posteffectslib[]; // gfx.posteffects
 extern const luaL_Reg quatlib[];
+extern const luaL_Reg randomlib[];
 extern const luaL_Reg text3dlib[]; // gfx.text3d
 extern const luaL_Reg timelib[];
 extern const luaL_Reg tomllib[];

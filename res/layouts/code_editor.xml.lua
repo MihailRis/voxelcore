@@ -81,6 +81,11 @@ local function refresh_file_title()
     document.saveIcon.enabled = edited
     document.title.text = gui.str('File')..' - '..current_file.filename
         ..(edited and ' *' or '')
+
+    local info = registry.get_info(current_file.filename)
+    if info and info.type == "model" then
+        pcall(run_current_file)
+    end
 end
 
 function on_control_combination(keycode)
@@ -118,7 +123,6 @@ function run_current_file()
     local unit = info and info.unit
 
     if script_type == "model" then
-        print(current_file.filename)
         clear_output()
         local _, err = pcall(reload_model, current_file.filename, unit)
         if err then
@@ -256,7 +260,7 @@ function open_file_in_editor(filename, line, mutable)
 end
 
 function on_open(mode)
-    registry = require "core:internal/scripts_registry"
+    registry = __vc_scripts_registry
 
     document.codePanel:setInterval(200, refresh_file_title)
 

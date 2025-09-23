@@ -1,8 +1,4 @@
-#include <algorithm>
-#include <filesystem>
-#include <stdexcept>
-#include <string>
-#include <set>
+#define VC_ENABLE_REFLECTION
 
 #include "assets/AssetsLoader.hpp"
 #include "content/Content.hpp"
@@ -18,6 +14,12 @@
 #include "world/Level.hpp"
 #include "world/World.hpp"
 #include "api_lua.hpp"
+
+#include <algorithm>
+#include <filesystem>
+#include <stdexcept>
+#include <string>
+#include <set>
 
 using namespace scripting;
 
@@ -102,19 +104,28 @@ static int l_pack_get_info(
             auto& dpack = pack.dependencies[i];
             std::string prefix;
             switch (dpack.level) {
-                case DependencyLevel::required:
+                case DependencyLevel::REQUIRED:
                     prefix = "!";
                     break;
-                case DependencyLevel::optional:
+                case DependencyLevel::OPTIONAL:
                     prefix = "?";
                     break;
-                case DependencyLevel::weak:
+                case DependencyLevel::WEAK:
                     prefix = "~";
                     break;
                 default:
                     throw std::runtime_error("");
             }
-            lua::pushfstring(L, "%s%s", prefix.c_str(), dpack.id.c_str());
+            auto opString = VersionOperatorMeta.getNameString(dpack.op);
+
+            lua::pushfstring(
+                L,
+                "%s%s@%s%s",
+                prefix.c_str(),
+                dpack.id.c_str(),
+                (dpack.op == VersionOperator::EQUAL ? "" : opString).c_str(),
+                dpack.version.c_str()
+            );
             lua::rawseti(L, i + 1);
         }
         lua::setfield(L, "dependencies");

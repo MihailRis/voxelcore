@@ -22,7 +22,7 @@ namespace markdown {
     Result<wchar_t> process(std::wstring_view source, bool eraseMarkdown);
 
     template <typename CharT>
-    inline std::basic_string<CharT> escape(std::string_view source) {
+    inline std::basic_string<CharT> escape(std::basic_string_view<CharT> source) {
         std::basic_stringstream<CharT> ss;
         int pos = 0;
         while (pos < source.size()) {

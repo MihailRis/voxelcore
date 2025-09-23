@@ -1,15 +1,51 @@
-#include "GuidesRenderer.hpp"
-
-#include <glm/gtc/matrix_transform.hpp>
+#include "DebugLinesRenderer.hpp"
 
 #include "graphics/core/Shader.hpp"
+#include "window/Camera.hpp"
 #include "graphics/core/LineBatch.hpp"
 #include "graphics/core/DrawContext.hpp"
+#include "graphics/render/LinesRenderer.hpp"
+#include "world/Level.hpp"
+#include "voxels/Chunk.hpp"
+#include "voxels/Pathfinding.hpp"
 #include "maths/voxmaths.hpp"
-#include "window/Camera.hpp"
-#include "constants.hpp"
 
-void GuidesRenderer::drawBorders(
+bool DebugLinesRenderer::showPaths = false;
+
+static void draw_route(
+    LinesRenderer& lines, const voxels::Agent& agent
+) {
+    const auto& route = agent.route;
+    if (!route.found)
+        return;
+
+    for (int i = 1; i < route.nodes.size(); i++) {
+        const auto& a = route.nodes.at(i - 1);
+        const auto& b = route.nodes.at(i);
+
+        if (i == 1) {
+            lines.pushLine(
+                glm::vec3(a.pos) + glm::vec3(0.5f),
+                glm::vec3(a.pos) + glm::vec3(0.5f, 1.0f, 0.5f),
+                glm::vec4(1, 1, 1, 1)
+            );
+        }
+
+        lines.pushLine(
+            glm::vec3(a.pos) + glm::vec3(0.5f),
+            glm::vec3(b.pos) + glm::vec3(0.5f),
+            glm::vec4(1, 0, 1, 1)
+        );
+
+        lines.pushLine(
+            glm::vec3(b.pos) + glm::vec3(0.5f),
+            glm::vec3(b.pos) + glm::vec3(0.5f, 1.0f, 0.5f),
+            glm::vec4(1, 1, 1, 1)
+        );
+    }
+}
+
+void DebugLinesRenderer::drawBorders(
     LineBatch& batch, int sx, int sy, int sz, int ex, int ey, int ez
 ) {
     int ww = ex - sx;
@@ -37,7 +73,7 @@ void GuidesRenderer::drawBorders(
     batch.flush();
 }
 
-void GuidesRenderer::drawCoordSystem(
+void DebugLinesRenderer::drawCoordSystem(
     LineBatch& batch, const DrawContext& pctx, float length
 ) {
     auto ctx = pctx.sub();
@@ -55,14 +91,22 @@ void GuidesRenderer::drawCoordSystem(
     batch.line(0.f, 0.f, 0.f, 0.f, 0.f, length, 0.f, 0.f, 1.f, 1.f);
 }
 
-void GuidesRenderer::renderDebugLines(
-    const DrawContext& pctx,
+
+void DebugLinesRenderer::render(
+    DrawContext& pctx,
     const Camera& camera,
-    LineBatch& batch,
+    LinesRenderer& renderer,
+    LineBatch& linesBatch,
     Shader& linesShader,
     bool showChunkBorders
 ) {
-    DrawContext ctx = pctx.sub(&batch);
+    // In-world lines
+    if (showPaths) {
+        for (const auto& [_, agent] : level.pathfinding->getAgents()) {
+            draw_route(renderer, agent);
+        }
+    }
+    DrawContext ctx = pctx.sub(&linesBatch);
     const auto& viewport = ctx.getViewport();
 
     ctx.setDepthTest(true);
@@ -78,7 +122,7 @@ void GuidesRenderer::renderDebugLines(
         int cz = floordiv(static_cast<int>(coord.z), CHUNK_D);
 
         drawBorders(
-            batch,
+            linesBatch,
             cx * CHUNK_W,
             0,
             cz * CHUNK_D,
@@ -103,5 +147,5 @@ void GuidesRenderer::renderDebugLines(
         ) * model *
             glm::inverse(camera.rotation)
     );
-    drawCoordSystem(batch, ctx, length);
+    drawCoordSystem(linesBatch, ctx, length);
 }

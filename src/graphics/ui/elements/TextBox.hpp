@@ -71,6 +71,8 @@ namespace gui {
         void stepDefaultDown(bool shiftPressed, bool breakSelection);
         void stepDefaultUp(bool shiftPressed, bool breakSelection);
 
+        void onTab(bool shiftPressed);
+
         size_t normalizeIndex(int index);
 
         int calcIndexAt(int x, int y) const;

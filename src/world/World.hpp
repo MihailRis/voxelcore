@@ -45,6 +45,8 @@ struct WorldInfo : public Serializable {
 
     int major = 0, minor = -1;
 
+    bool isLoaded = false;
+
     dv::value serialize() const override;
     void deserialize(const dv::value& src) override;
 };

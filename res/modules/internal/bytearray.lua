@@ -71,7 +71,7 @@ local function insert(self, index, b)
     if self.size + elems > self.capacity then
         grow_buffer(self, elems)
     end
-    for i=self.size, index - 1, -1 do
+    for i = self.size - 1, index - 1, -1 do
         self.bytes[i + elems] = self.bytes[i]
     end
     if _type(b) == "number" then

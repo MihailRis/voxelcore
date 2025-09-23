@@ -15,6 +15,7 @@
 #include "objects/Player.hpp"
 #include "objects/Players.hpp"
 #include "objects/Entities.hpp"
+#include "objects/Entity.hpp"
 #include "logic/LevelController.hpp"
 #include "util/stringutil.hpp"
 #include "engine/Engine.hpp"

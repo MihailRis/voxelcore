@@ -12,7 +12,28 @@ local Text3D = {__index={
     update_settings=function(self, t) return gfx.text3d.update_settings(self.id, t) end,
 }}
 
+local Skeleton = {__index={
+    index=function(self, s) return gfx.skeletons.index(self.name, s) end,
+    get_model=function(self, i) return gfx.skeletons.get_model(self.name, i) end,
+    set_model=function(self, i, s) return gfx.skeletons.set_model(self.name, i, s) end,
+    get_matrix=function(self, i) return gfx.skeletons.get_matrix(self.name, i) end,
+    set_matrix=function(self, i, m) return gfx.skeletons.set_matrix(self.name, i, m) end,
+    get_texture=function(self, i) return gfx.skeletons.get_texture(self.name, i) end,
+    set_texture=function(self, i, s) return gfx.skeletons.set_texture(self.name, i, s) end,
+    is_visible=function(self, i) return gfx.skeletons.is_visible(self.name, i) end,
+    set_visible=function(self, i, b) return gfx.skeletons.set_visible(self.name, i, b) end,
+    get_color=function(self, i) return gfx.skeletons.get_color(self.name, i) end,
+    set_color=function(self, i, c) return gfx.skeletons.set_color(self.name, i, c) end,
+}}
+
 gfx.text3d.new = function(pos, text, preset, extension)
     local id = gfx.text3d.show(pos, text, preset, extension)
     return setmetatable({id=id}, Text3D)
+end
+
+gfx.skeletons = __skeleton
+gfx.skeletons.get = function(name)
+    if gfx.skeletons.exists(name) then
+        return setmetatable({name=name}, Skeleton)
+    end
 end

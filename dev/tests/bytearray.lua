@@ -28,3 +28,9 @@ assert(#arr == arr:get_capacity())
 
 arr = Bytearray({0, 2, 7, 1, 16, 75, 25})
 assert(arr[6] == 75)
+
+arr:insert(2, {5, 6})
+
+assert(arr[#arr] == 25)
+assert(arr[2] == 5)
+assert(arr[3] == 6)

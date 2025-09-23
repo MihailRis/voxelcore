@@ -1,10 +1,21 @@
 #include "InventoryView.hpp"
 
+#include <glm/glm.hpp>
+#include <utility>
+
 #include "assets/Assets.hpp"
 #include "assets/assets_util.hpp"
 #include "content/Content.hpp"
 #include "frontend/LevelFrontend.hpp"
 #include "frontend/locale.hpp"
+#include "graphics/core/Atlas.hpp"
+#include "graphics/core/Batch2D.hpp"
+#include "graphics/core/DrawContext.hpp"
+#include "graphics/core/Font.hpp"
+#include "graphics/core/Shader.hpp"
+#include "graphics/core/Texture.hpp"
+#include "graphics/render/BlocksPreview.hpp"
+#include "graphics/ui/GUI.hpp"
 #include "items/Inventories.hpp"
 #include "items/Inventory.hpp"
 #include "items/ItemDef.hpp"
@@ -15,17 +26,6 @@
 #include "voxels/Block.hpp"
 #include "window/input.hpp"
 #include "world/Level.hpp"
-#include "graphics/core/Atlas.hpp"
-#include "graphics/core/Batch2D.hpp"
-#include "graphics/core/Font.hpp"
-#include "graphics/core/DrawContext.hpp"
-#include "graphics/core/Shader.hpp"
-#include "graphics/core/Texture.hpp"
-#include "graphics/render/BlocksPreview.hpp"
-#include "graphics/ui/GUI.hpp"
-
-#include <glm/glm.hpp>
-#include <utility>
 
 using namespace gui;
 
@@ -37,21 +37,24 @@ SlotLayout::SlotLayout(
     slotcallback updateFunc,
     slotcallback shareFunc,
     slotcallback rightClick
-) : index(index),
-    position(position),
-    background(background),
-    itemSource(itemSource),
-    updateFunc(std::move(updateFunc)),
-    shareFunc(std::move(shareFunc)),
-    rightClick(std::move(rightClick)) {}
+)
+    : index(index),
+      position(position),
+      background(background),
+      itemSource(itemSource),
+      updateFunc(std::move(updateFunc)),
+      shareFunc(std::move(shareFunc)),
+      rightClick(std::move(rightClick)) {
+}
 
 InventoryBuilder::InventoryBuilder(GUI& gui) : gui(gui) {
     view = std::make_shared<InventoryView>(gui);
 }
 
 void InventoryBuilder::addGrid(
-    int cols, int count, 
-    glm::vec2 pos, 
+    int cols,
+    int count,
+    glm::vec2 pos,
     glm::vec4 padding,
     bool addpanel,
     const SlotLayout& slotLayout
@@ -61,9 +64,11 @@ void InventoryBuilder::addGrid(
 
     int rows = ceildiv(count, cols);
 
-    uint width =  cols * (slotSize + interval) - interval + padding.x + padding.z;
-    uint height = rows * (slotSize + interval) - interval + padding.y + padding.w;
-    
+    uint width =
+        cols * (slotSize + interval) - interval + padding.x + padding.z;
+    uint height =
+        rows * (slotSize + interval) - interval + padding.y + padding.w;
+
     glm::vec2 vsize = view->getSize();
     if (pos.x + width > vsize.x) {
         vsize.x = pos.x + width;
@@ -85,7 +90,7 @@ void InventoryBuilder::addGrid(
             if (row * cols + col >= count) {
                 break;
             }
-            glm::vec2 position (
+            glm::vec2 position(
                 col * (slotSize + interval) + padding.x,
                 row * (slotSize + interval) + padding.y
             );
@@ -105,24 +110,72 @@ std::shared_ptr<InventoryView> InventoryBuilder::build() {
     return view;
 }
 
-SlotView::SlotView(
-    GUI& gui, SlotLayout layout
-) : UINode(gui, glm::vec2(InventoryView::SLOT_SIZE)),
-    layout(std::move(layout))
-{
+SlotView::SlotView(GUI& gui, SlotLayout layout)
+    : UINode(gui, glm::vec2(InventoryView::SLOT_SIZE)),
+      layout(std::move(layout)) {
     setColor(glm::vec4(0, 0, 0, 0.2f));
     setTooltipDelay(0.0f);
+}
+// TODO: Refactor
+static std::wstring get_caption_string(
+    const ItemStack& stack, const ItemDef& item
+) {
+    dv::value* caption = stack.getField("caption");
+    if (caption != nullptr) {
+        return util::pascal_case(
+            langs::get(util::str2wstr_utf8(caption->asString()))
+        );
+    } else {
+        return util::pascal_case(
+            langs::get(util::str2wstr_utf8(item.caption))
+        );
+    }
+}
+// TODO: Refactor
+static std::wstring get_description_string(
+    const ItemStack& stack, const ItemDef& item
+) {
+    dv::value* description = stack.getField("description");
+
+    if (description != nullptr) {
+        return langs::get(util::str2wstr_utf8(description->asString()));
+    } else {
+        return langs::get(util::str2wstr_utf8(item.description));
+    }
+}
+
+static bool is_same_tooltip(const ItemStack& stack, const ItemStack& cache) {
+    if (stack.getItemId() != cache.getItemId()) {
+        return false;
+    }
+    auto caption = stack.getField("caption");
+    auto cCaption = cache.getField("caption");
+    auto description = stack.getField("description");
+    auto cDescription = cache.getField("description");
+
+    if (((caption != nullptr) != (cCaption != nullptr)) ||
+        ((description != nullptr) != (cDescription != nullptr))) {
+        return false;
+    }
+    return (caption ? caption->asString() == cCaption->asString() : true) &&
+           (description ? description->asString() == cDescription->asString()
+                        : true);
 }
 
 void SlotView::refreshTooltip(const ItemStack& stack, const ItemDef& item) {
     itemid_t itemid = stack.getItemId();
-    if (itemid == cache.stack.getItemId()) {
+
+    if (is_same_tooltip(stack, cache.stack)) {
         return;
     }
     if (itemid) {
-        tooltip = util::pascal_case(
-            langs::get(util::str2wstr_utf8(item.caption))
-        );
+        std::wstring caption = get_caption_string(stack, item);
+        std::wstring description = get_description_string(stack, item);
+        if (description.length() > 0) {
+            tooltip = caption + L"\n" + description;
+        } else {
+            tooltip = caption;
+        }
     } else {
         tooltip.clear();
     }
@@ -148,19 +201,37 @@ void SlotView::drawItemIcon(
 
             UVRegion region = previews.get(block.name);
             batch.rect(
-                pos.x, pos.y, SLOT_SIZE, SLOT_SIZE, 
-                0, 0, 0, region, false, true, tint
+                pos.x,
+                pos.y,
+                SLOT_SIZE,
+                SLOT_SIZE,
+                0,
+                0,
+                0,
+                region,
+                false,
+                true,
+                tint
             );
             break;
         }
         case ItemIconType::SPRITE: {
             auto textureRegion =
                 util::get_texture_region(assets, item.icon, "blocks:notfound");
-            
+
             batch.texture(textureRegion.texture);
             batch.rect(
-                pos.x, pos.y, SLOT_SIZE, SLOT_SIZE, 
-                0, 0, 0, textureRegion.region, false, true, tint
+                pos.x,
+                pos.y,
+                SLOT_SIZE,
+                SLOT_SIZE,
+                0,
+                0,
+                0,
+                textureRegion.region,
+                false,
+                true,
+                tint
             );
             break;
         }
@@ -179,12 +250,12 @@ void SlotView::draw(const DrawContext& pctx, const Assets& assets) {
         cache.countStr = std::to_wstring(stack.getCount());
     }
     refreshTooltip(stack, item);
-    cache.stack.set(ItemStack(stack.getItemId(), stack.getCount()));
+    cache.stack.set(stack);
 
     glm::vec4 tint(1, 1, 1, isEnabled() ? 1 : 0.5f);
     glm::vec2 pos = calcPos();
     glm::vec4 color = getColor();
-    
+
     if (hover || highlighted) {
         tint *= 1.333f;
         color = glm::vec4(1, 1, 1, 0.2f);
@@ -262,7 +333,7 @@ void SlotView::drawItemInfo(
             batch.setColor({0, 0, 0, 0.75f});
             batch.rect(pos.x - 2, pos.y - 2, 6, SLOT_SIZE + 4);
             float t = static_cast<float>(uses) / item.uses;
-            
+
             int height = SLOT_SIZE * t;
             batch.setColor({(1.0f - t * 0.8f), 0.4f, t * 0.8f + 0.2f, 1.0f});
             batch.rect(pos.x, pos.y + SLOT_SIZE - height, 2, height);
@@ -317,8 +388,7 @@ void SlotView::performRightClick(ItemStack& stack, ItemStack& grabbed) {
         }
         return;
     }
-    if (layout.itemSource)
-        return;
+    if (layout.itemSource) return;
     if (grabbed.isEmpty()) {
         if (!stack.isEmpty() && layout.taking) {
             grabbed.set(std::move(stack));
@@ -342,15 +412,15 @@ void SlotView::performRightClick(ItemStack& stack, ItemStack& grabbed) {
         } else {
             grabbed = ItemStack(stack.getItemId(), count - 1);
         }
-    } else if (stack.accepts(grabbed) && stack.getCount() < stackDef.stackSize) {
+    } else if (stack.accepts(grabbed) &&
+               stack.getCount() < stackDef.stackSize) {
         stack.setCount(stack.getCount() + 1);
         grabbed.setCount(grabbed.getCount() - 1);
     }
 }
 
 void SlotView::clicked(Mousecode button) {
-    if (bound == nullptr)
-        return;
+    if (bound == nullptr) return;
     auto exchangeSlot =
         std::dynamic_pointer_cast<SlotView>(gui.get(EXCHANGE_SLOT_NAME));
     if (exchangeSlot == nullptr) {
@@ -358,7 +428,7 @@ void SlotView::clicked(Mousecode button) {
     }
     ItemStack& grabbed = exchangeSlot->getStack();
     ItemStack& stack = *bound;
-    
+
     if (button == Mousecode::BUTTON_1) {
         performLeftClick(stack, grabbed);
     } else if (button == Mousecode::BUTTON_2) {
@@ -382,9 +452,7 @@ const std::wstring& SlotView::getTooltip() const {
 }
 
 void SlotView::bind(
-    int64_t inventoryid,
-    ItemStack& stack, 
-    const Content* content
+    int64_t inventoryid, ItemStack& stack, const Content* content
 ) {
     this->inventoryid = inventoryid;
     bound = &stack;
@@ -403,11 +471,11 @@ InventoryView::InventoryView(GUI& gui) : Container(gui, glm::vec2()) {
     setColor(glm::vec4(0, 0, 0, 0.0f));
 }
 
-InventoryView::~InventoryView() {}
-
+InventoryView::~InventoryView() {
+}
 
 std::shared_ptr<SlotView> InventoryView::addSlot(const SlotLayout& layout) {
-    uint width =  InventoryView::SLOT_SIZE + layout.padding;
+    uint width = InventoryView::SLOT_SIZE + layout.padding;
     uint height = InventoryView::SLOT_SIZE + layout.padding;
 
     auto pos = layout.position;
@@ -432,14 +500,12 @@ std::shared_ptr<Inventory> InventoryView::getInventory() const {
     return inventory;
 }
 
-
 size_t InventoryView::getSlotsCount() const {
     return slots.size();
 }
 
 void InventoryView::bind(
-    const std::shared_ptr<Inventory>& inventory,
-    const Content* content
+    const std::shared_ptr<Inventory>& inventory, const Content* content
 ) {
     this->inventory = inventory;
     this->content = content;

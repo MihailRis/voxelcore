@@ -45,7 +45,7 @@ sudo apt install libglfw3-dev libglfw3 libglew-dev libglm-dev libpng-dev libopen
 #### RHEL based distros
 
 ```sh
-sudo dnf install glfw-devel glfw glew-devel glm-devel libpng-devel libvorbis-devel openal-devel luajit-devel libcurl-devel
+sudo dnf install glfw-devel glfw glew-devel glm-devel libpng-devel libvorbis-devel openal-soft-devel luajit-devel libcurl-devel
 ```
 
 #### Arch based distros

@@ -97,7 +97,6 @@ LevelScreen::LevelScreen(
     animator->addAnimations(assets.getAnimations());
 
     loadDecorations();
-    initializeContent();
 }
 
 LevelScreen::~LevelScreen() {
@@ -110,6 +109,10 @@ LevelScreen::~LevelScreen() {
     input.getBindings().enableAll();
     controller->onWorldQuit();
     engine.getPaths().setCurrentWorldFolder("");
+}
+
+void LevelScreen::onOpen() {
+    initializeContent();
 }
 
 void LevelScreen::initializeContent() {
@@ -173,7 +176,7 @@ void LevelScreen::saveWorldPreview() {
              static_cast<uint>(previewSize)}
         );
 
-        renderer->draw(ctx, camera, false, true, 0.0f, *postProcessing);
+        renderer->renderFrame(ctx, camera, false, true, 0.0f, *postProcessing);
         auto image = postProcessing->toImage();
         image->flipY();
         imageio::write("world:preview.png", image.get());
@@ -260,7 +263,7 @@ void LevelScreen::draw(float delta) {
     if (!hud->isPause()) {
         scripting::on_entities_render(engine.getTime().getDelta());
     }
-    renderer->draw(
+    renderer->renderFrame(
         ctx, *camera, hudVisible, hud->isPause(), delta, *postProcessing
     );
 

@@ -25,9 +25,12 @@ Waits for the specified time in seconds, performing the main engine loop.
 app.sleep_until(
     -- function that checks the condition for ending the wait
     predicate: function() -> bool,
-    -- the maximum number of engine loop ticks after which
+    -- maximum number of engine loop ticks after which
     -- a "max ticks exceed" exception will be thrown
-    [optional] max_ticks = 1e9
+    [optional] max_ticks = 1e9,
+    -- maximum wait time in seconds.
+    -- (works with system time, including test mode)
+    [optional] timeout = 1e9
 )
 ```
 

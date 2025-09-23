@@ -7,6 +7,7 @@
 #include "window/Camera.hpp"
 #include "graphics/core/Texture.hpp"
 #include "objects/Entities.hpp"
+#include "objects/Entity.hpp"
 #include "world/Level.hpp"
 
 Emitter::Emitter(

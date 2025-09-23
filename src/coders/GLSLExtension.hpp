@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "io/io.hpp"
+#include "data/setting.hpp"
 #include "graphics/core/PostEffect.hpp"
 
 class ResPaths;
@@ -19,6 +20,7 @@ public:
     };
 
     void setPaths(const ResPaths* paths);
+    void setTraceOutput(bool enabled);
 
     void define(const std::string& name, std::string value);
     void undefine(const std::string& name);
@@ -37,7 +39,8 @@ public:
     ProcessingResult process(
         const io::path& file,
         const std::string& source,
-        bool header = false
+        bool header,
+        const std::vector<std::string>& defines
     );
 
     static inline std::string VERSION = "330 core";
@@ -46,4 +49,5 @@ private:
     std::unordered_map<std::string, std::string> defines;
 
     const ResPaths* paths = nullptr;
+    bool traceOutput = false;
 };

@@ -207,6 +207,9 @@ Hud::Hud(Engine& engine, LevelFrontend& frontend, Player& player)
 }
 
 Hud::~Hud() {
+    if (input.isCursorLocked()) {
+        input.toggleCursor();
+    }
     // removing all controlled ui
     for (auto& element : elements) {
         onRemove(element);
@@ -324,7 +327,7 @@ void Hud::updateWorldGenDebug() {
 
 void Hud::update(bool visible) {
     const auto& chunks = *player.chunks;
-    bool is_menu_open = menu.hasOpenPage();
+    bool isMenuOpen = menu.hasOpenPage();
 
     debugPanel->setVisible(
         debug && visible && !(inventoryOpen && inventoryView == nullptr)
@@ -333,13 +336,13 @@ void Hud::update(bool visible) {
     if (!visible && inventoryOpen) {
         closeInventory();
     }
-    if (pause && !is_menu_open) {
+    if (pause && !isMenuOpen) {
         setPause(false);
     }
     if (!gui.isFocusCaught()) {
         processInput(visible);
     }
-    if ((is_menu_open || inventoryOpen) == input.getCursor().locked) {
+    if ((isMenuOpen || inventoryOpen) == input.isCursorLocked()) {
         input.toggleCursor();
     }
 
@@ -360,8 +363,8 @@ void Hud::update(bool visible) {
     contentAccessPanel->setSize(glm::vec2(caSize.x, windowSize.y));
     contentAccess->setMinSize(glm::vec2(1, windowSize.y));
     hotbarView->setVisible(visible && !(secondUI && !inventoryView));
-    darkOverlay->setVisible(is_menu_open);
-    menu.setVisible(is_menu_open);
+    darkOverlay->setVisible(isMenuOpen);
+    menu.setVisible(isMenuOpen);
 
     if (visible) {
         for (auto& element : elements) {
@@ -538,6 +541,7 @@ void Hud::closeInventory() {
     exchangeSlotInv = nullptr;
     inventoryOpen = false;
     inventoryView = nullptr;
+    secondInvView = nullptr;
     secondUI = nullptr;
 
     for (auto& element : elements) {
@@ -597,6 +601,9 @@ void Hud::remove(const std::shared_ptr<UINode>& node) {
         }
     }
     cleanup();
+    if (node == secondUI) {
+        closeInventory();
+    }
 }
 
 void Hud::setDebug(bool flag) {

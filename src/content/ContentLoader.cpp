@@ -288,6 +288,7 @@ void ContentLoader::loadContent(const dv::value& root) {
             item.iconType = ItemIconType::BLOCK;
             item.icon = def.name;
             item.placingBlock = def.name;
+            item.tags = def.tags;
     
             for (uint j = 0; j < 4; j++) {
                 item.emission[j] = def.emission[j];
@@ -412,23 +413,43 @@ void ContentLoader::load() {
     if (io::exists(contentFile)) {
         loadContent(io::read_json(contentFile));
     }
+
+    // Load attached tags
+    io::path tagsFile = folder / "tags.toml";
+    if (io::exists(tagsFile)) {
+        auto tagsMap = io::read_object(tagsFile);
+        for (const auto& [key, list] : tagsMap.asObject()) {
+            for (const auto& id : list) {
+                const auto& stringId = id.asString();
+                if (auto block = builder.blocks.get(stringId)) {
+                    block->tags.push_back(key);
+                    if (auto item = builder.items.get(stringId + BLOCK_ITEM_SUFFIX)) {
+                        item->tags.push_back(key);
+                    }
+                } else if (auto item = builder.items.get(stringId)) {
+                    item->tags.push_back(key);
+                }
+            }
+        }
+    }
 }
 
 template <class T>
 static void load_script(const Content& content, T& def) {
-    const auto& name = def.name;
-    size_t pos = name.find(':');
+    const auto& scriptName = def.scriptFile;
+    if (scriptName.empty()) return;
+    size_t pos = scriptName.find(':');
     if (pos == std::string::npos) {
         throw std::runtime_error("invalid content unit name");
     }
-    const auto runtime = content.getPackRuntime(name.substr(0, pos));
+    const auto runtime = content.getPackRuntime(scriptName.substr(0, pos));
     const auto& pack = runtime->getInfo();
     const auto& folder = pack.folder;
     auto scriptfile = folder / ("scripts/" + def.scriptName + ".lua");
     if (io::is_regular_file(scriptfile)) {
         scripting::load_content_script(
             runtime->getEnvironment(),
-            name,
+            def.name,
             scriptfile,
             def.scriptFile,
             def.rt.funcsset

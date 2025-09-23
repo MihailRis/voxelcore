@@ -174,7 +174,6 @@ std::unique_ptr<model::Model> vcm::parse(
                 "'model' tag expected as root, got '" + root.getTag() + "'"
             );
         }
-        std::cout << xml::stringify(*doc) << std::endl;
         return load_model(root);
     } catch (const parsing_error& err) {
         throw std::runtime_error(err.errorLog());

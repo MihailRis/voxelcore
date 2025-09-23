@@ -1,6 +1,9 @@
 #include "Project.hpp"
 
 #include "data/dv_util.hpp"
+#include "logic/scripting/scripting.hpp"
+
+Project::~Project() = default;
 
 dv::value Project::serialize() const {
     return dv::object({

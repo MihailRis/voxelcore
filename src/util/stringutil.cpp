@@ -40,7 +40,7 @@ std::string util::escape(std::string_view s, bool escapeUnicode) {
                     uint cpsize;
                     int codepoint = decode_utf8(cpsize, s.data() + pos);
                     if (escapeUnicode) {
-                        ss << "\\u" << std::hex << codepoint;
+                        ss << "\\u" << std::setw(4) << std::setfill('0') << std::hex << codepoint;
                     } else {
                         ss << std::string(s.data() + pos, cpsize);
                     }
