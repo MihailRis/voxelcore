@@ -4,13 +4,22 @@ local mob = entity:require_component("core:mob")
 
 local cheat_speed_mul = 10.0
 
-local function process_player_inputs(pid, delta)
+local function get_player_rotation(pid)
+    local rx, ry, rz = player.get_rot(pid)
+    local matrix = mat4.rotate({0, 1, 0}, rx)
+    mat4.rotate(matrix, {1, 0, 0}, ry, matrix)
+    mat4.rotate(matrix, {0, 0, 1}, rz, matrix)
+    return matrix
+end
+
+local function process_player_inputs(pid, rot, delta)
     if not hud or hud.is_inventory_open() or menu.page ~= "" then
         return
     end
-    local cam = cameras.get("core:first-person")
-    local front = cam:get_front()
-    local right = cam:get_right()
+
+    local front = mat4.mul(rot, {0, 0, -1})
+    local right = mat4.mul(rot, {1, 0, 0})
+
     front[2] = 0.0
     vec3.normalize(front, front)
 
@@ -22,8 +31,6 @@ local function process_player_inputs(pid, delta)
     local isback = input.is_active('movement.back')
     local isleft = input.is_active('movement.left')
     local isright = input.is_active('movement.right')
-    mob.set_flight(player.is_flight(pid))
-    body:set_body_type(player.is_noclip(pid) and "kinematic" or "dynamic")
     body:set_crouching(iscrouch)
 
     local vel = body:get_vel()
@@ -53,10 +60,19 @@ end
 
 function on_physics_update(delta)
     local pid = entity:get_player()
-    if pid ~= -1 and (hud and pid == hud.get_player()) then
+    if pid == -1 then
+        return
+    end
+
+    mob.set_flight(player.is_flight(pid))
+    body:set_body_type(player.is_noclip(pid) and "kinematic" or "dynamic")
+
+    if hud and pid == hud.get_player() then
         local pos = tsf:get_pos()
-        local cam = cameras.get("core:first-person")
-        process_player_inputs(pid, delta)
-        mob.look_at(vec3.add(pos, cam:get_front()))
+        local rot = get_player_rotation(pid)
+        local front = mat4.mul(rot, {0, 0, -1})
+
+        process_player_inputs(pid, rot, delta)
+        mob.look_at(vec3.add(pos, front))
     end
 end

@@ -43,7 +43,7 @@ float calc_shadow(
 // TODO: add array textures support
 float calc_shadow(vec4 modelPos, vec3 realnormal, float distance) {
 #ifdef ENABLE_SHADOWS
-    float s = pow(abs(cos(u_dayTime * PI2)), 0.25) * u_shadowsOpacity;
+    float s = u_shadowsOpacity;
     vec3 normalOffset = realnormal * (distance > 64.0 ? 0.2 : 0.04);
 
     // as slow as mix(...) 

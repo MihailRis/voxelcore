@@ -255,30 +255,33 @@ function check_dependencies(packinfo)
     if packinfo.dependencies == nil then
         return
     end
-    for i,dep in ipairs(packinfo.dependencies) do
+    for i, dep in ipairs(packinfo.dependencies) do
         local depid, depver = unpack(string.split(dep:sub(2,-1), "@"))
 
-        if dep:sub(1,1) == '!' then
-            if not table.has(packs_all, depid) then
-                return string.format(
-                    "%s (%s)", gui.str("error.dependency-not-found"), depid
-                )
-            end
-
-            
-            local dep_pack = pack.get_info(depid);
-            
-            if not compare_version(depver, dep_pack.version) then
-                local op, ver = Version.parse(depver);
-
-                print(string.format("%s: %s !%s %s (%s)", gui.str("error.dependency-version-not-met"), dep_pack.version, op, ver, depid));
-                return string.format("%s: %s != %s (%s)", gui.str("error.dependency-version-not-met"), dep_pack.version, ver, depid);
-            end
-
-            if table.has(packs_installed, packinfo.id) then
-                table.insert(required, depid)
-            end
+        if dep:sub(1,1) ~= '!' then
+            goto continue
         end
+        if not table.has(packs_all, depid) then
+            return string.format(
+                "%s (%s)", gui.str("error.dependency-not-found"), depid
+            )
+        end
+
+        local dep_pack = pack.get_info(depid);
+        
+        if not compare_version(depver, dep_pack.version) then
+            local op, ver = Version.parse(depver)
+            return string.format(
+                "%s: %s != %s (%s)",
+                gui.str("error.dependency-version-not-met"),
+                dep_pack.version, ver, depid
+            );
+        end
+
+        if table.has(packs_installed, packinfo.id) then
+            table.insert(required, depid)
+        end
+        ::continue::
     end
     return
 end

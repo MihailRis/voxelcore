@@ -1,3 +1,4 @@
+#define VC_ENABLE_REFLECTION
 #include "ContentPack.hpp"
 
 #include <algorithm>
@@ -146,7 +147,7 @@ ContentPack ContentPack::read(const io::path& folder) {
                     std::uint8_t op_size = 0;
 
                     // Two symbol operators
-                    if (op == ">=" || op == "=>" || op == "<=" || op == "=<") {
+                    if (op == ">=" || op == "<=") {
                         op_size = 2;
                         depVerOperator = op;
                     }
@@ -169,7 +170,16 @@ ContentPack ContentPack::read(const io::path& folder) {
                 }
             }
             
-            pack.dependencies.push_back({level, depName, depVer, depVerOperator});
+            VersionOperator versionOperator;
+            if (VersionOperatorMeta.getItem(depVerOperator, versionOperator)) {
+                pack.dependencies.push_back(
+                    {level, depName, depVer, versionOperator}
+                );
+            } else {
+                throw contentpack_error(
+                    pack.id, folder, "invalid version operator"
+                );
+            }
         }
     }
 

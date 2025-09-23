@@ -54,7 +54,12 @@ static int l_get_gravity_scale(lua::State* L) {
 
 static int l_set_gravity_scale(lua::State* L) {
     if (auto entity = get_entity(L, 1)) {
-        entity->getRigidbody().hitbox.gravityScale = lua::tovec3(L, 2).y;
+        auto& hitbox = entity->getRigidbody().hitbox;
+        if (lua::istable(L, 2)) {
+            hitbox.gravityScale = lua::tovec3(L, 2).y;
+        } else {
+            hitbox.gravityScale = lua::tonumber(L, 2);
+        }
     }
     return 0;
 }

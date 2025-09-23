@@ -96,12 +96,16 @@ void Shadows::setup(Shader& shader, const Weather& weather) {
     if (shadows) {
         const auto& worldInfo = level.getWorld()->getInfo();
         float cloudsIntensity = glm::max(worldInfo.fog, weather.clouds());
+        float shadowsOpacity = 1.0f - cloudsIntensity;
+        shadowsOpacity *= glm::sqrt(glm::abs(
+            glm::mod((worldInfo.daytime + 0.5f) * 2.0f, 1.0f) * 2.0f - 1.0f
+        ));
         shader.uniform1i("u_screen", 0);
         shader.uniformMatrix("u_shadowsMatrix[0]", shadowCamera.getProjView());
         shader.uniformMatrix("u_shadowsMatrix[1]", wideShadowCamera.getProjView());
         shader.uniform3f("u_sunDir", shadowCamera.front);
         shader.uniform1i("u_shadowsRes", shadowMap->getResolution());
-        shader.uniform1f("u_shadowsOpacity", 1.0f - cloudsIntensity); // TODO: make it configurable
+        shader.uniform1f("u_shadowsOpacity", shadowsOpacity); // TODO: make it configurable
         shader.uniform1f("u_shadowsSoftness", 1.0f + cloudsIntensity * 4); // TODO: make it configurable
 
         glActiveTexture(GL_TEXTURE0 + TARGET_SHADOWS0);

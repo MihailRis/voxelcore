@@ -1,3 +1,4 @@
+#define VC_ENABLE_REFLECTION
 #include "PacksManager.hpp"
 
 #include <queue>
@@ -109,9 +110,9 @@ static bool resolve_dependencies(
 
         auto dep_pack = found -> second;
 
-        if (Version::matches_pattern(dep.version) && Version::matches_pattern(dep_pack.version)
+        if (Version::matchesPattern(dep.version) && Version::matchesPattern(dep_pack.version)
             && Version(dep_pack.version)
-                .process_operator(dep.op, Version(dep.version))
+                .processOperator(dep.op, Version(dep.version))
         ) {
             // dependency pack version meets the required one
             continue;
@@ -120,7 +121,11 @@ static bool resolve_dependencies(
             continue;
         } else {
             throw contentpack_error(
-                dep.id, io::path(), "does not meet required version '" + dep.op + dep.version +"' of '" + pack->id + "'"
+                dep.id,
+                io::path(),
+                "does not meet required version '" +
+                    VersionOperatorMeta.getNameString(dep.op) + dep.version +
+                    "' of '" + pack->id + "'"
             );
         }
 
