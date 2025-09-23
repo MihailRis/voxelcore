@@ -24,7 +24,7 @@ class ArgC {
 static bool perform_keyword(
     util::ArgsReader& reader, const std::string& keyword, CoreParameters& params
 ) {
-    const std::vector<ArgC> argumentsCommandline = {
+    static const std::vector<ArgC> argumentsCommandline = {
         ArgC("--res", [&params, &reader]() -> bool {
             params.resFolder = reader.next();
             return true;
@@ -55,17 +55,17 @@ static bool perform_keyword(
             std::cout << ENGINE_VERSION_STRING << std::endl;
             return false;
         }, "- display the engine version."),
-        ArgC("--help", [&argumentsCommandline]() -> bool {
+        ArgC("--help", []() -> bool {
             std::cout << "VoxelCore v" << ENGINE_VERSION_STRING << "\n\n";
             std::cout << "Command-line arguments:\n";
-            for (auto a : argumentsCommandline) {
+            for (auto& a : argumentsCommandline) {
                 std::cout << a.keyword << " " << a.help << std::endl;
             }
             std::cout << std::endl;
             return false;
         }, "- display this help.")
     };
-    for (auto a : argumentsCommandline) {
+    for (auto& a : argumentsCommandline) {
         if (a.keyword == keyword) {
             return a.execute();
         }
