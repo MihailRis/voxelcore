@@ -97,10 +97,6 @@ public:
     int getChosenSlot() const;
 
     float getSpeed() const;
-    void setSpeed(float speed);
-
-    float getGravityScale() const;
-    void setGravityScale(float scale);
 
     bool isSuspended() const;
     void setSuspended(bool flag);
