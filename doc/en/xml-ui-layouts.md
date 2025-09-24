@@ -109,7 +109,6 @@ Inner text is a button text.
 - `multiline` - allows display of multiline text.
 - `text-wrap` - allows automatic text wrapping (works only with multiline: "true").
 - `markup` - text markup language ("md" - Markdown).
-- `url` - makes the text a clickable hyperlink (opens in the browser when clicked).  
 
 ## *image*
 

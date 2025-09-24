@@ -340,7 +340,6 @@ static std::shared_ptr<UINode> read_label(
     if (element.has("markup")) {
         label->setMarkup(element.attr("markup").getText());
     }
-
     return label;
 }
 
