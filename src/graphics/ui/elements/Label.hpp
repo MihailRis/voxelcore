@@ -33,7 +33,6 @@ namespace gui {
         glm::vec2 calcSize();
     protected:
         std::wstring text;
-        std::string url;
         std::string fontName;
         wstringsupplier supplier = nullptr;
         
