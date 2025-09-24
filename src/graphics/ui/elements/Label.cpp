@@ -1,19 +1,12 @@
 #include "Label.hpp"
-
 #include <utility>
 
 #include "assets/Assets.hpp"
-#include "graphics/core/Batch2D.hpp"
 #include "graphics/core/DrawContext.hpp"
+#include "graphics/core/Batch2D.hpp"
 #include "graphics/core/Font.hpp"
 #include "graphics/ui/markdown.hpp"
 #include "util/stringutil.hpp"
-#include "engine/Engine.hpp"
-#include "graphics/ui/gui_util.hpp"
-#include "graphics/ui/GUI.hpp"
-#include "graphics/ui/elements/Menu.hpp"
-#include "util/platform.hpp"
-#include "frontend/locale.hpp"
 
 using namespace gui;
 
@@ -27,12 +20,10 @@ void LabelCache::prepare(Font* font, size_t wrapWidth) {
         this->wrapWidth = wrapWidth;
     }
 }
-
 size_t LabelCache::getTextLineOffset(size_t line) const {
     line = std::min(lines.size()-1, line);
     return lines.at(line).offset;
 }
-
 uint LabelCache::getLineByTextIndex(size_t index) const {
     for (size_t i = 0; i < lines.size(); i++) {
         if (lines[i].offset > index) {
@@ -41,16 +32,14 @@ uint LabelCache::getLineByTextIndex(size_t index) const {
     }
     return lines.size()-1;
 }
-
 void LabelCache::update(std::wstring_view text, bool multiline, bool wrap) {
     resetFlag = false;
     lines.clear();
     lines.push_back(LineScheme {0, false});
-
     if (font == nullptr) {
         wrap = false;
     }
-
+    
     if (multiline) {
         size_t len = 0;
         for (size_t i = 0; i < text.length(); i++, len++) {
@@ -90,26 +79,25 @@ void LabelCache::update(std::wstring_view text, bool multiline, bool wrap) {
 }
 
 Label::Label(GUI& gui, const std::string& text, std::string fontName)
-    : UINode(gui, glm::vec2(text.length() * 8, 16)),
-      text(util::str2wstr_utf8(text)),
+  : UINode(gui, glm::vec2(text.length() * 8, 16)),
+    text(util::str2wstr_utf8(text)), 
     fontName(std::move(fontName))
 {
     setInteractive(false);
+  
     cache.update(this->text, multiline, textWrap);
 }
 
 
 Label::Label(GUI& gui, const std::wstring& text, std::string fontName)
-    : UINode(gui, glm::vec2(text.length() * 8, 16)),
-      text(text),
+  : UINode(gui, glm::vec2(text.length() * 8, 16)), 
+    text(text), 
     fontName(std::move(fontName))
 {
     setInteractive(false);
     cache.update(this->text, multiline, textWrap);
 }
-
 Label::~Label() = default;
-
 glm::vec2 Label::calcSize() {
     auto font = cache.font;
     uint lineHeight = font->getLineHeight();
@@ -124,7 +112,7 @@ glm::vec2 Label::calcSize() {
         );
     }
     return glm::vec2 (
-        cache.font->calcWidth(view),
+        cache.font->calcWidth(view), 
         lineHeight * cache.lines.size() + font->getYOffset()
     );
 }
@@ -140,44 +128,12 @@ void Label::setText(std::wstring text) {
     }
     this->text = std::move(text);
     cache.update(this->text, multiline, textWrap);
-
     if (cache.font && autoresize) {
         setSize(calcSize());
     }
 }
-
 const std::wstring& Label::getText() const {
     return text;
-}
-
-const std::string& Label::getURL() const {
-    return url;
-}
-
-void Label::setURL(std::string url) {
-    this->url = std::move(url);
-    setInteractive(!this->getURL().empty());
-
-    listenAction([this](GUI& gui) {
-        Engine& engine = gui.getEngine();
-
-        std::wstring msg = langs::get(L"Are you sure you want to open the link:") + L"\n"
-                    + util::str2wstr_utf8(this->getURL()) 
-                    + std::wstring(L"?");
-        
-        auto menu = gui.getMenu();
-
-        guiutil::confirm(
-            engine,
-            msg,
-            [this, menu]() {
-                platform::openURL(this->getURL());
-                if (!menu->back()) {
-                    menu->reset();
-                }
-            }
-        );
-    });
 }
 
 void Label::setFontName(std::string name) {
@@ -187,60 +143,47 @@ void Label::setFontName(std::string name) {
 const std::string& Label::getFontName() const {
     return fontName;
 }
-
 void Label::setVerticalAlign(Align align) {
     this->valign = align;
 }
-
 Align Label::getVerticalAlign() const {
     return valign;
 }
-
 float Label::getLineInterval() const {
     return lineInterval;
 }
-
 void Label::setLineInterval(float interval) {
     lineInterval = interval;
 }
-
 int Label::getTextYOffset() const {
     return textYOffset;
 }
-
 size_t Label::getTextLineOffset(size_t line) const {
     return cache.getTextLineOffset(line);
 }
-
 bool Label::isFakeLine(size_t line) const {
     line = std::min(cache.lines.size()-1, line);
     return cache.lines.at(line).fake;
 }
-
 int Label::getLineYOffset(uint line) const {
     return line * totalLineHeight + textYOffset;
 }
-
 uint Label::getLineByYOffset(int offset) const {
     if (offset < textYOffset) {
         return 0;
     }
     return (offset - textYOffset) / totalLineHeight;
 }
-
 uint Label::getLineByTextIndex(size_t index) const {
     return cache.getLineByTextIndex(index);
 }
-
 uint Label::getLinesNumber() const {
     return cache.lines.size();
 }
-
 void Label::draw(const DrawContext& pctx, const Assets& assets) {
     auto batch = pctx.getBatch2D();
     auto font = assets.get<Font>(fontName);
     cache.prepare(font, static_cast<size_t>(glm::abs(getSize().x)));
-
     if (supplier) {
         setText(supplier());
     }
@@ -248,7 +191,6 @@ void Label::draw(const DrawContext& pctx, const Assets& assets) {
         cache.update(text, multiline, textWrap);
     }
     batch->setColor(calcColor());
-
     uint lineHeight = font->getLineHeight();
     if (cache.lines.size() > 1) {
         lineHeight *= lineInterval;
@@ -258,7 +200,6 @@ void Label::draw(const DrawContext& pctx, const Assets& assets) {
     if (autoresize) {
         setSize(newsize);
     }
-
     glm::vec2 pos = calcPos();
     switch (align) {
         case Align::left: break;
@@ -272,7 +213,6 @@ void Label::draw(const DrawContext& pctx, const Assets& assets) {
     }
     textYOffset = pos.y-calcPos().y;
     totalLineHeight = lineHeight;
-
     const auto& viewport = pctx.getViewport();
     glm::vec4 bounds {0, 0, viewport.x, viewport.y};
     if (parent) {
@@ -302,48 +242,38 @@ void Label::draw(const DrawContext& pctx, const Assets& assets) {
         font->draw(*batch, text, pos.x, pos.y, styles.get(), 0);
     }
 }
-
 void Label::textSupplier(wstringsupplier supplier) {
     this->supplier = std::move(supplier);
 }
-
 void Label::setAutoResize(bool flag) {
     this->autoresize = flag;
 }
-
 bool Label::isAutoResize() const {
     return autoresize;
 }
-
 void Label::setMultiline(bool multiline) {
     if (multiline != this->multiline) {
         this->multiline = multiline;
         cache.resetFlag = true;
     }
 }
-
 bool Label::isMultiline() const {
     return multiline;
 }
-
 void Label::setTextWrapping(bool flag) {
     this->textWrap = flag;
     cache.resetFlag = true;
 }
-
 bool Label::isTextWrapping() const {
     return textWrap;
 }
-
 void Label::setMarkup(std::string_view lang) {
     markup = lang;
     setText(text);
 }
-
 const std::string& Label::getMarkup() const {
     return markup;
 }
-
 void Label::setStyles(std::unique_ptr<FontStylesScheme> styles) {
     this->styles = std::move(styles);
 }

@@ -341,10 +341,6 @@ static std::shared_ptr<UINode> read_label(
         label->setMarkup(element.attr("markup").getText());
     }
 
-    if (element.has("url")) {
-        label->setURL(element.attr("url").getText());
-    }
-
     return label;
 }
 

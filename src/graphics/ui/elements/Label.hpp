@@ -72,9 +72,6 @@ namespace gui {
         virtual void setText(std::wstring text);
         const std::wstring& getText() const;
 
-        virtual void setURL(std::string url);
-        const std::string& getURL() const;
-
         virtual void setFontName(std::string name);
         virtual const std::string& getFontName() const;
 
