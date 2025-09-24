@@ -16,8 +16,11 @@ class ArgC {
         std::string keyword;
         std::function<bool()> execute;
         std::string help;
-        ArgC(const std::string& keywo, std::function<bool()> execu, const std::string& he):
-            keyword(keywo), execute(execu), help(he) {}
+        ArgC(const std::string& keyword, std::function<bool()> execute, const std::string& help) {
+            this->keyword = keyword;
+            this->execute = execute;
+            this->help = help;
+        }
 };
 
 
