@@ -39,6 +39,7 @@
             entt
             mesa
             freeglut
+            mbedtls
           ]; # libglvnd
 
           packages = with pkgs; [

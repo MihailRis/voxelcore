@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     libluajit-5.1-dev \
     libvorbis-dev \
     libcurl4-openssl-dev \
+    libmbedtls-dev \
     ca-certificates \
     wget \
     && rm -rf /var/lib/apt/lists/*

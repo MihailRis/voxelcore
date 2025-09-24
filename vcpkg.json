@@ -13,6 +13,7 @@
       "libvorbis",
       "entt",
       "gtest",
-      "curl"
+      "curl",
+      "mbedtls"
     ]
   }
