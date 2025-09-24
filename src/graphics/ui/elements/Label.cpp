@@ -44,7 +44,7 @@ void LabelCache::update(std::wstring_view text, bool multiline, bool wrap) {
     if (font == nullptr) {
         wrap = false;
     }
-
+    
     if (multiline) {
         size_t len = 0;
         for (size_t i = 0; i < text.length(); i++, len++) {
@@ -236,7 +236,7 @@ void Label::draw(const DrawContext& pctx, const Assets& assets) {
     }
     textYOffset = pos.y-calcPos().y;
     totalLineHeight = lineHeight;
-    
+
     const auto& viewport = pctx.getViewport();
     glm::vec4 bounds {0, 0, viewport.x, viewport.y};
     if (parent) {

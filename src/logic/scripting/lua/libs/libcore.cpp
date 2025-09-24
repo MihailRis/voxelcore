@@ -20,6 +20,11 @@
 #include "util/platform.hpp"
 #include "world/Level.hpp"
 #include "world/generator/WorldGenerator.hpp"
+#include "util/platform.hpp"
+#include "frontend/locale.hpp"
+#include "graphics/ui/gui_util.hpp"
+#include "graphics/ui/GUI.hpp"
+#include "graphics/ui/elements/Menu.hpp"
 
 using namespace scripting;
 
@@ -229,6 +234,24 @@ static int l_open_folder(lua::State* L) {
     return 0;
 }
 
+static int l_open_url(lua::State* L) {
+    auto url = lua::require_string(L, 1);
+
+    std::wstring msg = langs::get(L"Are you sure you want to open the link:") +
+                       L"\n" + util::str2wstr_utf8(url) +
+                       std::wstring(L"?");
+
+    auto menu = engine->getGUI().getMenu();
+
+    guiutil::confirm(*engine, msg, [url, menu]() {
+        platform::openURL(url);
+        if (!menu->back()) {
+            menu->reset();
+        }
+    });
+    return 0;
+}
+
 /// @brief Quit the game
 static int l_quit(lua::State*) {
     engine->quit();
@@ -284,6 +307,7 @@ const luaL_Reg corelib[] = {
     {"str_setting", lua::wrap<l_str_setting>},
     {"get_setting_info", lua::wrap<l_get_setting_info>},
     {"open_folder", lua::wrap<l_open_folder>},
+    {"open_url", lua::wrap<l_open_url>},
     {"quit", lua::wrap<l_quit>},
     {"capture_output", lua::wrap<l_capture_output>},
     {NULL, NULL}
