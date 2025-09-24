@@ -1,4 +1,5 @@
 #include "Label.hpp"
+
 #include <utility>
 
 #include "assets/Assets.hpp"
@@ -39,9 +40,11 @@ void LabelCache::update(std::wstring_view text, bool multiline, bool wrap) {
     resetFlag = false;
     lines.clear();
     lines.push_back(LineScheme {0, false});
+
     if (font == nullptr) {
         wrap = false;
     }
+
     if (multiline) {
         size_t len = 0;
         for (size_t i = 0; i < text.length(); i++, len++) {
@@ -86,7 +89,6 @@ Label::Label(GUI& gui, const std::string& text, std::string fontName)
     fontName(std::move(fontName))
 {
     setInteractive(false);
-  
     cache.update(this->text, multiline, textWrap);
 }
 
@@ -101,6 +103,7 @@ Label::Label(GUI& gui, const std::wstring& text, std::string fontName)
 }
 
 Label::~Label() = default;
+
 glm::vec2 Label::calcSize() {
     auto font = cache.font;
     uint lineHeight = font->getLineHeight();
@@ -131,6 +134,7 @@ void Label::setText(std::wstring text) {
     }
     this->text = std::move(text);
     cache.update(this->text, multiline, textWrap);
+
     if (cache.font && autoresize) {
         setSize(calcSize());
     }
@@ -200,6 +204,7 @@ void Label::draw(const DrawContext& pctx, const Assets& assets) {
     auto batch = pctx.getBatch2D();
     auto font = assets.get<Font>(fontName);
     cache.prepare(font, static_cast<size_t>(glm::abs(getSize().x)));
+
     if (supplier) {
         setText(supplier());
     }
@@ -207,6 +212,7 @@ void Label::draw(const DrawContext& pctx, const Assets& assets) {
         cache.update(text, multiline, textWrap);
     }
     batch->setColor(calcColor());
+
     uint lineHeight = font->getLineHeight();
     if (cache.lines.size() > 1) {
         lineHeight *= lineInterval;
@@ -216,6 +222,7 @@ void Label::draw(const DrawContext& pctx, const Assets& assets) {
     if (autoresize) {
         setSize(newsize);
     }
+
     glm::vec2 pos = calcPos();
     switch (align) {
         case Align::left: break;
@@ -229,6 +236,7 @@ void Label::draw(const DrawContext& pctx, const Assets& assets) {
     }
     textYOffset = pos.y-calcPos().y;
     totalLineHeight = lineHeight;
+    
     const auto& viewport = pctx.getViewport();
     glm::vec4 bounds {0, 0, viewport.x, viewport.y};
     if (parent) {
