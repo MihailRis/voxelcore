@@ -120,8 +120,11 @@ cd vcpkg
 ```
 After installing **vcpkg**, setup env variable **VCPKG_ROOT** and add it to **PATH**:
 ```PowerShell
-$env:VCPKG_ROOT = "C:\path\to\vcpkg"
-$env:PATH = "$env:VCPKG_ROOT;$env:PATH"
+[Environment]::SetEnvironmentVariable(
+  "VCPKG_ROOT", 
+  "C:\path\to\vcpkg", 
+  "User"
+)
 ```
 >[!TIP]
 >For troubleshooting you can read full [documentation](https://learn.microsoft.com/ru-ru/vcpkg/get_started/get-started?pivots=shell-powershell) for **vcpkg**
