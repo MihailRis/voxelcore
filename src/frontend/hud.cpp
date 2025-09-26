@@ -51,6 +51,7 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <cmath>
 
 using namespace gui;
 
@@ -67,9 +68,9 @@ std::shared_ptr<UINode> create_debug_panel(
 );
 
 HudElement::HudElement(
-    HudElementMode mode, 
-    UiDocument* document, 
-    std::shared_ptr<UINode> node, 
+    HudElementMode mode,
+    UiDocument* document,
+    std::shared_ptr<UINode> node,
     bool debug
 ) : mode(mode), document(document), node(std::move(node)), debug(debug) {
 }
@@ -107,7 +108,7 @@ std::shared_ptr<InventoryView> Hud::createContentAccess() {
     auto& content = frontend.getLevel().content;
     auto& indices = *content.getIndices();
     auto inventory = player.getInventory();
-    
+
     size_t itemsCount = indices.items.count();
     auto accessInventory = std::make_shared<Inventory>(0, itemsCount);
     for (size_t id = 1; id < itemsCount; id++) {
@@ -118,7 +119,7 @@ std::shared_ptr<InventoryView> Hud::createContentAccess() {
     [inventory, &indices](uint, ItemStack& item) {
         auto copy = ItemStack(item);
         inventory->move(copy, indices);
-    }, 
+    },
     [this, inventory](uint, ItemStack& item) {
         inventory->getSlot(player.getChosenSlot()).set(item);
     });
@@ -220,6 +221,67 @@ Hud::~Hud() {
     gui.remove(debugPanel);
 }
 
+void Hud::startSlotSwitch(int newSlot) {
+    int cur = player.getChosenSlot();
+    if (newSlot == cur) return;
+    prevChosenSlot = cur;
+
+    player.setChosenSlot(newSlot);
+    slotSwitching = true;
+    slotSwitchTime = 0.0f;
+
+    hotbarView->setSelectedScale(1.0f);
+}
+
+static inline float easeInCubic(float t) {
+    return t * t * t;
+}
+
+static inline float easeOutBack(float t) {
+    const float c1 = 1.70158f;
+    const float c3 = c1 + 1.0f;
+    float p = t - 1.0f;
+    return 1.0f + c3 * p * p * p + c1 * p * p;
+}
+
+void Hud::updateSlotSwitchAnimation() {
+    if (!slotSwitching) return;
+
+    // TODO: linking to delta time
+    float dt = 1.0f / 60.0f;
+
+    slotSwitchTime += dt;
+    float t = slotSwitchTime / slotSwitchDuration;
+    if (t >= 1.0f) {
+        t = 1.0f;
+        slotSwitching = false;
+    }
+
+    const float split = 0.2f; // 0..1 phase parameters. When the moment comes to return to default size
+    const float amount = slotTargetScaleAmount;
+    const float minScale = 1.0f - amount;
+
+    float scale = 1.0f;
+    if (t <= split) {
+        float u = (split > 0.0f) ? (t / split) : 1.0f;
+        float e = easeInCubic(u);
+        scale = 1.0f - amount * e;
+    } else {
+        float u = (1.0f - split) > 0.0f ? ((t - split) / (1.0f - split)) : 1.0f;
+        float e = easeOutBack(u);
+        scale = minScale + (1.0f - minScale) * e;
+    }
+
+    if (scale < 0.1f) scale = 0.1f;
+    if (scale > 1.25f) scale = 1.25f;
+
+    hotbarView->setSelectedScale(scale);
+
+    if (!slotSwitching) {
+        hotbarView->setSelectedScale(1.0f);
+    }
+}
+
 /// @brief Remove all elements marked as removed
 void Hud::cleanup() {
     auto it = std::remove_if(elements.begin(), elements.end(), [](const HudElement& e) {
@@ -254,19 +316,26 @@ void Hud::updateHotbarControl() {
         if (slot < 0) {
             slot += 10;
         }
-        player.setChosenSlot(slot);
+        if (slot != player.getChosenSlot()) {
+            startSlotSwitch(slot);
+        }
     }
     for (
-        int i = static_cast<int>(Keycode::NUM_1); 
-        i <= static_cast<int>(Keycode::NUM_9); 
+        int i = static_cast<int>(Keycode::NUM_1);
+        i <= static_cast<int>(Keycode::NUM_9);
         i++
     ) {
         if (input.jpressed(static_cast<Keycode>(i))) {
-            player.setChosenSlot(i - static_cast<int>(Keycode::NUM_1));
+            int newSlot = i - static_cast<int>(Keycode::NUM_1);
+            if (newSlot != player.getChosenSlot()) {
+                startSlotSwitch(newSlot);
+            }
         }
     }
     if (input.jpressed(Keycode::NUM_0)) {
-        player.setChosenSlot(9);
+        if (9 != player.getChosenSlot()) {
+            startSlotSwitch(9);
+        }
     }
 }
 
@@ -277,7 +346,7 @@ void Hud::updateWorldGenDebug() {
     auto generator =
         frontend.getController()->getChunksController()->getGenerator();
     auto debugInfo = generator->createDebugInfo();
-    
+
     int width = debugImgWorldGen->getWidth();
     int height = debugImgWorldGen->getHeight();
     ubyte* data = debugImgWorldGen->getData();
@@ -304,10 +373,10 @@ void Hud::updateWorldGenDebug() {
                 chunks.getChunk(ax + ox, az + oz)
                     ? (isInLoadingZone ? 255 : 128)
                     : 0;
-            data[(flippedZ * width + x) * 4 + 0] = 
+            data[(flippedZ * width + x) * 4 + 0] =
                 level.chunks->fetch(ax + ox, az + oz) ? 255 : 0;
 
-            if (ax < 0 || az < 0 || 
+            if (ax < 0 || az < 0 ||
                 ax >= areaWidth || az >= areaHeight) {
                 data[(flippedZ * width + x) * 4 + 2] = 0;
                 data[(flippedZ * width + x) * 4 + 3] = 0;
@@ -328,6 +397,8 @@ void Hud::updateWorldGenDebug() {
 void Hud::update(bool visible) {
     const auto& chunks = *player.chunks;
     bool isMenuOpen = menu.hasOpenPage();
+
+    updateSlotSwitchAnimation();
 
     debugPanel->setVisible(
         debug && visible && !(inventoryOpen && inventoryView == nullptr)
@@ -427,9 +498,9 @@ std::shared_ptr<Inventory> Hud::openInventory(
 }
 
 void Hud::openInventory(
-    glm::ivec3 block, 
-    UiDocument* doc, 
-    std::shared_ptr<Inventory> blockinv, 
+    glm::ivec3 block,
+    UiDocument* doc,
+    std::shared_ptr<Inventory> blockinv,
     bool playerInventory
 ) {
     if (isInventoryOpen()) {
@@ -511,7 +582,7 @@ void Hud::dropExchangeSlot() {
         return;
     }
     ItemStack& stack = slotView->getStack();
-    
+
     auto indices = frontend.getLevel().content.getIndices();
     if (auto invView = std::dynamic_pointer_cast<InventoryView>(blockUI)) {
         invView->getInventory()->move(stack, *indices);
@@ -570,7 +641,7 @@ void Hud::add(const HudElement& element, const dv::value& argsArray) {
             args.emplace_back(static_cast<integer_t>(blockPos[i]));
         }
         scripting::on_ui_open(
-            element.getDocument(), 
+            element.getDocument(),
             std::move(args)
         );
     }
@@ -634,7 +705,7 @@ void Hud::draw(const DrawContext& ctx){
         int chsizex = texture != nullptr ? texture->getWidth() : 16;
         int chsizey = texture != nullptr ? texture->getHeight() : 16;
         batch->rect(
-            (viewport.x - chsizex) / 2, (viewport.y - chsizey) / 2, 
+            (viewport.x - chsizex) / 2, (viewport.y - chsizey) / 2,
             chsizex, chsizey, 0, 0, 1, 1, 1, 1, 1, 1
         );
     }
@@ -710,7 +781,7 @@ void Hud::setPause(bool pause) {
     if (inventoryOpen) {
         closeInventory();
     }
-    
+
     if (!pause && menu.hasOpenPage()) {
         menu.reset();
     }
@@ -740,7 +811,7 @@ void Hud::setContentAccess(bool flag) {
 
 void Hud::setDebugCheats(bool flag) {
     allowDebugCheats = flag;
-    
+
     gui.remove(debugPanel);
     debugPanel = create_debug_panel(
         engine, frontend.getLevel(), player, allowDebugCheats
