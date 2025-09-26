@@ -34,7 +34,7 @@ apt-get install entt-devel libglfw3-devel libGLEW-devel libglm-devel libpng-deve
 #### Debian based distros
 
 ```sh
-sudo apt install libglfw3-dev libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libcurl4-openssl-dev
+sudo apt install libglfw3 libglfw3-dev libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libcurl4-openssl-dev
 ```
 
 > [!TIP]
