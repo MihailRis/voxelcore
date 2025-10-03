@@ -181,9 +181,14 @@ std::filesystem::path platform::get_executable_path() {
         throw std::runtime_error("could not get executable path");
     }
     std::string str(size, 0);
-    WideCharToMultiByte(
+    size = WideCharToMultiByte(
         CP_UTF8, 0, buffer, -1, str.data(), size, nullptr, nullptr
     );
+    if (size == 0) {
+        DWORD error = GetLastError();
+        throw std::runtime_error("WideCharToMultiByte failed with code: " + std::to_string(error));
+    }
+    str.resize(size - 1);
     return std::filesystem::path(str);
 
 #elif defined(__APPLE__)
