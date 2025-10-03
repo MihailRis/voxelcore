@@ -19,6 +19,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef __APPLE__
+#include <mach-o/dyld.h> 
+#endif
+
 static debug::Logger logger("platform");
 
 #ifdef _WIN32
