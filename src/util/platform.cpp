@@ -19,9 +19,9 @@
 #include <unistd.h>
 #endif
 
-#ifdef __APPLE__
-#include <mach-o/dyld.h> 
-#endif
+namespace platform::internal {
+    std::filesystem::path get_executable_path();
+}
 
 static debug::Logger logger("platform");
 
@@ -183,14 +183,11 @@ std::filesystem::path platform::get_executable_path() {
     return std::filesystem::path(str);
 
 #elif defined(__APPLE__)
-    char buffer[1024];
-    uint32_t size = sizeof(buffer);
-    if (_NSGetExecutablePath(buffer, &size) == 0) {
-        return std::filesystem::canonical(std::filesystem::path(buffer));
-    } else {
-        logger.error() << "buffer too small; need size " << size;
+    auto path = platform::internal::get_executable_path();
+    if (path.empty()) {
         throw std::runtime_error("could not get executable path");
     }
+    return path;
 #else
     char buffer[1024];
     ssize_t count = readlink("/proc/self/exe", buffer, sizeof(buffer));
