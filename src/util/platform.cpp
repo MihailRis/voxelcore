@@ -10,13 +10,18 @@
 #include "stringutil.hpp"
 #include "typedefs.hpp"
 #include "debug/Logger.hpp"
-
-static debug::Logger logger("platform");
+#include "frontend/locale.hpp"
 
 #ifdef _WIN32
 #include <Windows.h>
 #pragma comment(lib, "winmm.lib")
+#else
+#include <unistd.h>
+#endif
 
+static debug::Logger logger("platform");
+
+#ifdef _WIN32
 void platform::configure_encoding() {
     // set utf-8 encoding to console output
     SetConsoleOutputCP(CP_UTF8);
@@ -67,9 +72,6 @@ int platform::get_process_id() {
 
 #else // _WIN32
 
-#include <unistd.h>
-#include "frontend/locale.hpp"
-
 void platform::configure_encoding() {
 }
 
@@ -111,5 +113,43 @@ void platform::open_folder(const std::filesystem::path& folder) {
         logger.warning() << "'" << cmd << "' returned code " << res;
     }
 
+#endif
+}
+
+std::filesystem::path platform::get_executable_path() {
+#ifdef _WIN32
+    wchar_t buffer[MAX_PATH];
+    GetModuleFileName(NULL, buffer, MAX_PATH);
+
+    int size = WideCharToMultiByte(
+        CP_UTF8, 0, buffer, -1, nullptr, 0, nullptr, nullptr
+    );
+    if (size == 0) {
+        throw std::runtime_error("could not get executable path");
+    }
+    std::string str(size, 0);
+    WideCharToMultiByte(
+        CP_UTF8, 0, buffer.c_str(), -1, &str[0], size, nullptr, nullptr
+    );
+    return std::filesystem::path(str);
+
+#elif defined(__APPLE__)
+    char buffer[1024];
+    uint32_t size = sizeof(buffer);
+    if (_NSGetExecutablePath(buffer, &size) == 0) {
+        return std::filesystem::canonical(std::filesystem::path(buffer));
+    } else {
+        logger.error() << "buffer too small; need size " << size;
+        throw std::runtime_error("could not get executable path");
+    }
+#else
+    char buffer[1024];
+    ssize_t count = readlink("/proc/self/exe", buffer, sizeof(buffer));
+    if (count != -1) {
+        return std::filesystem::canonical(std::filesystem::path(
+            std::string(buffer, static_cast<size_t>(count))
+        ));
+    }
+    throw std::runtime_error("could not get executable path");
 #endif
 }

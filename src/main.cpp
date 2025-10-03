@@ -28,6 +28,8 @@ int main(int argc, char** argv) {
     debug::Logger::init(coreParameters.userFolder.string()+"/latest.log");
     platform::configure_encoding();
 
+    logger.info() << "executable path: " << platform::get_executable_path();
+
     auto& engine = Engine::getInstance();
     try {
         engine.initialize(std::move(coreParameters));
