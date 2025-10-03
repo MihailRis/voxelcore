@@ -16,4 +16,6 @@ namespace platform {
     int get_process_id();
     /// @brief Get current process running executable path  
     std::filesystem::path get_executable_path();
+    /// @brief Open URL in web browser 
+    bool open_url(const std::string& url);
 }

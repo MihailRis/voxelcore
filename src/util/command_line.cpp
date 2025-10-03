@@ -4,6 +4,7 @@
 #include <functional>
 #include <vector>
 #include <string>
+#include <iomanip>
 
 #include "io/engine_paths.hpp"
 #include "util/ArgsReader.hpp"
@@ -15,10 +16,17 @@ class ArgC {
     public:
         std::string keyword;
         std::function<bool()> execute;
+        std::string args;
         std::string help;
-        ArgC(const std::string& keyword, std::function<bool()> execute, const std::string& help) {
+        ArgC(
+            const std::string& keyword,
+            std::function<bool()> execute,
+            const std::string& args,
+            const std::string& help
+        ) {
             this->keyword = keyword;
             this->execute = execute;
+            this->args = args;
             this->help = help;
         }
 };
@@ -31,42 +39,47 @@ static bool perform_keyword(
         ArgC("--res", [&params, &reader]() -> bool {
             params.resFolder = reader.next();
             return true;
-        }, "<path> - set resources directory."),
+        }, "<path>", "set resources directory."),
         ArgC("--dir", [&params, &reader]() -> bool {
             params.userFolder = reader.next();
             return true;
-        }, "<path> - set userfiles directory."),
+        }, "<path>", "set userfiles directory."),
         ArgC("--project", [&params, &reader]() -> bool {
             params.projectFolder = reader.next();
             return true;
-        }, "<path> - set project directory."),
+        }, "<path>", "set project directory."),
         ArgC("--test", [&params, &reader]() -> bool {
             params.testMode = true;
             params.scriptFile = reader.next();
             return true;
-        }, "<path> - test script file."),
+        }, "<path>", "test script file."),
         ArgC("--script", [&params, &reader]() -> bool {
             params.testMode = false;
             params.scriptFile = reader.next();
             return true;
-        }, "<path> - main script file."),
+        }, "<path>", "main script file."),
         ArgC("--headless", [&params]() -> bool {
             params.headless = true;
             return true;
-        }, "- run in headless mode."),
+        }, "", "run in headless mode."),
+        ArgC("--tps", [&params, &reader]() -> bool {
+            params.tps = reader.nextInt();
+            return true;
+        }, "<tps>", "headless mode tick-rate (default - 20)."),
         ArgC("--version", []() -> bool {
             std::cout << ENGINE_VERSION_STRING << std::endl;
             return false;
-        }, "- display the engine version."),
+        }, "", "display the engine version."),
         ArgC("--help", []() -> bool {
             std::cout << "VoxelCore v" << ENGINE_VERSION_STRING << "\n\n";
             std::cout << "Command-line arguments:\n";
             for (auto& a : argumentsCommandline) {
-                std::cout << a.keyword << " " << a.help << std::endl;
+                std::cout << std::setw(20) << std::left << (a.keyword + " " + a.args);
+                std::cout << "- " << a.help << std::endl;
             }
             std::cout << std::endl;
             return false;
-        }, "- display this help.")
+        }, "", "display this help.")
     };
     for (auto& a : argumentsCommandline) {
         if (a.keyword == keyword) {

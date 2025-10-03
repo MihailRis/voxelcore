@@ -25,6 +25,7 @@ Grant %{0} pack modification permission?=Выдать разрешение на 
 Error at line %{0}=Ошибка на строке %{0}
 Run=Запустить
 Filter=Фильтр
+Are you sure you want to open the link: =Вы уверены, что хотите открыть ссылку: 
 
 editor.info.tooltip=CTRL+S - Сохранить\nCTRL+R - Запустить\nCTRL+Z - Отменить\nCTRL+Y - Повторить
 devtools.traceback=Стек вызовов (от последнего)
@@ -102,6 +103,8 @@ settings.Limit Background FPS=Ограничить фоновую частоту
 settings.Advanced render=Продвинутый рендер
 settings.Shadows quality=Качество теней
 settings.Conflict=Найдены возможные конфликты
+settings.Windowed=Оконный
+settings.Borderless=Безрамочный
 
 # Управление
 chunks.reload=Перезагрузить Чанки

@@ -16,7 +16,6 @@ namespace network {
     using ServerDatagramCallback = std::function<void(u64id_t sid, const std::string& addr, int port, const char* buffer, size_t length)>;
     using ClientDatagramCallback = std::function<void(u64id_t cid, const char* buffer, size_t length)>;
 
-
     class Requests {
     public:
         virtual ~Requests() {}
@@ -78,6 +77,8 @@ namespace network {
         virtual void connect(runnable callback) = 0;
         virtual int recv(char* buffer, size_t length) = 0;
         virtual int available() = 0;
+        virtual void setNoDelay(bool noDelay) = 0;
+        [[nodiscard]] virtual bool isNoDelay() const = 0;
 
         [[nodiscard]] TransportType getTransportType() const noexcept override {
             return TransportType::TCP;

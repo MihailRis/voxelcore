@@ -23,6 +23,7 @@ devtools.traceback=Стек викликів (від останнього)
 error.pack-not-found=Не вдалося знайти пакет
 error.dependency-not-found=Використовувана залежність не знайдена
 pack.remove-confirm=Видалити весь контент, що постачається паком/паками зі світу (безповоротно)?
+Are you sure you want to open the link: =Ви впевнені, що хочете відкрити посилання: 
 
 # Меню
 menu.Apply=Застосувати

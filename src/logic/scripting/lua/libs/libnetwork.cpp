@@ -402,6 +402,28 @@ static int l_get_total_download(lua::State* L, network::Network& network) {
     return lua::pushinteger(L, network.getTotalDownload());
 }
 
+static int l_set_nodelay(lua::State* L, network::Network& network) {
+    u64id_t id = lua::tointeger(L, 1);
+    bool noDelay = lua::toboolean(L, 2);
+    if (auto connection = network.getConnection(id)) {
+        if (connection->getTransportType() == network::TransportType::TCP) {
+            dynamic_cast<network::TcpConnection*>(connection)->setNoDelay(noDelay);
+        }
+    }
+    return 0;
+}
+
+static int l_is_nodelay(lua::State* L, network::Network& network) {
+    u64id_t id = lua::tointeger(L, 1);
+    if (auto connection = network.getConnection(id)) {
+        if (connection->getTransportType() == network::TransportType::TCP) {
+            bool noDelay = dynamic_cast<network::TcpConnection*>(connection)->isNoDelay();
+            return lua::pushboolean(L, noDelay);
+        }
+    }
+    return lua::pushboolean(L, false);
+}
+
 static int l_pull_events(lua::State* L, network::Network& network) {
     std::vector<NetworkEvent> local_queue;
     {
@@ -517,5 +539,7 @@ const luaL_Reg networklib[] = {
     {"__get_address", wrap<l_get_address>},
     {"__is_serveropen", wrap<l_is_serveropen>},
     {"__get_serverport", wrap<l_get_serverport>},
+    {"__set_nodelay", wrap<l_set_nodelay>},
+    {"__is_nodelay", wrap<l_is_nodelay>},
     {NULL, NULL}
 };

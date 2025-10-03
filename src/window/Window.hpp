@@ -10,6 +10,12 @@ class ImageData;
 class Input;
 struct DisplaySettings;
 
+enum class WindowMode {
+    WINDOWED,
+    FULLSCREEN,
+    BORDERLESS
+};
+
 class Window {
 public:
     Window(glm::ivec2 size) : size(std::move(size)) {}
@@ -25,8 +31,8 @@ public:
     virtual void setShouldClose(bool flag) = 0;
 
     virtual void setCursor(CursorShape shape) = 0;
-    virtual void toggleFullscreen() = 0;
-    virtual bool isFullscreen() const = 0;
+    virtual void setMode(WindowMode mode) = 0;
+    virtual WindowMode getMode() const = 0;
 
     virtual void setIcon(const ImageData* image) = 0;
 
@@ -51,6 +57,7 @@ public:
     > initialize(DisplaySettings* settings, std::string title);
 protected:
     glm::ivec2 size;
+    WindowMode mode = WindowMode::WINDOWED;
 };
 
 namespace display {

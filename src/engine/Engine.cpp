@@ -135,10 +135,11 @@ void Engine::initializeClient() {
     if (ENGINE_DEBUG_BUILD) {
         menus::create_version_label(*gui);
     }
-    keepAlive(settings.display.fullscreen.observe(
-        [this](bool value) {
-            if (value != this->window->isFullscreen()) {
-                this->window->toggleFullscreen();
+    keepAlive(settings.display.windowMode.observe(
+        [this](int value) {
+            WindowMode mode = static_cast<WindowMode>(value);
+            if (mode != this->window->getMode()) {
+                this->window->setMode(mode);
             }
         },
         true
@@ -237,7 +238,11 @@ void Engine::updateHotkeys() {
         gui->toggleDebug();
     }
     if (input->jpressed(Keycode::F11)) {
-        settings.display.fullscreen.toggle();
+        if (settings.display.windowMode.get() != static_cast<int>(WindowMode::FULLSCREEN)) {
+            settings.display.windowMode.set(static_cast<int>(WindowMode::FULLSCREEN));
+        } else {
+            settings.display.windowMode.set(static_cast<int>(WindowMode::WINDOWED));
+        }
     }
 }
 

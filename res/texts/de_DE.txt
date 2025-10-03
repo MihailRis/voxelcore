@@ -7,6 +7,7 @@ Back=Zurück
 Continue=Weitermachen
 Add=Hinzufügen
 Converting world...=Weltkonvertierung im Gange...
+Are you sure you want to open the link: =Sind Sie sicher, dass Sie den Link öffnen möchten: 
 
 error.pack-not-found=Paket konnte nicht gefunden werden
 error.dependency-not-found=Die verwendete Abhängigkeit wurde nicht gefunden

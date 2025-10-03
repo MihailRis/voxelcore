@@ -15,8 +15,6 @@ using namespace std::chrono;
 
 static debug::Logger logger("mainloop");
 
-inline constexpr int TPS = 20;
-
 ServerMainloop::ServerMainloop(Engine& engine) : engine(engine) {
 }
 
@@ -39,7 +37,7 @@ void ServerMainloop::run() {
         "script:" + coreParams.scriptFile.filename().u8string()
     );
 
-    double targetDelta = 1.0 / static_cast<double>(TPS);
+    double targetDelta = 1.0 / static_cast<double>(coreParams.tps);
     double delta = targetDelta;
     auto begin = system_clock::now();
     auto startupTime = begin;

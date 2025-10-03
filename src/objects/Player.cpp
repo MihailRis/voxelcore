@@ -196,6 +196,14 @@ void Player::setLoadingChunks(bool flag) {
     loadingChunks = flag;
 }
 
+float Player::getMaxInteractionDistance() const {
+    return interactionDistance;
+}
+
+void Player::setMaxInteractionDistance(float distance) {
+    interactionDistance = std::max(1.0f, std::min(200.0f, distance));
+}
+
 entityid_t Player::getEntity() const {
     return eid;
 }
@@ -250,6 +258,7 @@ dv::value Player::serialize() const {
     root["rotation"] = dv::to_value(rotation);
     root["spawnpoint"] = dv::to_value(spawnpoint);
 
+    root["interaction-distance"] = interactionDistance;
     root["flight"] = flight;
     root["noclip"] = noclip;
     root["suspended"] = suspended;
@@ -283,6 +292,8 @@ void Player::deserialize(const dv::value& src) {
     const auto& sparr = src["spawnpoint"];
     setSpawnPoint(glm::vec3(
         sparr[0].asNumber(), sparr[1].asNumber(), sparr[2].asNumber()));
+    
+    src.at("interaction-distance").get(interactionDistance);
 
     flight = src["flight"].asBoolean();
     noclip = src["noclip"].asBoolean();

@@ -406,21 +406,28 @@ public:
         glfwSetCursor(window, standard_cursors[static_cast<int>(shape)]);
     }
 
-    void toggleFullscreen() override {
-        fullscreen = !fullscreen;
-    
+    void setMode(WindowMode mode) override {
+        Window::mode = mode;
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        const GLFWvidmode* glfwMode = glfwGetVideoMode(monitor);
     
         if (input.isCursorLocked()){
             input.toggleCursor();
         }
-    
-        if (fullscreen) {
+
+        if (mode == WindowMode::FULLSCREEN) {
+            const int width = glfwMode->width;
+            const int height = glfwMode->height;
+            const int refreshRate = glfwMode->refreshRate;
             glfwGetWindowPos(window, &posX, &posY);
-            glfwSetWindowMonitor(
-                window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate
-            );
+            glfwSetWindowMonitor(window, monitor, 0, 0, width, height, refreshRate);
+        }
+        else if(mode == WindowMode::BORDERLESS) {
+            glfwGetWindowPos(window, &posX, &posY);
+            glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+            glfwSetWindowAttrib(window, GLFW_RESIZABLE, GLFW_FALSE);
+            glfwSetWindowSize(window, glfwMode->width, glfwMode->height);
+            glfwSetWindowPos(window, 0, 0);
         } else {
             glfwSetWindowMonitor(
                 window,
@@ -431,6 +438,8 @@ public:
                 settings->height.get(),
                 GLFW_DONT_CARE
             );
+            glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_TRUE);
+            glfwSetWindowAttrib(window, GLFW_RESIZABLE, GLFW_TRUE);
             window_size_callback(window, settings->width.get(), settings->height.get());
         }
     
@@ -439,8 +448,8 @@ public:
         input.setCursorPosition(xPos, yPos);
     }
 
-    bool isFullscreen() const override {
-        return fullscreen;
+    WindowMode getMode() const override {
+        return mode;
     }
 
     void setIcon(const ImageData* image) override {
@@ -459,7 +468,7 @@ public:
         glViewport(0, 0, width, height);
         size = {width, height};
 
-        if (!isFullscreen() && !isMaximized()) {
+        if (mode == WindowMode::WINDOWED && !isMaximized()) {
             settings->width.set(width);
             settings->height.set(height);
         }
@@ -542,7 +551,6 @@ public:
 private:
     GLFWwindow* window;
     CursorShape cursor = CursorShape::ARROW;
-    bool fullscreen = false;
     int framerate = -1;
     std::stack<glm::vec4> scissorStack;
     glm::vec4 scissorArea;
@@ -600,7 +608,7 @@ static void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
 
 static void iconify_callback(GLFWwindow* window, int iconified) {
     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    if (handler->isFullscreen() && iconified == 0) {
+    if (handler->getMode() == WindowMode::FULLSCREEN && iconified == 0) {
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
         glfwSetWindowMonitor(

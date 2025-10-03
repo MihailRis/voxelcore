@@ -1,6 +1,8 @@
 # Documentation
 
-Documentation for 0.29.
+Documentation for 0.30 (in development).
+
+[Documentation for 0.29.](https://github.com/MihailRis/voxelcore/blob/release-0.29/doc/ru/main-page.md)
 
 ## Sections
 

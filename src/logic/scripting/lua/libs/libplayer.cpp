@@ -2,14 +2,14 @@
 #include <glm/glm.hpp>
 
 #include "items/Inventory.hpp"
+#include "libentity.hpp"
 #include "objects/Entities.hpp"
+#include "objects/Entity.hpp"
 #include "objects/Player.hpp"
 #include "objects/Players.hpp"
-#include "objects/Entity.hpp"
 #include "physics/Hitbox.hpp"
 #include "window/Camera.hpp"
 #include "world/Level.hpp"
-#include "libentity.hpp"
 
 using namespace scripting;
 
@@ -53,7 +53,7 @@ static int l_set_vel(lua::State* L) {
     auto x = lua::tonumber(L, 2);
     auto y = lua::tonumber(L, 3);
     auto z = lua::tonumber(L, 4);
-    
+
     if (auto hitbox = player->getHitbox()) {
         hitbox->velocity = glm::vec3(x, y, z);
     }
@@ -177,6 +177,21 @@ static int l_is_loading_chunks(lua::State* L) {
 static int l_set_loading_chunks(lua::State* L) {
     if (auto player = get_player(L, 1)) {
         player->setLoadingChunks(lua::toboolean(L, 2));
+    }
+    return 0;
+}
+
+static int l_get_interaction_distance(lua::State* L) {
+    if (auto player = get_player(L, 1)) {
+        return lua::pushnumber(L, player->getMaxInteractionDistance());
+    }
+    return 0;
+}
+
+static int l_set_interaction_distance(lua::State* L) {
+    if (auto player = get_player(L, 1)) {
+        player->setMaxInteractionDistance(
+            static_cast<float>(lua::tonumber(L, 2)));
     }
     return 0;
 }
@@ -328,6 +343,8 @@ const luaL_Reg playerlib[] = {
     {"set_instant_destruction", lua::wrap<l_set_instant_destruction>},
     {"is_loading_chunks", lua::wrap<l_is_loading_chunks>},
     {"set_loading_chunks", lua::wrap<l_set_loading_chunks>},
+    {"get_interaction_distance", lua::wrap<l_get_interaction_distance>},
+    {"set_interaction_distance", lua::wrap<l_set_interaction_distance>},
     {"set_selected_slot", lua::wrap<l_set_selected_slot>},
     {"get_selected_block", lua::wrap<l_get_selected_block>},
     {"get_selected_entity", lua::wrap<l_get_selected_entity>},

@@ -1,5 +1,4 @@
 <panel size='400' color='0' interval='1' context='menu'>
-    
     <button onclick='menu.page="new_world"'>@New World</button>
     
     <panel id='worlds' size='390,1' padding='5' color='#FFFFFF11' max-length='400'>

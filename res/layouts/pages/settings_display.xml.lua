@@ -53,10 +53,19 @@ function create_checkbox(id, name, tooltip)
     ))
 end
 
+
 function on_open()
     create_setting("camera.fov", "FOV", 1, "°")
     create_setting("display.framerate", "Framerate", 1, "", "", true)
-    create_checkbox("display.fullscreen", "Fullscreen")
+
+    document.root:add(string.format(
+        "<select context='settings' onselect='function(opt) core.set_setting(\"display.window-mode\", tonumber(opt)) end' selected='%s'>"..
+            "<option value='0'>@Windowed</option>"..
+            "<option value='1'>@Fullscreen</option>"..
+            "<option value='2'>@Borderless</option>"..
+        "</select>", core.get_setting("display.window-mode"))
+    )
+
     create_checkbox("camera.shaking", "Camera Shaking")
     create_checkbox("camera.inertia", "Camera Inertia")
     create_checkbox("camera.fov-effects", "Camera FOV Effects")

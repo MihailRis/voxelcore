@@ -355,6 +355,22 @@ public:
         }
     }
 
+    void setNoDelay(bool noDelay) override {
+        int opt = noDelay ? 1 : 0;
+        if (setsockopt(descriptor, IPPROTO_TCP, TCP_NODELAY, (char*)&opt, sizeof(opt)) < 0) {
+            throw handle_socket_error("setsockopt(TCP_NODELAY) failed");
+        }
+    }
+
+    bool isNoDelay() const override {
+        int opt = 0;
+        socklen_t len = sizeof(opt);
+        if (getsockopt(descriptor, IPPROTO_TCP, TCP_NODELAY, (char*)&opt, &len) < 0) {
+            throw handle_socket_error("getsockopt(TCP_NODELAY) failed");
+        }
+        return opt != 0;
+    }
+
     void startListen() {
         while (state == ConnectionState::CONNECTED) {
             int size = recvsocket(descriptor, buffer.data(), buffer.size());
