@@ -46,7 +46,7 @@ jobs:
         run: |
             chmod +x build/VoxelEngine
             chmod +x AppDir/usr/bin/vctest
-            AppDir/usr/bin/vctest -e build/VoxelEngine -d dev/tests -u build --output-always
+            AppDir/usr/bin/vctest -e build/VoxelEngine -d dev/tests -u build
       - name: Build AppImage
         uses: AppImageCrafters/build-appimage-action@fe2205a4d6056be47051f7b1b3811106e9814910
         env:

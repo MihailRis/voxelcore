@@ -6,6 +6,7 @@
 #include <stack>
 #include "typedefs.hpp"
 #include "util/stringutil.hpp"
+#include "util/platform.hpp"
 #include <utility>
 
 #include "io/devices/StdfsDevice.hpp"
@@ -44,6 +45,7 @@ void EnginePaths::prepare() {
             resourcesFolder.string() + " is not a directory"
         );
     }
+    logger.info() << "executable path: " << platform::get_executable_path().string();
     logger.info() << "resources folder: " << fs::canonical(resourcesFolder).u8string();
     logger.info() << "user files folder: " << fs::canonical(userFilesFolder).u8string();
     logger.info() << "project folder: " << fs::canonical(projectFolder).u8string();
