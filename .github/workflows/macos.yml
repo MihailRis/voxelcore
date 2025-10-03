@@ -39,7 +39,7 @@ jobs:
         run: |
           chmod +x build/VoxelEngine
           chmod +x AppDir/usr/bin/vctest
-          AppDir/usr/bin/vctest -e build/VoxelEngine -d dev/tests -u build
+          AppDir/usr/bin/vctest -e build/VoxelEngine -d dev/tests -u build --output-always
       - name: Create DMG
         run: |
           mkdir VoxelEngineDmgContent
