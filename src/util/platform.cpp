@@ -168,7 +168,7 @@ void platform::open_folder(const std::filesystem::path& folder) {
 std::filesystem::path platform::get_executable_path() {
 #ifdef _WIN32
     wchar_t buffer[MAX_PATH];
-    auto result = GetModuleFileNameW(NULL, buffer, MAX_PATH);
+    DWORD result = GetModuleFileNameW(NULL, buffer, MAX_PATH);
     if (result == 0) {
         DWORD error = GetLastError();
         throw std::runtime_error("GetModuleFileName failed with code: " + std::to_string(error));
@@ -182,7 +182,7 @@ std::filesystem::path platform::get_executable_path() {
     }
     std::string str(size, 0);
     WideCharToMultiByte(
-        CP_UTF8, 0, buffer.c_str(), -1, &str[0], size, nullptr, nullptr
+        CP_UTF8, 0, buffer, -1, str.data(), size, nullptr, nullptr
     );
     return std::filesystem::path(str);
 
