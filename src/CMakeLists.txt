@@ -104,9 +104,7 @@ target_compile_options(
            # additional warnings
            -Wformat-nonliteral
            -Wctor-dtor-privacy
-           -Wduplicated-branches
-           -Wduplicated-cond
-           -Wzero-as-null-pointer-constant
+
            #-Wsign-conversion
            -Wcast-align
            -Wpointer-arith
@@ -115,6 +113,11 @@ target_compile_options(
            -Wno-unused-parameter
            -Wno-sign-compare
            -Wno-unknown-pragmas
+           -Wzero-as-null-pointer-constant
+           >
+           $<$<CXX_COMPILER_ID:MSVC>:
+           -Wduplicated-branches
+           -Wduplicated-cond
            >)
 
 target_link_options(
