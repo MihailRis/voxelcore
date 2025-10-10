@@ -103,8 +103,6 @@ target_compile_options(
            -Wextra
            # additional warnings
            -Wformat-nonliteral
-           -Wctor-dtor-privacy
-
            #-Wsign-conversion
            -Wcast-align
            -Wpointer-arith
@@ -113,7 +111,6 @@ target_compile_options(
            -Wno-unused-parameter
            -Wno-sign-compare
            -Wno-unknown-pragmas
-           -Wzero-as-null-pointer-constant
            >
            $<$<CXX_COMPILER_ID:MSVC>:
            -Wduplicated-branches

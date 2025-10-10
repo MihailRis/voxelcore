@@ -99,7 +99,7 @@ static bool initialize_gl(int width, int height) {
 
 #ifndef __APPLE__
     glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(gl_message_callback, 0);
+    glDebugMessageCallback(gl_message_callback, nullptr);
 #endif
 
     glViewport(0, 0, width, height);
