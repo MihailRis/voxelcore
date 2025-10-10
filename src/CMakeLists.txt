@@ -101,7 +101,6 @@ target_compile_options(
            $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:
            -Wall
            -Wextra
-           -Wpedantic
            # additional warnings
            -Wformat-nonliteral
            -Wctor-dtor-privacy
@@ -116,7 +115,6 @@ target_compile_options(
            -Wno-unused-parameter
            -Wno-sign-compare
            -Wno-unknown-pragmas
-           -Wno-gnu-anonymous-struct
            >)
 
 target_link_options(
