@@ -379,7 +379,6 @@ public:
                 }
                 totalDownload += size;
             }
-            logger.debug() << "read " << size << " bytes from " << to_string(addr);
         }
     }
 
@@ -620,6 +619,26 @@ public:
     }
 };
 
+static sockaddr_in resolve_address_dgram(const std::string& address, int port) {
+    sockaddr_in serverAddr{};
+    addrinfo hints {};
+
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_DGRAM;
+
+    addrinfo* addrinfo = nullptr;
+    if (int res = getaddrinfo(
+        address.c_str(), nullptr, &hints, &addrinfo
+    )) {
+        throw std::runtime_error(gai_strerror(res));
+    }
+
+    std::memcpy(&serverAddr, addrinfo->ai_addr, sizeof(sockaddr_in));
+    serverAddr.sin_port = htons(port);
+    freeaddrinfo(addrinfo);
+    return serverAddr;
+}
+
 class SocketUdpConnection : public UdpConnection {
     u64id_t id;
     SOCKET descriptor;
@@ -652,13 +671,7 @@ public:
             throw std::runtime_error("could not create udp socket");
         }
 
-        sockaddr_in serverAddr{};
-        serverAddr.sin_family = AF_INET;
-        if (inet_pton(AF_INET, address.c_str(), &serverAddr.sin_addr) <= 0) {
-            closesocket(descriptor);
-            throw std::runtime_error("invalid udp address: " + address);
-        }
-        serverAddr.sin_port = htons(port);
+        sockaddr_in serverAddr = resolve_address_dgram(address, port);
 
         if (::connect(descriptor, (sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
             auto err = handle_socket_error("udp connect failed");
@@ -683,6 +696,8 @@ public:
             while (open) {
                 int size = recv(descriptor, buffer.data(), buffer.size(), 0);
                 if (size <= 0) {
+                    logger.error() << "udp connection " << id
+                                   << handle_socket_error(" recv error").what();
                     if (!open) break;
                     closesocket(descriptor);
                     state = ConnectionState::CLOSED;
@@ -697,11 +712,12 @@ public:
     }
 
     int send(const char* buffer, size_t length) override {
-        int len = sendto(descriptor, buffer, length, 0,
-                         (sockaddr*)&addr, sizeof(addr));
+        int len = ::send(descriptor, buffer, length, 0);
         if (len < 0) {
+            auto err = handle_socket_error(" send failed");
             closesocket(descriptor);
             state = ConnectionState::CLOSED;
+            logger.error() << "udp connection " << id << err.what();
         } else totalUpload += len;
 
         return len;
@@ -710,6 +726,7 @@ public:
     void close(bool discardAll=false) override {
         if (!open) return;
         open = false;
+        logger.info() << "closing udp connection "<< id;
 
         if (state != ConnectionState::CLOSED) {
             shutdown(descriptor, 2);
@@ -789,13 +806,11 @@ public:
     }
 
     void sendTo(const std::string& addr, int port, const char* buffer, size_t length) override {
-        sockaddr_in client{};
-        client.sin_family = AF_INET;
-        inet_pton(AF_INET, addr.c_str(), &client.sin_addr);
-        client.sin_port = htons(port);
-
-        sendto(descriptor, buffer, length, 0,
-               reinterpret_cast<sockaddr*>(&client), sizeof(client));
+        sockaddr_in client = resolve_address_dgram(addr, port);
+        if (sendto(descriptor, buffer, length, 0,
+               reinterpret_cast<sockaddr*>(&client), sizeof(client)) < 0) {
+            logger.error() << handle_socket_error("sendto").what();
+        }
     }
 
     void close() override {

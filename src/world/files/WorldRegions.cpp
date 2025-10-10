@@ -238,8 +238,10 @@ std::unique_ptr<light_t[]> WorldRegions::getLights(int x, int z) {
     auto data = compression::decompress(
         bytes, size, srcSize, layer.compression
     );
-    assert(srcSize == LIGHTMAP_DATA_LEN);
-    return Lightmap::decode(data.get());
+    if (srcSize == LIGHTMAP_DATA_LEN) {
+        return Lightmap::decode(data.get());
+    }
+    return nullptr;
 }
 
 ChunkInventoriesMap WorldRegions::fetchInventories(int x, int z) {

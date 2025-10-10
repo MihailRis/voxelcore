@@ -558,7 +558,7 @@ local internal_locked = false
 --     Example `base:scripts/tests.lua`
 --
 -- nocache - ignore cached script, load anyway
-function __load_script(path, nocache)
+local function __load_script(path, nocache, env)
     local packname, filename = parse_path(path)
 
     if internal_locked and (packname == "res" or packname == "core") 
@@ -578,6 +578,9 @@ function __load_script(path, nocache)
     if script == nil then
         error(err)
     end
+    if env then
+        script = setfenv(script, env)
+    end
     local result = script()
     if not nocache then
         __cached_scripts[path] = script
@@ -593,10 +596,11 @@ end
 function require(path)
     if not string.find(path, ':') then
         local prefix, _ = parse_path(_debug_getinfo(2).source)
-        return require(prefix..':'..path)
+        return require(prefix .. ':' .. path)
     end
     local prefix, file = parse_path(path)
-    return __load_script(prefix..":modules/"..file..".lua")
+    local env = __vc__pack_envs[prefix]
+    return __load_script(prefix .. ":modules/" .. file .. ".lua", nil, env)
 end
 
 function __scripts_cleanup()
@@ -669,4 +673,41 @@ end
 bit.compile = require "core:bitwise/compiler"
 bit.execute = require "core:bitwise/executor"
 
-random.Random = require "core:internal/random_generator"
+function __vc_create_random_methods(random_methods)
+    local index = 1
+    local buffer = nil
+    local buffer_size = 64
+
+    local seed_func = random_methods.seed
+    local random_func = random_methods.random
+
+    function random_methods:bytes(n)
+        local bytes = Bytearray(n)
+        for i=1,n do
+            bytes[i] = self:random(255)
+        end
+        return bytes
+    end
+
+    function random_methods:seed(x)
+        seed_func(self, x)
+        buffer = nil
+    end
+
+    function random_methods:random(a, b)
+        if not buffer or index > #buffer then
+            buffer = random_func(self, buffer_size)
+            index = 1
+        end
+        local value = buffer[index]
+        if b then
+            value = math.floor(value * (b - a + 1) + a)
+        elseif a then
+            value = math.floor(value * a + 1)
+        end
+
+        index = index + 4
+        return value
+    end
+    return random_methods
+end

@@ -120,7 +120,7 @@ namespace rigging {
 
         void update(
             Skeleton& skeleton,
-            const glm::mat4& matrix,
+            const glm::mat3& rotation,
             const glm::vec3& position
         ) const;
 
@@ -128,7 +128,7 @@ namespace rigging {
             const Assets& assets,
             ModelBatch& batch,
             Skeleton& skeleton,
-            const glm::mat4& matrix,
+            const glm::mat3& rotation,
             const glm::vec3& position
         ) const;
 

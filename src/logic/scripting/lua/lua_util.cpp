@@ -133,7 +133,6 @@ dv::value lua::tovalue(State* L, int idx) {
             auto bytes = std::make_shared<dv::objects::Bytes>(
                 reinterpret_cast<const ubyte*>(data.data()), data.size()
             );
-            pop(L);
             return bytes;
         }
     }

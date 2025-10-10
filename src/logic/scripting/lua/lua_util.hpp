@@ -275,6 +275,15 @@ namespace lua {
         }
         return nullptr;
     }
+
+    template <class T>
+    inline T& require_userdata(lua::State* L, int idx) {
+        if (void* rawptr = lua_touserdata(L, idx)) {
+            return *static_cast<T*>(rawptr);
+        }
+        throw std::runtime_error("invalid 'self' value");
+    }
+    
     template <class T, typename... Args>
     inline int newuserdata(lua::State* L, Args&&... args) {
         const auto& found = usertypeNames.find(typeid(T));
@@ -759,9 +768,12 @@ namespace lua {
     }
 
     inline std::string_view bytearray_as_string(lua::State* L, int idx) {
-        lua::requireglobal(L, "Bytearray_as_string");
         lua::pushvalue(L, idx);
+        lua::requireglobal(L, "Bytearray_as_string");
+        lua::pushvalue(L, -2);
         lua::call(L, 1, 1);
-        return lua::tolstring(L, -1);
+        auto view = lua::tolstring(L, -1);
+        lua::pop(L, 2);
+        return view;
     }
 }

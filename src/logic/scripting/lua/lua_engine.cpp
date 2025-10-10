@@ -104,6 +104,9 @@ void lua::init_state(State* L, StateType stateType) {
     pushnil(L);
     setglobal(L, "io");
 
+    createtable(L, 0, 0);
+    setglobal(L, "__vc__pack_envs");
+
     const char* removed_os[] {
         "execute", "exit", "remove", "rename", "setlocale", "tmpname", nullptr};
     remove_lib_funcs(L, "os", removed_os);
@@ -169,5 +172,13 @@ State* lua::create_state(const EnginePaths& paths, StateType stateType) {
     auto file = "res:scripts/stdmin.lua";
     auto src = io::read_string(file);
     lua::pop(L, lua::execute(L, 0, src, "core:scripts/stdmin.lua"));
+
+    newusertype<LuaRandom>(L);
+    if (getglobal(L, "random")) {
+        if (getglobal(L, "__vc_Random")) {
+            setfield(L, "Random");
+        }
+        pop(L);
+    }
     return L;
 }

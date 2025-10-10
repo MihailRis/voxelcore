@@ -38,6 +38,10 @@ bool Font::isPrintableChar(uint codepoint) const {
     }
 }
 
+int FontMetrics::calcWidth(std::wstring_view text, size_t offset, size_t length) const {
+    return std::min(text.length() - offset, length) * glyphInterval;
+}
+
 int Font::calcWidth(std::wstring_view text, size_t length) const {
     return calcWidth(text, 0, length);
 }

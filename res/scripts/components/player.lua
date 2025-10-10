@@ -67,12 +67,12 @@ function on_physics_update(delta)
     mob.set_flight(player.is_flight(pid))
     body:set_body_type(player.is_noclip(pid) and "kinematic" or "dynamic")
 
-    if hud and pid == hud.get_player() then
-        local pos = tsf:get_pos()
-        local rot = get_player_rotation(pid)
-        local front = mat4.mul(rot, {0, 0, -1})
+    local rot = get_player_rotation(pid)
+    local front = mat4.mul(rot, {0, 0, -1})
+    local pos = tsf:get_pos()
 
+    if hud and pid == hud.get_player() then
         process_player_inputs(pid, rot, delta)
-        mob.look_at(vec3.add(pos, front))
     end
+    mob.look_at(vec3.add(pos, front))
 end

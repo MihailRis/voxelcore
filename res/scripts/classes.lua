@@ -144,7 +144,11 @@ network.udp_connect = function (address, port, datagramHandler, openCallback)
     socket.id = network.__connect_udp(address, port)
 
     _udp_client_datagram_callbacks[socket.id] = datagramHandler
-    _udp_client_open_callbacks[socket.id] = openCallback
+    if openCallback then
+        _udp_client_open_callbacks[socket.id] = function()
+            openCallback(socket)
+        end
+    end
 
     return socket
 end
@@ -254,9 +258,15 @@ network.__process_events = function()
             end
         elseif etype == DATAGRAM then
             if side == ON_CLIENT then
-                _udp_client_datagram_callbacks[cid](data)
+                local callback = _udp_client_datagram_callbacks[cid]
+                if callback then
+                    callback(data)
+                end
             elseif side == ON_SERVER then
-                _udp_server_callbacks[sid](addr, port, data)
+                local callback = _udp_server_callbacks[sid]
+                if callback then
+                    callback(addr, port, data)
+                end
             end
         elseif etype == RESPONSE then
             if event[2] / 100 == 2 then

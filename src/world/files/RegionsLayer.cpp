@@ -1,8 +1,10 @@
-#include "WorldRegions.hpp"
-
 #include <cstring>
 
+#include "WorldRegions.hpp"
+#include "debug/Logger.hpp"
 #include "util/data_io.hpp"
+
+static debug::Logger logger("regions-layer");
 
 #define REGION_FORMAT_MAGIC ".VOXREG"
 
@@ -20,31 +22,39 @@ static void fetch_chunks(WorldRegion* region, int x, int z, regfile* file) {
         int chunk_z = (i / REGION_SIZE) + z * REGION_SIZE;
         if (chunks[i] == nullptr) {
             chunks[i] = RegionsLayer::readChunkData(
-                    chunk_x, chunk_z, sizes[i][0], sizes[i][1], file);
+                chunk_x, chunk_z, sizes[i][0], sizes[i][1], file
+            );
         }
     }
 }
 
-regfile::regfile(io::path filename) : file(std::move(filename)) {
+regfile::regfile(io::path filename) : file(filename), filename(filename) {
     if (file.length() < REGION_HEADER_SIZE)
-        throw std::runtime_error("incomplete region file header");
+        throw std::runtime_error(
+            "incomplete region file header in " + filename.string()
+        );
     char header[REGION_HEADER_SIZE];
     file.read(header, REGION_HEADER_SIZE);
 
     // avoid of use strcmp_s
     if (std::string(header, std::strlen(REGION_FORMAT_MAGIC)) !=
         REGION_FORMAT_MAGIC) {
-        throw std::runtime_error("invalid region file magic number");
+        throw std::runtime_error(
+            "invalid region file magic number in " + filename.string()
+        );
     }
     version = header[8];
     if (static_cast<uint>(version) > REGION_FORMAT_VERSION) {
         throw illegal_region_format(
-            "region format " + std::to_string(version) + " is not supported"
+            "region format " + std::to_string(version) +
+            " is not supported in " + filename.string()
         );
     }
 }
 
-std::unique_ptr<ubyte[]> regfile::read(int index, uint32_t& size, uint32_t& srcSize) {
+std::unique_ptr<ubyte[]> regfile::read(
+    int index, uint32_t& size, uint32_t& srcSize
+) {
     size_t file_size = file.length();
     size_t table_offset = file_size - REGION_CHUNKS_COUNT * 4;
 
@@ -62,11 +72,16 @@ std::unique_ptr<ubyte[]> regfile::read(int index, uint32_t& size, uint32_t& srcS
     file.read(reinterpret_cast<char*>(&buff32), 4);
     srcSize = dataio::le2h(buff32);
 
+    if (offset + size > file_size) {
+        logger.error() << "corrupted region " << filename.string()
+                       << " chunk offset detected at "
+                       << (table_offset + index * 4);
+        return nullptr;
+    }
     auto data = std::make_unique<ubyte[]>(size);
     file.read(reinterpret_cast<char*>(data.get()), size);
     return data;
 }
-
 
 void RegionsLayer::closeRegFile(glm::ivec2 coord) {
     openRegFiles.erase(coord);
@@ -192,7 +207,7 @@ void RegionsLayer::writeRegion(int x, int z, WorldRegion* entry) {
 
     char header[REGION_HEADER_SIZE] = REGION_FORMAT_MAGIC;
     header[8] = REGION_FORMAT_VERSION;
-    header[9] = static_cast<ubyte>(compression); // FIXME
+    header[9] = static_cast<ubyte>(compression);  // FIXME
     std::ofstream file(io::resolve(filename), std::ios::out | std::ios::binary);
     file.write(header, REGION_HEADER_SIZE);
 
@@ -213,7 +228,7 @@ void RegionsLayer::writeRegion(int x, int z, WorldRegion* entry) {
         auto sizevec = sizes[i];
         uint32_t compressedSize = sizevec[0];
         uint32_t srcSize = sizevec[1];
-        
+
         intbuf = dataio::h2le(compressedSize);
         file.write(reinterpret_cast<const char*>(&intbuf), 4);
         offset += 4;

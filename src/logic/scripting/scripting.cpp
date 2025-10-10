@@ -181,7 +181,16 @@ std::unique_ptr<Process> scripting::start_coroutine(const io::path& script) {
     lua::setfield(L, "PACK_ENV");
     lua::pushstring(L, pack.id);
     lua::setfield(L, "PACK_ID");
+
+    if(!lua::getglobal(L, "__vc__pack_envs")) {
+        lua::createtable(L, 0, 0);
+        lua::setglobal(L, "__vc__pack_envs");
+        lua::pushvalue(L, -1);
+    }
+    lua::pushenv(L, id);
+    lua::setfield(L, pack.id);
     lua::pop(L);
+
     return std::shared_ptr<int>(new int(id), [=](int* id) { //-V508
         lua::remove_environment(L, *id);
         delete id;

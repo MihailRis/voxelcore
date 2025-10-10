@@ -39,7 +39,7 @@ function events.emit(event, ...)
         local status, newres = xpcall(func, __vc__error, ...)
         if not status then
             debug.error("error in event ("..event..") handler: "..newres)
-        else 
+        else
             result = result or newres
         end
     end

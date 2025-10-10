@@ -25,6 +25,9 @@ void TextureAnimator::update(float delta) {
     std::unordered_set<uint> changedTextures;
 
     for (auto& elem : animations) {
+        if (elem.frames.empty()) {
+            continue;
+        }
         elem.timer += delta;
         size_t frameNum = elem.currentFrame;
         Frame frame = elem.frames[elem.currentFrame];
