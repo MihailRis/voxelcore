@@ -402,7 +402,7 @@ public:
             return;
         }
         cursor = shape;
-        // NULL cursor is valid for GLFW
+        // nullptr cursor is valid for GLFW
         glfwSetCursor(window, standard_cursors[static_cast<int>(shape)]);
     }
 

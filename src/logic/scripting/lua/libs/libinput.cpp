@@ -177,5 +177,5 @@ const luaL_Reg inputlib[] = {
     {"is_pressed", lua::wrap<l_is_pressed>},
     {"reset_bindings", lua::wrap<l_reset_bindings>},
     {"set_enabled", lua::wrap<l_set_enabled>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

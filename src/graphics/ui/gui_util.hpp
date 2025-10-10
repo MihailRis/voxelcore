@@ -17,7 +17,7 @@ namespace guiutil {
     /// @brief Create element from XML
     /// @param source XML
     std::shared_ptr<gui::UINode> create(
-        gui::GUI& gui, const std::string& source, scriptenv env = 0
+        gui::GUI& gui, const std::string& source, scriptenv env = nullptr
     );
 
     void alert(

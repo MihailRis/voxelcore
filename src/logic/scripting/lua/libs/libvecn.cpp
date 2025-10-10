@@ -228,7 +228,8 @@ const luaL_Reg vec2lib[] = {
     {"angle", lua::wrap<l_vec2_angle>},
     {"mix", lua::wrap<l_mix<2>>},
     {"rotate", lua::wrap<l_vec2_rotate>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};
 
 const luaL_Reg vec3lib[] = {
     {"add", lua::wrap<l_binop<3, std::plus>>},
@@ -246,7 +247,8 @@ const luaL_Reg vec3lib[] = {
     {"dot", lua::wrap<l_dot<3>>},
     {"spherical_rand", lua::wrap<l_spherical_rand>},
     {"mix", lua::wrap<l_mix<3>>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};
 
 const luaL_Reg vec4lib[] = {
     {"add", lua::wrap<l_binop<4, std::plus>>},
@@ -263,4 +265,5 @@ const luaL_Reg vec4lib[] = {
     {"pow", lua::wrap<l_pow<4>>},
     {"dot", lua::wrap<l_dot<4>>},
     {"mix", lua::wrap<l_mix<4>>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};

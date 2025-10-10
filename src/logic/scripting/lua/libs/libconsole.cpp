@@ -126,4 +126,5 @@ const luaL_Reg consolelib[] = {
     {"set", lua::wrap<l_set>},
     {"get_commands_list", lua::wrap<l_get_commands_list>},
     {"get_command_info", lua::wrap<l_get_command_info>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};

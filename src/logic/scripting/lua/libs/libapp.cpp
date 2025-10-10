@@ -2,5 +2,5 @@
 
 const luaL_Reg applib[] = {
     // see libcore.cpp an stdlib.lua
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

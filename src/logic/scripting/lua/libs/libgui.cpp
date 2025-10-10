@@ -1053,5 +1053,5 @@ const luaL_Reg guilib[] = {
     {"alert", lua::wrap<l_gui_alert>},
     {"load_document", lua::wrap<l_gui_load_document>},
     {"__reindex", lua::wrap<l_gui_reindex>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

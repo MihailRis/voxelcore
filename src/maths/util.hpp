@@ -23,7 +23,7 @@ namespace util {
         PseudoRandom(unsigned short seed) : seed(seed) {}
 
         PseudoRandom() {
-            seed = static_cast<unsigned short>(time(0));
+            seed = static_cast<unsigned short>(time(nullptr));
         }
 
         int rand() {

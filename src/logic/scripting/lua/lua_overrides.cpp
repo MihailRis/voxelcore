@@ -14,7 +14,7 @@ int l_print(lua::State* L) {
         lua::pushvalue(L, i);  /* value to print */
         lua::call(L, 1, 1);
         const char* s = lua::tostring(L, -1); /* get result */
-        if (s == NULL)
+        if (s == nullptr)
             return luaL_error(
                 L,
                 LUA_QL("tostring") " must return a string to " LUA_QL("print")

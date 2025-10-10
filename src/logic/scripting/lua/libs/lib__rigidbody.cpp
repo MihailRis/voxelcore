@@ -169,4 +169,5 @@ const luaL_Reg rigidbodylib[] = {
     {"set_crouching", lua::wrap<l_set_crouching>},
     {"get_body_type", lua::wrap<l_get_body_type>},
     {"set_body_type", lua::wrap<l_set_body_type>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};

@@ -169,5 +169,5 @@ const luaL_Reg skeletonlib[] = {
     {"is_interpolated", lua::wrap<l_is_interpolated>},
     {"set_interpolated", lua::wrap<l_set_interpolated>},
     {"exists", lua::wrap<l_exists>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

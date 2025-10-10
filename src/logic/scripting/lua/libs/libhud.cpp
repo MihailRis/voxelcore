@@ -208,5 +208,5 @@ const luaL_Reg hudlib[] = {
     {"_set_debug_cheats", wrap_hud<l_set_debug_cheats>},
     {"set_allow_pause", wrap_hud<l_set_allow_pause>},
     {"reload_script", wrap_hud<l_reload_script>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

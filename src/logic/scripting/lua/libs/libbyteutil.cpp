@@ -208,5 +208,5 @@ const luaL_Reg byteutillib[] = {
     {"tpack", lua::wrap<l_tpack>},
     {"unpack", lua::wrap<l_unpack>},
     {"get_size", lua::wrap<l_get_size>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

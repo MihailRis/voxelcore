@@ -147,5 +147,5 @@ const luaL_Reg itemlib[] = {
     {"reload_script", lua::wrap<l_reload_script>},
     {"has_tag", lua::wrap<l_has_tag>},
     {"__get_tags", lua::wrap<l_get_tags>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

@@ -42,5 +42,5 @@ const luaL_Reg randomlib[] = {
     {"random", lua::wrap<l_random>},
     {"bytes", lua::wrap<l_bytes>},
     {"uuid", lua::wrap<l_uuid>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

@@ -48,4 +48,5 @@ const luaL_Reg quatlib[] = {
     {"from_mat4", lua::wrap<l_from_mat4>},
     {"slerp", lua::wrap<l_slerp>},
     {"tostring", lua::wrap<l_tostring>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};

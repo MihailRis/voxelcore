@@ -541,5 +541,5 @@ const luaL_Reg networklib[] = {
     {"__get_serverport", wrap<l_get_serverport>},
     {"__set_nodelay", wrap<l_set_nodelay>},
     {"__is_nodelay", wrap<l_is_nodelay>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

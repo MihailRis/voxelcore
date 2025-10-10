@@ -16,5 +16,5 @@ static int l_parse(lua::State* L) {
 const luaL_Reg yamllib[] = {
     {"tostring", lua::wrap<l_stringify>},
     {"parse", lua::wrap<l_parse>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

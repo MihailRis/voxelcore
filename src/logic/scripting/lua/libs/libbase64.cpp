@@ -49,5 +49,5 @@ const luaL_Reg base64lib[] = {
     {"decode", lua::wrap<l_decode<util::base64_decode>>},
     {"encode_urlsafe", lua::wrap<l_encode<util::base64_urlsafe_encode>>},
     {"decode_urlsafe", lua::wrap<l_decode<util::base64_urlsafe_decode>>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

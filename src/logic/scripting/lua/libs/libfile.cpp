@@ -404,6 +404,6 @@ const luaL_Reg filelib[] = {
     {"__flush_descriptor", lua::wrap<l_flush_descriptor>},
     {"__close_descriptor", lua::wrap<l_close_descriptor>},
     {"__close_all_descriptors", lua::wrap<l_close_all_descriptors>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };
 

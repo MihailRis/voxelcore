@@ -35,5 +35,5 @@ static int l_frombytes(lua::State* L) {
 const luaL_Reg bjsonlib[] = {
     {"tobytes", lua::wrap<l_tobytes>},
     {"frombytes", lua::wrap<l_frombytes>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

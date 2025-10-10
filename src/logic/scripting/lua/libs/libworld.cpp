@@ -251,5 +251,5 @@ const luaL_Reg worldlib[] = {
     {"save_chunk_data", lua::wrap<l_save_chunk_data>},
     {"count_chunks", lua::wrap<l_count_chunks>},
     {"reload_script", lua::wrap<l_reload_script>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

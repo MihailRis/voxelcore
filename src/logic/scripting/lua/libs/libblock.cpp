@@ -783,5 +783,5 @@ const luaL_Reg blocklib[] = {
     {"has_tag", lua::wrap<l_has_tag>},
     {"__get_tags", lua::wrap<l_get_tags>},
     {"__pull_register_events", lua::wrap<l_pull_register_events>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

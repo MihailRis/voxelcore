@@ -256,5 +256,5 @@ const luaL_Reg inventorylib[] = {
     {"create", lua::wrap<l_create>},
     {"remove", lua::wrap<l_remove>},
     {"clone", lua::wrap<l_clone>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

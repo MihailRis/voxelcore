@@ -268,5 +268,5 @@ const luaL_Reg packlib[] = {
     {"get_base_packs", lua::wrap<l_pack_get_base_packs>},
     {"assemble", lua::wrap<l_pack_assemble>},
     {"request_writeable", lua::wrap<l_pack_request_writeable>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

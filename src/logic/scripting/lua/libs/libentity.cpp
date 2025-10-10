@@ -255,5 +255,5 @@ const luaL_Reg entitylib[] = {
     {"get_all_in_radius", lua::wrap<l_get_all_in_radius>},
     {"raycast", lua::wrap<l_raycast>},
     {"reload_component", lua::wrap<l_reload_component>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

@@ -65,5 +65,5 @@ static int l_parse_model(lua::State* L) {
 const luaL_Reg assetslib[] = {
     {"load_texture", lua::wrap<l_load_texture>},
     {"parse_model", lua::wrap<l_parse_model>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

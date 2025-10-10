@@ -79,6 +79,6 @@ static int l_decode(lua::State* L) {
 const luaL_Reg compressionlib[] = {
     {"encode", lua::wrap<l_encode>},
     {"decode", lua::wrap<l_decode>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };
 

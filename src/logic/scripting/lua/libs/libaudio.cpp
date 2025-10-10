@@ -394,4 +394,5 @@ const luaL_Reg audiolib[] = {
     {"get_velocity", lua::wrap<l_audio_get_velocity>},
     {"count_speakers", lua::wrap<l_audio_count_speakers>},
     {"count_streams", lua::wrap<l_audio_count_streams>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};

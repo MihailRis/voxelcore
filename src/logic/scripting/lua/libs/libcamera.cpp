@@ -125,4 +125,5 @@ const luaL_Reg cameralib[] = {
     {"get_right", lua::wrap<l_camera_getter<getter_right>>},
     {"get_up", lua::wrap<l_camera_getter<getter_up>>},
     {"look_at", lua::wrap<l_look_at>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};

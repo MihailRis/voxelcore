@@ -358,5 +358,5 @@ const luaL_Reg playerlib[] = {
     {"set_name", lua::wrap<l_set_name>},
     {"create", lua::wrap<l_create>},
     {"delete", lua::wrap<l_delete>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

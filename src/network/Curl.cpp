@@ -115,7 +115,7 @@ public:
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_POST, request.type == RequestType::POST);
         
-        curl_slist* hs = NULL;
+        curl_slist* hs = nullptr;
         
         for (const auto& header : request.headers) {
             hs = curl_slist_append(hs, header.c_str());
@@ -172,7 +172,7 @@ public:
             url = "";
             return;
         }
-        if ((msg = curl_multi_info_read(multiHandle, &messagesLeft)) != NULL) {
+        if ((msg = curl_multi_info_read(multiHandle, &messagesLeft)) != nullptr) {
             if(msg->msg == CURLMSG_DONE) {
                 curl_multi_remove_handle(multiHandle, curl);
             }

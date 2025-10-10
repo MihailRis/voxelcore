@@ -104,5 +104,5 @@ const luaL_Reg generationlib[] = {
     {"load_fragment", lua::wrap<l_load_fragment>},
     {"get_generators", lua::wrap<l_get_generators>},
     {"get_default_generator", lua::wrap<l_get_default_generator>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };
