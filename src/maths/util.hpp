@@ -145,11 +145,26 @@ namespace util {
         const glm::ivec3& a, const glm::ivec3& b, const glm::ivec3& point
     ) {
         auto vec = b - a;
-        float da = distance2(point, a);
-        float db = distance2(point, b);
-        float len = length2(vec);
-        float t = (((da - db) / len) * 0.5f + 0.5f);
+        int len = length2(vec);
+        
+        // Degenerate case: a and b are the same point
+        if (len == 0) {
+            return a;
+        }
+        
+        // Project point onto line using dot product
+        auto ap = point - a;
+        int dot = ap.x * vec.x + ap.y * vec.y + ap.z * vec.z;
+        
+        // Clamp t to [0, 1] to stay on segment
+        float t = static_cast<float>(dot) / static_cast<float>(len);
         t = std::min(1.0f, std::max(0.0f, t));
-        return a + glm::ivec3(glm::vec3(vec) * t);
+        
+        // Use precise integer arithmetic to avoid rounding errors
+        glm::ivec3 result;
+        result.x = a.x + static_cast<int>(std::round(vec.x * t));
+        result.y = a.y + static_cast<int>(std::round(vec.y * t));
+        result.z = a.z + static_cast<int>(std::round(vec.z * t));
+        return result;
     }
 }
