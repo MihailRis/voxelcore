@@ -159,12 +159,6 @@ namespace util {
         // Clamp t to [0, 1] to stay on segment
         float t = static_cast<float>(dot) / static_cast<float>(len);
         t = std::min(1.0f, std::max(0.0f, t));
-        
-        // Use precise integer arithmetic to avoid rounding errors
-        glm::ivec3 result;
-        result.x = a.x + static_cast<int>(std::round(vec.x * t));
-        result.y = a.y + static_cast<int>(std::round(vec.y * t));
-        result.z = a.z + static_cast<int>(std::round(vec.z * t));
-        return result;
+        return a + glm::ivec3(glm::vec3(vec) * t);
     }
 }
