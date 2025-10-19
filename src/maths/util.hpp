@@ -144,21 +144,17 @@ namespace util {
     inline glm::ivec3 closest_point_on_segment(
         const glm::ivec3& a, const glm::ivec3& b, const glm::ivec3& point
     ) {
-        auto vec = b - a;
-        int len = length2(vec);
-        
-        // Degenerate case: a and b are the same point
-        if (len == 0) {
-            return a;
-        }
-        
-        // Project point onto line using dot product
-        auto ap = point - a;
+        glm::ivec3 vec = b - a;
+        int len2 = length2(vec);
+    
+        if (len2 == 0) return a;
+    
+        glm::ivec3 ap = point - a;
         int dot = ap.x * vec.x + ap.y * vec.y + ap.z * vec.z;
-        
-        // Clamp t to [0, 1] to stay on segment
-        float t = static_cast<float>(dot) / static_cast<float>(len);
-        t = std::min(1.0f, std::max(0.0f, t));
-        return a + glm::ivec3(glm::vec3(vec) * t);
+    
+        float t = static_cast<float>(dot) / static_cast<float>(len2);
+        t = glm::clamp(t, 0.0f, 1.0f);
+    
+        return a + glm::ivec3(glm::round(glm::vec3(vec) * t));
     }
 }
