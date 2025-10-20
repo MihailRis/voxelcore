@@ -118,6 +118,11 @@ namespace util {
         return x * x + y * y + z * z;
     }
 
+    /// @return integer dot product of two vectors
+    inline int dot(const glm::ivec3& a, const glm::ivec3& b) {
+        return a.x * b.x + a.y * b.y + a.z * b.z;
+    }
+
     /// @brief Find nearest point on segment to given
     /// @param a segment point A
     /// @param b segment point B
@@ -150,9 +155,9 @@ namespace util {
         if (len2 == 0) return a;
     
         glm::ivec3 ap = point - a;
-        int dot = ap.x * vec.x + ap.y * vec.y + ap.z * vec.z;
+        int dot_product = dot(ap, vec);
     
-        float t = static_cast<float>(dot) / static_cast<float>(len2);
+        float t = static_cast<float>(dot_product) / static_cast<float>(len2);
         t = glm::clamp(t, 0.0f, 1.0f);
     
         return a + glm::ivec3(glm::round(glm::vec3(vec) * t));
