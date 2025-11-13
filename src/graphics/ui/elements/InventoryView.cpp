@@ -187,9 +187,9 @@ void SlotView::drawItemIcon(
     const ItemDef& item,
     const Assets& assets,
     const glm::vec4& tint,
+    float size,
     const glm::vec2& pos
 ) {
-    const int SLOT_SIZE = InventoryView::SLOT_SIZE;
     const auto& previews = assets.require<Atlas>("block-previews");
     batch.setColor(glm::vec4(1.0f));
     switch (item.iconType) {
@@ -203,8 +203,8 @@ void SlotView::drawItemIcon(
             batch.rect(
                 pos.x,
                 pos.y,
-                SLOT_SIZE,
-                SLOT_SIZE,
+                static_cast<int>(size),
+                static_cast<int>(size),
                 0,
                 0,
                 0,
@@ -223,8 +223,8 @@ void SlotView::drawItemIcon(
             batch.rect(
                 pos.x,
                 pos.y,
-                SLOT_SIZE,
-                SLOT_SIZE,
+                static_cast<int>(size),
+                static_cast<int>(size),
                 0,
                 0,
                 0,
@@ -262,12 +262,12 @@ void SlotView::draw(const DrawContext& pctx, const Assets& assets) {
     }
 
     auto& batch = *pctx.getBatch2D();
+    const int size = InventoryView::SLOT_SIZE;
 
     if (color.a > 0.0) {
         batch.setColor(color);
         batch.texture(nullptr);
 
-        const int size = InventoryView::SLOT_SIZE;
         if (highlighted) {
             batch.rect(pos.x - 4, pos.y - 4, size + 8, size + 8);
         } else {
@@ -275,7 +275,16 @@ void SlotView::draw(const DrawContext& pctx, const Assets& assets) {
         }
     }
 
-    drawItemIcon(batch, stack, item, assets, tint, pos);
+    float s = scale;
+    if (!highlighted) {
+        s = 1.0f;
+    }
+
+    float iconSizeF = static_cast<float>(size) * s;
+    glm::vec2 offset((size - iconSizeF) * 0.5f, (size - iconSizeF) * 0.5f);
+    glm::vec2 iconPos = pos + offset;
+
+    drawItemIcon(batch, stack, item, assets, tint, iconSizeF, iconPos);
 
     if (stack.getCount() > 1 || stack.getFields() != nullptr) {
         const auto& font = assets.require<Font>(FONT_DEFAULT);
@@ -523,8 +532,18 @@ void InventoryView::unbind() {
 }
 
 void InventoryView::setSelected(int index) {
+    selectedIndex = index;
     for (size_t i = 0; i < slots.size(); i++) {
-        slots[i]->setHighlighted(static_cast<int>(i) == index);
+        bool isSel = static_cast<int>(i) == index;
+        slots[i]->setHighlighted(isSel);
+        slots[i]->setScale(isSel ? selectedScale : 1.0f);
+    }
+}
+
+void InventoryView::setSelectedScale(float s) {
+    selectedScale = s;
+    if (selectedIndex >= 0 && selectedIndex < static_cast<int>(slots.size())) {
+        slots[selectedIndex]->setScale(selectedScale);
     }
 }
 

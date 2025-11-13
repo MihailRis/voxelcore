@@ -42,7 +42,7 @@ namespace gui {
 
         SlotLayout(
             int index,
-            glm::vec2 position, 
+            glm::vec2 position,
             bool background,
             bool itemSource,
             slotcallback updateFunc,
@@ -56,11 +56,12 @@ namespace gui {
             ItemStack stack {};
             std::wstring countStr;
         } cache;
-    
+
         const Content* content = nullptr;
         SlotLayout layout;
         bool highlighted = false;
 
+        float scale = 1.0f;
         int64_t inventoryid = 0;
         ItemStack* bound = nullptr;
 
@@ -73,6 +74,7 @@ namespace gui {
             const ItemDef& item,
             const Assets& assets,
             const glm::vec4& tint,
+            float size,
             const glm::vec2& pos
         );
 
@@ -93,6 +95,8 @@ namespace gui {
         void setHighlighted(bool flag);
         bool isHighlighted() const;
 
+        void setScale(float s) { scale = s; }
+
         virtual void clicked(Mousecode) override;
         virtual void onFocus() override;
         virtual const std::wstring& getTooltip() const override;
@@ -111,14 +115,19 @@ namespace gui {
 
     class InventoryView : public gui::Container {
         const Content* content = nullptr;
-        
+
         std::shared_ptr<Inventory> inventory;
 
         std::vector<SlotView*> slots;
         glm::vec2 origin {};
+
+        int selectedIndex = -1;
+        float selectedScale = 1.0f;
     public:
         InventoryView(GUI& gui);
         virtual ~InventoryView();
+
+        void setSelectedScale(float s);
 
         virtual void setPos(glm::vec2 pos) override;
 
@@ -131,7 +140,7 @@ namespace gui {
             const std::shared_ptr<Inventory>& inventory,
             const Content* content
         );
-        
+
         void unbind();
 
         std::shared_ptr<SlotView> addSlot(const SlotLayout& layout);
@@ -150,7 +159,7 @@ namespace gui {
     public:
         InventoryBuilder(GUI& gui);
 
-        /// @brief Add slots grid to inventory view 
+        /// @brief Add slots grid to inventory view
         /// @param cols grid columns
         /// @param count total number of grid slots
         /// @param pos position of the first slot of the grid
@@ -159,13 +168,13 @@ namespace gui {
         /// with size including padding
         /// @param slotLayout slot settings (index and position are ignored)
         void addGrid(
-            int cols, int count, 
-            glm::vec2 pos, 
+            int cols, int count,
+            glm::vec2 pos,
             glm::vec4 padding,
             bool addpanel,
             const SlotLayout& slotLayout
         );
-        
+
         void add(const SlotLayout& slotLayout);
         std::shared_ptr<InventoryView> build();
     };

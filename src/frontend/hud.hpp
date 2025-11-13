@@ -80,6 +80,14 @@ class Hud : public util::ObjectsKeeper {
     LevelFrontend& frontend;
     Player& player;
 
+    int prevChosenSlot = -1;
+    bool slotSwitching = false;
+    float slotSwitchTime = 0.0f;
+    float slotSwitchDuration = 0.85f;
+    float slotTargetScaleAmount = 0.25f;
+    void startSlotSwitch(int newSlot);
+    void updateSlotSwitchAnimation(); // will be called from update()
+
     /// @brief Is any overlay/inventory open
     bool inventoryOpen = false;
     /// @brief Is pause mode on
@@ -125,7 +133,7 @@ class Hud : public util::ObjectsKeeper {
     std::shared_ptr<gui::UINode> debugMinimap;
 
     std::unique_ptr<ImageData> debugImgWorldGen;
-    
+
     std::shared_ptr<gui::InventoryView> createContentAccess();
     std::shared_ptr<gui::InventoryView> createHotbar();
 
@@ -167,16 +175,16 @@ public:
         std::shared_ptr<Inventory> inv,
         bool playerInventory
     );
-    
+
     /// @brief Show block inventory in inventory-mode
     /// @param block block position
     /// @param doc block ui layout
     /// @param blockInv block inventory
     /// @param playerInventory show player inventory too
     void openInventory(
-        glm::ivec3 block, 
-        UiDocument* doc, 
-        std::shared_ptr<Inventory> blockInv, 
+        glm::ivec3 block,
+        UiDocument* doc,
+        std::shared_ptr<Inventory> blockInv,
         bool playerInventory
     );
 
