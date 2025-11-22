@@ -49,6 +49,12 @@ player.set_rot(playerid: int, x: number, y: number, z: number)
 Устанавливает x, y вращения камеры (в градусах)
 
 ```lua
+player.get_dir(playerid: int) -> vec2
+```
+
+Возвращает вектор направления взгляда игрока
+
+```lua
 player.get_inventory(playerid: int) -> int, int
 ```
 
