@@ -49,7 +49,7 @@ player.set_rot(playerid: int, x: number, y: number, z: number)
 Set camera rotation (degrees)
 
 ```lua
-player.get_dir(playerid: int) -> vec2
+player.get_dir(playerid: int) -> vec3
 ```
 
 Returns the player look direction vector
