@@ -2,6 +2,8 @@
 
 #include "graphics/core/DrawContext.hpp"
 #include "graphics/core/Batch2D.hpp"
+#include "window/Window.hpp"
+#include "../GUI.hpp"
 
 #include <algorithm>
 #include <utility>
@@ -76,6 +78,10 @@ void Container::act(float delta) {
         if (node->isVisible()) {
             node->act(delta);
         }
+    }
+    if (!intervalEvents.empty()) {
+        // TODO: make it interval-based
+        gui.getWindow().setShouldRefresh();
     }
     for (IntervalEvent& event : intervalEvents) {
         event.timer += delta;
@@ -170,6 +176,7 @@ void Container::add(const std::shared_ptr<UINode>& node) {
         parent->setMustRefresh();
         parent = parent->getParent();
     }
+    gui.getWindow().setShouldRefresh();
 }
 
 void Container::add(const std::shared_ptr<UINode>& node, glm::vec2 pos) {
@@ -203,11 +210,11 @@ void Container::clear() {
     refresh();
 }
 
-void Container::listenInterval(float interval, ontimeout callback, int repeat) {
+void Container::listenInterval(float interval, OnTimeOut callback, int repeat) {
     intervalEvents.push_back({std::move(callback), interval, 0.0f, repeat});
 }
 
-void Container::setSize(glm::vec2 size) {
+void Container::setSize(const glm::vec2& size) {
     if (size == getSize()) {
         return;
     }

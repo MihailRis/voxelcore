@@ -64,7 +64,7 @@ namespace gui {
             checkbox->setTooltip(text);
         }
 
-        virtual void setSize(glm::vec2 new_size) override {
+        virtual void setSize(const glm::vec2& new_size) override {
             Panel::setSize(new_size);
             checkbox->setSize(glm::vec2(size.y, size.y));
         }

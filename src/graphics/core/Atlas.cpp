@@ -49,6 +49,14 @@ ImageData* Atlas::getImage() const {
     return image.get();
 }
 
+std::shared_ptr<Texture> Atlas::shareTexture() const {
+    return texture;
+}
+
+std::shared_ptr<ImageData> Atlas::shareImageData() const {
+    return image;
+}
+
 void AtlasBuilder::add(const std::string& name, std::unique_ptr<ImageData> image) {
     entries.push_back(atlasentry{name, std::shared_ptr<ImageData>(image.release())});
     names.insert(name);

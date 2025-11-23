@@ -33,5 +33,14 @@ namespace util {
             last = argv[pos];
             return argv[pos++];
         }
+
+        int nextInt() {
+            auto text = next();
+            try {
+                return std::stoi(text);
+            } catch (const std::exception& e) {
+                throw std::runtime_error(e.what());
+            }
+        }
     };
 }

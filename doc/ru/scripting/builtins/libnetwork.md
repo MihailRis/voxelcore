@@ -2,13 +2,19 @@
 
 Библиотека для работы с сетью.
 
-## HTTP-запросы
+## HTTP-Запросы
 
 ```lua
 -- Выполняет GET запрос к указанному URL.
--- После получения ответа, передаёт текст в функцию callback.
--- В случае ошибки в onfailure будет передан HTTP-код ответа.
-network.get(url: str, callback: function(str), [опционально] onfailure: function(int))
+network.get(
+    url: str,
+    -- Функция, вызываемая при получении ответа
+    callback: function(str),
+    -- Обработчик ошибок
+    [опционально] onfailure: function(int, str),
+    -- Список дополнительных заголовков запроса
+    [опционально] headers: table<str>
+)
 
 -- Пример:
 network.get("https://api.github.com/repos/MihailRis/VoxelEngine-Cpp/releases/latest", function (s)
@@ -16,13 +22,28 @@ network.get("https://api.github.com/repos/MihailRis/VoxelEngine-Cpp/releases/lat
 end)
 
 -- Вариант для двоичных файлов, с массивом байт вместо строки в ответе.
-network.get_binary(url: str, callback: function(table|ByteArray), [опционально] onfailure: function(int))
+network.get_binary(
+    url: str,
+    callback: function(ByteArray),
+    [опционально] onfailure: function(int, Bytearray),
+    [опционально] headers: table<str>
+)
 
 -- Выполняет POST запрос к указанному URL.
 -- На данный момент реализована поддержка только `Content-Type: application/json`
 -- После получения ответа, передаёт текст в функцию callback.
 -- В случае ошибки в onfailure будет передан HTTP-код ответа.
-network.post(url: str, data: table, callback: function(str), [опционально] onfailure: function(int))
+network.post(
+    url: str,
+    -- Тело запроса в виде таблицы, конвертируемой в JSON или строки
+    body: table|str,
+    -- Функция, вызываемая при получении ответа
+    callback: function(str),
+    -- Обработчик ошибок
+    [опционально] onfailure: function(int, str),
+    -- Список дополнительных заголовков запроса
+    [опционально] headers: table<str>
+)
 ```
 
 ## TCP-Соединения
@@ -37,6 +58,9 @@ network.tcp_connect(
     -- До подключения отправка работать не будет
     -- Как единственный аргумент передаётся сокет
     callback: function(Socket)
+    -- Функция, вызываемая при ошибке подключения
+    -- Как аргументы передаются сокет и текст ошибки
+    [опционально] error_callback: function(Socket, str)
 ) --> Socket
 ```
 
@@ -58,6 +82,16 @@ socket:recv(
 -- В случае ошибки возвращает nil (сокет закрыт или несуществует).
 -- Если данных пока нет, возвращает пустой массив байт.
 
+-- Асинхронный вариант для использования в корутинах.
+-- Ожидает получение всего указанного числа байт.
+-- При закрытии сокета работает как socket:recv
+socket:recv_async(
+    -- Размер читаемого массива байт
+    length: int, 
+    -- Использовать таблицу вместо Bytearray
+    [опционально] usetable: bool=false
+) -> nil|table|Bytearray
+
 -- Закрывает соединение
 socket:close()
 
@@ -72,6 +106,12 @@ socket:is_connected() --> bool
 
 -- Возвращает адрес и порт соединения.
 socket:get_address() --> str, int
+
+-- Возвращает состояние NoDelay
+socket:is_nodelay() --> bool
+
+-- Устанавливает состояние NoDelay
+socket:set_nodelay(state: bool)
 ```
 
 ```lua
@@ -98,6 +138,65 @@ server:is_open() --> bool
 server:get_port() --> int
 ```
 
+## UDP-Датаграммы
+
+```lua
+network.udp_connect(
+	address: str,
+	port: int,
+    -- Функция, вызываемая при получении датаграммы с указанного при открытии сокета адреса и порта
+	datagramHandler: function(Bytearray),
+	-- Функция, вызываемая после открытия сокета
+	-- Опциональна, так как в UDP нет handshake
+    [опционально] openCallback: function(WriteableSocket),
+) --> WriteableSocket
+```
+
+Открывает UDP-сокет с привязкой к удалённому адресу и порту
+
+Класс WriteableSocket имеет следующие методы:
+
+```lua
+-- Отправляет датаграмму на адрес и порт, заданные при открытии сокета
+socket:send(table|Bytearray|str)
+
+-- Закрывает сокет
+socket:close()
+
+-- Проверяет открыт ли сокет
+socket:is_open() --> bool
+
+-- Возвращает адрес и порт, на которые привязан сокет
+socket:get_address() --> str, int
+```
+
+```lua
+network.udp_open(
+	port: int,
+	-- Функция, вызываемая при получении датаграмы
+	-- В параметры передаётся адрес и порт отправителя, а также сами данные
+	datagramHandler: function(address: str, port: int, data: Bytearray, server: DatagramServerSocket)
+) --> DatagramServerSocket
+```
+
+Открывает UDP-сервер на указанном порту
+
+Класс DatagramServerSocket имеет следующие методы:
+
+```lua
+-- Отправляет датаграмму на переданный адрес и порт
+server:send(address: str, port: int, data: table|Bytearray|str)
+
+-- Завершает принятие датаграмм
+server:stop()
+
+-- Проверяет возможность принятия датаграмм
+server:is_open() --> bool
+
+-- Возвращает порт, который слушает сервер
+server:get_port() --> int
+```
+
 ## Аналитика
 
 ```lua
@@ -107,4 +206,11 @@ network.get_total_upload() --> int
 -- Возвращает приблизительный объем полученных данных (включая соединения с localhost)
 -- в байтах.
 network.get_total_download() --> int
+```
+
+## Другое
+
+```lua
+-- Ищет свободный для использования порт.
+network.find_free_port() --> int или nil
 ```

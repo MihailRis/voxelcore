@@ -67,6 +67,9 @@ block.get_variant(x: int, y: int, z: int) -> int
 
 -- Устанавливает вариант блока по индексу
 block.set_variant(x: int, y: int, z: int, index: int) -> int
+
+-- Проверяет наличие тега у блока
+block.has_tag(id: int, tag: str) -> bool
 ```
 
 ### Raycast
@@ -170,6 +173,9 @@ block.get_hitbox(id: int, rotation_index: int) -> {vec3, vec3}
 ```lua
 -- возвращает тип модели блока (block/aabb/custom/...)
 block.get_model(id: int) -> str
+
+-- возвращает имя модели блока
+block.model_name(id: int) -> str
 
 -- возвращает массив из 6 текстур, назначенных на стороны блока
 block.get_textures(id: int) -> таблица строк

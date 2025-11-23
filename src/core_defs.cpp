@@ -4,7 +4,7 @@
 #include "content/Content.hpp"
 #include "content/ContentBuilder.hpp"
 #include "io/io.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "window/input.hpp"
 #include "voxels/Block.hpp"
 #include "coders/toml.hpp"

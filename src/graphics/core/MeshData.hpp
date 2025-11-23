@@ -1,5 +1,6 @@
 #pragma once
 
+#include <vector>
 #include <stdexcept>
 
 #include "typedefs.hpp"
@@ -40,7 +41,7 @@ struct VertexAttribute {
 template<typename VertexStructure>
 struct MeshData {
     util::Buffer<VertexStructure> vertices;
-    util::Buffer<uint32_t> indices;
+    std::vector<util::Buffer<uint32_t>> indices;
     util::Buffer<VertexAttribute> attrs;
 
     MeshData() = default;
@@ -50,7 +51,7 @@ struct MeshData {
     /// @param attrs vertex attribute sizes (must be null-terminated) 
     MeshData(
         util::Buffer<VertexStructure> vertices,
-        util::Buffer<uint32_t> indices,
+        std::vector<util::Buffer<uint32_t>> indices,
         util::Buffer<VertexAttribute> attrs
     ) : vertices(std::move(vertices)),
         indices(std::move(indices)),

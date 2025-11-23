@@ -1,49 +1,64 @@
-#include "engine_paths.hpp"
+#include "EnginePaths.hpp"
+
+#include "debug/Logger.hpp"
+#include "io/devices/StdfsDevice.hpp"
+#include "io/devices/MemoryDevice.hpp"
+#include "io/devices/ZipFileDevice.hpp"
+#include "maths/util.hpp"
+#include "typedefs.hpp"
+#include "util/platform.hpp"
+#include "util/random.hpp"
+#include "util/stringutil.hpp"
+#include "world/files/WorldFiles.hpp"
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <sstream>
 #include <stack>
-#include "typedefs.hpp"
-#include "util/stringutil.hpp"
+#include <stdexcept>
 #include <utility>
-
-#include "io/devices/StdfsDevice.hpp"
-#include "io/devices/ZipFileDevice.hpp"
-#include "world/files/WorldFiles.hpp"
-#include "debug/Logger.hpp"
-
-#include <chrono>
-#include "maths/util.hpp"
-
-template<int n>
-static std::string generate_random_base64() {
-    auto now = std::chrono::high_resolution_clock::now();
-    auto seed = now.time_since_epoch().count();
-
-    util::PseudoRandom random(seed); // fixme: replace with safe random
-    ubyte bytes[n];
-    random.rand(bytes, n);
-    return util::base64_urlsafe_encode(bytes, n);
-}
 
 namespace fs = std::filesystem;
 
-static debug::Logger logger("engine-paths");
+static std::random_device random_device;
 
 static inline io::path SCREENSHOTS_FOLDER = "user:screenshots";
 static inline io::path CONTENT_FOLDER = "user:content";
 static inline io::path WORLDS_FOLDER = "user:worlds";
 
-void EnginePaths::prepare() {
+static debug::Logger logger("engine-paths");
+
+template<int n>
+static std::string generate_random_base64() {
+    auto randomEngine = util::seeded_random_engine(random_device);
+    static std::uniform_int_distribution<integer_t> dist(0, 0xFF);
+    ubyte bytes[n];
+    for (size_t i = 0; i < n; i++) {
+        bytes[i] = dist(randomEngine);
+    }
+    return util::base64_urlsafe_encode(bytes, n);
+}
+
+EnginePaths::EnginePaths(CoreParameters& params)
+    : resourcesFolder(params.resFolder),
+      userFilesFolder(params.userFolder),
+      projectFolder(params.projectFolder) {
+    if (!params.scriptFile.empty()) {
+        scriptFolder = params.scriptFile.parent_path();
+        io::set_device("script", std::make_shared<io::StdfsDevice>(*scriptFolder));
+    }
+
     io::set_device("res", std::make_shared<io::StdfsDevice>(resourcesFolder, false));
     io::set_device("user", std::make_shared<io::StdfsDevice>(userFilesFolder));
+    io::set_device("project", std::make_shared<io::StdfsDevice>(projectFolder));
 
     if (!io::is_directory("res:")) {
         throw std::runtime_error(
             resourcesFolder.string() + " is not a directory"
         );
     }
+    logger.info() << "executable path: " << platform::get_executable_path().string();
     logger.info() << "resources folder: " << fs::canonical(resourcesFolder).u8string();
     logger.info() << "user files folder: " << fs::canonical(userFilesFolder).u8string();
     logger.info() << "project folder: " << fs::canonical(projectFolder).u8string();
@@ -57,15 +72,15 @@ void EnginePaths::prepare() {
     io::create_subdevice("config", "user", "config");
 }
 
-const std::filesystem::path& EnginePaths::getUserFilesFolder() const {
-    return userFilesFolder;
-}
-
-const std::filesystem::path& EnginePaths::getResourcesFolder() const {
+std::filesystem::path EnginePaths::getResourcesFolder() const {
     return resourcesFolder;
 }
 
-io::path EnginePaths::getNewScreenshotFile(const std::string& ext) {
+std::filesystem::path EnginePaths::getUserFilesFolder() const {
+    return userFilesFolder;
+}
+
+io::path EnginePaths::getNewScreenshotFile(const std::string& ext) const {
     auto folder = SCREENSHOTS_FOLDER;
     if (!io::is_directory(folder)) {
         io::create_directories(folder);
@@ -91,10 +106,6 @@ io::path EnginePaths::getNewScreenshotFile(const std::string& ext) {
 
 io::path EnginePaths::getWorldsFolder() const {
     return WORLDS_FOLDER;
-}
-
-io::path EnginePaths::getCurrentWorldFolder() {
-    return currentWorldFolder;
 }
 
 io::path EnginePaths::getWorldFolderByName(const std::string& name) {
@@ -128,24 +139,6 @@ std::vector<io::path> EnginePaths::scanForWorlds() const {
         }
     );
     return folders;
-}
-
-void EnginePaths::setUserFilesFolder(std::filesystem::path folder) {
-    this->userFilesFolder = std::move(folder);
-}
-
-void EnginePaths::setResourcesFolder(std::filesystem::path folder) {
-    this->resourcesFolder = std::move(folder);
-}
-
-void EnginePaths::setScriptFolder(std::filesystem::path folder) {
-    io::set_device("script", std::make_shared<io::StdfsDevice>(folder));
-    this->scriptFolder = std::move(folder);
-}
-
-void EnginePaths::setProjectFolder(std::filesystem::path folder) {
-    io::set_device("project", std::make_shared<io::StdfsDevice>(folder));
-    this->projectFolder = std::move(folder);
 }
 
 void EnginePaths::setCurrentWorldFolder(io::path folder) {
@@ -182,6 +175,18 @@ void EnginePaths::unmount(const std::string& name) {
     }
     io::remove_device(name);
     mounted.erase(found);
+}
+
+std::string EnginePaths::createMemoryDevice() {
+    auto device = std::make_unique<io::MemoryDevice>();
+        std::string name;
+    do {
+        name = std::string("W.") + generate_random_base64<6>();
+    } while (std::find(mounted.begin(), mounted.end(), name) != mounted.end());
+    
+    io::set_device(name, std::move(device));
+    mounted.push_back(name);
+    return name;
 }
 
 std::string EnginePaths::createWriteableDevice(const std::string& name) {

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Device.hpp"
 
 namespace io {

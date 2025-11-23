@@ -24,7 +24,7 @@ namespace gui {
             const glm::vec4& padding
         );
 
-        void listenChange(onstringchange&& callback);
+        void listenChange(OnStringChange&& callback);
 
         void setSelected(const Option& selected);
 

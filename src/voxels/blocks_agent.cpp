@@ -6,62 +6,73 @@
 
 using namespace blocks_agent;
 
-template <class Storage>
-static inline void set_block(
-    Storage& chunks,
-    int32_t x,
-    int32_t y,
-    int32_t z,
-    uint32_t id,
-    blockstate state
+static std::vector<BlockRegisterEvent> block_register_events {};
+
+std::vector<BlockRegisterEvent> blocks_agent::pull_register_events() {
+    auto events = block_register_events;
+    block_register_events.clear();
+    return events;
+}
+
+static uint8_t get_events_bits(const Block& def) {
+    uint8_t bits = 0;
+    auto funcsset = def.rt.funcsset;
+    bits |= BlockRegisterEvent::UPDATING_BIT * funcsset.onblocktick;
+    bits |= BlockRegisterEvent::PRESENT_EVENT_BIT * funcsset.onblockpresent;
+    bits |= BlockRegisterEvent::REMOVED_EVENT_BIT * funcsset.onblockremoved;
+    return bits;
+}
+
+static void on_chunk_register_event(
+    const ContentIndices& indices,
+    const Chunk& chunk,
+    bool present
 ) {
-    if (y < 0 || y >= CHUNK_H) {
-        return;
-    }
-    const auto& indices = chunks.getContentIndices();
-    int cx = floordiv<CHUNK_W>(x);
-    int cz = floordiv<CHUNK_D>(z);
-    Chunk* chunk = get_chunk(chunks, cx, cz);
-    if (chunk == nullptr) {
-        return;
-    }
-    int lx = x - cx * CHUNK_W;
-    int lz = z - cz * CHUNK_D;
-    size_t index = vox_index(lx, y, lz);
+    const auto& voxels = chunk.voxels;
 
-    // block finalization
-    voxel& vox = chunk->voxels[(y * CHUNK_D + lz) * CHUNK_W + lx];
-    const auto& prevdef = indices.blocks.require(vox.id);
-    if (prevdef.inventorySize != 0) {
-        chunk->removeBlockInventory(lx, y, lz);
-    }
-    if (prevdef.rt.extended && !vox.state.segment) {
-        erase_segments(chunks, prevdef, vox.state, x, y, z);
-    }
-    if (prevdef.dataStruct) {
-        if (auto found = chunk->blocksMetadata.find(index)) {
-            chunk->blocksMetadata.free(found);
-            chunk->flags.unsaved = true;
-            chunk->flags.blocksData = true;
+    int totalBegin = chunk.bottom * (CHUNK_W * CHUNK_D);
+    int totalEnd = chunk.top * (CHUNK_W * CHUNK_D);
+
+    uint8_t flagsCache[1024] {};
+
+    for (int i = totalBegin; i < totalEnd; i++) {
+        blockid_t id = voxels[i].id;
+        uint8_t bits = id < sizeof(flagsCache) ? flagsCache[id] : 0;
+        if ((bits & 0x80) == 0) {
+            const auto& def = indices.blocks.require(id);
+            bits = get_events_bits(def);
+            flagsCache[id] = bits | 0x80;
         }
+        bits &= 0x7F;
+        if (bits == 0) {
+            continue;
+        }
+        int x = i % CHUNK_W + chunk.x * CHUNK_W;
+        int z = (i / CHUNK_W) % CHUNK_D + chunk.z * CHUNK_D;
+        int y = (i / CHUNK_W / CHUNK_D);
+        block_register_events.push_back(BlockRegisterEvent {
+            static_cast<uint8_t>(bits | (present ? 1 : 0)), id, {x, y, z}
+        });
     }
+}
 
-    // block initialization
-    const auto& newdef = indices.blocks.require(id);
-    vox.id = id;
-    vox.state = state;
-    chunk->setModifiedAndUnsaved();
-    if (!state.segment && newdef.rt.extended) {
-        repair_segments(chunks, newdef, state, x, y, z);
-    }
+void blocks_agent::on_chunk_present(
+    const ContentIndices& indices, const Chunk& chunk
+) {
+    on_chunk_register_event(indices, chunk, true);
+}
 
-    if (y < chunk->bottom)
-        chunk->bottom = y;
-    else if (y + 1 > chunk->top)
-        chunk->top = y + 1;
-    else if (id == 0)
-        chunk->updateHeights();
+void blocks_agent::on_chunk_remove(
+    const ContentIndices& indices, const Chunk& chunk
+) {
+    on_chunk_register_event(indices, chunk, false);
+}
 
+template <class Storage>
+static void mark_neighboirs_modified(
+    Storage& chunks, int32_t cx, int32_t cz, int32_t lx, int32_t lz
+) {
+    Chunk* chunk;
     if (lx == 0 && (chunk = get_chunk(chunks, cx - 1, cz))) {
         chunk->flags.modified = true;
     }
@@ -76,7 +87,116 @@ static inline void set_block(
     }
 }
 
-void blocks_agent::set(
+static void refresh_chunk_heights(Chunk& chunk, bool isAir, int y) {
+    if (y < chunk.bottom)
+        chunk.bottom = y;
+    else if (y + 1 > chunk.top)
+        chunk.top = y + 1;
+    else if (isAir)
+        chunk.flags.dirtyHeights = true;
+}
+
+template <class Storage>
+static void finalize_block(
+    Storage& chunks,
+    Chunk& chunk,
+    voxel& vox,
+    int32_t x, int32_t y, int32_t z,
+    int32_t lx, int32_t lz
+) {
+    size_t index = vox_index(lx, y, lz);
+    const auto& indices = chunks.getContentIndices();
+    const auto& def = indices.blocks.require(vox.id);
+    if (def.inventorySize != 0) {
+        chunk.removeBlockInventory(lx, y, lz);
+    }
+    if (def.rt.extended && !vox.state.segment) {
+        erase_segments(chunks, def, vox.state, x, y, z);
+    }
+    if (def.dataStruct) {
+        if (auto found = chunk.blocksMetadata.find(index)) {
+            chunk.blocksMetadata.free(found);
+            chunk.flags.unsaved = true;
+            chunk.flags.blocksData = true;
+        }
+    }
+
+    uint8_t bits = get_events_bits(def);
+    if (bits == 0) {
+        return;
+    }
+    block_register_events.push_back(BlockRegisterEvent {
+        bits, def.rt.id, {x, y, z}
+    });
+}
+
+template <class Storage>
+static void initialize_block(
+    Storage& chunks,
+    Chunk& chunk,
+    voxel& vox,
+    blockid_t id,
+    blockstate state,
+    int32_t x, int32_t y, int32_t z,
+    int32_t lx, int32_t lz,
+    int32_t cx, int32_t cz
+) {
+    const auto& indices = chunks.getContentIndices();
+    const auto& def = indices.blocks.require(id);
+    vox.id = id;
+    vox.state = state;
+    chunk.setModifiedAndUnsaved();
+    if (!state.segment && def.rt.extended) {
+        restore_segments(chunks, def, state, x, y, z);
+    }
+
+    refresh_chunk_heights(chunk, id == BLOCK_AIR, y);
+    mark_neighboirs_modified(chunks, cx, cz, lx, lz);
+
+    uint8_t bits = get_events_bits(def);
+    if (bits == 0) {
+        return;
+    }
+    block_register_events.push_back(BlockRegisterEvent {
+        static_cast<uint8_t>(bits | 1), def.rt.id, {x, y, z}
+    });
+
+    if (def.rt.funcsset.onblocktick) {
+        block_register_events.push_back(BlockRegisterEvent {
+            bits, def.rt.id, {x, y, z}
+        });
+    }
+}
+
+template <class Storage>
+static inline bool set_block(
+    Storage& chunks,
+    int32_t x,
+    int32_t y,
+    int32_t z,
+    blockid_t id,
+    blockstate state
+) {
+    if (y < 0 || y >= CHUNK_H) {
+        return false;
+    }
+    int cx = floordiv<CHUNK_W>(x);
+    int cz = floordiv<CHUNK_D>(z);
+    Chunk* chunk = get_chunk(chunks, cx, cz);
+    if (chunk == nullptr) {
+        return false;
+    }
+    int lx = x - cx * CHUNK_W;
+    int lz = z - cz * CHUNK_D;
+
+    voxel& vox = chunk->voxels[(y * CHUNK_D + lz) * CHUNK_W + lx];
+
+    finalize_block(chunks, *chunk, vox, x, y, z, lx, lz);
+    initialize_block(chunks, *chunk, vox, id, state, x, y, z, lx, lz, cx, cz);
+    return true;
+}
+
+bool blocks_agent::set(
     Chunks& chunks,
     int32_t x,
     int32_t y,
@@ -84,10 +204,10 @@ void blocks_agent::set(
     uint32_t id,
     blockstate state
 ) {
-    set_block(chunks, x, y, z, id, state);
+    return set_block(chunks, x, y, z, id, state);
 }
 
-void blocks_agent::set(
+bool blocks_agent::set(
     GlobalChunks& chunks,
     int32_t x,
     int32_t y,
@@ -95,7 +215,7 @@ void blocks_agent::set(
     uint32_t id,
     blockstate state
 ) {
-    set_block(chunks, x, y, z, id, state);
+    return set_block(chunks, x, y, z, id, state);
 }
 
 template <class Storage>
@@ -314,7 +434,8 @@ inline void get_voxels_impl(
                 }
             } else {
                 const voxel* cvoxels = chunk->voxels;
-                const light_t* clights = chunk->lightmap.getLights();
+                const light_t* clights =
+                    chunk->lightmap ? chunk->lightmap->getLights() : nullptr;
                 for (int ly = y; ly < y + h; ly++) {
                     for (int lz = std::max(z, cz * CHUNK_D);
                              lz < std::min(z + d, (cz + 1) * CHUNK_D);
@@ -331,7 +452,8 @@ inline void get_voxels_impl(
                                 CHUNK_D
                             );
                             voxels[vidx] = cvoxels[cidx];
-                            light_t light = clights[cidx];
+                            light_t light = clights ? clights[cidx]
+                                                    : Lightmap::SUN_LIGHT_ONLY;
                             if (backlight) {
                                 const auto block = blocks.get(voxels[vidx].id);
                                 if (block && block->lightPassing) {

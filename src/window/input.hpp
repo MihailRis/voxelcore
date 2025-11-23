@@ -261,7 +261,7 @@ class Input {
 public:
     virtual ~Input() = default;
 
-    virtual void pollEvents() = 0;
+    virtual void pollEvents(bool waitForRefresh) = 0;
 
     virtual const char* getClipboardText() const = 0;
     virtual void setClipboardText(const char* str) = 0;

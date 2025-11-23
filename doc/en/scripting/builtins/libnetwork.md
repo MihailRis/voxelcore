@@ -6,9 +6,15 @@ A library for working with the network.
 
 ```lua
 -- Performs a GET request to the specified URL.
--- After receiving the response, passes the text to the callback function.
--- In case of an error, the HTTP response code will be passed to onfailure.
-network.get(url: str, callback: function(str), [optional] onfailure: function(int))
+network.get(
+    url: str,
+    -- Function to call when response is received
+    callback: function(str),
+    -- Error handler
+    [optional] onfailure: function(int, str),
+    -- List of additional request headers
+    [optional] headers: table<str>
+)
 
 -- Example:
 network.get("https://api.github.com/repos/MihailRis/VoxelEngine-Cpp/releases/latest", function (s)
@@ -16,13 +22,28 @@ network.get("https://api.github.com/repos/MihailRis/VoxelEngine-Cpp/releases/lat
 end)
 
 -- A variant for binary files, with a byte array instead of a string in the response.
-network.get_binary(url: str, callback: function(table|ByteArray), [optional] onfailure: function(int))
+network.get_binary(
+    url: str,
+    callback: function(ByteArray),
+    [optional] onfailure: function(int, str),
+    [optional] headers: table<str>
+)
 
 -- Performs a POST request to the specified URL.
 -- Currently, only `Content-Type: application/json` is supported
 -- After receiving the response, passes the text to the callback function.
 -- In case of an error, the HTTP response code will be passed to onfailure.
-network.post(url: str, data: table, callback: function(str), [optional] onfailure: function(int))
+network.post(
+    url: str,
+    -- Request body as a table (will be converted to JSON) or string
+    body: table|str,
+    -- Function called when response is received
+    callback: function(str),
+    -- Error handler
+    [optional] onfailure: function(int, str),
+    -- List of additional request headers
+    [optional] headers: table<str>
+)
 ```
 
 ## TCP Connections
@@ -36,7 +57,10 @@ network.tcp_connect(
     -- Function called upon successful connection
     -- Sending will not work before connection
     -- Socket is passed as the only argument
-    callback: function(Socket)
+    callback: function(Socket),
+    -- Function called when a connection error occurs
+    -- Arguments passed: socket and error text
+    [optional] error_callback: function(Socket, str)
 ) --> Socket
 ```
 
@@ -57,6 +81,16 @@ socket:recv(
 ) -> nil|table|Bytearray
 -- Returns nil on error (socket is closed or does not exist).
 -- If there is no data yet, returns an empty byte array.
+
+-- Asynchronous version for use in coroutines.
+-- Waits for the entire specified number of bytes to be received.
+-- If socket closes, function works like socket:recv
+socket:recv_async(
+    -- Size of the byte array to read
+    length: int,
+    -- Use table instead of Bytearray
+    [optional] usetable: bool=false
+) -> nil|table|Bytearray
 
 -- Closes the connection
 socket:close()
@@ -107,4 +141,11 @@ network.get_total_upload() --> int
 -- Returns the approximate amount of data received (including connections to localhost)
 -- in bytes.
 network.get_total_download() --> int
+```
+
+## Other
+
+```lua
+-- Looks for a free port to use.
+network.find_free_port() --> int or nil
 ```

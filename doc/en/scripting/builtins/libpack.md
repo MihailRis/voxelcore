@@ -104,7 +104,7 @@ pack.get_info(packids: table) -> {id={...}, id2={...}, ...}
 ```
 
 ```lua
-pack.assemble(packis: table) -> table
+pack.assemble(packids: table) -> table
 ```
 
 Checks the configuration for correctness and adds dependencies, returning the complete configuration.

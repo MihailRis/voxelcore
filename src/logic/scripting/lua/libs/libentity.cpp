@@ -2,8 +2,11 @@
 
 #include "content/Content.hpp"
 #include "engine/Engine.hpp"
+#include "engine/EnginePaths.hpp"
 #include "objects/Entities.hpp"
 #include "objects/EntityDef.hpp"
+#include "objects/Entity.hpp"
+#include "objects/Rigidbody.hpp"
 #include "objects/Player.hpp"
 #include "objects/rigging.hpp"
 #include "physics/Hitbox.hpp"
@@ -253,5 +256,5 @@ const luaL_Reg entitylib[] = {
     {"get_all_in_radius", lua::wrap<l_get_all_in_radius>},
     {"raycast", lua::wrap<l_raycast>},
     {"reload_component", lua::wrap<l_reload_component>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

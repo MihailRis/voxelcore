@@ -239,7 +239,7 @@ std::unique_ptr<std::istream> ZipFileDevice::read(std::string_view path) {
 size_t ZipFileDevice::size(std::string_view path) {
     const auto& found = entries.find(std::string(path));
     if (found == entries.end()) {
-        return false;
+        return 0;
     }
     return found->second.uncompressedSize;
 }

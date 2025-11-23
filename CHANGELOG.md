@@ -1,74 +1,131 @@
-# 0.28 - 2025.07.18
+# 0.29 - 2025.09.20
 
-[Documentation](https://github.com/MihailRis/VoxelEngine-Cpp/tree/release-0.28/doc/en/main-page.md) for 0.28
+[Documentation](https://github.com/MihailRis/VoxelEngine-Cpp/tree/release-0.29/doc/en/main-page.md) for 0.29
 
 Table of contents:
 
 - [Added](#added)
-    - [Changes](#changes)
     - [Functions](#functions)
+    - [Changes](#changes)
 - [Fixes](#fixes)
 
 ## Added
 
-- advanced graphics mode
-- state bits based models
-- post-effects
-- ui elements:
-    - iframe
-    - select
-    - modelviewer
-- vcm models format
-- bit.compile
-- yaml encoder/decoder
-- error handler argument in http.get, http.post
-- ui properties:
-    - image.region
-- rotation profiles:
-    - stairs
-- libraries
-    - gfx.posteffects
-    - yaml
-- stairs rotation profile
-- models editing in console
-- syntax highlighting: xml, glsl, vcm
-- beginning of projects system
+- pathfinding
+- components:
+    - core:pathfinding
+    - core:player
+    - core:mob
+- libraries:
+    - random
+    - gfx.skeletons
+    - (documented) assets
+- udp support
+- schedules
+- events:
+    - on_physics_update (components)
+    - on_block_tick(x, y, z, tps) (blocks)
+- custom hand controller
+- http headers
+- named pipes
+- optimizations:
+    - speed up block.set
+    - speed up vectors
+- items description
+- item properties methods
+- tab + shift+tab
+- blocks, items tags
+- pack dependencies versions
+- ~~allow to disable autospawn position~~ use player.set_spawnpoint
+- entity.spawn command
+- project script
+- gui.root document
+- time.schedules.world.common: Schedule
 
 ### Changes
 
-- reserved 'project', 'pack', 'packid', 'root' entry points
-- Bytearray optimized with FFI
-- chunks non-unloading zone limited with circle 
+- app.sleep_until - added 'timeout argument'
+- network.get / post - added 'data' argument to error callback
+- autorefresh model preview
+- move player controls to lua
+- move hand control to lua
 
 ### Functions
 
-- yaml.tostring
-- yaml.parse
-- gfx.posteffects.index
-- gfx.posteffects.set_effect
-- gfx.posteffects.get_intensity
-- gfx.posteffects.set_intensity
-- gfx.posteffects.is_active
-- gfx.posteffects.set_params
-- gfx.posteffects.set_array
-- block.get_variant
-- block.set_variant
-- bit.compile
-- Bytearray_as_string
+- block.model_name
+- block.has_tag
+- item.has_tag
+- item.description
+- base64.encode_urlsafe
+- base64.decode_urlsafe
+- vec2.rotate
+- vecn.distance
+- vecn.mix
+- rigidbody:get_vdamping
+- rigidbody:set_vdamping
+- entity:require_component
+- network.udp_connect
+- random.random
+- random.bytes
+- random.uuid
+- Random:random
+- Random:seed
+- hud.hand_controller
+- inventory.get_caption
+- inventory.set_caption
+- inventory.get_description
+- inventory.set_description
+- pathfinding.create_agent
+- pathfinding.remove_agent
+- pathfinding.set_enabled
+- pathfinding.is_enabled
+- pathfinding.make_route
+- pathfinding.make_route_async
+- pathfinding.pull_route
+- pathfinding.set_max_visited
+- pathfinding.avoid_tag
+- gfx.skeletons.get
+- Skeleton:index
+- Skeleton:get_model
+- Skeleton:set_model
+- Skeleton:get_matrix
+- Skeleton:set_matrix
+- Skeleton:get_texture
+- Skeleton:set_texture
+- Skeleton:is_visible
+- Skeleton:set_visible
+- Skeleton:get_color
+- Skeleton:set_color
+- Schedule:set_timeout(time_ms, callback)
+- Schedule:set_interval(interval_ms, callback, [optional] repetions): int
+- Schedule:remove_interval(id)
+- ScheduleGroup:publish(schedule: Schedule)
 
 ## Fixes
 
-- [fix: "unknown argument --memcheck" in vctest](https://github.com/MihailRis/voxelcore/commit/281d5e09e6f1c016646af6000f6b111695c994b3)
-- [fix "upgrade square is not fully inside of area" error](https://github.com/MihailRis/voxelcore/commit/bf79f6bc75a7686d59fdd0dba8b9018d6191e980 )
-- [fix generator area centering](https://github.com/MihailRis/voxelcore/commit/98813472a8c25b1de93dd5d843af38c5aec9b1d8 "fix generator area centering")
-- [fix incomplete content reset](https://github.com/MihailRis/voxelcore/commit/61af8ba943a24f6544c6482def2e244cf0af4d18)
-- [fix stack traces](https://github.com/MihailRis/voxelcore/commit/05ddffb5c9902e237c73cdea55d4ac1e303c6a8e)
-- [fix containers refreshing](https://github.com/MihailRis/voxelcore/commit/34295faca276b55c6e3c0ddd98b867a0aab3eb2a)
-- [fix toml encoder](https://github.com/MihailRis/voxelcore/commit/9cd95bb0eb73521bef07f6f0d5e8b78f3e309ebf)
-- [fix InputBindBox](https://github.com/MihailRis/voxelcore/commit/7c976a573b01e3fb6f43bacaab22e34037b55b73 "fix InputBindBox")
-- [fix inventory.* functions error messages](https://github.com/MihailRis/voxelcore/commit/af3c315c04959eea6c11f5ae2854a6f253e3450f)
-- [fix: validator not called after backspace](https://github.com/MihailRis/voxelcore/commit/df3640978d279b85653d647facb26ef15c509848)
-- [fix: missing pack.has_indices if content is not loaded](https://github.com/MihailRis/voxelcore/commit/b02b45457322e1ce8f6b9735caeb5b58b1e2ffb4)
-- [fix: entities despawn on F5](https://github.com/MihailRis/voxelcore/commit/6ab48fda935f3f1d97d76a833c8511522857ba6a)
-- [bug fix [#549]](https://github.com/MihailRis/voxelcore/commit/49727ec02647e48323266fbf814c15f6d5632ee9)
-- [fix player camera zoom with fov-effects disabled](https://github.com/MihailRis/voxelcore/commit/014ffab183687ed9acbb93ab90e43d8f82ed826a)
+- fix 3d text position / culling
+- fix fragment:place rotation (#593)
+- fix server socket creation in macos
+- fix: base packs not scanned for app scripts
+- fix lua::getfield and events registering
+- fix UIDocument::rebuildIndices
+- fix input library in headless mode
+- fix rigidbody:set_gravity_scale
+- fix extended blocks destruction particles spawn spread, offset
+- fix shaders recompiling
+- fix: C++ vecn functions precision loss
+- fix coroutines errors handling
+- fix: viewport size on toggle fullscreen
+- fix: fullscreen monitor refresh rate
+- fix: content menu panel height
+- fix generation.create_fragment (#596)
+- fix bytearray:insert (#594)
+- fix: script overriding
+- fix: hud.close after hud.show_overlay bug
+- fix: 'cannot resume dead coroutine' (#569)
+- fix: skybox is not visible behind translucent blocks
+- fix: sampler arrays inbdexed with non-constant / uniform-based expressions are forbidden
+- fix initial weather intensity
+- fix drop count (560)
+- fix BasicParser::parseNumber() out of range (560)
+- fix rotation interpolation (#557)

@@ -20,6 +20,12 @@ hud.open(
     [optional] invid: int
 ) -> int
 
+-- Returns true if specified layout is open.
+hud.is_open(
+    layoutid: str
+) -> bool
+
+
 -- Open block UI and inventory.
 -- Throws an exception if block has no UI layout.
 -- Returns block inventory ID (if *"inventory-size"=0* a virtual 
@@ -65,4 +71,7 @@ hud.is_inventory_open() -> bool
 
 -- Sets whether to allow pausing. If false, the pause menu will not pause the game.
 hud.set_allow_pause(flag: bool)
+
+-- Function that controls the named skeleton 'hand' (see gfx.skeletons)
+hud.hand_controller: function()
 ```

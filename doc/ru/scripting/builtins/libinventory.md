@@ -94,6 +94,40 @@ inventory.set(...)
 inventory.set_all_data(...)
 ```
 для перемещения вляется неэффективным, используйте inventory.move или inventory.move_range.
+```lua
+-- Получает имя предмета в слоте
+inventory.get_caption(
+    -- id инвентаря
+    invid: int,
+    -- индекс слота
+    slot: int
+)
+-- Задает имя предмету в слоте
+inventory.set_caption(
+    -- id инвентаря
+    invid: int,
+    -- индекс слота
+    slot: int,
+    -- Имя предмета
+    caption: string
+)
+-- Получает описание предмета в слоте
+inventory.get_description(
+    -- id инвентаря
+    invid: int,
+    -- индекс слота
+    slot: int
+)
+-- Задает описание предмету в слоте
+inventory.set_description(
+    -- id инвентаря
+    invid: int,
+    -- индекс слота
+    slot: int,
+    -- Описание предмета
+    description: string
+)
+```
 
 ```lua
 -- Проверяет наличие локального свойства по имени без копирования его значения.

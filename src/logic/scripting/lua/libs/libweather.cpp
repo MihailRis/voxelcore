@@ -64,5 +64,5 @@ const luaL_Reg weatherlib[] = {
     {"get_current_data", lua::wrap<l_get_current_data>},
     {"get_fall_intensity", lua::wrap<l_get_fall_intensity>},
     {"is_transition", lua::wrap<l_is_transition>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

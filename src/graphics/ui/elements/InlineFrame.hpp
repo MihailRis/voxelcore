@@ -5,7 +5,7 @@
 class UiDocument;
 
 namespace gui {
-    class InlineFrame : public Container {
+    class InlineFrame final : public Container {
     public:
         explicit InlineFrame(GUI& gui);
         virtual ~InlineFrame();
@@ -14,7 +14,7 @@ namespace gui {
         void setDocument(const std::shared_ptr<UiDocument>& document);
 
         void act(float delta) override;
-        void setSize(glm::vec2 size) override;
+        void setSize(const glm::vec2& size) override;
 
         const std::string& getSrc() const;
     private:

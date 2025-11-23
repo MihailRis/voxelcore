@@ -61,6 +61,13 @@ namespace audio {
 
         void setTime(duration_t time) override {
         }
+
+        bool isStopOnEnd() const override {
+            return false;
+        }
+
+        void setStopOnEnd(bool stopOnEnd) override {
+        }
     };
 
     class NoAudio : public Backend {
@@ -71,9 +78,23 @@ namespace audio {
         std::unique_ptr<Sound> createSound(
             std::shared_ptr<PCM> pcm, bool keepPCM
         ) override;
+
         std::unique_ptr<Stream> openStream(
             std::shared_ptr<PCMStream> stream, bool keepSource
         ) override;
+
+        std::unique_ptr<InputDevice> openInputDevice(
+            const std::string& deviceName, uint sampleRate, uint channels, uint bitsPerSample
+        ) override {
+            return nullptr;
+        }
+
+        std::vector<std::string> getInputDeviceNames() override {
+            return {};
+        }
+        std::vector<std::string> getOutputDeviceNames() override {
+            return {};
+        }
 
         void setListener(
             glm::vec3 position, glm::vec3 velocity, glm::vec3 at, glm::vec3 up

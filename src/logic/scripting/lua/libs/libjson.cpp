@@ -19,5 +19,5 @@ static int l_json_parse(lua::State* L) {
 const luaL_Reg jsonlib[] = {
     {"tostring", lua::wrap<l_json_stringify>},
     {"parse", lua::wrap<l_json_parse>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

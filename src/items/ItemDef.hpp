@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 #include <string>
+#include <vector>
+#include <set>
 
 #include "data/dv.hpp"
 #include "typedefs.hpp"
@@ -34,6 +36,9 @@ struct ItemDef {
     /// @brief Item name will shown in inventory
     std::string caption;
 
+    /// @brief Item description will shown in inventory
+    std::string description;
+
     dv::value properties = nullptr;
 
     /// @brief Item max stack size
@@ -61,11 +66,15 @@ struct ItemDef {
 
     std::string scriptFile;
 
+    std::vector<std::string> tags;
+
     struct {
         itemid_t id;
         blockid_t placingBlock;
         ItemFuncsSet funcsset {};
         bool emissive = false;
+
+        std::set<int> tags;
     } rt {};
 
     ItemDef(const std::string& name);

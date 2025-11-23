@@ -547,13 +547,13 @@ void WorldGenerator::generateLine(
     auto b = line.b;
 
     int minX = std::max(0, std::min(a.x-radius-cgx, b.x-radius-cgx));
-    int maxX = std::min(CHUNK_W, std::max(a.x+radius-cgx, b.x+radius-cgx));
+    int maxX = std::min(CHUNK_W, std::max(a.x+radius-cgx, b.x+radius-cgx) + 1);
 
     int minZ = std::max(0, std::min(a.z-radius-cgz, b.z-radius-cgz));
-    int maxZ = std::min(CHUNK_D, std::max(a.z+radius-cgz, b.z+radius-cgz));
+    int maxZ = std::min(CHUNK_D, std::max(a.z+radius-cgz, b.z+radius-cgz) + 1);
 
     int minY = std::max(0, std::min(a.y-radius, b.y-radius));
-    int maxY = std::min(CHUNK_H, std::max(a.y+radius, b.y+radius));
+    int maxY = std::min(CHUNK_H, std::max(a.y+radius, b.y+radius) + 1);
 
     for (int y = minY; y < maxY; y++) {
         for (int z = minZ; z < maxZ; z++) {

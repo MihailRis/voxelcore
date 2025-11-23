@@ -18,6 +18,7 @@ uniform mat4 u_view;
 uniform mat4 u_inverseView;
 uniform vec3 u_sunDir;
 uniform vec3 u_cameraPos;
+uniform float u_gamma;
 
 #include <__effect__>
 

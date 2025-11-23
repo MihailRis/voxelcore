@@ -4,7 +4,9 @@
 #include <string>
 #include <vector>
 #include <glm/glm.hpp>
+
 #include "typedefs.hpp"
+#include "FontMetics.hpp"
 
 class Texture;
 class Batch2D;
@@ -90,4 +92,8 @@ public:
     ) const;
 
     const Texture* getPage(int page) const;
+
+    FontMetrics getMetrics() const {
+        return {lineHeight, yoffset, glyphInterval};
+    }
 };

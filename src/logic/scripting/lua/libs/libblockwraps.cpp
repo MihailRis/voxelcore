@@ -39,5 +39,5 @@ const luaL_Reg blockwrapslib[] = {
     {"unwrap", lua::wrap<l_unwrap>},
     {"set_pos", lua::wrap<l_set_pos>},
     {"set_texture", lua::wrap<l_set_texture>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

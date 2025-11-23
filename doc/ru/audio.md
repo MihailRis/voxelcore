@@ -29,6 +29,7 @@
 Доступ к спикерам производится по целочисленным id, которые не повторяются за время работы движка, следует избегать хранения прямых указателей на объекты класса.
 
 Нумерация ID спикеров начинается с 1. ID 0 означает невозможность воспроизведения, по какой-либо причине.
+
 ### Звук (Sound)
 
 Звуковые данные загруженные в память для возможности одновременного воспроизведения из нескольких источников. Может предоставлять доступ к PCM данным.
@@ -202,4 +203,80 @@ audio.count_speakers() -> integer
 
 -- получить текущее число проигрываемых аудио-потоков
 audio.count_streams() -> integer
+```
+
+### audio.PCMStream
+
+```lua
+-- создание источника PCM данных
+local stream = audio.PCMStream(
+    -- частота дискретизации
+    sample_rate: integer,
+    -- число каналов (1 - моно, 2 - стерео)
+    channels: integer,
+    -- число бит на сэмпл (8 или 16)
+    bits_per_sample: integer,
+)
+
+-- подача PCM данных в поток
+stream:feed(
+    -- PCM данные для подачи в поток
+    data: Bytearray
+)
+
+-- публикация источника PCM данных для использования системами движка
+stream:share(
+    -- имя потокового аудио, которое можно будет указать в audio.play_stream
+    alias: string
+)
+
+-- создание звука из имеющихся в потоке PCM данных
+stream:create_sound(
+    -- имя создаваемого звука
+    name: string
+)
+```
+
+### Запись звука
+
+```lua
+-- запрашивает доступ к записи звука
+-- при подтверждении, в callback передаётся токен для использовании в audio.input.fetch
+audio.input.request_open(callback: function(string))
+
+-- читает новые PCM данные аудио ввода
+audio.input.fetch(
+    -- токен, полученный через audio.input.request_open
+    access_token: string,
+    -- максимальное размер буфера в байтах
+    [опционально] max_read_size: integer
+)
+```
+
+### Пример генерации аудио:
+
+```lua
+-- для работы с 16-битными семплами используйте U16view поверх Bytearray
+-- пример:
+local max_amplitude = 32767
+local sample_rate = 44100
+local total_samples = sample_rate * 5 -- 5 секунд моно
+local bytes = Bytearray(total_samples * 2) -- 5 секунд 16 бит моно
+local samples = I16view(bytes)
+
+local frequency_hz = 400
+for i=1, total_samples do
+    local value = math.sin(i * math.pi * 2 / sample_rate * frequency_hz)
+    samples[i] = value * max_amplitude
+end
+
+local stream_name = "test-stream"
+local stream = audio.PCMStream(sample_rate, 1, 16)
+stream:feed(bytes)
+stream:share(stream_name)
+
+local volume = 1.0
+local pitch = 1.0
+local channel = "ui"
+audio.play_stream_2d(stream_name, volume, pitch, channel)
 ```

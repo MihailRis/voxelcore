@@ -11,6 +11,60 @@
 
 static debug::Logger logger("png-coder");
 
+static util::Buffer<ubyte> write_to_memory(uint width, uint height, const ubyte* data, bool alpha) {
+    uint pixsize = alpha ? 4 : 3;
+
+    std::vector<ubyte> buffer;
+    png_structp png_ptr = png_create_write_struct(
+        PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr
+    );
+    png_infop info_ptr = png_create_info_struct(png_ptr);
+
+    png_set_write_fn(
+        png_ptr,
+        &buffer,
+        [](png_structp pngPtr, png_bytep data, png_size_t length) {
+            auto& buf = *reinterpret_cast<std::vector<ubyte>*>(png_get_io_ptr(pngPtr));
+            buf.insert(
+                buf.end(),
+                reinterpret_cast<ubyte*>(data),
+                reinterpret_cast<ubyte*>(data) + length
+            );
+        },
+        nullptr
+    );
+
+    png_set_IHDR(
+        png_ptr,
+        info_ptr,
+        width,
+        height,
+        8,
+        alpha ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB,
+        PNG_INTERLACE_NONE,
+        PNG_COMPRESSION_TYPE_BASE,
+        PNG_FILTER_TYPE_BASE
+    );
+
+    png_write_info(png_ptr, info_ptr);
+
+    auto row = std::make_unique<png_byte[]>(pixsize * width);
+    for (uint y = 0; y < height; y++) {
+        for (uint x = 0; x < width; x++) {
+            for (uint i = 0; i < pixsize; i++) {
+                row[x * pixsize + i] =
+                    (png_byte)data[(y * width + x) * pixsize + i];
+            }
+        }
+        png_write_row(png_ptr, row.get());
+    }
+
+    png_write_end(png_ptr, nullptr);
+    png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+    return util::Buffer<ubyte>(buffer.data(), buffer.size());
+}
+
 // returns 0 if all-right, 1 otherwise
 static int png_write(
     const char* filename, uint width, uint height, const ubyte* data, bool alpha
@@ -228,5 +282,15 @@ void png::write_image(const std::string& filename, const ImageData* image) {
         image->getHeight(),
         (const ubyte*)image->getData(),
         image->getFormat() == ImageFormat::rgba8888
+    );
+}
+
+util::Buffer<ubyte> png::encode_image(const ImageData& image) {
+    auto format = image.getFormat();
+    return write_to_memory(
+        image.getWidth(),
+        image.getHeight(),
+        image.getData(),
+        format == ImageFormat::rgba8888
     );
 }

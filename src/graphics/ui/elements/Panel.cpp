@@ -72,7 +72,7 @@ void Panel::refresh() {
     float x = padding.x;
     float y = padding.y;
     glm::vec2 size = getSize();
-    if (orientation == Orientation::vertical) {
+    if (orientation == Orientation::VERTICAL) {
         float maxw = size.x;
         for (auto& node : nodes) {
             const glm::vec4 margin = node->getMargin();

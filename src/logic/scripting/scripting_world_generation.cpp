@@ -6,7 +6,7 @@
 #include "scripting_commons.hpp"
 #include "typedefs.hpp"
 #include "lua/lua_engine.hpp"
-#include "lua/lua_custom_types.hpp"
+#include "lua/usertypes/lua_type_heightmap.hpp"
 #include "content/Content.hpp"
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"

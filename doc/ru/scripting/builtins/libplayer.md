@@ -40,13 +40,19 @@ player.set_vel(playerid: int, x: number, y: number, z: number)
 player.get_rot(playerid: int, interpolated: bool=false) -> number, number, number
 ```
 
-Возвращает x, y, z вращения камеры (в радианах). Интерполяция актуальна в случаях, когда частота обновления вращения ниже частоты кадров.
+Возвращает x, y, z вращения камеры (в градусах). Интерполяция актуальна в случаях, когда частота обновления вращения ниже частоты кадров.
 
 ```lua
 player.set_rot(playerid: int, x: number, y: number, z: number)
 ```
 
-Устанавливает x, y вращения камеры (в радианах)
+Устанавливает x, y вращения камеры (в градусах)
+
+```lua
+player.get_dir(playerid: int) -> vec3
+```
+
+Возвращает вектор направления взгляда игрока
 
 ```lua
 player.get_inventory(playerid: int) -> int, int
@@ -90,6 +96,13 @@ player.set_loading_chunks(playerid: int, bool)
 Геттер и сеттер свойства, определяющего, прогружает ли игрок чанки вокруг.
 
 ```lua
+player.get_interaction_distance(playerid: int) -> float
+player.set_interaction_distance(playerid: int, distance: float)
+```
+
+Геттер и сеттер свойства, определяющего максимальную дистанцию взаимодействия.
+
+```lua
 player.set_spawnpoint(playerid: int, x: number, y: number, z: number) 
 player.get_spawnpoint(playerid: int) -> number, number, number
 ```
@@ -111,6 +124,18 @@ player.get_name(playerid: int) -> str
 ```
 
 Сеттер и геттер имени игрока
+
+```lua
+player.get_camera(playerid: int) -> int
+```
+
+Возвращает индекс текущей камеры игрока
+
+```lua
+player.set_camera(playerid: int, camera_index: int)
+```
+
+Переключает камеру игрока. См. [камеры](libcameras.md).
 
 ```lua
 player.set_selected_slot(playerid: int, slotid: int)
@@ -135,3 +160,21 @@ player.get_entity(playerid: int) -> int
 ```
 
 Возвращает уникальный идентификатор сущности игрока
+
+```lua
+player.get_all_in_radius(center: vec3, radius: number) -> table<int>
+```
+
+Возвращает массив id игроков в пределах сферы с центром `center` и радиусом `radius`.
+
+```lua
+player.get_all() -> table<int>
+```
+
+Возвращает массив id всех активных игроков.
+
+```lua
+player.get_nearest(position: vec3) -> int
+```
+
+Возвращает id ближайшего к указанной позиции игрока, либо nil если игроков нет.

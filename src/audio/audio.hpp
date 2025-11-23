@@ -24,6 +24,10 @@ namespace audio {
     /// @brief streams and important sounds
     constexpr inline int PRIORITY_HIGH = 10;
 
+    constexpr inline size_t MAX_INPUT_SAMPLES = 22050;
+
+    inline std::string_view DEVICE_NONE = "none";
+
     class Speaker;
 
     /// @brief Audio speaker states
@@ -108,6 +112,31 @@ namespace audio {
         }
     };
 
+    class InputDevice {
+    public:
+        virtual ~InputDevice() {};
+
+        virtual void startCapture() = 0;
+        virtual void stopCapture() = 0;
+
+        /// @brief Get number of audio channels
+        /// @return 1 if mono, 2 if stereo
+        virtual uint getChannels() const = 0;
+        /// @brief Get audio sampling frequency
+        /// @return number of mono samples per second
+        virtual uint getSampleRate() const = 0;
+        /// @brief Get number of bits per mono sample
+        /// @return 8 or 16
+        virtual uint getBitsPerSample() const = 0;
+
+        /// @brief Read available data to buffer.
+        /// @return size of data received or PCMStream::ERROR in case of error
+        virtual size_t read(char* buffer, size_t bufferSize) = 0;
+
+        /// @brief Get device specifier string
+        virtual const std::string& getDeviceSpecifier() const = 0;
+    };
+
     /// @brief audio::PCMStream is a data source for audio::Stream
     class PCMStream {
     public:
@@ -121,6 +150,10 @@ namespace audio {
         /// (always equals bufferSize if seekable and looped)
         virtual size_t readFully(char* buffer, size_t bufferSize, bool loop);
 
+        /// @brief Read available data to buffer
+        /// @param buffer destination buffer
+        /// @param bufferSize destination buffer size
+        /// @return count of received bytes or PCMStream::ERROR
         virtual size_t read(char* buffer, size_t bufferSize) = 0;
 
         /// @brief Close stream
@@ -195,6 +228,9 @@ namespace audio {
         /// @brief Set playhead to the selected time
         /// @param time selected time
         virtual void setTime(duration_t time) = 0;
+
+        virtual bool isStopOnEnd() const = 0;
+        virtual void setStopOnEnd(bool stopOnEnd) = 0;
     };
 
     /// @brief Sound is an audio asset that supposed to support many
@@ -329,6 +365,8 @@ namespace audio {
         inline bool isStopped() const {
             return getState() == State::stopped;
         }
+
+        virtual bool isManuallyStopped() const = 0;
     };
 
     class Backend {
@@ -341,12 +379,20 @@ namespace audio {
         virtual std::unique_ptr<Stream> openStream(
             std::shared_ptr<PCMStream> stream, bool keepSource
         ) = 0;
+        virtual std::unique_ptr<InputDevice> openInputDevice(
+            const std::string& deviceName,
+            uint sampleRate,
+            uint channels,
+            uint bitsPerSample
+        ) = 0;
         virtual void setListener(
             glm::vec3 position,
             glm::vec3 velocity,
             glm::vec3 lookAt,
             glm::vec3 up
         ) = 0;
+        virtual std::vector<std::string> getInputDeviceNames() = 0;
+        virtual std::vector<std::string> getOutputDeviceNames() = 0;
         virtual void update(double delta) = 0;
 
         /// @brief Check if backend is an abstraction that does not internally
@@ -401,6 +447,28 @@ namespace audio {
     std::unique_ptr<Stream> open_stream(
         std::shared_ptr<PCMStream> stream, bool keepSource
     );
+
+    /// @brief Open audio input device
+    /// @param sampleRate sample rate
+    /// @param channels channels count (1 - mono, 2 - stereo)
+    /// @param bitsPerSample number of bits per sample (8 or 16)
+    /// @return new InputDevice instance or nullptr
+    std::unique_ptr<InputDevice> open_input_device(
+        const std::string& deviceName,
+        uint sampleRate,
+        uint channels,
+        uint bitsPerSample
+    );
+
+    /// @brief Retrieve names of available audio input devices
+    /// @return list of device names
+    std::vector<std::string> get_input_devices_names();
+
+    /// @brief Retrieve names of available audio output devices
+    /// @return list of device names
+    std::vector<std::string> get_output_devices_names();
+
+    void set_input_device(const std::string& deviceName);
 
     /// @brief Configure 3D listener
     /// @param position listener position
@@ -514,6 +582,8 @@ namespace audio {
 
     /// @brief Stop all playing audio in channel, reset channel state
     void reset_channel(int channel);
+
+    InputDevice* get_input_device();
 
     /// @brief Finalize audio system
     void close();

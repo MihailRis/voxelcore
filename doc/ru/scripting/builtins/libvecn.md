@@ -100,6 +100,13 @@ vecn.length(a: vector)
 
 ```
 
+#### Дистанция - *vecn.distance(...)*
+
+```lua
+-- возвращает расстояние между двумя векторами
+vecn.distance(a: vector, b: vector)
+```
+
 #### Абсолютное значение - *vecn.abs(...)*
 
 ```lua
@@ -136,6 +143,16 @@ vecn.pow(v: vector, exponent: number, dst: vector)
 vecn.dot(a: vector, b: vector)
 ```
 
+#### Смешивание - *vecn.mix(...)*
+
+```lua
+-- возвращает вектор a * (1.0 - t) + b * t
+vecn.mix(a: vector, b: vector, t: number)
+
+-- записывает в dst вектор a * (1.0 - t) + b * t
+vecn.mix(a: vector, b: vector, t: number, dst: vector)
+```
+
 #### Перевод в строку - *vecn.tostring(...)*
 > [!WARNING]
 > Возвращает только тогда, когда содержимым является вектор
@@ -160,6 +177,12 @@ vec2.angle(v: vec2)
 
 -- возвращает угол направления вектора {x, y} в градусах [0, 360]
 vec2.angle(x: number, y: number) 
+
+-- возвращает повернутый вектор на угол в градусах против часовой стрелки
+vec2.rotate(v: vec2, angle: number) -> vec2
+
+-- записывает повернутый вектор на угол в градусах против часовой стрелки в dst
+vec2.rotate(v: vec2, angle: number, dst: vec2) -> vec2
 ```
 
 
@@ -192,6 +215,10 @@ print("mul_scal: " .. vec3.tostring(result_mul_scal)) -- {6, 12, 12}
 local result_norm = vec3.normalize(v1_3d)
 print("norm: " .. vec3.tostring(result_norm)) -- {0.333, 0.667, 0.667}
 
+-- дистанция между векторами
+local result_distance = vec3.distance(v1_3d, v2_3d)
+print("distance: " .. result_distance) -- 43
+
 -- длина вектора
 local result_len = vec3.length(v1_3d)
 print("len: " .. result_len) -- 3
@@ -211,4 +238,9 @@ print("pow: " .. vec3.tostring(result_pow)) -- {1, 4, 4}
 -- скалярное произведение векторов
 local result_dot = vec3.dot(v1_3d, v2_3d)
 print("dot: " .. result_dot) -- 250
+
+-- смешивание векторов
+local result_mix = vec3.mix(v1_3d, v2_3d, 0.25)
+print("mix: " .. vec3.tostring(result_mix)) -- {3.25, 6.5, 11.5}
+
 ```

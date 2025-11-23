@@ -19,6 +19,7 @@ Problems=Ongelmia
 Monitor=Valvonta
 Debug=Virheenkorjaus
 File=Tiedosto
+Are you sure you want to open the link: =Haluatko varmasti avata linkin: 
 
 devtools.traceback=Puhelupino (viimeisestä)
 error.pack-not-found=Pakettia ei löytynyt!

@@ -27,7 +27,7 @@ public:
     int x, z;
     int bottom, top;
     voxel voxels[CHUNK_VOL] {};
-    Lightmap lightmap;
+    std::shared_ptr<Lightmap> lightmap;
     struct {
         bool modified : 1;
         bool ready : 1;
@@ -37,6 +37,7 @@ public:
         bool loadedLights : 1;
         bool entities : 1;
         bool blocksData : 1;
+        bool dirtyHeights : 1;
     } flags {};
 
     /// @brief Block inventories map where key is index of block in voxels array
@@ -44,13 +45,10 @@ public:
     /// @brief Blocks metadata heap
     BlocksMetadata blocksMetadata;
 
-    Chunk(int x, int z);
+    Chunk(int x, int z, std::shared_ptr<Lightmap> lightmap=nullptr);
 
     /// @brief Refresh `bottom` and `top` values
     void updateHeights();
-
-    // unused
-    std::unique_ptr<Chunk> clone() const;
 
     /// @brief Creates new block inventory given size
     /// @return inventory id or 0 if block does not exists

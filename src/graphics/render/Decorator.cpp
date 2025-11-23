@@ -15,16 +15,18 @@
 #include "objects/Player.hpp"
 #include "objects/Players.hpp"
 #include "objects/Entities.hpp"
+#include "objects/Entity.hpp"
 #include "logic/LevelController.hpp"
 #include "util/stringutil.hpp"
 #include "engine/Engine.hpp"
+#include "engine/EnginePaths.hpp"
 #include "io/io.hpp"
 #include "audio/audio.hpp"
 #include "maths/util.hpp"
 
 namespace fs = std::filesystem;
 
-/// @brief Not greather than 64 for this BIG_PRIME value
+/// @brief Not greater than 64 for this BIG_PRIME value
 inline constexpr int UPDATE_AREA_DIAMETER = 32;
 /// @brief Number of blocks in the volume
 inline constexpr int UPDATE_BLOCKS =

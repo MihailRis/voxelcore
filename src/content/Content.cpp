@@ -35,13 +35,15 @@ Content::Content(
     UptrsMap<std::string, BlockMaterial> blockMaterials,
     UptrsMap<std::string, rigging::SkeletonConfig> skeletons,
     ResourceIndicesSet resourceIndices,
-    dv::value defaults
+    dv::value defaults,
+    std::unordered_map<std::string, int> tags
 )
     : indices(std::move(indices)),
       packs(std::move(packs)),
       blockMaterials(std::move(blockMaterials)),
       skeletons(std::move(skeletons)),
       defaults(std::move(defaults)),
+      tags(std::move(tags)),
       blocks(std::move(blocks)),
       items(std::move(items)),
       entities(std::move(entities)),
@@ -61,6 +63,14 @@ const rigging::SkeletonConfig* Content::getSkeleton(const std::string& id
         return nullptr;
     }
     return found->second.get();
+}
+
+const rigging::SkeletonConfig& Content::requireSkeleton(const std::string& id) const {
+    auto skeleton = getSkeleton(id);
+    if (skeleton == nullptr) {
+        throw std::runtime_error("skeleton '" + id + "' not loaded");
+    }
+    return *skeleton;
 }
 
 const BlockMaterial* Content::findBlockMaterial(const std::string& id) const {

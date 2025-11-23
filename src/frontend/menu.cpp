@@ -11,7 +11,7 @@
 #include "graphics/ui/elements/Menu.hpp"
 #include "graphics/ui/gui_util.hpp"
 #include "interfaces/Task.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "locale.hpp"
 #include "logic/scripting/scripting.hpp"
 #include "screens/MenuScreen.hpp"

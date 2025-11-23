@@ -27,9 +27,10 @@ std::unique_ptr<ImageData> BlocksPreview::draw(
 ){
     display::clear();
     blockid_t id = def.rt.id;
-    const UVRegion texfaces[6]{cache.getRegion(id, 0, 0), cache.getRegion(id, 0, 1),
-                               cache.getRegion(id, 0, 2), cache.getRegion(id, 0, 3),
-                               cache.getRegion(id, 0, 4), cache.getRegion(id, 0, 5)};
+    const UVRegion texfaces[6] {
+        cache.getRegion(id, 0, 0, true), cache.getRegion(id, 0, 1, true),
+        cache.getRegion(id, 0, 2, true), cache.getRegion(id, 0, 3, true),
+        cache.getRegion(id, 0, 4, true), cache.getRegion(id, 0, 5, true)};
 
     glm::vec3 offset(0.1f, 0.5f, 0.1f);
     switch (def.defaults.model.type) {
@@ -66,7 +67,7 @@ std::unique_ptr<ImageData> BlocksPreview::draw(
             glm::vec3 poff = glm::vec3(0.0f, 0.0f, 1.0f);
             offset.y += (1.0f - hitbox).y * 0.5f;
             shader.uniformMatrix("u_apply", glm::translate(glm::mat4(1.0f), offset));
-            const auto& model = cache.getModel(def.rt.id);
+            const auto& model = cache.getModel(def.rt.id, 0);
             
             for (const auto& mesh : model.meshes) {
                 for (const auto& vertex : mesh.vertices) {
@@ -136,5 +137,5 @@ std::unique_ptr<Atlas> BlocksPreview::build(
         builder.add(def.name, draw(cache, shader, fbo, batch, def, iconSize));
     }
     fbo.unbind();
-    return builder.build(2);
+    return builder.build(ATLAS_EXTRUSION);
 }

@@ -51,4 +51,5 @@ const luaL_Reg transformlib[] = {
     {"set_size", lua::wrap<l_set_size>},
     {"get_rot", lua::wrap<l_get_rot>},
     {"set_rot", lua::wrap<l_set_rot>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};

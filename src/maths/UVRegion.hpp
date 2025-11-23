@@ -1,8 +1,7 @@
 #pragma once
 
 #include <cmath>
-#include <glm/vec2.hpp>
-#include <glm/vec4.hpp>
+#include <glm/glm.hpp>
 
 struct UVRegion {
     float u1;
@@ -68,5 +67,11 @@ struct UVRegion {
         auto copy = UVRegion(*this);
         copy.scale(scale);
         return copy;
+    }
+
+    bool isFull() const {
+        const auto e = 1e-7;
+        return glm::abs(u1 - 0.0) < e && glm::abs(v1 - 0.0) < e &&
+               glm::abs(u2 - 1.0) < e && glm::abs(v2 - 1.0) < e;
     }
 };

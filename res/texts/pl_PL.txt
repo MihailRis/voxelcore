@@ -7,6 +7,7 @@ Back=Powrót
 Continue=Kontynuacja
 Add=Dodać
 Converting world...=Konwersja świata w toku...
+Are you sure you want to open the link: =Czy na pewno chcesz otworzyć link: 
 
 error.pack-not-found=Nie udało się znaleźć pakietu
 

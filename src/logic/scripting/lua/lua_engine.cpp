@@ -4,11 +4,15 @@
 #include <iostream>
 
 #include "io/io.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "debug/Logger.hpp"
 #include "util/stringutil.hpp"
 #include "libs/api_lua.hpp"
-#include "lua_custom_types.hpp"
+#include "usertypes/lua_type_heightmap.hpp"
+#include "usertypes/lua_type_voxelfragment.hpp"
+#include "usertypes/lua_type_canvas.hpp"
+#include "usertypes/lua_type_random.hpp"
+#include "usertypes/lua_type_pcmstream.hpp"
 #include "engine/Engine.hpp"
 
 static debug::Logger logger("lua-state");
@@ -51,6 +55,8 @@ static void create_libs(State* L, StateType stateType) {
     openlib(L, "mat4", mat4lib);
     openlib(L, "pack", packlib);
     openlib(L, "quat", quatlib);
+    openlib(L, "random", randomlib);
+    openlib(L, "compression", compressionlib);
     openlib(L, "toml", tomllib);
     openlib(L, "utf8", utf8lib);
     openlib(L, "vec2", vec2lib);
@@ -72,6 +78,7 @@ static void create_libs(State* L, StateType stateType) {
         openlib(L, "input", inputlib);
         openlib(L, "inventory", inventorylib);
         openlib(L, "network", networklib);
+        openlib(L, "pathfinding", pathfindinglib);
         openlib(L, "player", playerlib);
         openlib(L, "time", timelib);
         openlib(L, "world", worldlib);
@@ -101,6 +108,9 @@ void lua::init_state(State* L, StateType stateType) {
     }
     pushnil(L);
     setglobal(L, "io");
+
+    createtable(L, 0, 0);
+    setglobal(L, "__vc__pack_envs");
 
     const char* removed_os[] {
         "execute", "exit", "remove", "rename", "setlocale", "tmpname", nullptr};
@@ -167,5 +177,20 @@ State* lua::create_state(const EnginePaths& paths, StateType stateType) {
     auto file = "res:scripts/stdmin.lua";
     auto src = io::read_string(file);
     lua::pop(L, lua::execute(L, 0, src, "core:scripts/stdmin.lua"));
+
+    newusertype<LuaRandom>(L);
+    if (getglobal(L, "random")) {
+        if (getglobal(L, "__vc_Random")) {
+            setfield(L, "Random");
+        }
+        pop(L);
+    }
+    newusertype<LuaPCMStream>(L);
+    if (getglobal(L, "audio")) {
+        if (getglobal(L, "__vc_PCMStream")) {
+            setfield(L, "PCMStream");
+        }
+        pop(L);
+    }
     return L;
 }

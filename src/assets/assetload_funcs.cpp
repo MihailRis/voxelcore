@@ -15,7 +15,7 @@
 #include "coders/vec3.hpp"
 #include "constants.hpp"
 #include "debug/Logger.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "io/io.hpp"
 #include "frontend/UiDocument.hpp"
 #include "graphics/core/Atlas.hpp"
@@ -71,8 +71,8 @@ static auto process_program(const ResPaths& paths, const std::string& filename) 
 
     auto& preprocessor = *Shader::preprocessor;
 
-    auto vertex = preprocessor.process(vertexFile, vertexSource);
-    auto fragment = preprocessor.process(fragmentFile, fragmentSource);
+    auto vertex = preprocessor.process(vertexFile, vertexSource, false, {});
+    auto fragment = preprocessor.process(fragmentFile, fragmentSource, false, {});
     return std::make_pair(vertex, fragment);
 }
 
@@ -121,7 +121,7 @@ assetload::postfunc assetload::posteffect(
 
     auto& preprocessor = *Shader::preprocessor;
     preprocessor.addHeader(
-        "__effect__", preprocessor.process(effectFile, effectSource, true)
+        "__effect__", preprocessor.process(effectFile, effectSource, true, {})
     );
 
     auto [vertex, fragment] = process_program(paths, SHADERS_FOLDER + "/effect");
@@ -184,7 +184,7 @@ assetload::postfunc assetload::atlas(
         if (!append_atlas(builder, file)) continue;
     }
     std::set<std::string> names = builder.getNames();
-    Atlas* atlas = builder.build(2, false).release();
+    Atlas* atlas = builder.build(ATLAS_EXTRUSION, false).release();
     return [=](auto assets) {
         atlas->prepare();
         assets->store(std::unique_ptr<Atlas>(atlas), name);
@@ -381,7 +381,8 @@ assetload::postfunc assetload::model(
 
     auto text = io::read_string(path);
     try {
-        auto model = vcm::parse(path.string(), text).release();
+        auto model = vcm::parse(path.string(), text, path.extension() == ".xml")
+                         .release();
         return [=](Assets* assets) {
             request_textures(loader, *model);
             assets->store(std::unique_ptr<model::Model>(model), name);
@@ -500,7 +501,7 @@ static bool load_animation(
             }
             if (!append_atlas(builder, file)) continue;
         }
-        auto srcAtlas = builder.build(2, true);
+        auto srcAtlas = builder.build(ATLAS_EXTRUSION, true);
         if (frameList.empty()) {
             for (const auto& frameName : builder.getNames()) {
                 frameList.emplace_back(frameName, 0);

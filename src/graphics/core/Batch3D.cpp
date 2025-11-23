@@ -126,7 +126,15 @@ void Batch3D::sprite(
     float scale = 1.0f / static_cast<float>(atlasRes);
     float u = (index % atlasRes) * scale;
     float v = 1.0f - ((index / atlasRes) * scale) - scale;
-    sprite(pos, up, right, w, h, UVRegion(u, v, u+scale, v+scale), tint);
+    sprite(
+        pos + right * w + up * h, // revert centering
+        up,
+        right,
+        w,
+        h,
+        UVRegion(u, v, u + scale, v + scale),
+        tint
+    );
 }
 
 void Batch3D::sprite(

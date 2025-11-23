@@ -19,7 +19,7 @@ SelectBox::SelectBox(
     : Button(gui, selected.text, padding, nullptr, glm::vec2(contentWidth, -1)),
       options(std::move(options)) {
 
-    listenAction([this](GUI& gui) {
+    listenClick([this](GUI& gui) {
         auto panel = std::make_shared<Panel>(gui, getSize());
         panel->setPos(calcPos() + glm::vec2(0, size.y));
         for (const auto& option : this->options) {
@@ -41,7 +41,7 @@ SelectBox::SelectBox(
     });
 }
 
-void SelectBox::listenChange(onstringchange&& callback) {
+void SelectBox::listenChange(OnStringChange&& callback) {
     changeCallbacks.listen(std::move(callback));
 }
 

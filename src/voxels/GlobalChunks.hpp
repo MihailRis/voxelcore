@@ -40,7 +40,7 @@ public:
     void setOnUnload(consumer<Chunk&> onUnload);
 
     std::shared_ptr<Chunk> fetch(int x, int z);
-    std::shared_ptr<Chunk> create(int x, int z);
+    std::shared_ptr<Chunk> create(int x, int z, bool lighting);
 
     void pinChunk(std::shared_ptr<Chunk> chunk);
     void unpinChunk(int x, int z);

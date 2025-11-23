@@ -14,6 +14,8 @@ FFI.cdef[[
 
 local malloc = FFI.C.malloc
 local free = FFI.C.free
+local FFIBytearray
+local bytearray_type
 
 local function grow_buffer(self, elems)
     local new_capacity = math.ceil(self.capacity / 0.75 + elems)
@@ -71,7 +73,7 @@ local function insert(self, index, b)
     if self.size + elems > self.capacity then
         grow_buffer(self, elems)
     end
-    for i=self.size, index - 1, -1 do
+    for i = self.size - 1, index - 1, -1 do
         self.bytes[i + elems] = self.bytes[i]
     end
     if _type(b) == "number" then
@@ -119,6 +121,23 @@ local function get_capacity(self)
     return self.capacity
 end
 
+local function slice(self, offset, length)
+    offset = offset or 1
+    length = length or (self.size - offset + 1)
+    if offset < 1 or offset > self.size then
+        return FFIBytearray(0)
+    end
+    if offset + length - 1 > self.size then
+        length = self.size - offset + 1
+    end
+    local buffer = malloc(length)
+    if not buffer then
+        error("malloc(" .. length .. ") returned NULL")
+    end
+    FFI.copy(buffer, self.bytes + (offset - 1), length)
+    return bytearray_type(buffer, length, length)
+end
+
 local bytearray_methods = {
     append=append,
     insert=insert,
@@ -127,6 +146,7 @@ local bytearray_methods = {
     clear=clear,
     reserve=reserve,
     get_capacity=get_capacity,
+    slice=slice,
 }
 
 local bytearray_mt = {
@@ -168,9 +188,9 @@ local bytearray_mt = {
 }
 bytearray_mt.__pairs = bytearray_mt.__ipairs
 
-local bytearray_type = FFI.metatype("bytearray_t", bytearray_mt)
+bytearray_type = FFI.metatype("bytearray_t", bytearray_mt)
 
-local FFIBytearray = {
+FFIBytearray = {
     __call = function (self, n)
         local t = type(n)
         if t == "string" then
@@ -210,7 +230,59 @@ local function FFIBytearray_as_string(bytes)
     end
 end
 
+local function create_FFIview_class(name, typename, typesize)
+    local FFIU16view_mt = {
+        __index = function(self, key)
+            if key <= 0 or key > self.size then
+                return
+            end
+            return self.ptr[key - 1]
+        end,
+        __newindex = function(self, key, value)
+            if key == self.size + 1 then
+                return append(self, value)
+            elseif key <= 0 or key > self.size then
+                return
+            end
+            self.ptr[key - 1] = value
+        end,
+        __len = function(self)
+            return self.size
+        end,
+        __tostring = function(self)
+            return string.format(name .. "[%s]{...}", tonumber(self.size))
+        end,
+        __ipairs = function(self)
+            local i = 0
+            return function()
+                i = i + 1
+                if i <= self.size then
+                    return i, self.ptr[i - 1]
+                end
+            end
+        end
+    }
+    return function (bytes)
+        local ptr = FFI.cast(typename .. "*", bytes.bytes)
+        local x = setmetatable({
+            bytes=bytes,
+            ptr=ptr,
+            size=math.floor(bytes.size / typesize),
+        }, FFIU16view_mt)
+        return x
+    end
+end
+
+local FFII16view = create_FFIview_class("FFII16view", "int16_t", 2)
+local FFIU16view = create_FFIview_class("FFIU16view", "uint16_t", 2)
+local FFII32view = create_FFIview_class("FFII32view", "int32_t", 4)
+local FFIU32view = create_FFIview_class("FFIU32view", "uint32_t", 4)
+
 return {
     FFIBytearray = setmetatable(FFIBytearray, FFIBytearray),
-    FFIBytearray_as_string = FFIBytearray_as_string
+    FFIBytearray_as_string = FFIBytearray_as_string,
+    FFIU16view = FFIU16view,
+    FFII16view = FFII16view,
+    FFIU32view = FFIU32view,
+    FFII32view = FFII32view,
 }

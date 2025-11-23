@@ -13,7 +13,16 @@ input.mousecode(mousename: str) --> int
 Возвращает код кнопки мыши по имени, либо -1
 
 ```lua
-input.add_callback(bindname: str, callback: function)
+input.add_callback(
+    -- Имя привязки
+    bindname: str,
+    -- Обработчик
+    callback: function
+    -- UI элемент-владелец обработчика (отвечает за срок жизни)
+    [опционально] owner: Element,
+    -- Игнорировать захват ввода UI элементами
+    [опционально] istoplevel: bool    
+)
 ```
 
 Назначает функцию, которая будет вызываться при активации привязки. Пример:
@@ -47,6 +56,12 @@ input.get_mouse_pos() --> {int, int}
 ```
 
 Возвращает позицию курсора на экране.
+
+```lua
+input.get_mouse_delta() --> {int, int}
+```
+
+Возращает дельту позиции курсора.
 
 ```lua
 input.get_bindings() --> массив строк

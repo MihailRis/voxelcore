@@ -10,6 +10,9 @@ item.index(name: str) -> int
 -- Returns the item display name.
 block.caption(blockid: int) -> str
 
+-- Returns the item display description.
+item.description(itemid: int) -> str
+
 -- Returns max stack size for the item
 item.stack_size(itemid: int) -> int
 
@@ -30,4 +33,7 @@ item.emission(itemid: int) -> str
 
 -- Returns the value of the `uses` property
 item.uses(itemid: int) -> int
+
+-- Checks if an item has specified tag
+item.has_tag(itemid: int, tag: str) -> bool
 ```

@@ -4,28 +4,29 @@
 #include <algorithm>
 #include <memory>
 
-#include "engine/Engine.hpp"
 #include "coders/commons.hpp"
-#include "debug/Logger.hpp"
 #include "coders/json.hpp"
-#include "content/ContentReport.hpp"
 #include "content/ContentControl.hpp"
+#include "content/ContentReport.hpp"
 #include "content/PacksManager.hpp"
-#include "world/files/WorldConverter.hpp"
-#include "world/files/WorldFiles.hpp"
+#include "debug/Logger.hpp"
+#include "engine/Engine.hpp"
+#include "engine/EnginePaths.hpp"
 #include "frontend/locale.hpp"
 #include "frontend/menu.hpp"
 #include "frontend/screens/LevelScreen.hpp"
 #include "frontend/screens/MenuScreen.hpp"
-#include "graphics/ui/GUI.hpp"
 #include "graphics/ui/elements/Menu.hpp"
 #include "graphics/ui/gui_util.hpp"
-#include "objects/Players.hpp"
+#include "graphics/ui/GUI.hpp"
 #include "interfaces/Task.hpp"
+#include "LevelController.hpp"
+#include "objects/Players.hpp"
 #include "util/stringutil.hpp"
+#include "world/files/WorldConverter.hpp"
+#include "world/files/WorldFiles.hpp"
 #include "world/Level.hpp"
 #include "world/World.hpp"
-#include "LevelController.hpp"
 
 static debug::Logger logger("engine-control");
 
@@ -365,7 +366,9 @@ void EngineController::reconfigPacks(
                 );
             }
         } else {
-            auto world = controller->getLevel()->getWorld();
+            auto level = controller->getLevel();
+            auto world = level->getWorld();
+            controller->processBeforeQuit();
             controller->saveWorld();
 
             auto names = PacksManager::getNames(world->getPacks());

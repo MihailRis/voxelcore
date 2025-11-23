@@ -64,41 +64,47 @@ UINode* UINode::getParent() const {
     return parent;
 }
 
-UINode* UINode::listenAction(const onaction& action) {
-    actions.listen(action);
-    return this;
+void UINode::listenClick(OnAction action) {
+    actions.listen(UIAction::CLICK, std::move(action));
 }
 
-UINode* UINode::listenDoubleClick(const onaction& action) {
-    doubleClickCallbacks.listen(action);
-    return this;
+void UINode::listenRightClick(OnAction action) {
+    actions.listen(UIAction::RIGHT_CLICK, std::move(action));
 }
 
-UINode* UINode::listenFocus(const onaction& action) {
-    focusCallbacks.listen(action);
-    return this;
+void UINode::listenDoubleClick(OnAction action) {
+    actions.listen(UIAction::DOUBLE_CLICK, std::move(action));
 }
 
-UINode* UINode::listenDefocus(const onaction& action) {
-    defocusCallbacks.listen(action);
-    return this;
+void UINode::listenFocus(OnAction action) {
+    actions.listen(UIAction::FOCUS, std::move(action));
+}
+
+void UINode::listenDefocus(OnAction action) {
+    actions.listen(UIAction::DEFOCUS, std::move(action));
 }
 
 void UINode::click(int, int) {
     pressed = true;
 }
 
+void UINode::clicked(Mousecode button) {
+    if (button == Mousecode::BUTTON_2) {
+        actions.notify(UIAction::RIGHT_CLICK, gui);
+    }
+}
+
 void UINode::doubleClick(int x, int y) {
     pressed = true;
     if (isInside(glm::vec2(x, y))) {
-        doubleClickCallbacks.notify(gui);
+        actions.notify(UIAction::DOUBLE_CLICK, gui);
     }
 }
 
 void UINode::mouseRelease(int x, int y) {
     pressed = false;
     if (isInside(glm::vec2(x, y))) {
-        actions.notify(gui);
+        actions.notify(UIAction::CLICK, gui);
     }
 }
 
@@ -108,12 +114,12 @@ bool UINode::isPressed() const {
 
 void UINode::onFocus() {
     focused = true;
-    focusCallbacks.notify(gui);
+    actions.notify(UIAction::FOCUS, gui);
 }
 
 void UINode::defocus() {
     focused = false;
-    defocusCallbacks.notify(gui);
+    actions.notify(UIAction::DEFOCUS, gui);
 }
 
 bool UINode::isFocused() const {
@@ -197,7 +203,7 @@ glm::vec4 UINode::calcColor() const {
     return color;
 }
 
-void UINode::setPos(glm::vec2 pos) {
+void UINode::setPos(const glm::vec2& pos) {
     this->pos = pos;
 }
 
@@ -209,7 +215,7 @@ glm::vec2 UINode::getSize() const {
     return size;
 }
 
-void UINode::setSize(glm::vec2 size) {
+void UINode::setSize(const glm::vec2& size) {
     this->size = glm::vec2(
         glm::max(minSize.x, glm::min(maxSize.x, size.x)),
         glm::max(minSize.y, glm::min(maxSize.y, size.y))
@@ -220,7 +226,7 @@ glm::vec2 UINode::getMinSize() const {
     return minSize;
 }
 
-void UINode::setMinSize(glm::vec2 minSize) {
+void UINode::setMinSize(const glm::vec2& minSize) {
     this->minSize = minSize;
     setSize(getSize());
 }
@@ -229,7 +235,7 @@ glm::vec2 UINode::getMaxSize() const {
     return maxSize;
 }
 
-void UINode::setMaxSize(glm::vec2 maxSize) {
+void UINode::setMaxSize(const glm::vec2& maxSize) {
     this->maxSize = maxSize;
     setSize(getSize());
 }
@@ -334,7 +340,7 @@ void UINode::reposition() {
 }
 
 void UINode::setGravity(Gravity gravity) {
-    if (gravity == Gravity::none) {
+    if (gravity == Gravity::NONE) {
         setPositionFunc(nullptr);
         return;
     }
@@ -349,27 +355,27 @@ void UINode::setGravity(Gravity gravity) {
 
         float x = 0.0f, y = 0.0f;
         switch (gravity) {
-            case Gravity::top_left:
-            case Gravity::center_left:
-            case Gravity::bottom_left: x = margin.x; break;
-            case Gravity::top_center:
-            case Gravity::center_center:
-            case Gravity::bottom_center: x = (parentSize.x-size.x)/2.0f; break;
-            case Gravity::top_right:
-            case Gravity::center_right:
-            case Gravity::bottom_right: x = parentSize.x-size.x-margin.z; break;
+            case Gravity::TOP_LEFT:
+            case Gravity::CENTER_LEFT:
+            case Gravity::BOTTOM_LEFT: x = margin.x; break;
+            case Gravity::TOP_CENTER:
+            case Gravity::CENTER_CENTER:
+            case Gravity::BOTTOM_CENTER: x = (parentSize.x-size.x)/2.0f; break;
+            case Gravity::TOP_RIGHT:
+            case Gravity::CENTER_RIGHT:
+            case Gravity::BOTTOM_RIGHT: x = parentSize.x-size.x-margin.z; break;
             default: break;
         }
         switch (gravity) {
-            case Gravity::top_left:
-            case Gravity::top_center:
-            case Gravity::top_right: y = margin.y; break;
-            case Gravity::center_left:
-            case Gravity::center_center:
-            case Gravity::center_right: y = (parentSize.y-size.y)/2.0f; break;
-            case Gravity::bottom_left:
-            case Gravity::bottom_center:
-            case Gravity::bottom_right: y = parentSize.y-size.y-margin.w; break;
+            case Gravity::TOP_LEFT:
+            case Gravity::TOP_CENTER:
+            case Gravity::TOP_RIGHT: y = margin.y; break;
+            case Gravity::CENTER_LEFT:
+            case Gravity::CENTER_CENTER:
+            case Gravity::CENTER_RIGHT: y = (parentSize.y-size.y)/2.0f; break;
+            case Gravity::BOTTOM_LEFT:
+            case Gravity::BOTTOM_CENTER:
+            case Gravity::BOTTOM_RIGHT: y = parentSize.y-size.y-margin.w; break;
             default: break;
         }
         return glm::vec2(x, y);

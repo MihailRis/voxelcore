@@ -14,11 +14,13 @@ UiDocument::UiDocument(
     const std::shared_ptr<gui::UINode>& root,
     scriptenv env
 ) : id(std::move(id)), script(script), root(root), env(std::move(env)) {
-    gui::UINode::getIndices(root, map);
+    rebuildIndices();
 }
 
 void UiDocument::rebuildIndices() {
+    map.clear();
     gui::UINode::getIndices(root, map);
+    map["root"] = root;
 }
 
 const UINodesMap& UiDocument::getMap() const {

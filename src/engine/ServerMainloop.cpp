@@ -1,6 +1,7 @@
 #include "ServerMainloop.hpp"
 
 #include "Engine.hpp"
+#include "EnginePaths.hpp"
 #include "logic/scripting/scripting.hpp"
 #include "logic/LevelController.hpp"
 #include "interfaces/Process.hpp"
@@ -14,8 +15,6 @@
 using namespace std::chrono;
 
 static debug::Logger logger("mainloop");
-
-inline constexpr int TPS = 20;
 
 ServerMainloop::ServerMainloop(Engine& engine) : engine(engine) {
 }
@@ -34,12 +33,11 @@ void ServerMainloop::run() {
         setLevel(std::move(level));
     });
 
-    logger.info() << "starting test " << coreParams.scriptFile.string();
-    auto process = scripting::start_coroutine(
+    auto process = scripting::start_app_script(
         "script:" + coreParams.scriptFile.filename().u8string()
     );
 
-    double targetDelta = 1.0 / static_cast<double>(TPS);
+    double targetDelta = 1.0 / static_cast<double>(coreParams.tps);
     double delta = targetDelta;
     auto begin = system_clock::now();
     auto startupTime = begin;
@@ -63,6 +61,7 @@ void ServerMainloop::run() {
             controller->getLevel()->getWorld()->updateTimers(delta);
             controller->update(glm::min(delta, 0.2), false);
         }
+        engine.applicationTick();
         engine.postUpdate();
 
         if (!coreParams.testMode) {

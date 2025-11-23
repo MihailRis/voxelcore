@@ -282,4 +282,5 @@ const luaL_Reg mat4lib[] = {
     {"look_at", lua::wrap<l_look_at>},
     {"from_quat", lua::wrap<l_from_quat>},
     {"tostring", lua::wrap<l_tostring>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};

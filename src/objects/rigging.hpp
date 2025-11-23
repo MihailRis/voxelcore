@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "typedefs.hpp"
+#include "data/dv_fwd.hpp"
 #include "util/Interpolation.hpp"
 
 class Assets;
@@ -50,7 +51,7 @@ namespace rigging {
             std::string name,
             std::string model,
             std::vector<std::unique_ptr<Bone>> bones,
-            glm::vec3 offset
+            const glm::vec3& offset
         );
 
         void setModel(const std::string& name);
@@ -89,6 +90,9 @@ namespace rigging {
         util::VecInterpolation<3, float> interpolation {false};
 
         Skeleton(const SkeletonConfig* config);
+
+        dv::value serialize(bool saveTextures, bool savePose) const;
+        void deserialize(const dv::value& root);
     };
 
     class SkeletonConfig {
@@ -116,7 +120,7 @@ namespace rigging {
 
         void update(
             Skeleton& skeleton,
-            const glm::mat4& matrix,
+            const glm::mat3& rotation,
             const glm::vec3& position
         ) const;
 
@@ -124,7 +128,7 @@ namespace rigging {
             const Assets& assets,
             ModelBatch& batch,
             Skeleton& skeleton,
-            const glm::mat4& matrix,
+            const glm::mat3& rotation,
             const glm::vec3& position
         ) const;
 

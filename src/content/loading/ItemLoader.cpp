@@ -1,5 +1,6 @@
 #define VC_ENABLE_REFLECTION
 #include "ContentUnitLoader.hpp"
+#include "ContentLoadingCommons.hpp"
 
 #include "../ContentBuilder.hpp"
 #include "coders/json.hpp"
@@ -12,11 +13,13 @@
 
 static debug::Logger logger("item-content-loader");
 
+
 template<> void ContentUnitLoader<ItemDef>::loadUnit(
     ItemDef& def, const std::string& name, const io::path& file
 ) {
     auto root = io::read_json(file);
-    def.properties = root;
+    process_properties(def, name, root);
+    process_tags(def, root);
 
     if (root.has("parent")) {
         const auto& parentName = root["parent"].asString();
@@ -29,6 +32,7 @@ template<> void ContentUnitLoader<ItemDef>::loadUnit(
         parentDef->cloneTo(def);
     }
     root.at("caption").get(def.caption);
+    root.at("description").get(def.description);
 
     std::string iconTypeStr = "";
     root.at("icon-type").get(iconTypeStr);

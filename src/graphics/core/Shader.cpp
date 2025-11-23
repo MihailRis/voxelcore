@@ -2,7 +2,6 @@
 
 #include <exception>
 #include <fstream>
-#include <iostream>
 #include <sstream>
 #include <filesystem>
 
@@ -138,15 +137,21 @@ glshader compile_shader(GLenum type, const GLchar* source, const std::string& fi
 }
 
 static GLuint compile_program(
-    const Shader::Source& vertexSource, const Shader::Source& fragmentSource
+    const Shader::Source& vertexSource,
+    const Shader::Source& fragmentSource,
+    const std::vector<std::string>& defines
 ) {
     auto& preprocessor = *Shader::preprocessor;
 
     auto vertexCode = std::move(
-        preprocessor.process(vertexSource.file, vertexSource.code).code
+        preprocessor
+            .process(vertexSource.file, vertexSource.code, false, defines)
+            .code
     );
     auto fragmentCode = std::move(
-        preprocessor.process(fragmentSource.file, fragmentSource.code).code
+        preprocessor
+            .process(fragmentSource.file, fragmentSource.code, false, defines)
+            .code
     );
 
     const GLchar* vCode = vertexCode.c_str();
@@ -176,8 +181,8 @@ static GLuint compile_program(
     return program;
 }
 
-void Shader::recompile() {
-    GLuint newProgram = compile_program(vertexSource, fragmentSource);
+void Shader::recompile(const std::vector<std::string>& defines) {
+    GLuint newProgram = compile_program(vertexSource, fragmentSource, defines);
     glDeleteProgram(id);
     id = newProgram;
     uniformLocations.clear();
@@ -188,7 +193,7 @@ std::unique_ptr<Shader> Shader::create(
     Source&& vertexSource, Source&& fragmentSource
 ) {
     return std::make_unique<Shader>(
-        compile_program(vertexSource, fragmentSource),
+        compile_program(vertexSource, fragmentSource, {}),
         std::move(vertexSource),
         std::move(fragmentSource)
     );

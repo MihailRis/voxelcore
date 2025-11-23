@@ -46,6 +46,7 @@ class Player : public Serializable {
     int64_t id;
     std::string name;
     float speed;
+    
     int chosenSlot;
     glm::vec3 position;
     glm::vec3 spawnpoint {};
@@ -56,6 +57,8 @@ class Player : public Serializable {
     bool infiniteItems = true;
     bool instantDestruction = true;
     bool loadingChunks = true;
+    float interactionDistance = 10.0f;
+
     entityid_t eid = ENTITY_AUTO;
     entityid_t selectedEid = 0;
 
@@ -82,7 +85,6 @@ public:
 
     void teleport(glm::vec3 position);
     void updateEntity();
-    void updateInput(PlayerInput& input, float delta);
     void updateSelectedEntity();
     void postUpdate();
 
@@ -91,6 +93,7 @@ public:
     void setChosenSlot(int index);
 
     int getChosenSlot() const;
+
     float getSpeed() const;
 
     bool isSuspended() const;
@@ -111,6 +114,9 @@ public:
     bool isLoadingChunks() const;
     void setLoadingChunks(bool flag);
 
+    float getMaxInteractionDistance() const;
+    void setMaxInteractionDistance(float distance);
+
     entityid_t getEntity() const;
     void setEntity(entityid_t eid);
 
@@ -124,6 +130,8 @@ public:
     const glm::vec3& getPosition() const {
         return position;
     }
+
+    bool isCurrentCameraBuiltin() const;
 
     Hitbox* getHitbox();
 
@@ -140,5 +148,9 @@ public:
 
     inline u64id_t getId() const {
         return id;
+    }
+
+    Level& getLevel() const {
+        return level;
     }
 };

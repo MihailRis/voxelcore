@@ -7,5 +7,6 @@
     "obstacle": false,
     "selectable": false,
     "replaceable": true,
-    "translucent": true
+    "translucent": true,
+    "tags": ["core:liquid"]
 }

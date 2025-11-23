@@ -136,6 +136,7 @@ The key code for comparison can be obtained via `input.keycode("key_name")`
 - `text-wrap` - allows automatic text wrapping (works only with multiline: "true")
 - `editable` - determines whether the text can be edited.
 - `line-numbers` - enables line numbers display.
+- `keep-line-selection` - keep showing selected line after defocus.
 - `error-color` - color when entering incorrect data (the text does not pass the validator check). Type: RGBA color.
 - `text-color` - text color. Type: RGBA color.
 - `validator` - lua function that checks text for correctness. Takes a string as input, returns true if the text is correct.

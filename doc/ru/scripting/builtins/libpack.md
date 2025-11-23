@@ -92,7 +92,7 @@ pack.get_info(packids: table) -> {id={...}, id2={...}, ...}
 ```
 
 ```lua
-pack.assemble(packis: table) -> table
+pack.assemble(packids: table) -> table
 ```
 
 Проверяет корректность конфигурации и добавляет зависимости, возвращая полную.

@@ -175,11 +175,11 @@ void WorldRegions::put(Chunk* chunk, std::vector<ubyte> entitiesData) {
         CHUNK_DATA_LEN);
 
     // Writing lights cache
-    if (doWriteLights && chunk->flags.lighted) {
+    if (doWriteLights && chunk->flags.lighted && chunk->lightmap) {
         put(chunk->x,
             chunk->z,
             REGION_LAYER_LIGHTS,
-            chunk->lightmap.encode(),
+            chunk->lightmap->encode(),
             LIGHTMAP_DATA_LEN);
     }
     // Writing block inventories
@@ -238,8 +238,10 @@ std::unique_ptr<light_t[]> WorldRegions::getLights(int x, int z) {
     auto data = compression::decompress(
         bytes, size, srcSize, layer.compression
     );
-    assert(srcSize == LIGHTMAP_DATA_LEN);
-    return Lightmap::decode(data.get());
+    if (srcSize == LIGHTMAP_DATA_LEN) {
+        return Lightmap::decode(data.get());
+    }
+    return nullptr;
 }
 
 ChunkInventoriesMap WorldRegions::fetchInventories(int x, int z) {

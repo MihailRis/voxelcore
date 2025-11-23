@@ -1,5 +1,6 @@
 #define VC_ENABLE_REFLECTION
 #include "ContentUnitLoader.hpp"
+#include "ContentLoadingCommons.hpp"
 
 #include "../ContentBuilder.hpp"
 #include "coders/json.hpp"
@@ -87,20 +88,8 @@ template<> void ContentUnitLoader<Block>::loadUnit(
     Block& def, const std::string& name, const io::path& file
 ) {
     auto root = io::read_json(file);
-    if (def.properties == nullptr) {
-        def.properties = dv::object();
-        def.properties["name"] = name;
-    }
-    for (auto& [key, value] : root.asObject()) {
-        auto pos = key.rfind('@');
-        if (pos == std::string::npos) {
-            def.properties[key] = value;
-            continue;
-        }
-        auto field = key.substr(0, pos);
-        auto suffix = key.substr(pos + 1);
-        process_method(def.properties, suffix, field, value);
-    }
+    process_properties(def, name, root);
+    process_tags(def, root);
 
     if (root.has("parent")) {
         const auto& parentName = root["parent"].asString();

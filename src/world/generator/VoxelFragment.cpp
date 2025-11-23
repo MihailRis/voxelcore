@@ -171,7 +171,7 @@ void VoxelFragment::prepare(const Content& content) {
 }
 
 void VoxelFragment::place(
-    GlobalChunks& chunks, const glm::ivec3& offset, ubyte rotation
+    GlobalChunks& chunks, const glm::ivec3& offset
 ) {
     auto& structVoxels = getRuntimeVoxels();
     for (int y = 0; y < size.y; y++) {

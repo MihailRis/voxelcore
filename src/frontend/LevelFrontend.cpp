@@ -49,8 +49,7 @@ LevelFrontend::LevelFrontend(
                 auto sound = rassets.get<audio::Sound>(material->stepsSound);
                 glm::vec3 pos {};
                 auto soundsCamera = currentPlayer->currentCamera.get();
-                if (soundsCamera == currentPlayer->spCamera.get() ||
-                    soundsCamera == currentPlayer->tpCamera.get()) {
+                if (currentPlayer->isCurrentCameraBuiltin()) {
                     soundsCamera = currentPlayer->fpCamera.get();
                 }
                 bool relative = player == currentPlayer && 

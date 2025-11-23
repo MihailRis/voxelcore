@@ -31,7 +31,7 @@ Button::Button(
     GUI& gui,
     const std::wstring& text,
     glm::vec4 padding,
-    const onaction& action,
+    const OnAction& action,
     glm::vec2 size
 )
     : Panel(gui, size, padding, 0.0f) {
@@ -42,12 +42,12 @@ Button::Button(
     }
 
     if (action) {
-        listenAction(action);
+        listenClick(action);
     }
     setScrollable(false);
 
     label = std::make_shared<Label>(gui, text);
-    label->setAlign(Align::center);
+    label->setAlign(Align::CENTER);
     label->setSize(getContentSize());
     label->setInteractive(false);
     add(label);
@@ -95,5 +95,5 @@ Align Button::getTextAlign() const {
     if (label) {
         return label->getAlign();
     }
-    return Align::left;
+    return Align::LEFT;
 }

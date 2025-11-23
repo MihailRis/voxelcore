@@ -10,6 +10,7 @@
 - [Сущности и компоненты](scripting/ecs.md)
 - [Библиотеки](#)
     - [app](scripting/builtins/libapp.md)
+    - [assets](scripting/builtins/libassets.md)
     - [base64](scripting/builtins/libbase64.md)
     - [bjson, json, toml, yaml](scripting/filesystem.md)
     - [block](scripting/builtins/libblock.md)
@@ -20,6 +21,7 @@
     - [gfx.blockwraps](scripting/builtins/libgfx-blockwraps.md)
     - [gfx.particles](particles.md#библиотека-gfxparticles)
     - [gfx.posteffects](scripting/builtins/libgfx-posteffects.md)
+    - [gfx.skeletons](scripting/builtins/libgfx-skeletons.md)
     - [gfx.text3d](3d-text.md#библиотека-gfxtext3d)
     - [gfx.weather](scripting/builtins/libgfx-weather.md)
     - [gui](scripting/builtins/libgui.md)
@@ -30,8 +32,10 @@
     - [mat4](scripting/builtins/libmat4.md)
     - [network](scripting/builtins/libnetwork.md)
     - [pack](scripting/builtins/libpack.md)
+    - [pathfinding](scripting/builtins/libpathfinding.md)
     - [player](scripting/builtins/libplayer.md)
     - [quat](scripting/builtins/libquat.md)
+    - [random](scripting/builtins/librandom.md)
     - [rules](scripting/builtins/librules.md)
     - [time](scripting/builtins/libtime.md)
     - [utf8](scripting/builtins/libutf8.md)
@@ -41,6 +45,7 @@
 - [Модуль core:bit_converter](scripting/modules/core_bit_converter.md)
 - [Модуль core:data_buffer](scripting/modules/core_data_buffer.md)
 - [Модули core:vector2, core:vector3](scripting/modules/core_vector2_vector3.md)
+- [Встроенные компоненты сущностей](scripting/core_components.md)
 
 ## Аннотации типов данных
 

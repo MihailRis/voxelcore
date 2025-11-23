@@ -3,28 +3,17 @@ layout (location = 1) out vec4 f_position;
 layout (location = 2) out vec4 f_normal;
 layout (location = 3) out vec4 f_emission;
 
-in float a_distance;
-in float a_fog;
-in vec2 a_texCoord;
-in vec3 a_dir;
-in vec3 a_normal;
-in vec3 a_position;
-in vec3 a_realnormal;
-in vec3 a_skyLight;
-in vec4 a_modelpos;
+#include <world_fragment_header>
+
 in vec4 a_torchLight;
-in float a_emission;
 
 uniform sampler2D u_texture0;
-uniform samplerCube u_skybox;
 uniform vec3 u_sunDir;
 
 // flags
 uniform bool u_alphaClip;
 uniform bool u_debugLights;
 uniform bool u_debugNormals;
-
-#include <shadows>
 
 void main() {
     vec4 texColor = texture(u_texture0, a_texCoord);
@@ -39,9 +28,7 @@ void main() {
     }
     if (u_debugLights)
         texColor.rgb = u_debugNormals ? (a_normal * 0.5 + 0.5) : vec3(1.0);
-    else if (u_debugNormals) {
-        texColor.rgb *= a_normal * 0.5 + 0.5;
-    }
+
     f_color = texColor;
     f_color.rgb *= min(vec3(1.0), a_torchLight.rgb + a_skyLight);
 

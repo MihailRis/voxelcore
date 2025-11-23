@@ -6,7 +6,7 @@
 #include "../ContentPack.hpp"
 
 #include "io/io.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "logic/scripting/scripting.hpp"
 #include "util/stringutil.hpp"
 #include "world/generator/GeneratorDef.hpp"

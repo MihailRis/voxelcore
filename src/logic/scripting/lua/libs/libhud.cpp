@@ -46,7 +46,7 @@ static int l_open(lua::State* L) {
     }
     return lua::pushinteger(L, hud->openInventory(
         layout,
-        level->inventories->get(invid),
+        lua::isnoneornil(L, 3) ? nullptr : level->inventories->get(invid),
         playerInventory
     )->getId());
 }
@@ -189,6 +189,11 @@ static int l_reload_script(lua::State* L) {
     return 0;
 }
 
+static int l_is_open(lua::State* L) {
+    auto layoutid = lua::require_string(L, 1);
+    return lua::pushboolean(L, hud->isOpen(layoutid));
+}
+
 const luaL_Reg hudlib[] = {
     {"open_inventory", wrap_hud<l_open_inventory>},
     {"close_inventory", wrap_hud<l_close_inventory>},
@@ -208,5 +213,6 @@ const luaL_Reg hudlib[] = {
     {"_set_debug_cheats", wrap_hud<l_set_debug_cheats>},
     {"set_allow_pause", wrap_hud<l_set_allow_pause>},
     {"reload_script", wrap_hud<l_reload_script>},
-    {NULL, NULL}
+    {"is_open", wrap_hud<l_is_open>},
+    {nullptr, nullptr}
 };

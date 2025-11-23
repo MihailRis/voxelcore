@@ -4,6 +4,10 @@
 
 Функции для обработки событий, прописываемые в скрипте блока.
 
+> [!WARNING]
+> Mass events such as on_block_tick, on_block_present, and on_block_removed, 
+> if used carelessly or excessively, can lead to performance issues.
+
 ```lua
 function on_placed(x, y, z, playerid)
 ```
@@ -45,6 +49,28 @@ function on_blocks_tick(tps: int)
 ```
 
 Вызывается tps (20) раз в секунду. Используйте 1/tps вместо `time.delta()`.
+
+```lua
+function on_block_tick(x, y, z, tps: number)
+```
+
+Вызывается tps (20 / tick-interval) раз в секунду для конкретного блока.
+Используйте 1/tps вместо `time.delta()`.
+
+```lua
+function on_block_present(x, y, z)
+```
+
+Вызывается для конкретного блока при появлении (генерации/загрузке/размещении).
+Вызов происходит в течение времени, которое может зависеть от нагрузки очереди событий.
+При малой нагрузке происходит в течение первого такта блока (tick-interval).
+До вызова события on_block_tick не вызывается.
+
+```lua
+function on_block_removed(x, y, z)
+```
+
+Вызывается при выгрузке чанка, в котором находится блок.
 
 ```lua
 function on_player_tick(playerid: int, tps: int)
@@ -182,6 +208,12 @@ function on_hud_open(playerid: int)
 ```
 
 Вызывается после входа в мир, когда становится доступна библиотека hud. Здесь на экран добавляются постоянные элементы.
+
+```lua
+function on_hud_render()
+```
+
+Вызывается каждый кадр. Используется для клиентских задач, таких как анимация, управление камерой.
 
 ```lua
 function on_hud_close(playerid: int)

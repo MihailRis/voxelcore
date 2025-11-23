@@ -203,3 +203,79 @@ audio.count_speakers() -> integer
 -- get current number of playing streams
 audio.count_streams() -> integer
 ```
+
+### audio.PCMStream
+
+```lua
+-- Creating a PCM data source
+local stream = audio.PCMStream(
+    -- Sample rate
+    sample_rate: integer,
+    -- Number of channels (1 - mono, 2 - stereo)
+    channels: integer,
+    -- Number of bits per sample (8 or 16)
+    bits_per_sample: integer,
+)
+
+-- Feeding PCM data into the stream
+stream:feed(
+    -- PCM data to be fed into the stream
+    data: Bytearray
+)
+
+-- Publishing the PCM data source for use by the engine systems
+stream:share(
+    -- Alias of the audio stream, which can be referenced in audio.play_stream
+    alias: string
+)
+
+-- Creating a sound from the PCM data in the stream
+stream:create_sound(
+    -- Name of the created sound
+    name: string
+)
+```
+
+### Audio Recording
+
+```lua
+-- Requests access to audio recording
+-- On confirmation, the callback receives a token for use in audio.input.fetch
+audio.input.request_open(callback: function(string))
+
+-- Reads new PCM audio input data
+audio.input.fetch(
+    -- Token obtained through audio.input.request_open
+    access_token: string,
+    -- Maximum buffer size in bytes (optional)
+    [optional] max_read_size: integer
+)
+```
+
+### Example of Audio Generation:
+
+```lua
+-- For working with 16-bit samples, use a U16view over Bytearray
+-- Example:
+local max_amplitude = 32767
+local sample_rate = 44100
+local total_samples = sample_rate * 5 -- 5 seconds of mono
+local bytes = Bytearray(total_samples * 2) -- 5 seconds of 16-bit mono
+local samples = I16view(bytes)
+
+local frequency_hz = 400
+for i=1, total_samples do
+    local value = math.sin(i * math.pi * 2 / sample_rate * frequency_hz)
+    samples[i] = value * max_amplitude
+end
+
+local stream_name = "test-stream"
+local stream = audio.PCMStream(sample_rate, 1, 16)
+stream:feed(bytes)
+stream:share(stream_name)
+
+local volume = 1.0
+local pitch = 1.0
+local channel = "ui"
+audio.play_stream_2d(stream_name, volume, pitch, channel)
+```

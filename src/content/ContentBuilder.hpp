@@ -62,6 +62,27 @@ public:
     }
 };
 
+struct TagsIndices {
+    int nextIndex = 1;
+    std::unordered_map<std::string, int> map;
+
+    int add(const std::string& tag) {
+        const auto& found = map.find(tag);
+        if (found != map.end()) {
+            return found->second;
+        }
+        return map[tag] = nextIndex++;
+    }
+
+    int indexOf(const std::string& tag) {
+        const auto& found = map.find(tag);
+        if (found == map.end()) {
+            return -1;
+        }
+        return found->second;
+    }
+};
+
 class ContentBuilder {
     UptrsMap<std::string, BlockMaterial> blockMaterials;
     UptrsMap<std::string, rigging::SkeletonConfig> skeletons;
@@ -74,6 +95,7 @@ public:
     ContentUnitBuilder<GeneratorDef> generators {allNames, ContentType::GENERATOR};
     ResourceIndicesSet resourceIndices {};
     dv::value defaults = nullptr;
+    TagsIndices tags {};
 
     ~ContentBuilder();
 

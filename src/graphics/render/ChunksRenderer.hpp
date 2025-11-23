@@ -73,7 +73,9 @@ public:
         const std::shared_ptr<Chunk>& chunk, bool important
     );
 
-    void drawChunksShadowsPass(const Camera& camera, Shader& shader);
+    void drawShadowsPass(
+        const Camera& camera, Shader& shader, const Camera& playerCamera
+    );
 
     void drawChunks(const Camera& camera, Shader& shader);
 

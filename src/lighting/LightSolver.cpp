@@ -16,18 +16,23 @@ LightSolver::LightSolver(const ContentIndices& contentIds, Chunks& chunks, int c
 }
 
 void LightSolver::add(int x, int y, int z, int emission) {
-    if (emission <= 1)
+    if (emission <= 1) {
         return;
+    }
     Chunk* chunk = chunks.getChunkByVoxel(x, y, z);
-    if (chunk == nullptr)
+    if (chunk == nullptr) {
         return;
-    ubyte light = chunk->lightmap.get(x-chunk->x*CHUNK_W, y, z-chunk->z*CHUNK_D, channel);
+    }
+    assert(chunk->lightmap != nullptr);
+    auto& lightmap = *chunk->lightmap;
+
+    ubyte light = lightmap.get(x-chunk->x*CHUNK_W, y, z-chunk->z*CHUNK_D, channel);
     if (emission < light) return;
 
     addqueue.push(lightentry {x, y, z, ubyte(emission)});
 
     chunk->flags.modified = true;
-    chunk->lightmap.set(x-chunk->x*CHUNK_W, y, z-chunk->z*CHUNK_D, channel, emission);
+    lightmap.set(x-chunk->x*CHUNK_W, y, z-chunk->z*CHUNK_D, channel, emission);
 }
 
 void LightSolver::add(int x, int y, int z) {
@@ -36,15 +41,18 @@ void LightSolver::add(int x, int y, int z) {
 
 void LightSolver::remove(int x, int y, int z) {
     Chunk* chunk = chunks.getChunkByVoxel(x, y, z);
-    if (chunk == nullptr)
+    if (chunk == nullptr) {
         return;
+    }
+    assert(chunk->lightmap != nullptr);
+    auto& lightmap = *chunk->lightmap;
 
-    ubyte light = chunk->lightmap.get(x-chunk->x*CHUNK_W, y, z-chunk->z*CHUNK_D, channel);
-    if (light == 0){
+    ubyte light = lightmap.get(x-chunk->x*CHUNK_W, y, z-chunk->z*CHUNK_D, channel);
+    if (light == 0) {
         return;
     }
     remqueue.push(lightentry {x, y, z, light});
-    chunk->lightmap.set(x-chunk->x*CHUNK_W, y, z-chunk->z*CHUNK_D, channel, 0);
+    lightmap.set(x-chunk->x*CHUNK_W, y, z-chunk->z*CHUNK_D, channel, 0);
 }
 
 void LightSolver::solve(){
@@ -73,18 +81,21 @@ void LightSolver::solve(){
                 int lz = z - chunk->z * CHUNK_D;
                 chunk->flags.modified = true;
 
-                ubyte light = chunk->lightmap.get(lx,y,lz, channel);
+                assert(chunk->lightmap != nullptr);
+                auto& lightmap = *chunk->lightmap;
+
+                ubyte light = lightmap.get(lx,y,lz, channel);
                 if (light != 0 && light == entry.light-1){
                     voxel* vox = chunks.get(x, y, z);
                     if (vox && vox->id != 0) {
                         const Block* block = blockDefs[vox->id];
                         if (uint8_t emission = block->emission[channel]) {
                             addqueue.push(lightentry {x, y, z, emission});
-                            chunk->lightmap.set(lx, y, lz, channel, emission);
+                            lightmap.set(lx, y, lz, channel, emission);
                         }
-                        else chunk->lightmap.set(lx, y, lz, channel, 0);
+                        else lightmap.set(lx, y, lz, channel, 0);
                     }
-                    else chunk->lightmap.set(lx, y, lz, channel, 0);
+                    else lightmap.set(lx, y, lz, channel, 0);
                     remqueue.push(lightentry {x, y, z, light});
                 }
                 else if (light >= entry.light){
@@ -105,21 +116,24 @@ void LightSolver::solve(){
             int z = entry.z+coords[imul3+2];
 
             Chunk* chunk = chunks.getChunkByVoxel(x,y,z);
-            if (chunk) {
-                int lx = x - chunk->x * CHUNK_W;
-                int lz = z - chunk->z * CHUNK_D;
-                chunk->flags.modified = true;
+            if (chunk == nullptr) {
+                continue;
+            }
+            assert(chunk->lightmap != nullptr);
+            auto& lightmap = *chunk->lightmap;
+            int lx = x - chunk->x * CHUNK_W;
+            int lz = z - chunk->z * CHUNK_D;
+            chunk->flags.modified = true;
 
-                ubyte light = chunk->lightmap.get(lx, y, lz, channel);
-                voxel& v = chunk->voxels[vox_index(lx, y, lz)];
-                const Block* block = blockDefs[v.id];
-                if (block->lightPassing && light+2 <= entry.light){
-                    chunk->lightmap.set(
-                        x-chunk->x*CHUNK_W, y, z-chunk->z*CHUNK_D, 
-                        channel, 
-                        entry.light-1);
-                    addqueue.push(lightentry {x, y, z, ubyte(entry.light-1)});
-                }
+            ubyte light = lightmap.get(lx, y, lz, channel);
+            voxel& v = chunk->voxels[vox_index(lx, y, lz)];
+            const Block* block = blockDefs[v.id];
+            if (block->lightPassing && light+2 <= entry.light){
+                lightmap.set(
+                    x-chunk->x*CHUNK_W, y, z-chunk->z*CHUNK_D, 
+                    channel, 
+                    entry.light-1);
+                addqueue.push(lightentry {x, y, z, ubyte(entry.light-1)});
             }
         }
     }

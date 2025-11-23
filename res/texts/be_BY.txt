@@ -25,6 +25,7 @@ Grant %{0} pack modification permission?=Выдаць дазвол на мады
 Error at line %{0}=Памылка ў радку %{0}
 Run=Запусціць
 Filter=Фільтр
+Are you sure you want to open the link: =Ці вы ўпэўненыя, што хочаце адкрыць спасылку: 
 
 editor.info.tooltip=CTRL+S - Захаваць\nCTRL+R - Запусціць\nCTRL+Z - Скасаваць\nCTRL+Y - Паўтарыць
 devtools.traceback=Стэк выклікаў (ад апошняга)

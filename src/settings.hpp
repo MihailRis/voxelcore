@@ -16,11 +16,13 @@ struct AudioSettings {
     NumberSetting volumeUI {1.0f, 0.0f, 1.0f, setting_format::percent};
     NumberSetting volumeAmbient {1.0f, 0.0f, 1.0f, setting_format::percent};
     NumberSetting volumeMusic {1.0f, 0.0f, 1.0f, setting_format::percent};
+
+    StringSetting inputDevice {"auto"};
 };
 
 struct DisplaySettings {
-    /// @brief Is window in full screen mode
-    FlagSetting fullscreen {false};
+    /// @brief Window mode (windowed/fullscreen/borderless)
+    IntegerSetting windowMode {0, 0, 2};
     /// @brief Window width (pixels)
     IntegerSetting width {1280};
     /// @brief Window height (pixels)
@@ -31,6 +33,8 @@ struct DisplaySettings {
     IntegerSetting framerate {-1, -1, 120};
     /// @brief Limit framerate when window is iconified
     FlagSetting limitFpsIconified {false};
+    /// @brief Adaptive framerate in menu (experimental)
+    FlagSetting adaptiveFpsInMenu {false};
 };
 
 struct ChunksSettings {
@@ -81,6 +85,15 @@ struct GraphicsSettings {
     FlagSetting ssao {true};
     /// @brief Shadows quality
     IntegerSetting shadowsQuality {0, 0, 3};
+    /// @brief Dense render distance
+    IntegerSetting denseRenderDistance {56, 0, 10'000};
+    /// @brief Soft lighting for blocks
+    FlagSetting softLighting {true};
+};
+
+struct PathfindingSettings {
+    /// @brief Max visited blocks by an agent per async tick
+    IntegerSetting stepsPerAsyncAgent {128, 1, 2048};
 };
 
 struct DebugSettings {
@@ -88,6 +101,10 @@ struct DebugSettings {
     FlagSetting generatorTestMode {false};
     /// @brief Write lights cache
     FlagSetting doWriteLights {true};
+    /// @brief Write preprocessed shaders code to user:export
+    FlagSetting doTraceShaders {false};
+    /// @brief Enable experimental optimizations and features
+    FlagSetting enableExperimental {false};
 };
 
 struct UiSettings {
@@ -107,4 +124,5 @@ struct EngineSettings {
     DebugSettings debug;
     UiSettings ui;
     NetworkSettings network;
+    PathfindingSettings pathfinding;
 };

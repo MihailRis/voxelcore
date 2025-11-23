@@ -19,7 +19,7 @@ namespace gui {
             GUI& gui,
             const std::wstring& text,
             glm::vec4 padding,
-            const onaction& action,
+            const OnAction& action,
             glm::vec2 size = glm::vec2(-1)
         );
 

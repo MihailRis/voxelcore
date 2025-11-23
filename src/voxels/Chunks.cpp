@@ -115,9 +115,10 @@ ubyte Chunks::getLight(int32_t x, int32_t y, int32_t z, int channel) const {
     if (chunk == nullptr) {
         return 0;
     }
+    assert(chunk->lightmap != nullptr);
     int lx = x - cx * CHUNK_W;
     int lz = z - cz * CHUNK_D;
-    return chunk->lightmap.get(lx, y, lz, channel);
+    return chunk->lightmap->get(lx, y, lz, channel);
 }
 
 light_t Chunks::getLight(int32_t x, int32_t y, int32_t z) const {
@@ -135,9 +136,10 @@ light_t Chunks::getLight(int32_t x, int32_t y, int32_t z) const {
     if (chunk == nullptr) {
         return 0;
     }
+    assert(chunk->lightmap != nullptr);
     int lx = x - cx * CHUNK_W;
     int lz = z - cz * CHUNK_D;
-    return chunk->lightmap.get(lx, y, lz);
+    return chunk->lightmap->get(lx, y, lz);
 }
 
 Chunk* Chunks::getChunkByVoxel(int32_t x, int32_t y, int32_t z) const {
@@ -171,10 +173,10 @@ void Chunks::eraseSegments(
     blocks_agent::erase_segments(*this, def, state, x, y, z);
 }
 
-void Chunks::repairSegments(
+void Chunks::restoreSegments(
     const Block& def, blockstate state, int x, int y, int z
 ) {
-    blocks_agent::repair_segments(*this, def, state, x, y, z);
+    blocks_agent::restore_segments(*this, def, state, x, y, z);
 }
 
 bool Chunks::checkReplaceability(
@@ -373,7 +375,8 @@ void Chunks::getVoxels(VoxelsVolume& volume, bool backlight) const {
                 }
             } else {
                 const voxel* cvoxels = chunk->voxels;
-                const light_t* clights = chunk->lightmap.getLights();
+                const light_t* clights =
+                    chunk->lightmap ? chunk->lightmap->getLights() : nullptr;
                 for (int ly = y; ly < y + h; ly++) {
                     for (int lz = std::max(z, cz * CHUNK_D);
                              lz < std::min(z + d, (cz + 1) * CHUNK_D);
@@ -390,7 +393,8 @@ void Chunks::getVoxels(VoxelsVolume& volume, bool backlight) const {
                                 CHUNK_D
                             );
                             voxels[vidx] = cvoxels[cidx];
-                            light_t light = clights[cidx];
+                            light_t light = clights ? clights[cidx]
+                                                    : Lightmap::SUN_LIGHT_ONLY;
                             if (backlight) {
                                 const auto block =
                                     indices.blocks.get(voxels[vidx].id);

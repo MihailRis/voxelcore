@@ -39,20 +39,31 @@ end
 local Socket = {__index={
     send=function(self, ...) return network.__send(self.id, ...) end,
     recv=function(self, ...) return network.__recv(self.id, ...) end,
+    recv_async=function(self, length, usetable)
+        while self:is_alive() do
+            local available = self:available()
+            if available >= length then
+                return self:recv(length, usetable)
+            end
+            coroutine.yield()
+        end
+        return self:recv(length, usetable)
+    end,
     close=function(self) return network.__close(self.id) end,
     available=function(self) return network.__available(self.id) or 0 end,
     is_alive=function(self) return network.__is_alive(self.id) end,
     is_connected=function(self) return network.__is_connected(self.id) end,
     get_address=function(self) return network.__get_address(self.id) end,
+    set_nodelay=function(self, nodelay) return network.__set_nodelay(self.id, nodelay or false) end,
+    is_nodelay=function(self) return network.__is_nodelay(self.id) end,
 }}
 
-network.tcp_connect = function(address, port, callback)
-    local socket = setmetatable({id=0}, Socket)
-    socket.id = network.__connect(address, port, function(id)
-        callback(socket)
-    end)
-    return socket
-end
+local WriteableSocket = {__index={
+    send=function(self, ...) return network.__send(self.id, ...) end,
+    close=function(self) return network.__close(self.id) end,
+    is_open=function(self) return network.__is_alive(self.id) end,
+    get_address=function(self) return network.__get_address(self.id) end,
+}}
 
 local ServerSocket = {__index={
     close=function(self) return network.__closeserver(self.id) end,
@@ -60,8 +71,185 @@ local ServerSocket = {__index={
     get_port=function(self) return network.__get_serverport(self.id) end,
 }}
 
-network.tcp_open = function(port, handler)
-    return setmetatable({id=network.__open(port, function(id)
+local DatagramServerSocket = {__index={
+    close=function(self) return network.__closeserver(self.id) end,
+    is_open=function(self) return network.__is_serveropen(self.id) end,
+    get_port=function(self) return network.__get_serverport(self.id) end,
+    send=function(self, ...) return network.__udp_server_send_to(self.id, ...) end
+}}
+
+local _tcp_server_callbacks = {}
+local _tcp_client_callbacks = {}
+local _tcp_client_error_callbacks = {}
+
+local _udp_server_callbacks = {}
+local _udp_client_datagram_callbacks = {}
+local _udp_client_open_callbacks = {}
+local _http_response_callbacks = {}
+local _http_error_callbacks = {}
+
+network.get = function(url, callback, errorCallback, headers)
+    local id = network.__get(url, headers)
+    if callback then
+        _http_response_callbacks[id] = callback
+    end
+    if errorCallback then
+        _http_error_callbacks[id] = errorCallback
+    end
+end
+
+network.get_binary = function(url, callback, errorCallback, headers)
+    local id = network.__get_binary(url, headers)
+    if callback then
+        _http_response_callbacks[id] = callback
+    end
+    if errorCallback then
+        _http_error_callbacks[id] = errorCallback
+    end
+end
+
+network.post = function(url, data, callback, errorCallback, headers)
+    local id = network.__post(url, data, headers)
+    if callback then
+        _http_response_callbacks[id] = callback
+    end
+    if errorCallback then
+        _http_error_callbacks[id] = errorCallback
+    end
+end
+
+network.tcp_open = function (port, handler)
+    local socket = setmetatable({id=network.__open_tcp(port)}, ServerSocket)
+
+    _tcp_server_callbacks[socket.id] = function(id)
         handler(setmetatable({id=id}, Socket))
-    end)}, ServerSocket)
+    end
+    return socket
+end
+
+network.tcp_connect = function(address, port, callback, errorCallback)
+    local socket = setmetatable({id=0}, Socket)
+    socket.id = network.__connect_tcp(address, port)
+    _tcp_client_callbacks[socket.id] = function() callback(socket) end
+    if errorCallback then
+        _tcp_client_error_callbacks[socket.id] = function(message) errorCallback(socket, message) end
+    end
+    return socket
+end
+
+network.udp_open = function (port, datagramHandler)
+    if type(datagramHandler) ~= 'function' then
+        error "udp server cannot be opened without datagram handler"
+    end
+
+    local socket = setmetatable({id=network.__open_udp(port)}, DatagramServerSocket)
+
+    _udp_server_callbacks[socket.id] = function(address, port, data)
+        datagramHandler(address, port, data, socket)
+    end
+
+    return socket
+end
+
+network.udp_connect = function (address, port, datagramHandler, openCallback)
+    if type(datagramHandler) ~= 'function' then
+        error "udp client socket cannot be opened without datagram handler"
+    end
+
+    local socket = setmetatable({id=0}, WriteableSocket)
+    socket.id = network.__connect_udp(address, port)
+
+    _udp_client_datagram_callbacks[socket.id] = datagramHandler
+    if openCallback then
+        _udp_client_open_callbacks[socket.id] = function()
+            openCallback(socket)
+        end
+    end
+
+    return socket
+end
+
+local function clean(iterable, checkFun, ...)
+    local tables = { ... }
+
+    for id, _ in pairs(iterable) do
+        if not checkFun(id) then
+            for i = 1, #tables do
+                tables[i][id] = nil
+            end
+        end
+    end
+end
+
+network.__process_events = function()
+    local CLIENT_CONNECTED = 1
+    local CONNECTED_TO_SERVER = 2
+    local DATAGRAM = 3
+    local RESPONSE = 4
+    local CONNECTION_ERROR = 5
+
+    local ON_SERVER = 1
+    local ON_CLIENT = 2
+
+    local cleaned = false
+    local events = network.__pull_events()
+    for i, event in ipairs(events) do
+        local etype, sid, cid, addr, port, side, data = unpack(event)
+
+        if etype == CLIENT_CONNECTED then
+            local callback = _tcp_server_callbacks[sid]
+            if callback then
+                callback(cid)
+            end
+        elseif etype == CONNECTED_TO_SERVER then
+            local callback = _tcp_client_callbacks[cid] or _udp_client_open_callbacks[cid]
+            if callback then
+                callback()
+            end
+        elseif etype == CONNECTION_ERROR then
+            local callback = _tcp_client_error_callbacks[cid]
+            if callback then
+                callback(addr)
+            end
+        elseif etype == DATAGRAM then
+            if side == ON_CLIENT then
+                local callback = _udp_client_datagram_callbacks[cid]
+                if callback then
+                    callback(data)
+                end
+            elseif side == ON_SERVER then
+                local callback = _udp_server_callbacks[sid]
+                if callback then
+                    callback(addr, port, data)
+                end
+            end
+        elseif etype == RESPONSE then
+            if event[2] / 100 == 2 then
+                local callback = _http_response_callbacks[event[3]]
+                _http_response_callbacks[event[3]] = nil
+                _http_error_callbacks[event[3]] = nil
+                if callback then
+                    callback(event[4])
+                end
+            else
+                local callback = _http_error_callbacks[event[3]]
+                _http_response_callbacks[event[3]] = nil
+                _http_error_callbacks[event[3]] = nil
+                if callback then
+                    callback(event[2], event[4])
+                end
+            end
+        end
+
+        -- remove dead servers
+        if not cleaned then
+            clean(_tcp_server_callbacks, network.__is_serveropen, _tcp_server_callbacks)
+            clean(_tcp_client_callbacks, network.__is_alive, _tcp_client_callbacks)
+
+            clean(_udp_server_callbacks, network.__is_serveropen, _udp_server_callbacks)
+            clean(_udp_client_datagram_callbacks, network.__is_alive, _udp_client_open_callbacks, _udp_client_datagram_callbacks)
+
+            cleaned = true
+        end
+    end
 end

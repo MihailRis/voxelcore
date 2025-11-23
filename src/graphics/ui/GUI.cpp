@@ -50,12 +50,19 @@ GUI::GUI(Engine& engine)
     tooltip = guiutil::create(
         *this,
         "<container color='#000000A0' interactive='false' z-index='999'>"
-            "<label id='tooltip.label' pos='2' autoresize='true' multiline='true' text-wrap='false'></label>"
+            "<label id='tooltip.label' markup='md' pos='2' autoresize='true' multiline='true' text-wrap='false'></label>"
         "</container>"
     );
     store("tooltip", tooltip);
     store("tooltip.label", UINode::find(tooltip, "tooltip.label"));
     container->add(tooltip);
+
+    rootDocument = std::make_unique<UiDocument>(
+        "core:root",
+        uidocscript {},
+        std::dynamic_pointer_cast<gui::UINode>(container),
+        nullptr
+    );
 }
 
 GUI::~GUI() = default;
@@ -74,15 +81,8 @@ std::shared_ptr<Menu> GUI::getMenu() {
 }
 
 void GUI::onAssetsLoad(Assets* assets) {
-    assets->store(
-        std::make_unique<UiDocument>(
-            "core:root",
-            uidocscript {},
-            std::dynamic_pointer_cast<gui::UINode>(container),
-            nullptr
-        ),
-        "core:root"
-    );
+    rootDocument->rebuildIndices();
+    assets->store(rootDocument, "core:root");
 }
 
 void GUI::resetTooltip() {
@@ -302,6 +302,7 @@ bool GUI::isFocusCaught() const {
 }
 
 void GUI::add(std::shared_ptr<UINode> node) {
+    UINode::getIndices(node, rootDocument->getMapWriteable());
     container->add(std::move(node));
 }
 

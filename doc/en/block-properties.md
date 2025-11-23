@@ -98,6 +98,32 @@ Properties available for variance:
 
 Variants are managed via `block.set_variant(x, y, z, index)`.
 
+### Custom model variants (geometry switching)
+
+You can use different custom models for different variants. Provide a separate `model-name` for each variant that needs different geometry. The renderer caches geometry per (block id, variant).
+
+The base model (specified in root) becomes variant 0. The variants array maps to indices 1+.
+
+Example (default + two custom variants):
+```json
+{
+    "model": "custom",
+    "model-name": "stairs_middle",
+    "state-based": {
+        "bits": 4,
+        "variants": [
+            { "model": "custom", "model-name": "stairs_left" },
+            { "model": "custom", "model-name": "stairs_right" }
+        ]
+    }
+}
+```
+
+In this example:
+- Variant 0 = `stairs_middle` (from root)
+- Variant 1 = `stairs_left` (from variants[0])
+- Variant 2 = `stairs_right` (from variants[1])
+
 ## Lighting
 
 ### *emission*
@@ -143,6 +169,8 @@ Block is not a physical obstacle if **false**
 
 An array of 6 numbers describing an offset an size of a block hitbox.
 
+The numbers are specified in the range [0.0, 1.0] - i.e. within the block (in the case of an extended block, the hitbox can be larger than one, but must not go beyond the "size" property).
+
 Array *\[0.25, 0.0, 0.5,  0.75, 0.4, 0.3\]* describes hitbox width:
 - offset 0.25m east
 - offset 0.0m up
@@ -150,6 +178,15 @@ Array *\[0.25, 0.0, 0.5,  0.75, 0.4, 0.3\]* describes hitbox width:
 - 0.75m width (from east to west)
 - 0.4m height
 - 0.3m length (from south to north)
+
+For composite hitboxes, the *hitboxes* property is used - an array of hitboxes, for example:
+
+```json
+"hitboxes": [
+  [0, 0, 0, 1, 0.625, 1],
+  [0, 0.6875, 0, 1, 0.3125, 1]
+]
+```
 
 ### *grounded*
 
@@ -286,3 +323,29 @@ Methods are used to manage the overwriting of properties when extending a block 
 ### `property_name@append`
 
 Adds elements to the end of the list instead of completely overwriting it.
+
+## Tags
+
+Tags allow you to designate general properties of blocks. Names should be formatted as `prefix:tag_name`.
+The prefix is ​​optional, but helps avoid unwanted logical collisions. Example:
+
+```json
+{
+    "tags": [
+        "core:ore",
+        "base_survival:food",
+    ]
+}
+```
+
+Block tags can also be added from other packs using the `your_pack:tags.toml` file. Example:
+
+```toml
+"prefix:tag_name" = [
+    "random_pack:some_block",
+    "another_pack:item",
+]
+"other_prefix:other_tag_name" = [
+    # ...
+]
+``

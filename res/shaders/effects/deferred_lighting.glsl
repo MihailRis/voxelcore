@@ -29,6 +29,8 @@ vec4 effect() {
 
     light = max(light, emission);
 
+    light = pow(light, u_gamma);
+
     vec3 fogColor = texture(u_skybox, dir).rgb;
     float fog = calc_fog(length(u_view * vec4((modelpos.xyz - u_cameraPos) * FOG_POS_SCALE, 0.0)) / 256.0);
     return vec4(mix(texture(u_screen, v_uv).rgb * mix(1.0, light, 1.0), fogColor, fog), 1.0);

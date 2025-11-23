@@ -5,6 +5,7 @@
 #include "BlocksController.hpp"
 #include "ChunksController.hpp"
 #include "util/Clock.hpp"
+#include "util/CallbacksSet.hpp"
 
 class Engine;
 class Level;
@@ -21,12 +22,15 @@ class LevelController {
 
     util::Clock playerTickClock;
 public:
+    CallbacksSet<> preQuitCallbacks;
+
     LevelController(Engine* engine, std::unique_ptr<Level> level, Player* clientPlayer);
 
     /// @param delta time elapsed since the last update
     /// @param pause is world and player simulation paused
     void update(float delta, bool pause);
 
+    void processBeforeQuit();
     void saveWorld();
 
     void onWorldQuit();

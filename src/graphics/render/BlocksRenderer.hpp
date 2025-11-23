@@ -26,13 +26,17 @@ class BlocksRenderer {
     const Content& content;
     std::unique_ptr<ChunkVertex[]> vertexBuffer;
     std::unique_ptr<uint32_t[]> indexBuffer;
+    std::unique_ptr<uint32_t[]> denseIndexBuffer;
     size_t vertexCount;
     size_t vertexOffset;
     size_t indexCount;
+    size_t denseIndexCount;
     size_t capacity;
     int voxelBufferPadding = 2;
     bool overflow = false;
     bool cancelled = false;
+    bool densePass = false;
+    bool denseRender = false;
     const Chunk* chunk = nullptr;
     std::unique_ptr<VoxelsVolume> voxelsBuffer;
 
@@ -135,10 +139,12 @@ class BlocksRenderer {
         if ((otherDrawGroup && (otherDrawGroup != variant.drawGroup)) || !blockVariant.rt.solid) {
             return true;
         }
-        if ((variant.culling == CullingMode::DISABLED ||
-             (variant.culling == CullingMode::OPTIONAL &&
-              settings.graphics.denseRender.get())) &&
-            vox.id == def.rt.id) {
+        if (densePass) {
+            return variant.culling == CullingMode::OPTIONAL;
+        } else if (variant.culling == CullingMode::OPTIONAL) {
+            return false;
+        }
+        if (variant.culling == CullingMode::DISABLED && vox.id == def.rt.id) {
             return true;
         }
         return !vox.id;
@@ -149,7 +155,7 @@ class BlocksRenderer {
     glm::vec4 pickSoftLight(const glm::ivec3& coord, const glm::ivec3& right, const glm::ivec3& up) const;
     glm::vec4 pickSoftLight(float x, float y, float z, const glm::ivec3& right, const glm::ivec3& up) const;
     
-    void render(const voxel* voxels, int beginEnds[256][2]);
+    void render(const voxel* voxels, const int beginEnds[256][2]);
     SortingMeshData renderTranslucent(const voxel* voxels, int beginEnds[256][2]);
 public:
     BlocksRenderer(
@@ -164,6 +170,8 @@ public:
     ChunkMesh render(const Chunk* chunk, const Chunks* chunks);
     ChunkMeshData createMesh();
     VoxelsVolume* getVoxelsBuffer() const;
+
+    size_t getMemoryConsumption() const;
 
     bool isCancelled() const {
         return cancelled;

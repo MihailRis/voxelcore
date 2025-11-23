@@ -25,7 +25,7 @@ int main(int argc, char** argv) {
     }
     std::signal(SIGTERM, sigterm_handler);
     
-    debug::Logger::init(coreParameters.userFolder.string()+"/latest.log");
+    debug::Logger::init(coreParameters.userFolder.string() + "/latest.log");
     platform::configure_encoding();
 
     auto& engine = Engine::getInstance();
@@ -33,7 +33,8 @@ int main(int argc, char** argv) {
         engine.initialize(std::move(coreParameters));
         engine.run();
     } catch (const initialize_error& err) {
-        logger.error() << "could not to initialize engine\n" << err.what();
+        logger.error() << err.what();
+        logger.error() << "could not to initialize engine";
     }
 #if defined(NDEBUG) and defined(_WIN32)
     catch (const std::exception& err) {

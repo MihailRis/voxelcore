@@ -176,22 +176,119 @@ function place_pack(panel, packinfo, callback, position_func)
     end
 end
 
+local Version = {};
+
+function Version.matches_pattern(version)
+    for _, letter in string.gmatch(version, "%.+") do
+        if type(letter) ~= "number" or letter ~= "." then
+            return false;
+        end
+
+        local t = string.split(version, ".");
+
+        return #t == 2 or #t == 3;
+    end
+end
+
+function Version.__equal(ver1, ver2)
+    return ver1[1] == ver2[1] and ver1[2] == ver2[2] and ver1[3] == ver2[3];
+end
+
+function Version.__greater(ver1, ver2)
+    if ver1[1] ~= ver2[1] then return ver1[1] > ver2[1] end;
+    if ver1[2] ~= ver2[2] then return ver1[2] > ver2[2] end;
+    return ver1[3] > ver2[3];
+end
+
+function Version.__less(ver1, ver2)
+    return Version.__greater(ver2, ver1);
+end
+
+function Version.__greater_or_equal(ver1, ver2)
+    return not Version.__less(ver1, ver2);
+end
+
+function Version.__less_or_equal(ver1, ver2)
+    return not Version.__greater(ver1, ver2);
+end
+
+Version.operators = {
+    ["="] = Version.__equal,
+    [">"] = Version.__greater,
+    ["<"] = Version.__less,
+    [">="] = Version.__greater_or_equal,
+    ["<="] = Version.__less_or_equal
+}
+
+function Version.compare(op, ver1, ver2)
+    ver1 = string.split(ver1, ".");
+    ver2 = string.split(ver2, ".");
+
+    local comparison_func = Version.operators[op];
+
+    if comparison_func then
+        return comparison_func(ver1, ver2);
+    else
+        return false;
+    end
+end
+
+function Version.parse(version)
+    local op = string.sub(version, 1, 2);
+    if op == ">=" or op == "<=" then
+        return op, string.sub(version, #op + 1);
+    end
+
+    op = string.sub(version, 1, 1);
+    if op == ">" or op == "<" then
+        return op, string.sub(version, #op + 1);
+    end
+
+    return "=", version;
+end
+
+local function compare_version(dependent_version, actual_version)
+    if Version.matches_pattern(dependent_version) and Version.matches_pattern(actual_version) then
+        local op, dep_ver = Version.parse_version(dependent_version);
+        Version.compare(op, dep_ver, actual_version);
+    elseif dependent_version == "*" or dependent_version == actual_version then
+        return true;
+    else
+        return false;
+    end
+end
+
 function check_dependencies(packinfo)
     if packinfo.dependencies == nil then
         return
     end
-    for i,dep in ipairs(packinfo.dependencies) do
-        local depid = dep:sub(2,-1)
-        if dep:sub(1,1) == '!' then 
-            if not table.has(packs_all, depid) then
-                return string.format(
-                    "%s (%s)", gui.str("error.dependency-not-found"), depid
-                )
-            end
-            if table.has(packs_installed, packinfo.id) then
-                table.insert(required, depid)
-            end
+    for i, dep in ipairs(packinfo.dependencies) do
+        local depid, depver = unpack(string.split(dep:sub(2,-1), "@"))
+
+        if dep:sub(1,1) ~= '!' then
+            goto continue
         end
+        if not table.has(packs_all, depid) then
+            return string.format(
+                "%s (%s)", gui.str("error.dependency-not-found"), depid
+            )
+        end
+
+        local dep_pack = pack.get_info(depid);
+        
+        if not compare_version(depver, dep_pack.version) then
+            local op, ver = Version.parse(depver)
+            return string.format(
+                "%s: %s != %s (%s)",
+                gui.str("error.dependency-version-not-met"),
+                dep_pack.version, ver, depid
+            );
+        end
+
+        if table.has(packs_installed, packinfo.id) then
+            table.insert(required, depid)
+        end
+        ::continue::
     end
     return
 end
@@ -250,12 +347,6 @@ function refresh()
         packs_info[id] = {packinfo.id, packinfo.title}
     end
 
-    for i,id in ipairs(packs_installed) do
-        if table.has(required, id) then
-            document["pack_"..id].enabled = false
-        end
-    end
-
     if #packs_excluded == 0 then packs_excluded = table.copy(packs_available) end
     if #packs_included == 0 then packs_included = table.copy(packs_installed) end
 
@@ -273,6 +364,12 @@ function refresh()
         callback = string.format('move_pack("%s")', id)
         packinfo.error = check_dependencies(packinfo)
         place_pack(packs_add, packinfo, callback, string.format('reposition_func("%s")', packinfo.id))
+    end
+
+    for i,id in ipairs(packs_installed) do
+        if table.has(required, id) then
+            document["pack_"..id].enabled = false
+        end
     end
 
     check_deleted()

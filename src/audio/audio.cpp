@@ -23,6 +23,7 @@ namespace {
     std::unordered_map<speakerid_t, std::shared_ptr<Stream>> streams;
     std::vector<std::unique_ptr<Channel>> channels;
     util::ObjectsKeeper objects_keeper {};
+    std::unique_ptr<InputDevice> input_device = nullptr;
 }
 
 Channel::Channel(std::string name) : name(std::move(name)) {
@@ -180,6 +181,15 @@ void audio::initialize(bool enabled, AudioSettings& settings) {
             audio::get_channel(channel.name)->setVolume(value * value);
         }, true));
     }
+
+    ::input_device = backend->openInputDevice("", 44100, 1, 16);
+    if (::input_device) {
+        ::input_device->startCapture();
+    }
+}
+
+InputDevice* audio::get_input_device() {
+    return input_device.get();
 }
 
 std::unique_ptr<PCM> audio::load_PCM(const io::path& file, bool headerOnly) {
@@ -240,6 +250,46 @@ std::unique_ptr<Stream> audio::open_stream(
     std::shared_ptr<PCMStream> stream, bool keepSource
 ) {
     return backend->openStream(std::move(stream), keepSource);
+}
+
+std::unique_ptr<InputDevice> audio::open_input_device(
+    const std::string& deviceName, uint sampleRate, uint channels, uint bitsPerSample
+) {
+    return backend->openInputDevice(
+        deviceName, sampleRate, channels, bitsPerSample
+    );
+}
+
+std::vector<std::string> audio::get_input_devices_names() {
+    return backend->getInputDeviceNames();
+}
+
+std::vector<std::string> audio::get_output_devices_names() {
+    return backend->getOutputDeviceNames();
+}
+
+void audio::set_input_device(const std::string& deviceName) {
+    logger.info() << "setting input device to " << deviceName;
+    if (deviceName == audio::DEVICE_NONE) {
+        if (::input_device) {
+            ::input_device->stopCapture();
+        }
+        ::input_device = nullptr;
+        return;
+    }
+    auto newDevice = backend->openInputDevice(deviceName, 44100, 1, 16);
+    if (newDevice == nullptr) {
+        logger.error() << "could not open input device: " << deviceName;
+        return;
+    }
+
+    if (::input_device) {
+        ::input_device->stopCapture();
+    }
+    ::input_device = std::move(newDevice);
+    if (::input_device) {
+        ::input_device->startCapture();
+    }
 }
 
 void audio::set_listener(
@@ -421,8 +471,15 @@ void audio::update(double delta) {
             speaker->update(channel);
         }
         if (speaker->isStopped()) {
-            streams.erase(it->first);
-            it = speakers.erase(it);
+            auto foundStream = streams.find(it->first);
+            if (foundStream == streams.end() ||
+                (!speaker->isManuallyStopped() &&
+                 foundStream->second->isStopOnEnd())) {
+                streams.erase(it->first);
+                it = speakers.erase(it);
+            } else {
+                it++;
+            }
         } else {
             it++;
         }
@@ -458,6 +515,9 @@ void audio::reset_channel(int index) {
 }
 
 void audio::close() {
+    if (input_device) {
+        input_device->stopCapture();
+    }
     speakers.clear();
     delete backend;
     backend = nullptr;

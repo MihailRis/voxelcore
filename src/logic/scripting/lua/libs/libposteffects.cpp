@@ -84,5 +84,5 @@ const luaL_Reg posteffectslib[] = {
     {"is_active", lua::wrap<l_is_active>},
     {"set_params", lua::wrap<l_set_params>},
     {"set_array", lua::wrap<l_set_array>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

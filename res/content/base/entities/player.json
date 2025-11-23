@@ -1,5 +1,12 @@
 {
     "components": [
+        {
+            "name": "core:mob",
+            "args": {
+                "jump_force": 8.0
+            }
+        },
+        "core:player",
         "base:player_animator"
     ],
     "hitbox": [0.6, 1.8, 0.6]

@@ -22,6 +22,8 @@ namespace devtools {
     class Editor;
 }
 
+class UiDocument;
+
 /*
  Some info about padding and margin.
     Padding is element inner space, margin is outer
@@ -70,6 +72,7 @@ namespace gui {
         std::shared_ptr<UINode> pressed;
         std::shared_ptr<UINode> focus;
         std::shared_ptr<UINode> tooltip;
+        std::shared_ptr<UiDocument> rootDocument;
         std::unordered_map<std::string, std::shared_ptr<UINode>> storage;
 
         std::unique_ptr<Camera> uicamera;

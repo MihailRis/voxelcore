@@ -3,26 +3,17 @@ layout (location = 1) out vec4 f_position;
 layout (location = 2) out vec4 f_normal;
 layout (location = 3) out vec4 f_emission;
 
-in float a_distance;
-in float a_fog;
-in vec2 a_texCoord;
-in vec3 a_dir;
-in vec3 a_normal;
-in vec3 a_position;
-in vec3 a_realnormal;
+#include <world_fragment_header>
+
 in vec4 a_color;
-in vec4 a_modelpos;
-in float a_emission;
 
 uniform sampler2D u_texture0;
-uniform samplerCube u_skybox;
+
 uniform vec3 u_fogColor;
 uniform float u_fogFactor;
 uniform float u_fogCurve;
 uniform bool u_alphaClip;
 uniform vec3 u_sunDir;
-
-#include <shadows>
 
 void main() {
     vec4 texColor = texture(u_texture0, a_texCoord);

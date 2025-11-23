@@ -4,7 +4,7 @@ history = session.get_entry("commands_history")
 history_pointer = #history
 
 events.on("core:open_traceback", function()
-    if modes then
+    if modes and modes.current ~= 'debug' then
         modes:set('debug')
     end
 end)

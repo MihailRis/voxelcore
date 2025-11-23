@@ -5,10 +5,40 @@
 
 #include "debug/Logger.hpp"
 #include "alutil.hpp"
+#include "../MemoryPCMStream.hpp"
 
 static debug::Logger logger("al-audio");
 
 using namespace audio;
+
+const char* alc_error_to_string(ALCenum error) {
+    switch (error) {
+        case ALC_NO_ERROR:
+            return "no error";
+        case ALC_INVALID_DEVICE:
+            return "invalid device handle";
+        case ALC_INVALID_CONTEXT:
+            return "invalid context handle";
+        case ALC_INVALID_ENUM:
+            return "invalid enum parameter passed to an ALC call";
+        case ALC_INVALID_VALUE:
+            return "invalid value parameter passed to an ALC call";
+        case ALC_OUT_OF_MEMORY:
+            return "out of memory";
+        default:
+            return "unknown ALC error";
+    }
+}
+
+static bool check_alc_errors(ALCdevice* device, const char* context) {
+    ALCenum error = alcGetError(device);
+    if (error == ALC_NO_ERROR) {
+        return false;
+    }
+    logger.error() << context << ": " << alc_error_to_string(error) << "("
+                   << error << ")";
+    return true;
+}
 
 ALSound::ALSound(
     ALAudio* al, uint buffer, const std::shared_ptr<PCM>& pcm, bool keepPCM
@@ -35,6 +65,69 @@ std::unique_ptr<Speaker> ALSound::newInstance(int priority, int channel) const {
     auto speaker = std::make_unique<ALSpeaker>(al, source, priority, channel);
     speaker->duration = duration;
     return speaker;
+}
+
+ALInputDevice::ALInputDevice(
+    ALAudio* al,
+    ALCdevice* device,
+    uint channels,
+    uint bitsPerSample,
+    uint sampleRate
+)
+    : device(device),
+      channels(channels),
+      bitsPerSample(bitsPerSample),
+      sampleRate(sampleRate) {
+    const ALCchar* deviceName = alcGetString(device, ALC_CAPTURE_DEVICE_SPECIFIER);
+
+    if (deviceName) {
+        deviceSpecifier = std::string(deviceName);
+    } else {
+        logger.warning() << "could not retrieve input device specifier";
+    }
+}
+
+ALInputDevice::~ALInputDevice() {
+    alcCaptureCloseDevice(device);
+    check_alc_errors(device, "alcCaptureCloseDevice");
+}
+
+void ALInputDevice::startCapture() {
+    alcCaptureStart(device);
+    check_alc_errors(device, "alcCaptureStart");
+}
+
+void ALInputDevice::stopCapture() {
+    alcCaptureStop(device);
+    check_alc_errors(device, "alcCaptureStop");
+}
+
+uint ALInputDevice::getChannels() const {
+    return channels;
+}
+
+uint ALInputDevice::getSampleRate() const {
+    return sampleRate;
+}
+
+uint ALInputDevice::getBitsPerSample() const {
+    return bitsPerSample;
+}
+
+const std::string& ALInputDevice::getDeviceSpecifier() const {
+    return deviceSpecifier;
+}
+
+size_t ALInputDevice::read(char* buffer, size_t bufferSize) {
+    ALCint samplesCount = 0;
+    alcGetIntegerv(device, ALC_CAPTURE_SAMPLES, sizeof(samplesCount), &samplesCount);
+    check_alc_errors(device, "alcGetIntegerv(ALC_CAPTURE_SAMPLES)");
+    size_t samplesRead = std::min<ALCsizei>(
+        samplesCount, bufferSize / channels / (bitsPerSample >> 3)
+    );
+    alcCaptureSamples(device, buffer, samplesRead);
+    check_alc_errors(device, "alcCaptureSamples");
+    return samplesRead * channels * (bitsPerSample >> 3);
 }
 
 ALStream::ALStream(
@@ -81,9 +174,10 @@ std::unique_ptr<Speaker> ALStream::createSpeaker(bool loop, int channel) {
     for (uint i = 0; i < ALStream::STREAM_BUFFERS; i++) {
         uint free_buffer = al->getFreeBuffer();
         if (!preloadBuffer(free_buffer, loop)) {
-            break;
+            unusedBuffers.push(free_buffer);
+        } else {
+            AL_CHECK(alSourceQueueBuffers(free_source, 1, &free_buffer));
         }
-        AL_CHECK(alSourceQueueBuffers(free_source, 1, &free_buffer));
     }
     return std::make_unique<ALSpeaker>(al, free_source, PRIORITY_HIGH, channel);
 }
@@ -130,11 +224,11 @@ void ALStream::unqueueBuffers(uint alsource) {
 uint ALStream::enqueueBuffers(uint alsource) {
     uint preloaded = 0;
     if (!unusedBuffers.empty()) {
-        uint first_buffer = unusedBuffers.front();
-        if (preloadBuffer(first_buffer, loop)) {
+        uint firstBuffer = unusedBuffers.front();
+        if (preloadBuffer(firstBuffer, loop)) {
             preloaded++;
             unusedBuffers.pop();
-            AL_CHECK(alSourceQueueBuffers(alsource, 1, &first_buffer));
+            AL_CHECK(alSourceQueueBuffers(alsource, 1, &firstBuffer));
         }
     }
     return preloaded;
@@ -144,14 +238,14 @@ void ALStream::update(double delta) {
     if (this->speaker == 0) {
         return;
     }
-    auto p_speaker = audio::get_speaker(this->speaker);
-    if (p_speaker == nullptr) {
+    auto speaker = audio::get_speaker(this->speaker);
+    if (speaker == nullptr) {
         this->speaker = 0;
         return;
     }
-    ALSpeaker* alspeaker = dynamic_cast<ALSpeaker*>(p_speaker);
+    ALSpeaker* alspeaker = dynamic_cast<ALSpeaker*>(speaker);
     assert(alspeaker != nullptr);
-    if (alspeaker->stopped) {
+    if (alspeaker->manuallyStopped) {
         this->speaker = 0;
         return;
     }
@@ -162,11 +256,11 @@ void ALStream::update(double delta) {
     uint preloaded = enqueueBuffers(alsource);
 
     // alspeaker->stopped is assigned to false at ALSpeaker::play(...)
-    if (p_speaker->isStopped() && !alspeaker->stopped) { //TODO: -V560 false-positive?
+    if (speaker->isStopped() && !alspeaker->manuallyStopped) { //TODO: -V560 false-positive?
         if (preloaded) {
-            p_speaker->play();
-        } else {
-            p_speaker->stop();
+            speaker->play();
+        } else if (isStopOnEnd()){
+            speaker->stop();
         }
     }
 }
@@ -205,6 +299,14 @@ void ALStream::setTime(duration_t time) {
     } else {
         totalPlayedSamples = sample;
     }
+}
+
+bool ALStream::isStopOnEnd() const {
+    return stopOnEnd;
+}
+
+void ALStream::setStopOnEnd(bool flag) {
+    stopOnEnd = flag;
 }
 
 ALSpeaker::ALSpeaker(ALAudio* al, uint source, int priority, int channel)
@@ -273,7 +375,7 @@ void ALSpeaker::setLoop(bool loop) {
 
 void ALSpeaker::play() {
     paused = false;
-    stopped = false;
+    manuallyStopped = false;
     auto p_channel = get_channel(this->channel);
     AL_CHECK(alSourcef(
         source,
@@ -289,7 +391,7 @@ void ALSpeaker::pause() {
 }
 
 void ALSpeaker::stop() {
-    stopped = true;
+    manuallyStopped = true;
     if (source) {
         AL_CHECK(alSourceStop(source));
 
@@ -353,6 +455,13 @@ int ALSpeaker::getPriority() const {
     return priority;
 }
 
+
+bool ALSpeaker::isManuallyStopped() const {
+    return manuallyStopped;
+}
+
+static bool alc_enumeration_ext = false;
+
 ALAudio::ALAudio(ALCdevice* device, ALCcontext* context)
     : device(device), context(context) {
     ALCint size;
@@ -365,9 +474,15 @@ ALAudio::ALAudio(ALCdevice* device, ALCcontext* context)
             maxSources = attrs[i + 1];
         }
     }
-    auto devices = getAvailableDevices();
-    logger.info() << "devices:";
-    for (auto& name : devices) {
+    auto outputDevices = getOutputDeviceNames();
+    logger.info() << "output devices:";
+    for (auto& name : outputDevices) {
+        logger.info() << "  " << name;
+    }
+
+    auto inputDevices = getInputDeviceNames();
+    logger.info() << "input devices:";
+    for (auto& name : inputDevices) {
         logger.info() << "  " << name;
     }
 }
@@ -385,8 +500,10 @@ ALAudio::~ALAudio() {
         AL_CHECK(alDeleteBuffers(1, &buffer));
     }
 
-    AL_CHECK(alcMakeContextCurrent(context));
+    alcMakeContextCurrent(nullptr);
+    check_alc_errors(device, "alcMakeContextCurrent");
     alcDestroyContext(context);
+    check_alc_errors(device, "alcDestroyContext");
     if (!alcCloseDevice(device)) {
         logger.error() << "device not closed!";
     }
@@ -411,7 +528,71 @@ std::unique_ptr<Stream> ALAudio::openStream(
     return std::make_unique<ALStream>(this, stream, keepSource);
 }
 
+std::vector<std::string> ALAudio::getInputDeviceNames() {
+    std::vector<std::string> devices;
+    
+    if (!alc_enumeration_ext) {
+        logger.warning() << "enumeration extension is not available";
+        return devices;
+    }
+
+    auto deviceList = alcGetString(nullptr, ALC_CAPTURE_DEVICE_SPECIFIER);
+    if (deviceList == nullptr) {
+        logger.warning() << "no input devices found";
+        return devices;
+    }
+    while (*deviceList) {
+        std::string deviceName(deviceList);
+        devices.push_back(deviceName);
+        deviceList += deviceName.length() + 1;
+    }
+    
+    return devices;
+}
+
+std::vector<std::string> ALAudio::getOutputDeviceNames() {
+    std::vector<std::string> devices;
+    
+    if (!alc_enumeration_ext) {
+        logger.warning() << "enumeration extension is not available";
+        return devices;
+    }
+
+    auto deviceList = alcGetString(nullptr, ALC_ALL_DEVICES_SPECIFIER);
+    if (deviceList == nullptr) {
+        logger.warning() << "no input devices found";
+        return devices;
+    }
+    while (*deviceList) {
+        std::string deviceName(deviceList);
+        devices.push_back(deviceName);
+        deviceList += deviceName.length() + 1;
+    }
+    
+    return devices;
+}
+
+std::unique_ptr<InputDevice> ALAudio::openInputDevice(
+    const std::string& deviceName, uint sampleRate, uint channels, uint bitsPerSample
+) {
+    uint bps = bitsPerSample >> 3;
+    ALCdevice* device = alcCaptureOpenDevice(
+        deviceName.empty() ? nullptr : deviceName.c_str(),
+        sampleRate,
+        AL::to_al_format(channels, bitsPerSample),
+        sampleRate * channels * bps / 8
+    );
+    if (check_alc_errors(device, "alcCaptureOpenDevice"))
+        return nullptr;
+
+    return std::make_unique<ALInputDevice>(
+        this, device, channels, bitsPerSample, sampleRate
+    );
+}
+
 std::unique_ptr<ALAudio> ALAudio::create() {
+    alc_enumeration_ext = alcIsExtensionPresent(nullptr, "ALC_ENUMERATION_EXT");
+
     ALCdevice* device = alcOpenDevice(nullptr);
     if (device == nullptr) return nullptr;
     ALCcontext* context = alcCreateContext(device, nullptr);
@@ -466,24 +647,6 @@ void ALAudio::freeSource(uint source) {
 
 void ALAudio::freeBuffer(uint buffer) {
     freebuffers.push_back(buffer);
-}
-
-std::vector<std::string> ALAudio::getAvailableDevices() const {
-    std::vector<std::string> devicesVec;
-
-    const ALCchar* devices;
-    devices = alcGetString(device, ALC_DEVICE_SPECIFIER);
-    if (!AL_GET_ERROR()) {
-        return devicesVec;
-    }
-
-    const char* ptr = devices;
-    do {
-        devicesVec.emplace_back(ptr);
-        ptr += devicesVec.back().size() + 1;
-    } while (ptr[0]);
-
-    return devicesVec;
 }
 
 void ALAudio::setListener(

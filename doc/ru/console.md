@@ -14,7 +14,7 @@
 Для создания команды консоли используется следующая функция:
 
 ```python
-console.add_command(схема: str, исполнитель: function)
+console.add_command(схема: str, исполнитель: function, чит_команда: bool)
 ```
 
 Схема имеет следующий синтаксис:
@@ -106,7 +106,7 @@ console.add_command(
     "Teleport object",
     function (args, kwargs)
         player.set_pos(unpack(args))
-    end
+    end, true
 )
 ```
 
@@ -114,3 +114,23 @@ console.add_command(
 - В kwargs передается таблица значений именованных аргументов.
 
 Проверку и приведение типов интерпретатор команд производит автоматически.
+
+## Остальные методы
+
+```lua
+console.set_cheat(name: String, cheat: Boolean) -> cheatIsChanged: Boolean
+console.is_cheat(name: String) -> Boolean
+```
+Сеттер и геттер статуса "чит" команды
+
+
+```lua
+console.log(...) -- Выводит информацию во внутриигровую консоль
+console.chat(...) -- Выводит информацию во внутриигровой чат
+console.get_commands_list() -> Table<String> -- Возвращает таблицу со списком команд
+console.get_command_info(name: String) -> Table -- Возвращает информацию о команде 
+console.execute(command: str) -- Выполняет команду
+```
+
+
+

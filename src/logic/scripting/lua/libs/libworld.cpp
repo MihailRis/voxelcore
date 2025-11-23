@@ -10,7 +10,7 @@
 #include "content/ContentControl.hpp"
 #include "engine/Engine.hpp"
 #include "world/files/WorldFiles.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "io/io.hpp"
 #include "lighting/Lighting.hpp"
 #include "voxels/Chunk.hpp"
@@ -153,8 +153,10 @@ static void integrate_chunk_client(Chunk& chunk) {
 
     chunk.flags.loadedLights = false;
     chunk.flags.lighted = false;
-    chunk.lightmap.clear();
-    Lighting::prebuildSkyLight(chunk, *indices);
+    if (chunk.lightmap) {
+        chunk.lightmap->clear();
+        Lighting::prebuildSkyLight(chunk, *indices);
+    }
 
     for (int lz = -1; lz <= 1; lz++) {
         for (int lx = -1; lx <= 1; lx++) {
@@ -251,5 +253,5 @@ const luaL_Reg worldlib[] = {
     {"save_chunk_data", lua::wrap<l_save_chunk_data>},
     {"count_chunks", lua::wrap<l_count_chunks>},
     {"reload_script", lua::wrap<l_reload_script>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

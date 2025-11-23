@@ -1,13 +1,13 @@
 #include "rigging.hpp"
 
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+
 #include "assets/Assets.hpp"
 #include "coders/json.hpp"
 #include "data/dv_util.hpp"
 #include "graphics/commons/Model.hpp"
 #include "graphics/render/ModelBatch.hpp"
-
-#include <glm/ext/matrix_transform.hpp>
-#include <glm/gtx/matrix_decompose.hpp>
 
 using namespace rigging;
 
@@ -23,7 +23,7 @@ Bone::Bone(
     std::string name,
     std::string model,
     std::vector<std::unique_ptr<Bone>> bones,
-    glm::vec3 offset
+    const glm::vec3& offset
 )
     : index(index),
       name(std::move(name)),
@@ -50,6 +50,39 @@ Skeleton::Skeleton(const SkeletonConfig* config)
     const auto& bones = config->getBones();
     for (size_t i = 0; i < bones.size(); i++) {
         flags[i].visible = true;
+    }
+}
+
+dv::value Skeleton::serialize(bool saveTextures, bool savePose) const {
+    auto root = dv::object();
+    if (saveTextures) {
+        auto& map = root.object("textures");
+        for (auto& [slot, texture] : textures) {
+            map[slot] = texture;
+        }
+    }
+    if (savePose) {
+        auto& list = root.list("pose");
+        for (auto& mat : pose.matrices) {
+            list.add(dv::to_value(mat));
+        }
+    }
+    return root;
+}
+
+void Skeleton::deserialize(const dv::value& root) {
+    if (auto found = root.at("textures")) {
+        auto& texturesmap = *found;
+        for (auto& [slot, _] : texturesmap.asObject()) {
+            texturesmap.at(slot).get(textures[slot]);
+        }
+    }
+    if (auto found = root.at("pose")) {
+        auto& posearr = *found;
+        auto& matrices = pose.matrices;
+        for (size_t i = 0; i < std::min(matrices.size(), posearr.size()); i++) {
+            dv::get_mat(posearr[i], pose.matrices[i]);
+        }
     }
 }
 
@@ -89,21 +122,26 @@ size_t SkeletonConfig::update(
     return count;
 }
 
+static glm::mat4 build_matrix(const glm::mat3& rot, const glm::vec3& pos) {
+    glm::mat4 combined(1.0f);
+    combined = glm::translate(combined, pos);
+    combined = combined * glm::mat4(rot);
+    return combined;
+}
+
 void SkeletonConfig::update(
-    Skeleton& skeleton, const glm::mat4& matrix, const glm::vec3& position
+    Skeleton& skeleton, const glm::mat3& rotation, const glm::vec3& position
 ) const {
     if (skeleton.interpolation.isEnabled()) {
         const auto& interpolation = skeleton.interpolation;
-        glm::vec3 scale, translation, skew;
-        glm::quat rotation;
-        glm::vec4 perspective;
-        glm::decompose(matrix, scale, rotation, translation, skew, perspective);
-
-        auto delta = interpolation.getCurrent() - position;
-        auto interpolatedMatrix = glm::translate(matrix, delta);
-        update(0, skeleton, root.get(), interpolatedMatrix);
+        update(
+            0,
+            skeleton,
+            root.get(),
+            build_matrix(rotation, interpolation.getCurrent())
+        );
     } else {
-        update(0, skeleton, root.get(), matrix);
+        update(0, skeleton, root.get(), build_matrix(rotation, position));
     }
 }
 
@@ -111,10 +149,10 @@ void SkeletonConfig::render(
     const Assets& assets,
     ModelBatch& batch,
     Skeleton& skeleton,
-    const glm::mat4& matrix,
+    const glm::mat3& rotation,
     const glm::vec3& position
 ) const {
-    update(skeleton, matrix, position);
+    update(skeleton, rotation, position);
 
     if (!skeleton.visible) {
         return;

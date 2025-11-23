@@ -1,6 +1,8 @@
 #include "vcm.hpp"
 
-#include <iostream>
+#include <algorithm>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include "xml.hpp"
 #include "util/stringutil.hpp"
@@ -73,6 +75,29 @@ static void perform_box(const xmlelement& root, model::Model& model) {
     auto from = root.attr("from").asVec3();
     auto to = root.attr("to").asVec3();
 
+    glm::vec3 origin = (from + to) * 0.5f;
+    if (root.has("origin")) {
+        origin = root.attr("origin").asVec3();
+    }
+
+    glm::mat4 tsf(1.0f);
+    from -= origin;
+    to -= origin;
+    tsf = glm::translate(tsf, origin);
+
+    if (root.has("rotate")) {
+        auto text = root.attr("rotate").getText();
+        if (std::count(text.begin(), text.end(), ',') == 3) {
+            auto quat = root.attr("rotate").asVec4();
+            tsf *= glm::mat4_cast(glm::quat(quat.w, quat.x, quat.y, quat.z));
+        } else {
+            auto rot = root.attr("rotate").asVec3();
+            tsf = glm::rotate(tsf, glm::radians(rot.x), glm::vec3(1, 0, 0));
+            tsf = glm::rotate(tsf, glm::radians(rot.y), glm::vec3(0, 1, 0));
+            tsf = glm::rotate(tsf, glm::radians(rot.z), glm::vec3(0, 0, 1));
+        }
+    }
+
     UVRegion regions[6] {};
     regions[0].scale(to.x - from.x, to.y - from.y);
     regions[1].scale(from.x - to.x, to.y - from.y);
@@ -142,7 +167,7 @@ static void perform_box(const xmlelement& root, model::Model& model) {
         bool enabled[6] {};
         enabled[i] = true;
         auto& mesh = model.addMesh(texfaces[i], shading);
-        mesh.addBox(center, halfsize, regions, enabled);
+        mesh.addBox(center, halfsize, regions, enabled, tsf);
     }
 }
 
@@ -163,18 +188,17 @@ static std::unique_ptr<model::Model> load_model(const xmlelement& root) {
 }
 
 std::unique_ptr<model::Model> vcm::parse(
-    std::string_view file, std::string_view src
+    std::string_view file, std::string_view src, bool usexml
 ) {
     try {
-        auto doc = io::path(std::string(file)).extension() == ".xml" 
-                    ? xml::parse(file, src) : xml::parse_vcm(file, src, "model");
+        auto doc =
+            usexml ? xml::parse(file, src) : xml::parse_vcm(file, src, "model");
         const auto& root = *doc->getRoot();
         if (root.getTag() != "model") {
             throw std::runtime_error(
                 "'model' tag expected as root, got '" + root.getTag() + "'"
             );
         }
-        std::cout << xml::stringify(*doc) << std::endl;
         return load_model(root);
     } catch (const parsing_error& err) {
         throw std::runtime_error(err.errorLog());

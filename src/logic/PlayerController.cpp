@@ -13,6 +13,7 @@
 #include "items/ItemStack.hpp"
 #include "lighting/Lighting.hpp"
 #include "objects/Entities.hpp"
+#include "objects/Entity.hpp"
 #include "objects/Player.hpp"
 #include "objects/Players.hpp"
 #include "physics/Hitbox.hpp"
@@ -206,8 +207,7 @@ void CameraControl::update(
         tpCamera->front = camera->front;
         tpCamera->right = camera->right;
     }
-    if (player.currentCamera == spCamera || player.currentCamera == tpCamera ||
-        player.currentCamera == camera) {
+    if (player.isCurrentCameraBuiltin()) {
         player.currentCamera->setFov(glm::radians(settings.fov.get()));
     }
 }
@@ -270,7 +270,6 @@ void PlayerController::update(float delta, const Input* inputEvents) {
     } else {
         resetKeyboard();
     }
-    updatePlayer(delta);
 }
 
 void PlayerController::postUpdate(
@@ -280,7 +279,7 @@ void PlayerController::postUpdate(
         updateFootsteps(delta);
     }
 
-    if (!pause && input) {
+    if (!pause && input && player.isCurrentCameraBuiltin()) {
         camControl.updateMouse(this->input, windowHeight);
     }
     camControl.refreshRotation();
@@ -309,20 +308,7 @@ void PlayerController::updateKeyboard(const Input& inputEvents) {
 }
 
 void PlayerController::resetKeyboard() {
-    input.zoom = false;
-    input.moveForward = false;
-    input.moveBack = false;
-    input.moveLeft = false;
-    input.moveRight = false;
-    input.sprint = false;
-    input.shift = false;
-    input.cheat = false;
-    input.jump = false;
-    input.delta = {};
-}
-
-void PlayerController::updatePlayer(float delta) {
-    player.updateInput(input, delta);
+    input = {};
 }
 
 static int determine_rotation(
@@ -338,7 +324,8 @@ static int determine_rotation(
             if (norm.z > 0.0f) return BLOCK_DIR_NORTH;
             if (norm.z < 0.0f) return BLOCK_DIR_SOUTH;
         } else if (name == "pane" || name == "stairs") {
-            int verticalBit = (name == "stairs" && (norm.y - camDir.y * 0.5f) < 0.0) ? 4 : 0; 
+            int verticalBit =
+                (name == "stairs" && (norm.y - camDir.y * 0.5f) < 0.0) ? 4 : 0;
             if (abs(camDir.x) > abs(camDir.z)) {
                 if (camDir.x > 0.0f) return BLOCK_DIR_EAST | verticalBit;
                 if (camDir.x < 0.0f) return BLOCK_DIR_WEST | verticalBit;
@@ -500,7 +487,10 @@ void PlayerController::updateInteraction(const Input& inputEvents, float delta) 
     }
     const auto& bindings = inputEvents.getBindings();
     bool xkey = bindings.active(BIND_PLAYER_FAST_INTERACTOIN);
-    float maxDistance = xkey ? 200.0f : 10.0f;
+    float maxDistance = player.getMaxInteractionDistance();
+    if (xkey) {
+        maxDistance *= 100.0;
+    }
     bool longInteraction = interactionTimer <= 0 || xkey;
     bool lclick = bindings.jactive(BIND_PLAYER_DESTROY) ||
                   (longInteraction && bindings.active(BIND_PLAYER_DESTROY));

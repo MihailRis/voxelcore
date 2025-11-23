@@ -6,7 +6,7 @@
         onclick='%{open_func}("%{filename}")'
         markup='md'
         tooltip='%{unit}'
-        sizefunc="-1,-1">
+        size-func="-1,-1">
         [#FFFFFF80]%{path}[#FFFFFFFF]%{name}
     </label>
 </container>

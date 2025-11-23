@@ -47,7 +47,7 @@ struct ChunkMeshData {
 };
 
 struct ChunkMesh {
-    std::unique_ptr<Mesh<ChunkVertex> > mesh;
+    std::unique_ptr<Mesh<ChunkVertex>> mesh;
     SortingMeshData sortingMeshData;
     std::unique_ptr<Mesh<ChunkVertex> > sortedMesh = nullptr;
 };

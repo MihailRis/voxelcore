@@ -8,5 +8,7 @@ namespace model {
 }
 
 namespace vcm {
-    std::unique_ptr<model::Model> parse(std::string_view file, std::string_view src);
+    std::unique_ptr<model::Model> parse(
+        std::string_view file, std::string_view src, bool usexml
+    );
 }

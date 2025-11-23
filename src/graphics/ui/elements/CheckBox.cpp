@@ -52,7 +52,7 @@ FullCheckBox::FullCheckBox(
       checkbox(std::make_shared<CheckBox>(gui, checked)),
       label(std::make_shared<Label>(gui, text)) {
     setColor(glm::vec4(0.0f));
-    setOrientation(Orientation::horizontal);
+    setOrientation(Orientation::HORIZONTAL);
 
     add(checkbox);
 

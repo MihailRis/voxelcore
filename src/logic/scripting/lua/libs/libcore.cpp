@@ -8,7 +8,7 @@
 #include "content/Content.hpp"
 #include "content/ContentControl.hpp"
 #include "engine/Engine.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "io/io.hpp"
 #include "io/settings_io.hpp"
 #include "frontend/menu.hpp"
@@ -20,6 +20,12 @@
 #include "util/platform.hpp"
 #include "world/Level.hpp"
 #include "world/generator/WorldGenerator.hpp"
+#include "util/platform.hpp"
+#include "frontend/locale.hpp"
+#include "graphics/ui/gui_util.hpp"
+#include "graphics/ui/GUI.hpp"
+#include "graphics/ui/elements/Menu.hpp"
+#include "window/Window.hpp"
 
 using namespace scripting;
 
@@ -38,7 +44,16 @@ static int l_reset_content(lua::State* L) {
     if (level != nullptr) {
         throw std::runtime_error("world must be closed before");
     }
-    content_control->resetContent();
+    std::vector<std::string> nonResetPacks;
+    if (lua::istable(L, 1)) {
+        int len = lua::objlen(L, 1);
+        for (int i = 0; i < len; i++) {
+            lua::rawgeti(L, i + 1, 1);
+            nonResetPacks.emplace_back(lua::require_lstring(L, -1));
+            lua::pop(L);
+        }
+    }
+    content_control->resetContent(std::move(nonResetPacks));
     return 0;
 }
 
@@ -105,6 +120,7 @@ static int l_close_world(lua::State* L) {
     if (controller == nullptr) {
         throw std::runtime_error("no world open");
     }
+    controller->processBeforeQuit();
     bool save_world = lua::toboolean(L, 1);
     if (save_world) {
         controller->saveWorld();
@@ -229,6 +245,24 @@ static int l_open_folder(lua::State* L) {
     return 0;
 }
 
+static int l_open_url(lua::State* L) {
+    auto url = lua::require_string(L, 1);
+
+    std::wstring msg = langs::get(L"Are you sure you want to open the link:") +
+                       L"\n" + util::str2wstr_utf8(url) +
+                       std::wstring(L"?");
+
+    auto menu = engine->getGUI().getMenu();
+
+    guiutil::confirm(*engine, msg, [url, menu]() {
+        platform::open_url(url);
+        if (!menu->back()) {
+            menu->reset();
+        }
+    });
+    return 0;
+}
+
 /// @brief Quit the game
 static int l_quit(lua::State*) {
     engine->quit();
@@ -266,6 +300,12 @@ static int l_capture_output(lua::State* L) {
     return 1;
 }
 
+static int l_set_title(lua::State* L) {
+    auto title = lua::require_string(L, 1);
+    engine->getWindow().setTitle(title);
+    return 0;
+}
+
 const luaL_Reg corelib[] = {
     {"blank", lua::wrap<l_blank>},
     {"get_version", lua::wrap<l_get_version>},
@@ -284,7 +324,9 @@ const luaL_Reg corelib[] = {
     {"str_setting", lua::wrap<l_str_setting>},
     {"get_setting_info", lua::wrap<l_get_setting_info>},
     {"open_folder", lua::wrap<l_open_folder>},
+    {"open_url", lua::wrap<l_open_url>},
     {"quit", lua::wrap<l_quit>},
     {"capture_output", lua::wrap<l_capture_output>},
-    {NULL, NULL}
+    {"set_title", lua::wrap<l_set_title>},
+    {nullptr, nullptr}
 };

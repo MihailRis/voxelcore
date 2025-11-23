@@ -9,7 +9,7 @@
 #include "content/Content.hpp"
 #include "content/ContentPack.hpp"
 #include "debug/Logger.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "io/io.hpp"
 #include "graphics/core/Texture.hpp"
 #include "logic/scripting/scripting.hpp"

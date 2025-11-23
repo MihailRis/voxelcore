@@ -20,6 +20,10 @@ hud.open(
     [опционально] invid: int
 ) -> int
 
+-- Возвращает true если указаный макет UI открыт.
+hud.is_open(
+    layoutid: str
+) -> bool
 
 -- Открывает инвентарь и UI блока.
 -- Если блок не имеет макета UI - бросается исключение.
@@ -68,4 +72,7 @@ hud.is_inventory_open() -> bool
 
 -- Устанавливает разрешение на паузу. При значении false меню паузы не приостанавливает игру.
 hud.set_allow_pause(flag: bool)
+
+-- Функция, управляющая именованным скелетом 'hand' (см. gfx.skeletons)
+hud.hand_controller: function()
 ```

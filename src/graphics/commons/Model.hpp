@@ -22,14 +22,16 @@ namespace model {
             const glm::vec3& pos,
             const glm::vec3& right,
             const glm::vec3& up,
-            const glm::vec3& norm
+            const glm::vec3& norm,
+            const UVRegion& region
         );
         void addPlane(
             const glm::vec3& pos,
             const glm::vec3& right,
             const glm::vec3& up,
             const glm::vec3& norm,
-            const UVRegion& region
+            const UVRegion& region,
+            const glm::mat4& transform
         );
         void addRect(
             const glm::vec3& pos,
@@ -44,6 +46,13 @@ namespace model {
             const glm::vec3& size,
             const UVRegion (&texfaces)[6],
             const bool enabledSides[6]
+        );
+        void addBox(
+            const glm::vec3& pos,
+            const glm::vec3& size,
+            const UVRegion (&texfaces)[6],
+            const bool enabledSides[6],
+            const glm::mat4& transform
         );
         void scale(const glm::vec3& size);
     };

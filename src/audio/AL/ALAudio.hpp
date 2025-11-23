@@ -58,6 +58,7 @@ namespace audio {
         bool keepSource;
         char buffer[BUFFER_SIZE];
         bool loop = false;
+        bool stopOnEnd = false;
 
         bool preloadBuffer(uint buffer, bool loop);
         void unqueueBuffers(uint alsource);
@@ -80,6 +81,38 @@ namespace audio {
         void setTime(duration_t time) override;
 
         static inline constexpr uint STREAM_BUFFERS = 3;
+
+        bool isStopOnEnd() const override;
+        
+        void setStopOnEnd(bool stopOnEnd) override;
+    };
+
+    class ALInputDevice : public InputDevice {
+    public:
+        ALInputDevice(
+            ALAudio* al,
+            ALCdevice* device,
+            uint channels,
+            uint bitsPerSample,
+            uint sampleRate
+        );
+        ~ALInputDevice() override;
+
+        void startCapture() override;
+        void stopCapture() override;
+
+        uint getChannels() const override;
+        uint getSampleRate() const override;
+        uint getBitsPerSample() const override;
+        const std::string& getDeviceSpecifier() const override;
+
+        size_t read(char* buffer, size_t bufferSize) override;
+    private:
+        ALCdevice* device;
+        uint channels;
+        uint bitsPerSample;
+        uint sampleRate;
+        std::string deviceSpecifier;
     };
 
     /// @brief AL source adapter
@@ -90,7 +123,7 @@ namespace audio {
         float volume = 0.0f;
     public:
         ALStream* stream = nullptr;
-        bool stopped = true;
+        bool manuallyStopped = true;
         bool paused = false;
         uint source;
         duration_t duration = 0.0f;
@@ -130,6 +163,8 @@ namespace audio {
         bool isRelative() const override;
 
         int getPriority() const override;
+
+        bool isManuallyStopped() const override;
     };
 
     class ALAudio : public Backend {
@@ -152,14 +187,23 @@ namespace audio {
         void freeSource(uint source);
         void freeBuffer(uint buffer);
 
-        std::vector<std::string> getAvailableDevices() const;
-
         std::unique_ptr<Sound> createSound(
             std::shared_ptr<PCM> pcm, bool keepPCM
         ) override;
+
         std::unique_ptr<Stream> openStream(
             std::shared_ptr<PCMStream> stream, bool keepSource
         ) override;
+
+        std::unique_ptr<InputDevice> openInputDevice(
+            const std::string& deviceName,
+            uint sampleRate,
+            uint channels,
+            uint bitsPerSample
+        ) override;
+
+        std::vector<std::string> getOutputDeviceNames() override;
+        std::vector<std::string> getInputDeviceNames() override;
 
         void setListener(
             glm::vec3 position,

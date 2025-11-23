@@ -8,19 +8,17 @@
 #include "elements/Button.hpp"
 #include "elements/Canvas.hpp"
 #include "elements/CheckBox.hpp"
-#include "elements/TextBox.hpp"
-#include "elements/SplitBox.hpp"
-#include "elements/TrackBar.hpp"
-#include "elements/SelectBox.hpp"
 #include "elements/Image.hpp"
 #include "elements/InlineFrame.hpp"
 #include "elements/InputBindBox.hpp"
 #include "elements/InventoryView.hpp"
 #include "elements/Menu.hpp"
+#include "elements/ModelViewer.hpp"
 #include "elements/Panel.hpp"
+#include "elements/SelectBox.hpp"
+#include "elements/SplitBox.hpp"
 #include "elements/TextBox.hpp"
 #include "elements/TrackBar.hpp"
-#include "elements/ModelViewer.hpp"
 #include "engine/Engine.hpp"
 #include "frontend/locale.hpp"
 #include "frontend/menu.hpp"
@@ -32,31 +30,31 @@
 using namespace gui;
 
 static Align align_from_string(std::string_view str, Align def) {
-    if (str == "left") return Align::left;
-    if (str == "center") return Align::center;
-    if (str == "right") return Align::right;
-    if (str == "top") return Align::top;
-    if (str == "bottom") return Align::bottom;
+    if (str == "left") return Align::LEFT;
+    if (str == "center") return Align::CENTER;
+    if (str == "right") return Align::RIGHT;
+    if (str == "top") return Align::TOP;
+    if (str == "bottom") return Align::BOTTOM;
     return def;
 }
 
 static Gravity gravity_from_string(const std::string& str) {
     static const std::unordered_map<std::string, Gravity> gravity_names {
-        {"top-left", Gravity::top_left},
-        {"top-center", Gravity::top_center},
-        {"top-right", Gravity::top_right},
-        {"center-left", Gravity::center_left},
-        {"center-center", Gravity::center_center},
-        {"center-right", Gravity::center_right},
-        {"bottom-left", Gravity::bottom_left},
-        {"bottom-center", Gravity::bottom_center},
-        {"bottom-right", Gravity::bottom_right},
+        {"top-left", Gravity::TOP_LEFT},
+        {"top-center", Gravity::TOP_CENTER},
+        {"top-right", Gravity::TOP_RIGHT},
+        {"center-left", Gravity::CENTER_LEFT},
+        {"center-center", Gravity::CENTER_CENTER},
+        {"center-right", Gravity::CENTER_RIGHT},
+        {"bottom-left", Gravity::BOTTOM_LEFT},
+        {"bottom-center", Gravity::BOTTOM_CENTER},
+        {"bottom-right", Gravity::BOTTOM_RIGHT},
     };
     auto found = gravity_names.find(str);
     if (found != gravity_names.end()) {
         return found->second;
     }
-    return Gravity::none;
+    return Gravity::NONE;
 }
 
 static runnable create_runnable(
@@ -75,7 +73,7 @@ static runnable create_runnable(
     return nullptr;
 }
 
-static onaction create_action(
+static OnAction create_action(
     const UiXmlReader& reader,
     const xml::xmlelement& element,
     const std::string& name
@@ -152,8 +150,9 @@ static void read_uinode(
     if (element.has("pressed-color")) {
         node.setPressedColor(element.attr("pressed-color").asColor());
     }
-    const auto& alignName = element.attr("align", "").getText();
-    node.setAlign(align_from_string(alignName, node.getAlign()));
+    node.setAlign(
+        align_from_string(element.attr("align", "").getText(), node.getAlign())
+    );
 
     if (element.has("gravity")) {
         node.setGravity(gravity_from_string(element.attr("gravity").getText()));
@@ -179,7 +178,11 @@ static void read_uinode(
     }
 
     if (auto onclick = create_action(reader, element, "onclick")) {
-        node.listenAction(onclick);
+        node.listenClick(onclick);
+    }
+
+    if (auto onclick = create_action(reader, element, "onrightclick")) {
+        node.listenRightClick(onclick);
     }
 
     if (auto onfocus = create_action(reader, element, "onfocus")) {
@@ -196,7 +199,10 @@ static void read_uinode(
 }
 
 static void read_container_impl(
-    UiXmlReader& reader, const xml::xmlelement& element, Container& container
+    UiXmlReader& reader,
+    const xml::xmlelement& element,
+    Container& container,
+    bool subnodes
 ) {
     read_uinode(reader, element, container);
 
@@ -205,6 +211,9 @@ static void read_container_impl(
     }
     if (element.has("scroll-step")) {
         container.setScrollStep(element.attr("scroll-step").asInt());
+    }
+    if (!subnodes) {
+        return;
     }
     for (auto& sub : element.getElements()) {
         if (sub->isText()) continue;
@@ -218,7 +227,7 @@ static void read_container_impl(
 void UiXmlReader::readUINode(
     UiXmlReader& reader, const xml::xmlelement& element, Container& container
 ) {
-    read_container_impl(reader, element, container);
+    read_container_impl(reader, element, container, true);
 }
 
 void UiXmlReader::readUINode(
@@ -228,11 +237,9 @@ void UiXmlReader::readUINode(
 }
 
 static void read_base_panel_impl(
-    UiXmlReader& reader,
-    const xml::xmlelement& element,
-    BasePanel& panel
+    UiXmlReader& reader, const xml::xmlelement& element, BasePanel& panel
 ) {
-    read_uinode(reader, element, panel);
+    read_container_impl(reader, element, panel, false);
 
     if (element.has("padding")) {
         glm::vec4 padding = element.attr("padding").asVec4();
@@ -243,9 +250,9 @@ static void read_base_panel_impl(
         ));
     }
     if (element.has("orientation")) {
-        auto &oname = element.attr("orientation").getText();
+        auto& oname = element.attr("orientation").getText();
         if (oname == "horizontal") {
-            panel.setOrientation(Orientation::horizontal);
+            panel.setOrientation(Orientation::HORIZONTAL);
         }
     }
 }
@@ -270,7 +277,7 @@ static void read_panel_impl(
     if (element.has("orientation")) {
         auto& oname = element.attr("orientation").getText();
         if (oname == "horizontal") {
-            panel.setOrientation(Orientation::horizontal);
+            panel.setOrientation(Orientation::HORIZONTAL);
         }
     }
     if (subnodes) {
@@ -331,7 +338,7 @@ static std::shared_ptr<UINode> read_label(
     if (element.has("multiline")) {
         label->setMultiline(element.attr("multiline").asBool());
         if (!element.has("valign")) {
-            label->setVerticalAlign(Align::top);
+            label->setVerticalAlign(Align::TOP);
         }
     }
     if (element.has("text-wrap")) {
@@ -347,7 +354,7 @@ static std::shared_ptr<UINode> read_container(
     UiXmlReader& reader, const xml::xmlelement& element
 ) {
     auto container = std::make_shared<Container>(reader.getGUI(), glm::vec2());
-    read_container_impl(reader, element, *container);
+    read_container_impl(reader, element, *container, true);
     return container;
 }
 
@@ -357,15 +364,14 @@ static std::shared_ptr<UINode> read_split_box(
     float splitPos = element.attr("split-pos", "0.5").asFloat();
     Orientation orientation =
         element.attr("orientation", "vertical").getText() == "horizontal"
-            ? Orientation::horizontal
-            : Orientation::vertical;
+            ? Orientation::HORIZONTAL
+            : Orientation::VERTICAL;
     auto splitBox = std::make_shared<SplitBox>(
         reader.getGUI(), glm::vec2(), splitPos, orientation
     );
     read_base_panel_impl(reader, element, *splitBox);
     for (auto& sub : element.getElements()) {
-        if (sub->isText())
-            continue;
+        if (sub->isText()) continue;
         auto subnode = reader.readUINode(*sub);
         if (subnode) {
             splitBox->add(subnode);
@@ -378,15 +384,15 @@ static std::shared_ptr<UINode> read_model_viewer(
     UiXmlReader& reader, const xml::xmlelement& element
 ) {
     auto model = element.attr("src", "").getText();
-    auto viewer = std::make_shared<ModelViewer>(
-        reader.getGUI(), glm::vec2(), model
-    );
-    read_container_impl(reader, element, *viewer);
+    auto viewer =
+        std::make_shared<ModelViewer>(reader.getGUI(), glm::vec2(), model);
+    read_container_impl(reader, element, *viewer, true);
     if (element.has("center")) {
         viewer->setCenter(element.attr("center").asVec3());
     }
     if (element.has("cam-rotation")) {
-        viewer->setRotation(glm::radians(element.attr("cam-rotation").asVec3()));
+        viewer->setRotation(glm::radians(element.attr("cam-rotation").asVec3())
+        );
     }
     return viewer;
 }
@@ -449,7 +455,8 @@ static std::shared_ptr<UINode> read_select(
         }
         auto value = elem->attr("value").getText();
         auto text = parse_inner_text(*elem, reader.getContext());
-        options.push_back(SelectBox::Option {std::move(value), std::move(text)});
+        options.push_back(SelectBox::Option {std::move(value), std::move(text)}
+        );
     }
 
     if (element.has("selected")) {
@@ -484,10 +491,9 @@ static std::shared_ptr<UINode> read_select(
             element.attr("onselect").getText(),
             reader.getFilename()
         );
-        selectBox->listenChange(
-        [callback=std::move(callback)](GUI&, const std::string& value) {
-            callback(value);
-        });
+        selectBox->listenChange([callback = std::move(callback)](
+                                    GUI&, const std::string& value
+                                ) { callback(value); });
     }
     read_panel_impl(reader, element, *selectBox, false);
     return selectBox;
@@ -538,7 +544,7 @@ static std::shared_ptr<UINode> read_text_box(
     );
     textbox->setHint(hint);
 
-    read_container_impl(reader, element, *textbox);
+    read_container_impl(reader, element, *textbox, true);
     if (element.has("padding")) {
         glm::vec4 padding = element.attr("padding").asVec4();
         textbox->setPadding(padding);
@@ -566,6 +572,11 @@ static std::shared_ptr<UINode> read_text_box(
     }
     if (element.has("line-numbers")) {
         textbox->setShowLineNumbers(element.attr("line-numbers").asBool());
+    }
+    if (element.has("keep-line-selection")) {
+        textbox->setKeepLineSelection(
+            element.attr("keep-line-selection").asBool()
+        );
     }
     if (element.has("markup")) {
         textbox->setMarkup(element.attr("markup").getText());
@@ -838,7 +849,7 @@ static std::shared_ptr<UINode> read_page_box(
     auto& gui = reader.getGUI();
     auto menu = std::make_shared<Menu>(gui);
     menu->setPageLoader(gui.getMenu()->getPageLoader());
-    read_container_impl(reader, element, *menu);
+    read_container_impl(reader, element, *menu, true);
 
     return menu;
 }
@@ -848,14 +859,15 @@ static std::shared_ptr<UINode> read_iframe(
 ) {
     auto& gui = reader.getGUI();
     auto iframe = std::make_shared<InlineFrame>(gui);
-    read_container_impl(reader, element, *iframe);
+    read_container_impl(reader, element, *iframe, true);
 
     std::string src = element.attr("src", "").getText();
     iframe->setSrc(src);
     return iframe;
 }
 
-UiXmlReader::UiXmlReader(gui::GUI& gui, scriptenv&& env) : gui(gui), env(std::move(env)) {
+UiXmlReader::UiXmlReader(gui::GUI& gui, scriptenv&& env)
+    : gui(gui), env(std::move(env)) {
     contextStack.emplace("");
     add("image", read_image);
     add("canvas", read_canvas);

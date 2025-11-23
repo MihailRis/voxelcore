@@ -213,6 +213,8 @@ public:
 
     void setAllowPause(bool flag);
 
+    bool isOpen(const std::string& layoutid) const;
+
     static bool showGeneratorMinimap;
 
     /// @brief Runtime updating debug visualization texture

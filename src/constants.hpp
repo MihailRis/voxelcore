@@ -6,7 +6,7 @@
 #include <string>
 
 inline constexpr int ENGINE_VERSION_MAJOR = 0;
-inline constexpr int ENGINE_VERSION_MINOR = 28;
+inline constexpr int ENGINE_VERSION_MINOR = 30;
 
 #ifdef NDEBUG
 inline constexpr bool ENGINE_DEBUG_BUILD = false;
@@ -14,7 +14,7 @@ inline constexpr bool ENGINE_DEBUG_BUILD = false;
 inline constexpr bool ENGINE_DEBUG_BUILD = true;
 #endif // NDEBUG
 
-inline const std::string ENGINE_VERSION_STRING = "0.28";
+inline const std::string ENGINE_VERSION_STRING = "0.30";
 
 /// @brief world regions format version
 inline constexpr uint REGION_FORMAT_VERSION = 3;
@@ -60,6 +60,8 @@ inline constexpr uint vox_index(uint x, uint y, uint z, uint w=CHUNK_W, uint d=C
 inline constexpr int ITEM_ICON_SIZE = 48;
 
 inline constexpr int TRANSLUCENT_BLOCKS_SORT_INTERVAL = 8;
+
+inline constexpr int ATLAS_EXTRUSION = 2;
 
 inline const std::string SHADERS_FOLDER = "shaders";
 inline const std::string TEXTURES_FOLDER = "textures";

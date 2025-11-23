@@ -6,27 +6,28 @@ local names = {
     "shadeless", "ambient-occlusion", "breakable", "selectable", "grounded",
     "hidden", "draw-group", "picking-item", "surface-replacement", "script-name",
     "ui-layout", "inventory-size", "tick-interval", "overlay-texture",
-    "translucent", "fields", "particles", "icon-type", "icon", "placing-block", 
+    "translucent", "fields", "particles", "icon-type", "icon", "placing-block",
     "stack-size", "name", "script-file", "culling"
 }
 for name, _ in pairs(user_props) do
     table.insert(names, name)
 end
--- remove undefined properties
-for id, blockprops in pairs(block.properties) do
-    for propname, value in pairs(blockprops) do
-        if not table.has(names, propname) then
-            blockprops[propname] = nil
+
+-- remove undefined properties and build tags set
+local function process_properties(lib)
+    for id, props in pairs(lib.properties) do
+        for propname, _ in pairs(props) do
+            if not table.has(names, propname) then
+                props[propname] = nil
+            end
         end
+
+        props.tags_set = lib.__get_tags(id)
     end
 end
-for id, itemprops in pairs(item.properties) do
-    for propname, value in pairs(itemprops) do
-        if not table.has(names, propname) then
-            itemprops[propname] = nil
-        end
-    end
-end
+
+process_properties(block)
+process_properties(item)
 
 local function make_read_only(t)
     setmetatable(t, {
@@ -57,10 +58,22 @@ local function cache_names(library)
     function library.index(name)
         return indices[name]
     end
+
+    function library.has_tag(id, tag)
+        if id == nil then
+            error("id is nil")
+        end
+        local props = library.properties[id]
+        local tags_set = props.tags_set
+        if tags_set then
+            return tags_set[tag]
+        else
+            return false
+        end
+    end
 end
 
 cache_names(block)
 cache_names(item)
 
-local scripts_registry = require "core:internal/scripts_registry"
-scripts_registry.build_registry()
+__vc_scripts_registry.build_registry()

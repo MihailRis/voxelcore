@@ -14,9 +14,11 @@ class Assets;
 class Atlas;
 class Block;
 struct UVRegion;
+struct Variant;
 struct GraphicsSettings;
 
-inline constexpr int MAX_VARIANTS = 16;
+inline constexpr int GFXC_MAX_VARIANTS = 16;
+inline constexpr int GFXC_SIDES = 6;
 
 class ContentGfxCache {
     const Content& content;
@@ -25,7 +27,18 @@ class ContentGfxCache {
 
     // array of block sides uv regions (6 per block)
     std::unique_ptr<UVRegion[]> sideregions;
-    std::unordered_map<blockid_t, model::Model> models;
+    std::unordered_map<uint64_t, model::Model> models;
+    
+    static inline uint64_t modelKey(blockid_t id, uint8_t variant) {
+        return (uint64_t(id) << 8) | uint64_t(variant & 0xFF);
+    }
+
+    void refreshVariant(
+        const Block& def,
+        const Variant& variant,
+        uint8_t variantIndex,
+        const Atlas& atlas
+    );
 public:
     ContentGfxCache(
         const Content& content,
@@ -34,11 +47,17 @@ public:
     );
     ~ContentGfxCache();
 
-    inline const UVRegion& getRegion(blockid_t id, uint8_t variant, int side) const {
-        return sideregions[(id * 6 + side) * MAX_VARIANTS + variant];
+    static inline size_t getRegionIndex(
+        blockid_t id, uint8_t variant, int side, bool opaque
+    ) {
+        return ((id * GFXC_SIDES + side) * GFXC_MAX_VARIANTS + variant) * 2 + opaque;
     }
 
-    const model::Model& getModel(blockid_t id) const;
+    inline const UVRegion& getRegion(blockid_t id, uint8_t variant, int side, bool dense) const {
+        return sideregions[getRegionIndex(id, variant, side, !dense)];
+    }
+
+    const model::Model& getModel(blockid_t id, uint8_t variant) const;
 
     void refresh(const Block& block, const Atlas& atlas);
 

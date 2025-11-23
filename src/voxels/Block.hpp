@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <set>
 
 #include "data/dv.hpp"
 #include "maths/UVRegion.hpp"
@@ -47,7 +48,10 @@ struct BlockFuncsSet {
     bool onreplaced : 1;
     bool oninteract : 1;
     bool randupdate : 1;
+    bool onblocktick : 1;
     bool onblockstick : 1;
+    bool onblockpresent : 1;
+    bool onblockremoved : 1;
 };
 
 struct CoordSystem {
@@ -261,6 +265,8 @@ public:
 
     std::unique_ptr<Variants> variants;
 
+    std::vector<std::string> tags;
+
     /// @brief Runtime indices (content indexing results)
     struct {
         /// @brief block runtime integer id
@@ -272,7 +278,7 @@ public:
         /// @brief does the block emit any lights
         bool emissive = false;
 
-        // @brief block size is greather than 1x1x1
+        // @brief block size is greater than 1x1x1
         bool extended = false;
 
         /// @brief set of hitboxes sets with all coord-systems precalculated
@@ -285,6 +291,8 @@ public:
         itemid_t pickingItem = 0;
 
         blockid_t surfaceReplacement = 0;
+
+        std::set<int> tags;
     } rt {};
 
     Block(const std::string& name);

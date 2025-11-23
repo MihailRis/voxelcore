@@ -43,11 +43,8 @@ function build_files_list(filenames, highlighted_part)
     end
 end
 
-function on_open(mode)
-    registry = require "core:internal/scripts_registry"
-    
-    local files_list = document.filesList
-
+function on_open()
+    registry = __vc_scripts_registry
     filenames = registry.filenames
     table.sort(filenames)
     build_files_list(filenames)

@@ -91,7 +91,9 @@ target_compile_options(
            /wd4245 # conversion from 'int' to 'const size_t', signed/unsigned
                    # mismatch
            /wd4100 # unreferenced formal parameter
+           /wd4457 # declaration of 'var' hides function parameter 
            /wd4458 # declaration of 'var' hides class member
+           /wd4459 # declaration of 'var' hides global declaration 
            /wd4101 # 'var': unreferenced local variable
            /wd4388 # 'token' : signed/unsigned mismatch
            /wd4018 # '>': signed/unsigned mismatch
@@ -101,6 +103,7 @@ target_compile_options(
            -Wextra
            # additional warnings
            -Wformat-nonliteral
+           #-Wsign-conversion
            -Wcast-align
            -Wpointer-arith
            -Wundef
@@ -108,6 +111,10 @@ target_compile_options(
            -Wno-unused-parameter
            -Wno-sign-compare
            -Wno-unknown-pragmas
+           >
+           $<$<CXX_COMPILER_ID:GNU>:
+           -Wduplicated-branches
+           -Wduplicated-cond
            >)
 
 target_link_options(

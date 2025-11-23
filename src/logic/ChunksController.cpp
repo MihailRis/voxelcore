@@ -15,6 +15,7 @@
 #include "voxels/Chunks.hpp"
 #include "voxels/GlobalChunks.hpp"
 #include "world/Level.hpp"
+#include "world/LevelEvents.hpp"
 #include "world/World.hpp"
 #include "world/generator/WorldGenerator.hpp"
 
@@ -149,7 +150,7 @@ bool ChunksController::buildLights(
         }
     }
     if (surrounding == MIN_SURROUNDING) {
-        if (lighting) {
+        if (lighting && chunk->lightmap) {
             bool lightsCache = chunk->flags.loadedLights;
             if (!lightsCache) {
                 lighting->buildSkyLight(chunk->x, chunk->z);
@@ -169,17 +170,16 @@ void ChunksController::createChunk(const Player& player, int x, int z) const {
         }
         return;
     }
-    auto chunk = level.chunks->create(x, z);
+    auto chunk = level.chunks->create(x, z, lighting != nullptr);
     player.chunks->putChunk(chunk);
     auto& chunkFlags = chunk->flags;
-
     if (!chunkFlags.loaded) {
         generator->generate(chunk->voxels, x, z);
         chunkFlags.unsaved = true;
     }
     chunk->updateHeights();
-
-    if (!chunkFlags.loadedLights) {
+    level.events->trigger(LevelEventType::CHUNK_PRESENT, chunk.get());
+    if (!chunkFlags.loadedLights && chunk->lightmap) {
         Lighting::prebuildSkyLight(*chunk, *level.content.getIndices());
     }
     chunkFlags.loaded = true;

@@ -6,6 +6,7 @@
 #include "voxels/Block.hpp"
 #include "content/Content.hpp"
 #include "debug/Logger.hpp"
+#include "core_defs.hpp"
 
 static debug::Logger logger("models-generator");
 
@@ -67,11 +68,18 @@ void ModelsGenerator::prepareModel(
         } else {
             auto srcModel = assets.get<model::Model>(blockModel.name);
             if (srcModel) {
+                bool defaultAssigned = variant.textureFaces[0] != TEXTURE_NOTFOUND;
                 auto model = std::make_unique<model::Model>(*srcModel);
                 for (auto& mesh : model->meshes) {
                     if (mesh.texture.length() && mesh.texture[0] == '$') {
                         int index = std::stoll(mesh.texture.substr(1));
                         mesh.texture = "blocks:" + variant.textureFaces[index];
+                    } else if (!defaultAssigned && !mesh.texture.empty()) {
+                        size_t sepPos = mesh.texture.find(':');
+                        if (sepPos == std::string::npos)
+                            continue;
+                        variant.textureFaces[0] = mesh.texture.substr(sepPos + 1);
+                        defaultAssigned = true;
                     }
                 }
                 blockModel.name = modelName;
