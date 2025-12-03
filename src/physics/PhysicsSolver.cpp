@@ -32,7 +32,8 @@ void PhysicsSolver::step(
     glm::vec3& pos = hitbox.position;
     glm::vec3& vel = hitbox.velocity;
     float gravityScale = hitbox.gravityScale;
-    
+    glm::vec3 gravityVec = hitbox.gravityVec;
+
     bool prevGrounded = hitbox.grounded;
     hitbox.grounded = false;
     for (uint i = 0; i < substeps; i++) {
@@ -40,13 +41,13 @@ void PhysicsSolver::step(
         float py = pos.y;
         float pz = pos.z;
         
-        vel += gravity * dt * gravityScale;
+        vel += (gravity + gravityVec) * dt * gravityScale;
         if (hitbox.type == BodyType::DYNAMIC) {
             colisionCalc(chunks, hitbox, vel, pos, half, 
                          (prevGrounded && gravityScale > 0.0f) ? 0.5f : 0.0f);
         }
 
-        pos += vel * dt + gravity * gravityScale * dt * dt * 0.5f;
+        pos += vel * dt + (gravity + gravityVec) * gravityScale * dt * dt * 0.5f;
         if (hitbox.grounded && pos.y < py) {
             pos.y = py;
         }

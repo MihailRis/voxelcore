@@ -56,10 +56,19 @@ static int l_set_gravity_scale(lua::State* L) {
     if (auto entity = get_entity(L, 1)) {
         auto& hitbox = entity->getRigidbody().hitbox;
         if (lua::istable(L, 2)) {
-            hitbox.gravityScale = lua::tovec3(L, 2).y;
+            // hitbox.gravityScale = lua::tovec3(L, 2).y;
+            hitbox.gravityVec = lua::tovec3(L, 2);
         } else {
             hitbox.gravityScale = lua::tonumber(L, 2);
         }
+    }
+    return 0;
+}
+
+static int l_set_gravity_vec(lua::State* L) {
+    if (auto entity = get_entity(L, 1)) {
+        auto& hitbox = entity->getRigidbody().hitbox;
+        hitbox.gravityVec = lua::tovec3(L, 2);
     }
     return 0;
 }
@@ -159,6 +168,7 @@ const luaL_Reg rigidbodylib[] = {
     {"set_size", lua::wrap<l_set_size>},
     {"get_gravity_scale", lua::wrap<l_get_gravity_scale>},
     {"set_gravity_scale", lua::wrap<l_set_gravity_scale>},
+    {"set_gravity_vec", lua::wrap<l_set_gravity_vec>},
     {"get_linear_damping", lua::wrap<l_get_linear_damping>},
     {"set_linear_damping", lua::wrap<l_set_linear_damping>},
     {"is_vdamping", lua::wrap<l_is_vdamping>},

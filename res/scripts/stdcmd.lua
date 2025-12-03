@@ -313,3 +313,24 @@ console.add_command(
         return "available presets:" .. presets
     end
 )
+
+console.add_command(
+    "player.gravity player:int x:num y:num z:num",
+    "Set gravity vector",
+    function(args, kwargs)
+        local pid = args[1]
+        local x, y, z = args[2], args[3], args[4]
+        local eid = player.get_entity(pid)
+            if not eid then
+                return "player has no entity"
+            end
+            
+            local ent = entities.get(eid)
+            if not ent then
+                return "entity not found"
+            end
+            
+            ent.rigidbody:set_gravity_vec({x, y, z})
+            return string.format(" gravity vector set to [%.1f, %.1f, %.1f]", x, y, z)
+    end, true
+)

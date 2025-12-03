@@ -22,6 +22,7 @@ local Rigidbody = {__index={
     set_size=function(self, v) return __rigidbody.set_size(self.eid, v) end,
     get_gravity_scale=function(self) return __rigidbody.get_gravity_scale(self.eid) end,
     set_gravity_scale=function(self, s) return __rigidbody.set_gravity_scale(self.eid, s) end,
+    set_gravity_vec=function(self, s) return __rigidbody.set_gravity_vec(self.eid, s) end,
     get_linear_damping=function(self) return __rigidbody.get_linear_damping(self.eid) end,
     set_linear_damping=function(self, f) return __rigidbody.set_linear_damping(self.eid, f) end,
     is_vdamping=function(self) return __rigidbody.is_vdamping(self.eid) end,
