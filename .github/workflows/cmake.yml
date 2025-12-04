@@ -39,7 +39,15 @@ jobs:
     #   make && make install INSTALL_INC=/usr/include/lua
       run: |
           sudo apt-get update
-          sudo apt-get install libglfw3-dev libglfw3 libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libgtest-dev libcurl4-openssl-dev
+          sudo apt-get install libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libgtest-dev libcurl4-openssl-dev
+          # dependency for building sdl
+          # https://github.com/libsdl-org/SDL/blob/main/docs/README-linux.md
+          sudo apt-get install -y build-essential git make \
+            pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
+            libaudio-dev libfribidi-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
+            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+            libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
+            libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev
           # fix luajit paths
           sudo ln -s /usr/lib/x86_64-linux-gnu/libluajit-5.1.a /usr/lib/x86_64-linux-gnu/liblua-5.1.a
           sudo ln -s /usr/include/luajit-2.1 /usr/include/lua
@@ -49,6 +57,13 @@ jobs:
           cmake -DCMAKE_BUILD_TYPE=Release -DENTT_INSTALL=on ..
           sudo make install
           cd ../..
+          # install SDL3
+          git clone https://github.com/libsdl-org/SDL.git
+          cd SDL
+          cmake -G "Ninja Multi-Config" -B.build .
+          cmake --build .build --config Release -j 4
+          sudo cmake --install .build --config Release
+          cd ..
 
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only
@@ -61,7 +76,7 @@ jobs:
     - name: Build
       # Build your program with the given configuration
       run: |
-        cmake --build ${{github.workspace}}/build --config ${{inputs.build_type}}
+        cmake --build ${{github.workspace}}/build --config ${{inputs.build_type}} -j 4
         mv ${{github.workspace}}/build/VoxelEngine VoxelEngine
     - name: Run tests
       if: ${{ inputs.run_tests }}

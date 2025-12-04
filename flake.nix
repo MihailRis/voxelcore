@@ -28,7 +28,7 @@
 
           buildInputs = with pkgs; [
             glm
-            glfw
+            sdl3
             glew
             zlib
             libpng
@@ -42,7 +42,7 @@
           ]; # libglvnd
 
           packages = with pkgs; [
-            glfw
+            sdl3
             mesa
             freeglut
             entt

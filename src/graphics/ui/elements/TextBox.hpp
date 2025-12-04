@@ -236,6 +236,7 @@ namespace gui {
         virtual bool isShowLineNumbers() const;
 
         virtual void reposition() override;
+        virtual void defocus() override;
         virtual void onFocus() override;
         virtual void refresh() override;
         virtual void doubleClick(int x, int y) override;

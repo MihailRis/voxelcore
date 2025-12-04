@@ -24,9 +24,18 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential libglfw3-dev libglfw3 libglew-dev libglew2.2 \
+          sudo apt-get install -y build-essential libglew-dev libglew2.2 \
             libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev \
             libcurl4-openssl-dev libgtest-dev cmake squashfs-tools valgrind
+          # dependency for building sdl
+          # https://github.com/libsdl-org/SDL/blob/main/docs/README-linux.md
+          sudo apt-get install -y build-essential git make \
+            pkg-config cmake ninja-build gnome-desktop-testing libasound2-dev libpulse-dev \
+            libaudio-dev libfribidi-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
+            libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
+            libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
+            libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev \
+            libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev
           # fix luajit paths
           sudo ln -s /usr/lib/x86_64-linux-gnu/libluajit-5.1.a /usr/lib/x86_64-linux-gnu/liblua5.1.a
           sudo ln -s /usr/include/luajit-2.1 /usr/include/lua
@@ -36,10 +45,17 @@ jobs:
           cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DENTT_INSTALL=on ..
           sudo make install
           cd ../..
+          # install SDL3
+          git clone https://github.com/libsdl-org/SDL.git
+          cd SDL
+          cmake -G "Ninja Multi-Config" -B.build .
+          cmake --build .build --config Release -j 4
+          sudo cmake --install .build --config Release
+          cd ..
       - name: Configure
         run: cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_APPDIR=1 -DVOXELENGINE_BUILD_TESTS=ON
       - name: Build
-        run: cmake --build build -t install
+        run: cmake --build build -t install -j 4
       - name: Run tests
         run: ctest --test-dir build
       - name: Run engine tests

@@ -1,21 +1,12 @@
 #include "Shader.hpp"
 
-#include <exception>
-#include <fstream>
-#include <sstream>
-#include <filesystem>
-
 #include <glm/gtc/type_ptr.hpp>
-
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
 
 #include "coders/GLSLExtension.hpp"
 #include "debug/Logger.hpp"
 
 static debug::Logger logger("gl-shader");
-
-namespace fs = std::filesystem;
 
 GLSLExtension* Shader::preprocessor = new GLSLExtension();
 Shader* Shader::used = nullptr;

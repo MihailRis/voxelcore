@@ -1,7 +1,7 @@
 project(VoxelEngineSrc)
 
-file(GLOB_RECURSE headers ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
-file(GLOB_RECURSE sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file(GLOB_RECURSE headers CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+file(GLOB_RECURSE sources CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 list(REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 
 add_library(VoxelEngineSrc STATIC ${sources} ${headers})
@@ -18,7 +18,7 @@ endif()
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(CURL REQUIRED)
-find_package(glfw3 REQUIRED)
+find_package(SDL3 REQUIRED)
 if(NOT APPLE)
     find_package(EnTT REQUIRED)
 endif()
@@ -65,7 +65,7 @@ target_include_directories(VoxelEngineSrc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(
     VoxelEngineSrc
-    PRIVATE glfw
+    PRIVATE SDL3::SDL3
             OpenGL::GL
             GLEW::GLEW
             ZLIB::ZLIB

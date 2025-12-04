@@ -4,17 +4,12 @@
 #include <memory>
 
 #include "graphics/core/commons.hpp"
-#include "typedefs.hpp"
 
 class ImageData;
 class Input;
 struct DisplaySettings;
 
-enum class WindowMode {
-    WINDOWED,
-    FULLSCREEN,
-    BORDERLESS
-};
+enum class WindowMode { WINDOWED, FULLSCREEN, BORDERLESS };
 
 class Window {
 public:
@@ -23,7 +18,7 @@ public:
     Window(glm::ivec2 size) : size(std::move(size)) {}
 
     virtual ~Window() = default;
-    virtual void swapBuffers() = 0;
+    virtual void swapBuffers() noexcept = 0;
 
     virtual bool isMaximized() const = 0;
     virtual bool isFocused() const = 0;
@@ -55,14 +50,17 @@ public:
     // todo: move somewhere
     virtual std::unique_ptr<ImageData> takeScreenshot() = 0;
 
-    const glm::ivec2& getSize() const {
+    [[nodiscard]] virtual bool isValid() const = 0;
+
+    virtual const glm::ivec2& getSize() const {
         return size;
     }
+    virtual void setSize(const glm::ivec2& s) {
+        size = std::move(s);
+    }
 
-    static std::tuple<
-        std::unique_ptr<Window>,
-        std::unique_ptr<Input>
-    > initialize(DisplaySettings* settings, std::string title);
+    static std::tuple<std::unique_ptr<Window>, std::unique_ptr<Input>>
+    initialize(DisplaySettings* settings, std::string title);
 protected:
     glm::ivec2 size;
     WindowMode mode = WindowMode::WINDOWED;

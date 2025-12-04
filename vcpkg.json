@@ -4,7 +4,7 @@
     "dependencies": [
       "opengl",
       "openal-soft",
-      "glfw3",
+      "sdl3",
       "glew",
       "glm",
       "libpng",

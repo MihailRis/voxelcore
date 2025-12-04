@@ -32,7 +32,7 @@ jobs:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
         run: |
           cmake --preset default-vs-msvc-windows
-          cmake --build --preset default-vs-msvc-windows --config Release
+          cmake --build --preset default-vs-msvc-windows --config Release -j 4
       - name: Run tests
         run: ctest --preset default-vs-msvc-windows
       - name: Run engine tests

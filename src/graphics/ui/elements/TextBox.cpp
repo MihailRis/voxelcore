@@ -627,8 +627,15 @@ bool TextBox::isAutoResize() const {
     return autoresize;
 }
 
+void TextBox::defocus() {
+    Container::defocus();
+    gui.getInput().stopTextInput();
+}
+
+
 void TextBox::onFocus() {
     Container::onFocus();
+    gui.getInput().startTextInput();
     if (onEditStart) {
         setCaret(input.size());
         onEditStart();

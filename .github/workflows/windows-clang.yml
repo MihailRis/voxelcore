@@ -49,7 +49,7 @@ jobs:
             mkdir build
             cd build
             cmake -G "MinGW Makefiles" -DVCPKG_TARGET_TRIPLET=x64-mingw-static -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake ..
-            cmake --build . --config Release
+            cmake --build . --config Release -j 4
       - name: Package for Windows
         run: |
           mkdir packaged

@@ -22,7 +22,6 @@ AppDir:
     - libexpat1
     - libfam0
     - libgcrypt20
-    - libglfw3
     - libglew2.2
     - libpng16-16
     - libopenal1

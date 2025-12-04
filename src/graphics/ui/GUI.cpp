@@ -174,7 +174,7 @@ void GUI::actMouse(float delta, const CursorState& cursor) {
     }
 
     if (hover) {
-        for (Mousecode code : MOUSECODES_ALL) {
+        for (Mousecode code : mousecodes_all) {
             if (input.jclicked(code)) {
                 hover->clicked(code);
             }

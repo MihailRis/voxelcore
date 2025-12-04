@@ -15,8 +15,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     xauth \
     gdb \
     gdbserver \
-    libglfw3-dev \
-    libglfw3 \
+    libsdl3-dev \
     libglew-dev \
     libglew2.2 \
     libglm-dev \

@@ -28,14 +28,18 @@ sudo make install
 
 ```sh
 su -
-apt-get install entt-devel libglfw3-devel libGLEW-devel libglm-devel libpng-devel libvorbis-devel libopenal-devel libluajit-devel libstdc++13-devel-static libcurl-devel
+apt-get install entt-devel SDL3-devel libGLEW-devel libglm-devel libpng-devel libvorbis-devel libopenal-devel libluajit-devel libstdc++13-devel-static libcurl-devel
 ```
 
 #### Debian based distros
 
 ```sh
-sudo apt install libglfw3 libglfw3-dev libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libcurl4-openssl-dev
+sudo apt install libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libcurl4-openssl-dev
 ```
+
+> [!WARNING]
+> You need manualy prebuild and install SDL3 lib.
+
 
 > [!TIP]
 > CMake missing `LUA_INCLUDE_DIR` and `LUA_LIBRARIES` fix:
@@ -48,21 +52,12 @@ sudo apt install libglfw3 libglfw3-dev libglew-dev libglm-dev libpng-dev libopen
 #### RHEL based distros
 
 ```sh
-sudo dnf install glfw-devel glew-devel glm-devel libpng-devel libvorbis-devel openal-soft-devel luajit-devel libcurl-devel
+sudo dnf install SDL3-devel glew-devel glm-devel libpng-devel libvorbis-devel openal-soft-devel luajit-devel libcurl-devel
 ```
 
 #### Arch based distros
-
-If you use X11:
-
 ```sh
-sudo pacman -S glfw-x11 glew glm libpng libvorbis openal luajit libcurl
-```
-
-If you use Wayland:
-
-```sh
-sudo pacman -S glfw-wayland glew glm libpng libvorbis openal luajit libcurl
+sudo pacman -S sdl3 glew glm libpng libvorbis openal luajit libcurl
 ```
 
 And install EnTT:
@@ -92,7 +87,7 @@ cmake --build . --parallel
 ### Install libraries
 
 ```sh
-brew install glfw3 glew glm libpng libvorbis lua luajit libcurl openal-soft skypjack/entt/entt
+brew install sdl3 glew glm libpng libvorbis lua luajit libcurl openal-soft skypjack/entt/entt
 ```
 
 > [!TIP]
