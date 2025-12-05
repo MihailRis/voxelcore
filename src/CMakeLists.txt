@@ -61,8 +61,6 @@ else()
     add_library(luajit::luajit ALIAS PkgConfig::luajit)
 endif()
 
-add_compile_definitions(VC_BUILD_NAME="${VC_BUILD_NAME}")
-
 target_include_directories(VoxelEngineSrc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(
