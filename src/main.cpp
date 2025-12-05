@@ -14,6 +14,10 @@ static void sigterm_handler(int signum) {
 }
 
 int main(int argc, char** argv) {
+#ifdef VC_BUILD_NAME
+    logger.info() << "build: " << VC_BUILD_NAME;
+#endif
+
     CoreParameters coreParameters;
     try {
         if (!parse_cmdline(argc, argv, coreParameters)) {

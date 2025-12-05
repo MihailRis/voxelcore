@@ -6,6 +6,8 @@ on:
         description: 'Engine release version'
         required: true
         default: "0.0.0"
+  pull_request:
+    branches: [ "main", "dev" ]
 env:
   RELEASE_VERSION: ${{ github.event.inputs.version || 'testrelease' }}
   BRANCH_NAME: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'main' }}
@@ -14,6 +16,8 @@ jobs:
     uses: ./.github/workflows/appimage.yml
   build_macos:
     uses: ./.github/workflows/macos.yml
+    with:
+      build_name: "${{env.RELEASE_VERSION}}"
   build_windows:
     uses: ./.github/workflows/windows-clang.yml
   publish_release:
