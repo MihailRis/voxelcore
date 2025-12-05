@@ -26,7 +26,7 @@ jobs:
           brew install glfw3 glew libpng openal-soft luajit libvorbis skypjack/entt/entt googletest glm
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_TESTS=ON -DVOXELENGINE_BUILD_APPDIR=1 -DVC_BUILD_NAME="${{github.event.inputs.build_name}}"
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_TESTS=ON -DVOXELENGINE_BUILD_APPDIR=1 -DVC_BUILD_NAME="${{ inputs.build_name }}"
 
       - name: Build
         run: cmake --build build -t install
