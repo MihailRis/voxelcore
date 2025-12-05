@@ -3,8 +3,8 @@ name: Windows Build (CLang)
 on:
   push:
     branches: [ "main", "release-**"]
-  # pull_request:
-  #  branches: [ "main", "dev" ]
+  pull_request:
+   branches: [ "main", "dev" ]
   workflow_call:
     inputs:
       build_name:
@@ -72,4 +72,4 @@ jobs:
         shell: msys2 {0}
         working-directory: ${{ github.workspace }}
         run: |
-          packaged/vctest.exe -e packaged/VoxelCore.exe -d dev/tests -u build  --output-always
+          packaged/vctest.exe -e packaged/VoxelCore.exe -d dev/tests -u build

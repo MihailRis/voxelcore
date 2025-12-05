@@ -6,8 +6,6 @@ on:
         description: 'Engine release version'
         required: true
         default: "0.0.0"
-  pull_request:
-    branches: [ "main", "dev" ]
 env:
   RELEASE_VERSION: ${{ github.event.inputs.version || 'testrelease' }}
   BRANCH_NAME: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'main' }}
