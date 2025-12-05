@@ -8,7 +8,7 @@ on:
   workflow_call:
     inputs:
       build_name:
-        required: false
+        required: true
         type: string
         description: 'Build name passed as VC_BUILD_NAME define'
 
