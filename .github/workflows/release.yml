@@ -24,7 +24,7 @@ jobs:
     needs: [prepare]
     uses: ./.github/workflows/macos.yml
     with:
-      build_name: '666'
+      build_name: '${{ needs.prepare.outputs.build_name }}'
   build_windows:
     uses: ./.github/workflows/windows-clang.yml
   publish_release:
