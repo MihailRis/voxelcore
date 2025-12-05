@@ -12,12 +12,19 @@ env:
   RELEASE_VERSION: ${{ github.event.inputs.version || 'testrelease' }}
   BRANCH_NAME: ${{ github.event_name == 'workflow_dispatch' && github.ref_name || 'main' }}
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    steps:
+       - run: echo "exists just for outputs"
+    outputs:
+      build_name: ${{ env.RELEASE_VERSION }}
   build_linux:
     uses: ./.github/workflows/appimage.yml
   build_macos:
+    needs: [prepare]
     uses: ./.github/workflows/macos.yml
     with:
-      build_name: ${{ env.RELEASE_VERSION }}
+      build_name: ${{ needs.prepare.build_name }}
   build_windows:
     uses: ./.github/workflows/windows-clang.yml
   publish_release:
