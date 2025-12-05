@@ -17,7 +17,7 @@ jobs:
   build_macos:
     uses: ./.github/workflows/macos.yml
     with:
-      build_name: "${{env.RELEASE_VERSION}}"
+      build_name: ${{ env.RELEASE_VERSION }}
   build_windows:
     uses: ./.github/workflows/windows-clang.yml
   publish_release:
