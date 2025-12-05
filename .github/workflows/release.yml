@@ -19,14 +19,20 @@ jobs:
     outputs:
       build_name: '${{ env.RELEASE_VERSION }}'
   build_linux:
+    needs: [prepare]
     uses: ./.github/workflows/appimage.yml
+    with:
+      build_name: '${{ needs.prepare.outputs.build_name }}'
   build_macos:
     needs: [prepare]
     uses: ./.github/workflows/macos.yml
     with:
       build_name: '${{ needs.prepare.outputs.build_name }}'
   build_windows:
+    needs: [prepare]
     uses: ./.github/workflows/windows-clang.yml
+    with:
+      build_name: '${{ needs.prepare.outputs.build_name }}'
   publish_release:
     runs-on: ubuntu-latest
     needs: [build_linux, build_macos, build_windows]
