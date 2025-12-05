@@ -17,14 +17,14 @@ jobs:
     steps:
        - run: echo "exists just for outputs"
     outputs:
-      build_name: ${{ env.RELEASE_VERSION }}
+      build_name: '${{ env.RELEASE_VERSION }}'
   build_linux:
     uses: ./.github/workflows/appimage.yml
   build_macos:
     needs: [prepare]
     uses: ./.github/workflows/macos.yml
     with:
-      build_name: ${{ needs.prepare.build_name }}
+      build_name: '${{ needs.prepare.build_name }}'
   build_windows:
     uses: ./.github/workflows/windows-clang.yml
   publish_release:
