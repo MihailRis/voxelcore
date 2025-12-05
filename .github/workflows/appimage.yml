@@ -6,6 +6,11 @@ on:
   # pull_request:
     # branches: [ "main", "dev" ]
   workflow_call:
+    inputs:
+      build_name:
+        required: true
+        type: string
+        description: 'Build name passed as VC_BUILD_NAME define'
 
 jobs:
   build-appimage:
@@ -37,7 +42,7 @@ jobs:
           sudo make install
           cd ../..
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_APPDIR=1 -DVOXELENGINE_BUILD_TESTS=ON
+        run: cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_APPDIR=1 -DVOXELENGINE_BUILD_TESTS=ON -DVC_BUILD_NAME="${{ inputs.build_name }}"
       - name: Build
         run: cmake --build build -t install
       - name: Run tests

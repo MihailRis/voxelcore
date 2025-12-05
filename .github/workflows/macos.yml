@@ -17,10 +17,6 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Print Inputs
-        run: |
-          echo "Build name: ${{ inputs.build_name }}"
-
       - uses: actions/checkout@v2
         with:
           submodules: 'true'
