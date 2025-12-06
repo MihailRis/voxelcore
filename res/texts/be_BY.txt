@@ -124,6 +124,7 @@ movement.crouch=Красціся
 movement.cheat=Чыт
 hud.inventory=Інвентар
 hud.chat=Чат
+hud.debug=Адладкавая панэль
 player.pick=Падабраць блок
 player.attack=Атакаваць
 player.destroy=Зламаць

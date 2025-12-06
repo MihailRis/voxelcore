@@ -101,6 +101,18 @@ static int l_get_day_time_speed(lua::State* L) {
     return lua::pushnumber(L, require_world_info().daytimeSpeed);
 }
 
+static int l_get_fog(lua::State* L) {
+    return lua::pushnumber(L, require_world_info().fog);
+}
+
+static int l_set_fog(lua::State* L) {
+    auto value = lua::tonumber(L, 1);
+    if (value < 0.0) value = 0.0;
+    if (value > 1.0) value = 1.0;
+    require_world_info().fog = static_cast<float>(value);
+    return 0;
+}
+
 static int l_get_seed(lua::State* L) {
     return lua::pushinteger(L, require_world_info().seed);
 }
@@ -243,6 +255,8 @@ const luaL_Reg worldlib[] = {
     {"set_day_time", lua::wrap<l_set_day_time>},
     {"set_day_time_speed", lua::wrap<l_set_day_time_speed>},
     {"get_day_time_speed", lua::wrap<l_get_day_time_speed>},
+    {"get_fog", lua::wrap<l_get_fog>},
+    {"set_fog", lua::wrap<l_set_fog>},
     {"get_seed", lua::wrap<l_get_seed>},
     {"get_generator", lua::wrap<l_get_generator>},
     {"is_day", lua::wrap<l_is_day>},

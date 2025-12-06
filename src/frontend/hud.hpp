@@ -91,8 +91,6 @@ class Hud : public util::ObjectsKeeper {
     std::shared_ptr<gui::InventoryView> contentAccess;
     /// @brief Player inventory hotbar
     std::shared_ptr<gui::InventoryView> hotbarView;
-    /// @brief Debug info and control panel (F3 key)
-    std::shared_ptr<gui::UINode> debugPanel;
     /// @brief Overlay used in pause mode
     std::shared_ptr<gui::UINode> darkOverlay;
     /// @brief Inventories interaction agent (grabbed item)

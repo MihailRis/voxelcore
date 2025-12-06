@@ -39,6 +39,7 @@ movement.crouch=Crouch
 movement.cheat=Cheat
 hud.inventory=Inventory
 hud.chat=Chat
+hud.debug=Debug Panel
 player.pick=Pick Block
 player.attack=Attack
 player.destroy=Destroy

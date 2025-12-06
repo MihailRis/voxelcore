@@ -82,6 +82,7 @@ static void create_libs(State* L, StateType stateType) {
         openlib(L, "player", playerlib);
         openlib(L, "time", timelib);
         openlib(L, "world", worldlib);
+        openlib(L, "render", renderlib);
 
         openlib(L, "entities", entitylib);
         openlib(L, "cameras", cameralib);

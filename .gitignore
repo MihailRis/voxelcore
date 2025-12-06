@@ -20,6 +20,7 @@ Debug/voxel_engine
 /latest.log
 
 /.idea
+/.junie
 .vscode
 /.vs
 *.sln

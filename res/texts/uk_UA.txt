@@ -101,6 +101,7 @@ movement.sprint=Прискорення
 movement.crouch=Крастися
 movement.cheat=Чит
 hud.inventory=Інвентар
+hud.debug=Панель налагодження
 player.pick=Підібрати Блок
 player.attack=Атакувати
 player.destroy=Зламати

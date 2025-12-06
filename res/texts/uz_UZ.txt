@@ -113,6 +113,7 @@ movement.crouch=Egilish
 movement.cheat=Hiyla (Chit)
 hud.inventory=Inventar
 hud.chat=Chat
+hud.debug=Tuzatish paneli
 player.pick=Blokni olish
 player.attack=Hujum qilish
 player.destroy=Sindirish

@@ -101,6 +101,7 @@ movement.sprint=Kiihtyvyys
 movement.crouch=Hiipiä
 movement.cheat=Huijata
 hud.inventory=Varasto
+hud.debug=Debug-paneeli
 player.pick=Valitse lohko
 player.attack=Lyödä
 player.destroy=Rikkoa

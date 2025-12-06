@@ -1,0 +1,68 @@
+<panel color="#00000080" size="300,0" gravity="top-left" padding="8,8,8,8" z-index="2">
+    <!-- Performance -->
+    <label id="dbg_fps" color="#FFFFFFFF">FPS: --/--</label>
+    <label id="dbg_meshes" color="#FFFFFFFF">meshes: N/A</label>
+    <label id="dbg_draw_calls" color="#FFFFFFFF">draw-calls: N/A</label>
+    <label id="dbg_particles" color="#FFFFFFFF">particles: N/A emitters: N/A</label>
+    <label id="dbg_frustum" color="#FFFFFFFF">frustum-culling: -</label>
+    <label id="dbg_audio" color="#FFFFFFFF">audio: speakers: - streams: -</label>
+    <label id="dbg_lua_stack" color="#FFFFFFFF">lua-stack: N/A</label>
+    <label id="dbg_net" color="#FFFFFFFF">net: download: - B/s upload: - B/s</label>
+
+    <!-- World stats -->
+    <label id="dbg_chunks" color="#FFFFFFFF">chunks: - visible: N/A</label>
+    <label id="dbg_entities" color="#FFFFFFFF">entities: - next: N/A</label>
+    <label id="dbg_players" color="#FFFFFFFF">players: - local: -</label>
+
+    <!-- Selection and player -->
+    <label id="dbg_block_state" color="#FFFFFFFF">block: -</label>
+    <label id="dbg_selection_pos" color="#FFFFFFFF">x: - y: - z: -</label>
+    <label id="dbg_block_name" color="#FFFFFFFF">name: -</label>
+    <label id="dbg_target_entity" color="#FFFFFFFF">entity: -</label>
+
+    <!-- World info and controls -->
+    <label id="dbg_seed" color="#FFFFFFFF">seed: -</label>
+
+    <!-- Teleport inputs (enter coords to teleport) -->
+    <panel color="#00000020" padding="2,2,2,2">
+        <label color="#FFFFFFFF">X:</label>
+        <textbox id="dbg_tp_x"
+                 supplier="function() local pid=hud.get_player(); local x=select(1, player.get_pos(pid)); if x==nil then return '' end; return string.format('%.2f', x) end"
+                 consumer="function(s) local pid=hud.get_player(); local x=tonumber(s); if x==nil then return end; local _,y,z = player.get_pos(pid); player.set_pos(pid, x, y, z) end"/>
+        <label color="#FFFFFFFF">Y:</label>
+        <textbox id="dbg_tp_y"
+                 supplier="function() local pid=hud.get_player(); local y=select(2, player.get_pos(pid)); if y==nil then return '' end; return string.format('%.2f', y) end"
+                 consumer="function(s) local pid=hud.get_player(); local y=tonumber(s); if y==nil then return end; local x,_,z = player.get_pos(pid); player.set_pos(pid, x, y, z) end"/>
+        <label color="#FFFFFFFF">Z:</label>
+        <textbox id="dbg_tp_z"
+                 supplier="function() local pid=hud.get_player(); local z=select(3, player.get_pos(pid)); if z==nil then return '' end; return string.format('%.2f', z) end"
+                 consumer="function(s) local pid=hud.get_player(); local z=tonumber(s); if z==nil then return end; local x,y,_ = player.get_pos(pid); player.set_pos(pid, x, y, z) end"/>
+    </panel>
+    
+    <!-- Time -->
+    <label id="dbg_time_label" color="#FFFFFFFF">time: --:--</label>
+    <trackbar id="dbg_time_trk"
+              min="0" max="1" step="0.005" value="0"
+              supplier="function() return world.get_day_time() end"
+              consumer="function(x) world.set_day_time(x) end"/>
+
+    <!-- Fog control -->
+    <trackbar id="dbg_fog_trk"
+              min="0" max="1" step="0.005" value="0"
+              supplier="function() return world.get_fog() end"
+              consumer="function(x) world.set_fog(x) end"/>
+
+    <!-- Debug toggles -->
+    <checkbox id="dbg_cb_chunk_borders" size="400,24"
+              supplier="render.get_show_chunk_borders"
+              consumer="render.set_show_chunk_borders">Show Chunk Borders</checkbox>
+    <checkbox id="dbg_cb_hitboxes" size="400,24"
+              supplier="render.get_show_hitboxes"
+              consumer="render.set_show_hitboxes">Show Hitboxes</checkbox>
+    <checkbox id="dbg_cb_paths" size="400,24"
+              supplier="render.get_show_paths"
+              consumer="render.set_show_paths">Show Paths</checkbox>
+    <checkbox id="dbg_cb_minimap" size="400,24"
+              supplier="render.get_show_generator_minimap"
+              consumer="render.set_show_generator_minimap">Show Generator Minimap</checkbox>
+</panel>

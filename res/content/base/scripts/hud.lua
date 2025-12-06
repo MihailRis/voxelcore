@@ -27,4 +27,16 @@ function on_hud_open()
         local velocity = vec3.add(throw_force, vec3.add(pvel, DROP_INIT_VEL))
         drop.rigidbody:set_vel(velocity)
     end)
+    
+    -- Toggle full debug panel via hotkey (see bindings.toml -> hud.debug)
+    -- Use show_overlay to enable interactive controls (unlocks cursor via inventory mode)
+    input.add_callback("hud.debug", function()
+        if hud.is_open("core:debug_panel") then
+            hud.close("core:debug_panel")
+        else
+            -- open as overlay without player inventory but with inventory mode enabled
+            -- this lets user interact with sliders, textboxes and checkboxes
+            hud.open_permanent("core:debug_panel", false)
+        end
+    end)
 end

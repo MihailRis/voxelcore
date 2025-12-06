@@ -66,6 +66,7 @@ movement.sprint=Przyspieszenie
 movement.crouch=Przekradać się
 movement.cheat=Chit
 hud.inventory=Implementy
+hud.debug=Panel debugowania
 player.pick=Odbierz blok
 player.attack=Atak / Przerwa
 player.build=Blok dostaw

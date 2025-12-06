@@ -58,14 +58,6 @@ static debug::Logger logger("hud");
 
 bool Hud::showGeneratorMinimap = false;
 
-// implemented in debug_panel.cpp
-std::shared_ptr<UINode> create_debug_panel(
-    Engine& engine,
-    Level& level,
-    Player& player,
-    bool allowDebugCheats
-);
-
 HudElement::HudElement(
     HudElementMode mode, 
     UiDocument* document, 
@@ -180,13 +172,7 @@ Hud::Hud(Engine& engine, LevelFrontend& frontend, Player& player)
     uicamera->flipped = true;
     uicamera->near = -1.0f;
     uicamera->far = 1.0f;
-
-    debugPanel = create_debug_panel(
-        engine, frontend.getLevel(), player, allowDebugCheats
-    );
-    debugPanel->setZIndex(2);
-
-    gui.add(debugPanel);
+    
     gui.add(darkOverlay);
     gui.add(hotbarView);
     gui.add(contentAccessPanel);
@@ -217,7 +203,6 @@ Hud::~Hud() {
     gui.remove(hotbarView);
     gui.remove(darkOverlay);
     gui.remove(contentAccessPanel);
-    gui.remove(debugPanel);
 }
 
 /// @brief Remove all elements marked as removed
@@ -328,10 +313,6 @@ void Hud::updateWorldGenDebug() {
 void Hud::update(bool visible) {
     const auto& chunks = *player.chunks;
     bool isMenuOpen = menu.hasOpenPage();
-
-    debugPanel->setVisible(
-        debug && visible && !(inventoryOpen && inventoryView == nullptr)
-    );
 
     if (!visible && inventoryOpen) {
         closeInventory();
@@ -741,13 +722,6 @@ void Hud::setContentAccess(bool flag) {
 
 void Hud::setDebugCheats(bool flag) {
     allowDebugCheats = flag;
-    
-    gui.remove(debugPanel);
-    debugPanel = create_debug_panel(
-        engine, frontend.getLevel(), player, allowDebugCheats
-    );
-    debugPanel->setZIndex(2);
-    gui.add(debugPanel);
 }
 
 void Hud::setAllowPause(bool flag) {

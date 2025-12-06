@@ -65,6 +65,7 @@ movement.sprint=Beschleunigung
 movement.crouch=Stehlen
 movement.cheat=Schummeln
 hud.inventory=Inventar
+hud.debug=Debug-Panel
 player.pick=Wählen Sie Blockieren
 player.attack=Angriff / Pause
 player.build=Setzen Sie einen Block
