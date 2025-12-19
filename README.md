@@ -23,18 +23,19 @@ sudo make install
 
 > [!WARNING]
 > If you are using ALT Linux, do **not** use this EnTT installation method.
+> Maybe don't work without this, then use this method.
 
 #### ALT Linux based distros
 
 ```sh
 su -
-apt-get install entt-devel libglfw3-devel libGLEW-devel libglm-devel libpng-devel libvorbis-devel libopenal-devel libluajit-devel libstdc++13-devel-static libcurl-devel
+apt-get install entt-devel libglfw3-devel libGLEW-devel libglm-devel libpng-devel libvorbis-devel libopenal-devel libluajit-devel libstdc++-devel-static libcurl-devel libgtest-devel
 ```
 
 #### Debian based distros
 
 ```sh
-sudo apt install libglfw3 libglfw3-dev libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libcurl4-openssl-dev
+sudo apt install libglfw3 libglfw3-dev libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libcurl4-openssl-dev libgtest-dev
 ```
 
 > [!TIP]
