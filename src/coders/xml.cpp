@@ -383,7 +383,11 @@ public:
     void parseSubElements(Node& node) {
         skipWhitespace();
         while (hasNext()) {
-            if (peek() != '@') {
+            char c = peek();
+            if (c == '}') {
+                break;
+            }
+            if (c != '@') {
                 throw error("unexpected character in element");
             }
             nextChar();
@@ -402,14 +406,12 @@ public:
             if (!hasNext()) {
                 break;
             }
-            char c = peek();
+            c = peek();
             if (c == '{') {
                 nextChar();
                 parseSubElements(*subnode);
                 expect('}');
                 skipWhitespace();
-            } else if (c == '}') {
-                break;
             }
         }
     }
