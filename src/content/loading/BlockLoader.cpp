@@ -120,8 +120,8 @@ template<> void ContentUnitLoader<Block>::loadUnit(
             }
 
             def.variants = std::make_unique<Variants>();
-            def.variants->offset = 0;
-            def.variants->mask = 0xF;
+            def.variants->offset = offset;
+            def.variants->mask = (1ULL << bitsCount) - 1;
             def.variants->variants.push_back(def.defaults);
             for (int i = 0; i < variants.size(); i++) {
                 Variant variant = def.defaults;

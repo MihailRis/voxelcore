@@ -67,7 +67,7 @@ block.get_picking_item(id: int) -> int
 block.get_variant(x: int, y: int, z: int) -> int
 
 -- Sets the block variant by index
-block.set_variant(x: int, y: int, z: int, index: int) -> int
+block.set_variant(x: int, y: int, z: int, index: int)
 
 -- Checks if an block has specified tag
 block.has_tag(id: int, tag: str) -> bool

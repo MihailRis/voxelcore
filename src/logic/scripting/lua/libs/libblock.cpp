@@ -246,17 +246,25 @@ static int l_get_user_bits(lua::State* L) {
 }
 
 static int l_get_variant(lua::State* L) {
+    auto& chunks = *level->chunks;
     auto x = lua::tointeger(L, 1);
     auto y = lua::tointeger(L, 2);
     auto z = lua::tointeger(L, 3);
 
-    auto vox = blocks_agent::get(*level->chunks, x, y, z);
+    auto vox = blocks_agent::get(chunks, x, y, z);
     if (vox == nullptr) {
         return lua::pushinteger(L, 0);
     }
     const auto& def = content->getIndices()->blocks.require(vox->id);
     if (def.variants == nullptr) {
         return lua::pushinteger(L, 0);
+    }
+    if (def.rt.extended) {
+        auto origin = blocks_agent::seek_origin(chunks, {x, y, z}, def, vox->state);
+        vox = blocks_agent::get(chunks, origin.x, origin.y, origin.z);
+        if (vox == nullptr) {
+            return lua::pushinteger(L, 0);
+        }
     }
     return lua::pushinteger(
         L, (vox->state.userbits >> def.variants->offset) & def.variants->mask
@@ -290,6 +298,14 @@ static int l_set_user_bits(lua::State* L) {
         if (vox == nullptr) {
             return 0;
         }
+        int ocx = floordiv<CHUNK_W>(origin.x);
+        int ocz = floordiv<CHUNK_D>(origin.z);
+        if (cx != ocx || cz != ocz) {
+            chunk = blocks_agent::get_chunk(chunks, ocx, ocz);
+            if (chunk == nullptr) {
+                return 0;
+            }
+        }
     }
     vox->state.userbits = (vox->state.userbits & (~mask)) | value;
     chunk->setModifiedAndUnsaved();
@@ -318,14 +334,22 @@ static int l_set_variant(lua::State* L) {
     }
 
     auto offset = def.variants->offset;
-    auto mask = def.variants->mask;
-    auto value = (lua::tointeger(L, 4) << offset) & mask;
+    auto mask = def.variants->mask << offset;
+    auto value = (lua::tointeger(L, 4) << offset);
 
     if (def.rt.extended) {
         auto origin = blocks_agent::seek_origin(chunks, {x, y, z}, def, vox->state);
         vox = blocks_agent::get(chunks, origin.x, origin.y, origin.z);
         if (vox == nullptr) {
             return 0;
+        }
+        int ocx = floordiv<CHUNK_W>(origin.x);
+        int ocz = floordiv<CHUNK_D>(origin.z);
+        if (cx != ocx || cz != ocz) {
+            chunk = blocks_agent::get_chunk(chunks, ocx, ocz);
+            if (chunk == nullptr) {
+                return 0;
+            }
         }
     }
     vox->state.userbits = (vox->state.userbits & (~mask)) | value;

@@ -46,7 +46,7 @@ block.destruct(x: int, y: int, z: int, playerid: int)
 block.get_variant(x: int, y: int, z: int) -> int
 
 -- Устанавливает вариант блока по индексу
-block.set_variant(x: int, y: int, z: int, index: int) -> int
+block.set_variant(x: int, y: int, z: int, index: int)
 ```
 
 > [!WARNING]

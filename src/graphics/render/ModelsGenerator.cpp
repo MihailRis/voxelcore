@@ -92,6 +92,12 @@ void ModelsGenerator::prepareModel(
 void ModelsGenerator::prepare(Content& content, Assets& assets) {
     for (auto& [name, def] : content.blocks.getDefs()) {
         prepareModel(assets, *def, def->defaults, 0);
+        if (def->variants) {
+            auto& variants = def->variants->variants;
+            for (int i = 1; i < variants.size(); i++) {
+                prepareModel(assets, *def, variants[i], i);
+            }
+        }
     }
     for (auto& [name, def] : content.items.getDefs()) {
         assets.store(
