@@ -78,14 +78,14 @@ Returns the id of all base packages (non-removeable)
 
 ```lua
 pack.get_info(packid: str) -> {
-  id: str,
-  title: str,
-  creator: str,
-  description: str,
-  version: str,
-  path: str,
-  icon: str, -- not available in headless mode
-  dependencies: optional strings array
+    id: str,
+    title: str,
+    creator: str,
+    description: str,
+    version: str,
+    path: str,
+    icon: str, -- not available in headless mode
+    dependencies: optional strings array
 }
 ```
 
@@ -95,6 +95,7 @@ Returns information about the pack (not necessarily installed).
   - `!` - required
   - `?` - optional
   - `~` - weak
+  
   for example `!teal`
 
 To obtain information about multiple packs, use table of ids to avoid re-scanning:one

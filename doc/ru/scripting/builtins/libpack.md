@@ -82,6 +82,7 @@ pack.get_info(packid: string) -> {
 	- `!` - required
 	- `?` - optional
 	- `~` - weak
+    
 	например `!teal`
 
 Для получения информации о нескольких паках используйте таблицу id, чтобы не
