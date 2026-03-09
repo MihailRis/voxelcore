@@ -89,6 +89,8 @@ body:set_size(size: vec3)
 body:get_gravity_scale() -> number
 -- Устанавливает множитель гравитации
 body:set_gravity_scale(scale: number)
+-- Устанавливает вектор гравитации
+body:set_gravity_vec(scale: number)
 
 -- Возвращает множитель затухания линейной скорости (используется для имитации сопротивления воздуха и трения)
 body:get_linear_damping() -> number

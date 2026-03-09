@@ -89,6 +89,8 @@ body:set_size(size: vec3)
 body:get_gravity_scale() -> number
 -- Sets the gravity multiplier
 body:set_gravity_scale(scale: number)
+-- Sets the gravity vector
+body:set_gravity_vec(scale: number)
 
 -- Returns the linear velocity attenuation multiplier (used to simulate air resistance and friction)
 body:get_linear_damping() -> number

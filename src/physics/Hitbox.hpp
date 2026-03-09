@@ -58,6 +58,7 @@ struct Hitbox {
     float verticalDamping = 1.0f;
     bool grounded = false;
     float gravityScale = 1.0f;
+    glm::vec3 gravityVec = glm::vec3(0.0f, 0.0f, 0.0f);
     bool crouching = false;
     float stepHeight = 0.5f;
 
