@@ -28,7 +28,8 @@ dv::value ParticlesPreset::serialize() const {
     root["angle_spread"] = angleSpread;
     root["min_angular_vel"] = minAngularVelocity;
     root["max_angular_vel"] = maxAngularVelocity;
-    root["spawn_spread"] = dv::to_value(size);
+    root["spawn_spread"] = dv::to_value(spawnSpread);
+    root["spawn_offset"] = dv::to_value(spawnOffset);
     root["spawn_shape"] = ParticleSpawnShapeMeta.getName(spawnShape);
     root["random_sub_uv"] = randomSubUV;
     return root;
@@ -47,9 +48,7 @@ void ParticlesPreset::deserialize(const dv::value& src) {
     src.at("min_angular_vel").get(minAngularVelocity);
     src.at("max_angular_vel").get(maxAngularVelocity);
     src.at("random_sub_uv").get(randomSubUV);
-    if (src.has("velocity")) {
-        dv::get_vec(src["velocity"], velocity);
-    }
+    dv::get_vec(src, "velocity", velocity);
     if (src.has("acceleration")) {
         dv::get_vec(src["acceleration"], acceleration);
     }
@@ -57,12 +56,9 @@ void ParticlesPreset::deserialize(const dv::value& src) {
         dv::get_vec(src["size"], size);
     }
     src.at("size_spread").get(sizeSpread);
-    if (src.has("spawn_spread")) {
-        dv::get_vec(src["spawn_spread"], spawnSpread);
-    }
-    if (src.has("explosion")) {
-        dv::get_vec(src["explosion"], explosion);
-    }
+    dv::get_vec(src, "spawn_spread", spawnSpread);
+    dv::get_vec(src, "spawn_offset", spawnOffset);
+    dv::get_vec(src, "explosion", explosion);
     if (src.has("spawn_shape")) {
         ParticleSpawnShapeMeta.getItem(src["spawn_shape"].asString(), spawnShape);
     }

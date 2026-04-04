@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <optional>
 #include <condition_variable>
 #include <functional>
 #include <iostream>
@@ -42,17 +43,18 @@ namespace util {
         std::condition_variable jobsMutexCondition;
         std::mutex jobsMutex;
         std::vector<std::unique_lock<std::mutex>> workersBlocked;
-        consumer<R&> resultConsumer;
+        consumer<R&&> resultConsumer;
         consumer<T&> onJobFailed = nullptr;
         runnable onComplete = nullptr;
         std::atomic<int> busyWorkers = 0;
         std::atomic<uint> jobsDone = 0;
         std::atomic<bool> working = true;
+        supplier<std::optional<T>> jobsSource = nullptr;
         bool failed = false;
         bool standaloneResults = true;
         bool stopOnFail = true;
 
-        void threadLoop(int index, std::shared_ptr<Worker<T, R>> worker) {
+        void threadLoop(int index, std::unique_ptr<Worker<T, R>> worker) {
             std::condition_variable variable;
             std::mutex mutex;
             bool locked = false;
@@ -76,7 +78,7 @@ namespace util {
                     {
                         std::lock_guard<std::mutex> lock(resultsMutex);
                         results.push(ThreadPoolResult<T, R> {
-                            job, variable, index, locked, result});
+                            job, variable, index, locked, std::move(result)});
                         if (!standaloneResults) {
                             locked = true;
                         }
@@ -115,8 +117,8 @@ namespace util {
         /// unlimited, -2 is half of auto count, -4 is quarter.
         ThreadPool(
             std::string name,
-            supplier<std::shared_ptr<Worker<T, R>>> workersSupplier,
-            consumer<R&> resultConsumer,
+            supplier<std::unique_ptr<Worker<T, R>>> workersSupplier,
+            consumer<R&&> resultConsumer,
             int maxWorkers=UNLIMITED
         )
             : logger(std::move(name)), resultConsumer(resultConsumer) {
@@ -151,6 +153,10 @@ namespace util {
             return working;
         }
 
+        void setJobsSource(supplier<std::optional<T>>&& source) {
+            jobsSource = std::move(source);
+        }
+
         void terminate() override {
             if (!working) {
                 return;
@@ -178,22 +184,28 @@ namespace util {
         }
 
         void update() override {
+            pullResults();
+        }
+
+        size_t pullResults(size_t maxResults = -1) {
             if (!working) {
-                return;
+                return 0;
             }
             if (failed) {
                 throw std::runtime_error("some job failed");
             }
 
             bool complete = false;
+            size_t resultsProcessed = 0;
             {
                 std::lock_guard<std::mutex> lock(resultsMutex);
-                while (!results.empty()) {
-                    ThreadPoolResult<T, R> entry = results.front();
+                while (!results.empty() && resultsProcessed < maxResults) {
+                    ThreadPoolResult<T, R> entry = std::move(results.front());
                     results.pop();
 
+                    ++resultsProcessed;
                     try {
-                        resultConsumer(entry.entry);
+                        resultConsumer(std::move(entry.entry));
                     } catch (std::exception& err) {
                         logger.error() << err.what();
                         if (onJobFailed) {
@@ -213,12 +225,28 @@ namespace util {
                     }
                 }
 
-                if (onComplete && busyWorkers == 0) {
+                if (onComplete && busyWorkers == 0 && results.empty()) {
                     std::lock_guard<std::mutex> jobsLock(jobsMutex);
                     if (jobs.empty()) {
                         onComplete();
                         complete = true;
                     }
+                }
+            }
+            if (jobsSource) {
+                bool jobsAdded = false;
+                std::lock_guard<std::mutex> jobsLock(jobsMutex);
+                while (true) {
+                    auto job = jobsSource();
+                    if (job.has_value()) {
+                        jobs.push(std::move(job.value()));
+                        jobsAdded = true;
+                    } else {
+                        break;
+                    }
+                }
+                if (jobsAdded) {
+                    jobsMutexCondition.notify_one();
                 }
             }
             if (failed) {
@@ -227,9 +255,10 @@ namespace util {
             if (complete) {
                 terminate();
             }
+            return resultsProcessed;
         }
 
-        void enqueueJob(T job) {
+        void enqueueJob(T&& job) {
             {
                 std::lock_guard<std::mutex> lock(jobsMutex);
                 jobs.push(std::move(job));

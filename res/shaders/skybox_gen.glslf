@@ -241,6 +241,8 @@ uniform vec3 u_xaxis;
 uniform vec3 u_yaxis;
 uniform vec3 u_zaxis;
 uniform vec3 u_lightDir;
+uniform vec3 u_tint;
+uniform vec3 u_hightlight;
 uniform int u_quality;
 uniform float u_mie;
 uniform float u_fog;
@@ -295,5 +297,5 @@ void main() {
     col = 1.0 - exp(-col);
     col = min(col, vec3(1.0));
     // Output to screen
-    f_color = vec4(col, 1.0);
+    f_color = vec4(col * u_tint + u_hightlight, 1.0);
 }

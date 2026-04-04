@@ -8,6 +8,9 @@
 using namespace scripting;
 
 static const ItemDef* get_item_def(lua::State* L, int idx) {
+    if (content == nullptr) {
+        throw std::runtime_error("content is not initialized");
+    }
     auto indices = content->getIndices();
     auto id = lua::tointeger(L, idx);
     return indices->items.get(id);
@@ -147,5 +150,5 @@ const luaL_Reg itemlib[] = {
     {"reload_script", lua::wrap<l_reload_script>},
     {"has_tag", lua::wrap<l_has_tag>},
     {"__get_tags", lua::wrap<l_get_tags>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

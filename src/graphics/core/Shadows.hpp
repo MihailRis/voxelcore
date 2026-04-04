@@ -14,7 +14,7 @@ class DrawContext;
 struct EngineSettings;
 class ShadowMap;
 
-class Shadows {
+class Shadows final {
 public:
     Shadows(const Level& level);
     ~Shadows();
@@ -24,7 +24,7 @@ public:
     void refresh(
         const Camera& camera,
         const DrawContext& pctx,
-        std::function<void(Camera&)> renderShadowPass
+        const std::function<void(Camera&)>& renderShadowPass
     );
 private:
     const Level& level;
@@ -41,6 +41,6 @@ private:
         ShadowMap& shadowMap,
         Camera& shadowCamera,
         float scale,
-        std::function<void(Camera&)> renderShadowPass
+        const std::function<void(Camera&)>& renderShadowPass
     );
 };

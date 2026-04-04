@@ -29,6 +29,7 @@ namespace xml {
         glm::vec3 asVec3() const;
         glm::vec4 asVec4() const;
         glm::vec4 asColor() const;
+        int asNumbers(float* dst, size_t dstSize) const;
     };
 
     /// @brief XML element class. Text element has tag 'text' and attribute

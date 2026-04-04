@@ -8,7 +8,7 @@ local vector2 =
 vector2.__index = vector2
 
 
--- vec2 cocnrtuct
+-- vec2 construct
 function vector2:new(x, y)
     if type(x) ~= "number" or type(y) ~= "number" then
         error("Invalid input argument. Expected two numbers. [ vec2(number, number) ]")
@@ -302,11 +302,6 @@ function vector2.__eq(a, b)
     return a.x == b.x and a.y == b.y
 end
 
-
--- eq vec
-function vector2.__eq(a, b)
-    return a.x == b.x and a.y == b.y
-end
 
 function vector2.__tostring(vcrt)
     return vcrt:strvec2()

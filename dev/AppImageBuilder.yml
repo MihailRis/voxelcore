@@ -31,6 +31,7 @@ AppDir:
     - libvorbis0a
     - libvorbisfile3
     - libluajit-5.1-2
+    - libfreetype6
     exclude:
       - hicolor-icon-theme
       - sound-theme-freedesktop
@@ -45,6 +46,9 @@ AppDir:
       - kwin-style-breeze
       - kde-style-breeze
       - plasma-integration
+      - libllvm15
+      - libicu70
+      - libxml2
   files:
     exclude:
     - usr/share/man

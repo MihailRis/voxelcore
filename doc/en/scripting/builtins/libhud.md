@@ -20,6 +20,12 @@ hud.open(
     [optional] invid: int
 ) -> int
 
+-- Returns true if specified layout is open.
+hud.is_open(
+    layoutid: str
+) -> bool
+
+
 -- Open block UI and inventory.
 -- Throws an exception if block has no UI layout.
 -- Returns block inventory ID (if *"inventory-size"=0* a virtual 
@@ -48,6 +54,9 @@ hud.close(layoutid: str)
 -- Get open block inventory ID or 0.
 hud.get_block_inventory() -> int
 
+-- Gives the ID of the second open inventory (block, virtual inventory...) or 0.
+hud.get_second_inventory() -> int
+
 -- Gives the ID of the player that the UI is bound to.
 hud.get_player() -> int
 
@@ -62,6 +71,9 @@ hud.is_paused() -> bool
 
 -- Returns true if inventory is open or overlay is shown.
 hud.is_inventory_open() -> bool
+
+-- Returns true if the player's inventory is open.
+hud.is_player_inventory_open() -> boolean
 
 -- Sets whether to allow pausing. If false, the pause menu will not pause the game.
 hud.set_allow_pause(flag: bool)

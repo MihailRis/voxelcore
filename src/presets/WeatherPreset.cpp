@@ -23,6 +23,9 @@ dv::value WeatherPreset::serialize() const {
     root["fog_opacity"] = fogOpacity;
     root["fog_dencity"] = fogDencity;
     root["fog_curve"] = fogCurve;
+    root["sky_tint"] = dv::to_value(skyTint);
+    root["clouds_tint"] = dv::to_value(cloudsTint);
+    root["min_sky_light"] = dv::to_value(minSkyLight);
     root["clouds"] = clouds;
     root["thunder_rate"] = thunderRate;
 
@@ -51,6 +54,9 @@ void WeatherPreset::deserialize(const dv::value& src) {
     src.at("fog_opacity").get(fogOpacity);
     src.at("fog_dencity").get(fogDencity);
     src.at("fog_curve").get(fogCurve);
+    dv::get_vec(src, "sky_tint", skyTint);
+    dv::get_vec(src, "clouds_tint", cloudsTint);
+    dv::get_vec(src, "min_sky_light", minSkyLight);
     src.at("clouds").get(clouds);
     src.at("thunder_rate").get(thunderRate);
 }

@@ -7,7 +7,7 @@ using namespace gui;
 SplitBox::SplitBox(GUI& gui, const glm::vec2& size, float splitPos, Orientation orientation)
  : BasePanel(gui, size, glm::vec4(), 4.0f, orientation), splitPos(splitPos) {
     setCursor(
-        orientation == Orientation::vertical ? CursorShape::NS_RESIZE
+        orientation == Orientation::VERTICAL ? CursorShape::NS_RESIZE
                                              : CursorShape::EW_RESIZE
     );
 }
@@ -17,7 +17,7 @@ void SplitBox::mouseMove(int x, int y) {
     auto size = getSize();
     
     glm::ivec2 cursor(x - pos.x, y - pos.y);
-    int axis = orientation == Orientation::vertical;
+    int axis = orientation == Orientation::VERTICAL;
 
     int v = cursor[axis];
     v = std::max(std::min(static_cast<int>(size[axis]) - 10, v), 10);
@@ -61,7 +61,7 @@ void SplitBox::refresh() {
     nodeA->setPos(glm::vec2(padding));
 
     const auto& p = padding;
-    if (orientation == Orientation::vertical) {
+    if (orientation == Orientation::VERTICAL) {
         float splitPos = this->splitPos * size.y;
         nodeA->setSize({size.x-p.x-p.z, splitPos - sepRadius - p.y});
         nodeB->setSize({size.x-p.x-p.z, size.y - splitPos - sepRadius - p.w});

@@ -12,6 +12,7 @@ struct Weather : Serializable {
     std::string nameB;
     float t = 1.0f;
     float speed = 0.0f;
+    glm::vec3 highlight {}; 
 
     void update(float delta) {
         t += delta * speed;
@@ -49,6 +50,18 @@ struct Weather : Serializable {
     float clouds() const {
         float sqrtT = glm::sqrt(t);
         return b.clouds * sqrtT + a.clouds * (1.0f - sqrtT);
+    }
+
+    glm::vec3 skyTint() const {
+        return b.skyTint * t + a.skyTint * (1.0f - t);
+    }
+
+    glm::vec3 cloudsTint() const {
+        return b.cloudsTint * t + a.cloudsTint * (1.0f - t);
+    }
+
+    glm::vec3 minSkyLight() const {
+        return b.minSkyLight * t + a.minSkyLight * (1.0f - t);
     }
 
     dv::value serialize() const override;

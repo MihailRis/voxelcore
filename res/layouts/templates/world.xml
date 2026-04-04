@@ -2,16 +2,16 @@
     size='380,66'
     color='#0F1E2DB2'
     hover-color='#162B3399'
-    onclick='core.open_world("%{name}")'
+    onclick='app.open_world("%{name}")'
 >
-    <image pos='1' src='%{icon}' size='96,64'></image>
+    <image pos='1' src='%{icon}' fallback='gui/no_world_icon' size='96,64'></image>
     <label pos='104,8'>%{name}</label>
     <button margin='4'
             gravity='center-right'
             color='#00000000'
             hover-color='#FFFFFF2B'
             padding='0'
-            onclick='core.delete_world("%{name}")'>
+            onclick='app.delete_world("%{name}")'>
         <image src='gui/delete_icon' size='32,32' color='#FFFFFF50'/>
     </button>
     <label color='%{versionColor}' pos='317,44'>%{versionString}</label>

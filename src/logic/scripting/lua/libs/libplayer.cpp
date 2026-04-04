@@ -2,19 +2,34 @@
 #include <glm/glm.hpp>
 
 #include "items/Inventory.hpp"
+#include "libentity.hpp"
 #include "objects/Entities.hpp"
+#include "objects/Entity.hpp"
 #include "objects/Player.hpp"
 #include "objects/Players.hpp"
-#include "objects/Entity.hpp"
 #include "physics/Hitbox.hpp"
 #include "window/Camera.hpp"
 #include "world/Level.hpp"
-#include "libentity.hpp"
+#include "engine/Engine.hpp"
 
 using namespace scripting;
 
+static Level& require_level() {
+    if (level == nullptr) {
+        throw std::runtime_error("world is not loaded");
+    }
+    return *level;
+}
+
 inline Player* get_player(lua::State* L, int idx) {
-    return level->players->get(lua::tointeger(L, idx));
+    if (!lua::isnumber(L, idx)) {
+        if (engine->isHeadless()) {
+            throw std::runtime_error(
+                "player id required as argument #" + std::to_string(idx)
+            );
+        }
+    }
+    return require_level().players->get(lua::tointeger(L, idx));
 }
 
 static int l_get_pos(lua::State* L) {
@@ -53,7 +68,7 @@ static int l_set_vel(lua::State* L) {
     auto x = lua::tonumber(L, 2);
     auto y = lua::tonumber(L, 3);
     auto z = lua::tonumber(L, 4);
-    
+
     if (auto hitbox = player->getHitbox()) {
         hitbox->velocity = glm::vec3(x, y, z);
     }
@@ -181,6 +196,21 @@ static int l_set_loading_chunks(lua::State* L) {
     return 0;
 }
 
+static int l_get_interaction_distance(lua::State* L) {
+    if (auto player = get_player(L, 1)) {
+        return lua::pushnumber(L, player->getMaxInteractionDistance());
+    }
+    return 0;
+}
+
+static int l_set_interaction_distance(lua::State* L) {
+    if (auto player = get_player(L, 1)) {
+        player->setMaxInteractionDistance(
+            static_cast<float>(lua::tonumber(L, 2)));
+    }
+    return 0;
+}
+
 static int l_get_selected_block(lua::State* L) {
     if (auto player = get_player(L, 1)) {
         if (player->selection.vox.id == BLOCK_VOID) {
@@ -281,15 +311,18 @@ static int l_create(lua::State* L) {
     if (lua::gettop(L) >= 2) {
         playerId = lua::tointeger(L, 2);
     }
-    auto player = level->players->create(playerId);
+    auto& level = require_level();
+    auto player = level.players->create(playerId);
     player->setName(lua::require_string(L, 1));
     return lua::pushinteger(L, player->getId());
 }
 
 static int l_delete(lua::State* L) {
     auto id = lua::tointeger(L, 1);
-    level->players->suspend(id);
-    level->players->remove(id);
+
+    auto& level = require_level();
+    level.players->suspend(id);
+    level.players->remove(id);
     return 0;
 }
 
@@ -301,8 +334,45 @@ static int l_is_suspended(lua::State* L) {
 }
 
 static int l_set_suspended(lua::State* L) {
-    if (auto player = get_player(L, 1)) {
-        player->setSuspended(lua::toboolean(L, 2));
+    auto& level = require_level();
+    if (lua::toboolean(L, 2)) {
+        level.players->suspend(lua::tointeger(L, 1));
+    } else {
+        level.players->resume(lua::tointeger(L, 1));
+    }
+    return 0;
+}
+
+static int l_get_all_in_radius(lua::State* L) {
+    auto& level = require_level();
+    auto center = lua::tovec3(L, 1);
+    auto radius = static_cast<float>(lua::tonumber(L, 2));
+
+    auto players = level.players->getAllInRadius(center, radius);
+    lua::createtable(L, players.size(), 0);
+    for (size_t i = 0; i < players.size(); i++) {
+        lua::pushinteger(L, players[i]->getId());
+        lua::rawseti(L, i + 1);
+    }
+    return 1;
+}
+
+static int l_get_all(lua::State* L) {
+    auto players = require_level().players->getAll();
+    lua::createtable(L, players.size(), 0);
+    for (size_t i = 0; i < players.size(); i++) {
+        lua::pushinteger(L, players[i]->getId());
+        lua::rawseti(L, i + 1);
+    }
+    return 1;
+}
+
+static int l_get_nearest(lua::State* L) {
+    auto& level = require_level();
+    auto position = lua::tovec3(L, 1);
+    if (auto player = level.players->getNearest(position)) {
+        lua::pushinteger(L, player->getId());
+        return 1;
     }
     return 0;
 }
@@ -328,6 +398,8 @@ const luaL_Reg playerlib[] = {
     {"set_instant_destruction", lua::wrap<l_set_instant_destruction>},
     {"is_loading_chunks", lua::wrap<l_is_loading_chunks>},
     {"set_loading_chunks", lua::wrap<l_set_loading_chunks>},
+    {"get_interaction_distance", lua::wrap<l_get_interaction_distance>},
+    {"set_interaction_distance", lua::wrap<l_set_interaction_distance>},
     {"set_selected_slot", lua::wrap<l_set_selected_slot>},
     {"get_selected_block", lua::wrap<l_get_selected_block>},
     {"get_selected_entity", lua::wrap<l_get_selected_entity>},
@@ -341,5 +413,8 @@ const luaL_Reg playerlib[] = {
     {"set_name", lua::wrap<l_set_name>},
     {"create", lua::wrap<l_create>},
     {"delete", lua::wrap<l_delete>},
-    {NULL, NULL}
+    {"get_all_in_radius", lua::wrap<l_get_all_in_radius>},
+    {"get_all", lua::wrap<l_get_all>},
+    {"get_nearest", lua::wrap<l_get_nearest>},
+    {nullptr, nullptr}
 };

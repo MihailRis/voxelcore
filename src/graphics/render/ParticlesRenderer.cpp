@@ -19,12 +19,12 @@ ParticlesRenderer::ParticlesRenderer(
     const Assets& assets,
     const Level& level,
     const Chunks& chunks,
-    const GraphicsSettings* settings
+    const GraphicsSettings& settings
 )
     : chunks(chunks),
       assets(assets),
       settings(settings),
-      batch(std::make_unique<MainBatch>(4096)) {
+      batch(std::make_unique<MainBatch>(settings.particlesBatchVertices.get())) {
 }
 
 ParticlesRenderer::~ParticlesRenderer() = default;
@@ -46,12 +46,7 @@ static inline void update_particle(
     particle.lifetime -= delta;
 }
 
-void ParticlesRenderer::renderParticles(const Camera& camera, float delta) {
-    const auto& right = camera.right;
-    const auto& up = camera.up;
-
-    bool backlight = settings->backlight.get();
-
+void ParticlesRenderer::updateParticles(float delta) {
     std::vector<const Texture*> unusedTextures;
 
     for (auto& [texture, vec] : particles) {
@@ -59,8 +54,6 @@ void ParticlesRenderer::renderParticles(const Camera& camera, float delta) {
             unusedTextures.push_back(texture);
             continue;
         }
-        batch->setTexture(texture);
-
         visibleParticles += vec.size();
 
         auto iter = vec.begin();
@@ -87,59 +80,6 @@ void ParticlesRenderer::renderParticles(const Camera& camera, float delta) {
                 }
             }
             update_particle(particle, delta, chunks);
-
-            float scale = 1.0f + ((particle.random ^ 2628172) % 1000) *
-                0.001f * preset.sizeSpread;
-
-            glm::vec4 light(1, 1, 1, 0);
-            if (preset.lighting) {
-                light = MainBatch::sampleLight(
-                    particle.position,
-                    chunks,
-                    backlight
-                );
-                auto size = glm::max(glm::vec3(0.5f), preset.size * scale);
-                for (int x = -1; x <= 1; x++) {
-                    for (int y = -1; y <= 1; y++) {
-                        for (int z = -1; z <= 1; z++) {
-                            light = glm::max(
-                                light,
-                                MainBatch::sampleLight(
-                                    particle.position -
-                                        size * glm::vec3(x, y, z),
-                                    chunks,
-                                    backlight
-                                )
-                            );
-                        }
-                    }
-                }
-                light *= 0.9f + (particle.random % 100) * 0.001f;
-            }
-
-            glm::vec3 localRight = right;
-            glm::vec3 localUp = preset.globalUpVector ? glm::vec3(0, 1, 0) : up;
-            float angle = particle.angle;
-            if (glm::abs(angle) >= 0.005f) {
-                glm::vec3 rotatedRight(glm::cos(angle), -glm::sin(angle), 0.0f);
-                glm::vec3 rotatedUp(glm::sin(angle), glm::cos(angle), 0.0f);
-
-                localRight = right * rotatedRight.x + localUp * rotatedRight.y +
-                            camera.front * rotatedRight.z;
-                localUp = right * rotatedUp.x + localUp * rotatedUp.y +
-                        camera.front * rotatedUp.z;
-            }
-            batch->quad(
-                particle.position,
-                localRight,
-                localUp,
-                -camera.front,
-                preset.size * scale,
-                light,
-                glm::vec3(1.0f),
-                particle.region,
-                preset.lighting ? 0.0f : 1.0f
-            );
             if (particle.lifetime <= 0.0f) {
                 iter = vec.erase(iter);
                 emitter.refCount--;
@@ -148,19 +88,85 @@ void ParticlesRenderer::renderParticles(const Camera& camera, float delta) {
             }
         }
     }
-    batch->flush();
+
     for (const auto& texture : unusedTextures) {
         particles.erase(texture);
     }
 }
 
-void ParticlesRenderer::render(const Camera& camera, float delta) {
-    batch->begin();
-    
-    aliveEmitters = emitters.size();
-    visibleParticles = 0;
+static inline glm::vec4 calc_lights(
+    Particle& particle,
+    ParticlesPreset& preset,
+    bool backlight,
+    float scale,
+    const Chunks& chunks
+) {
+    auto light = MainBatch::sampleLight(
+        particle.position,
+        chunks,
+        backlight
+    );
+    auto size = glm::max(glm::vec3(0.5f), preset.size * scale);
+    for (int x = -1; x <= 1; x++) {
+        for (int y = -1; y <= 1; y++) {
+            for (int z = -1; z <= 1; z++) {
+                light = glm::max(
+                    light,
+                    MainBatch::sampleLight(
+                        particle.position - size * glm::vec3(x, y, z),
+                        chunks,
+                        backlight
+                    )
+                );
+            }
+        }
+    }
+    light *= 0.9f + (particle.random % 100) * 0.001f;
+    return light;
+}
 
-    renderParticles(camera, delta);
+void ParticlesRenderer::renderParticle(
+    Particle& particle, const Camera& camera, bool backlight
+) {
+    const auto& right = camera.right;
+    const auto& up = camera.up;
+    auto& emitter = *particle.emitter;
+    auto& preset = emitter.preset;
+    float scale = 1.0f + ((particle.random ^ 2628172) % 1000) *
+        0.001f * preset.sizeSpread;
+
+    glm::vec4 light(1, 1, 1, 0);
+    if (preset.lighting) {
+        light = calc_lights(particle, preset, backlight, scale, chunks);
+    }
+
+    glm::vec3 localRight = right;
+    glm::vec3 localUp = preset.globalUpVector ? glm::vec3(0, 1, 0) : up;
+    float angle = particle.angle;
+    if (glm::abs(angle) >= 0.005f) {
+        glm::vec3 rotatedRight(glm::cos(angle), -glm::sin(angle), 0.0f);
+        glm::vec3 rotatedUp(glm::sin(angle), glm::cos(angle), 0.0f);
+
+        localRight = right * rotatedRight.x + localUp * rotatedRight.y +
+                    camera.front * rotatedRight.z;
+        localUp = right * rotatedUp.x + localUp * rotatedUp.y +
+                camera.front * rotatedUp.z;
+    }
+    batch->quad(
+        particle.position,
+        localRight,
+        localUp,
+        -camera.front,
+        preset.size * scale,
+        light,
+        glm::vec3(1.0f),
+        particle.region,
+        preset.lighting ? 0.0f : 1.0f
+    );
+}
+
+void ParticlesRenderer::update(const Camera& camera, float delta) {
+    updateParticles(delta);
 
     auto iter = emitters.begin();
     while (iter != emitters.end()) {
@@ -176,6 +182,33 @@ void ParticlesRenderer::render(const Camera& camera, float delta) {
         emitter.update(delta, camera.position, *vec);
         iter++;
     }
+}
+
+void ParticlesRenderer::render(const Camera& camera) {
+    aliveEmitters = emitters.size();
+    visibleParticles = 0;
+
+    bool backlight = settings.backlight.get();
+
+    batch->begin();
+    for (auto& [texture, vec] : particles) {
+        batch->setTexture(texture);
+
+        auto iter = vec.begin();
+        while (iter != vec.end()) {
+            auto& particle = *iter;
+
+            renderParticle(particle, camera, backlight);
+            
+            if (particle.lifetime <= 0.0f) {
+                iter = vec.erase(iter);
+                particle.emitter->refCount--;
+            } else {
+                iter++;
+            }
+        }
+    }
+    batch->flush();
 }
 
 Emitter* ParticlesRenderer::getEmitter(u64id_t id) const {

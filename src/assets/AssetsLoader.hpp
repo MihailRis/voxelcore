@@ -33,14 +33,19 @@ struct LayoutCfg : AssetCfg {
     gui::GUI* gui;
     scriptenv env;
 
-    LayoutCfg(gui::GUI* gui, scriptenv env) : gui(gui), env(std::move(env)) {
-    }
+    LayoutCfg(gui::GUI* gui, scriptenv env) : gui(gui), env(std::move(env)) {}
 };
 
 struct SoundCfg : AssetCfg {
     bool keepPCM;
 
     SoundCfg(bool keepPCM) : keepPCM(keepPCM) {}
+};
+
+struct FontCfg : AssetCfg {
+    int size;
+
+    FontCfg(int size) : size(size) {}
 };
 
 enum class AtlasType {
@@ -57,6 +62,12 @@ struct PostEffectCfg : AssetCfg {
     bool advanced;
 
     PostEffectCfg(bool advanced) : advanced(advanced) {}
+};
+
+struct ModelCfg : AssetCfg {
+    bool squashed;
+
+    ModelCfg(bool squashed) : squashed(squashed) {}
 };
 
 using aloader_func = std::function<
@@ -107,7 +118,7 @@ public:
     /// @throws assetload::error
     void loadNext();
 
-    std::shared_ptr<Task> startTask(runnable onDone);
+    std::shared_ptr<Task> startTask(runnable onDone, int maxWorkers);
 
     const ResPaths& getPaths() const;
     aloader_func getLoader(AssetType tag);
@@ -118,10 +129,11 @@ public:
     static void addDefaults(AssetsLoader& loader, const Content* content);
 
     static bool loadExternalTexture(
-        Assets* assets,
+        AssetsLoader& loader,
         const std::string& name,
         const std::vector<io::path>& alternatives
     );
 
+    Assets& getAssets();
     Engine& getEngine();
 };

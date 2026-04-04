@@ -2,6 +2,6 @@
     <label id='%{id}.L' margin='0,3,0,0'>%{name}: %{value}%{postfix}</label>
     <trackbar 
         value='%{value}' min='%{min}' max='%{max}' step='%{step}' tooltip='%{tooltip}'
-        consumer='function(x) core.set_setting("%{id}", x) end' change-on-release='%{changeonrelease}'
+        consumer='function(x) app.set_setting("%{id}", x) end' change-on-release='%{changeonrelease}'
         sub-consumer='function(x) update_setting(x, "%{id}", "%{name}", "%{postfix}") end'/>
 </panel>

@@ -18,7 +18,7 @@ function ores.place(placements, x, z, w, d, seed, hmap, chunk_height)
         for i=1,count do
             local sx = math.random() * w
             local sz = math.random() * d
-            local sy = math.random() * (chunk_height * 0.5)
+            local sy = math.random() * (chunk_height * 0.5) + 6
             if sy < hmap:at(sx, sz) * chunk_height - 6 then
                 table.insert(placements, {ore.struct, {sx, sy, sz}, math.random()*4, -1})
             end

@@ -11,5 +11,8 @@
     "fog_opacity": 0.8,
     "fog_dencity": 2.5,
     "fog_curve": 0.5,
-    "clouds": 0.5
+    "clouds": 1.0,
+    "sky_tint": [1.9, 1.9, 1.9],
+    "clouds_tint": [0.7, 0.8, 0.9],
+    "min_sky_light": [0.05, 0.07, 0.1]
 }

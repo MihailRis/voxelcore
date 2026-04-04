@@ -6,7 +6,7 @@
 #include "scripting_commons.hpp"
 #include "typedefs.hpp"
 #include "lua/lua_engine.hpp"
-#include "lua/lua_custom_types.hpp"
+#include "lua/usertypes/lua_type_heightmap.hpp"
 #include "content/Content.hpp"
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"
@@ -152,6 +152,32 @@ public:
         placements.emplace_back(priority, LinePlacement {block, a, b, radius});
     }
 
+    void perform_block(lua::State* L, std::vector<Placement>& placements) {
+        rawgeti(L, 2);
+        blockid_t block = touinteger(L, -1);
+        pop(L);
+
+        rawgeti(L, 3);
+        glm::ivec3 pos = tovec3(L, -1);
+        pop(L);
+
+        uint8_t rotation = 0;
+        if (objlen(L, -1) >= 4) {
+            rawgeti(L, 4);
+            rotation = tointeger(L, -1) & 0b11;
+            pop(L);
+        }
+
+        int priority = 0;
+        if (objlen(L, -1) >= 5) {
+            rawgeti(L, 5);
+            priority = tointeger(L, -1);
+            pop(L);
+        }
+
+        placements.emplace_back(priority, BlockPlacement {block, pos, rotation});
+    }
+
     void perform_placement(lua::State* L, std::vector<Placement>& placements) {
         rawgeti(L, 1);
         int structIndex = 0;
@@ -161,6 +187,11 @@ public:
                 pop(L);
 
                 perform_line(L, placements);
+                return;
+            } else if (!std::strcmp(name, ":block")) {
+                pop(L);
+
+                perform_block(L, placements);
                 return;
             }
             const auto& found = def.structuresIndices.find(name);

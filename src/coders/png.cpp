@@ -11,6 +11,60 @@
 
 static debug::Logger logger("png-coder");
 
+static util::Buffer<ubyte> write_to_memory(uint width, uint height, const ubyte* data, bool alpha) {
+    uint pixsize = alpha ? 4 : 3;
+
+    std::vector<ubyte> buffer;
+    png_structp png_ptr = png_create_write_struct(
+        PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr
+    );
+    png_infop info_ptr = png_create_info_struct(png_ptr);
+
+    png_set_write_fn(
+        png_ptr,
+        &buffer,
+        [](png_structp pngPtr, png_bytep data, png_size_t length) {
+            auto& buf = *reinterpret_cast<std::vector<ubyte>*>(png_get_io_ptr(pngPtr));
+            buf.insert(
+                buf.end(),
+                reinterpret_cast<ubyte*>(data),
+                reinterpret_cast<ubyte*>(data) + length
+            );
+        },
+        nullptr
+    );
+
+    png_set_IHDR(
+        png_ptr,
+        info_ptr,
+        width,
+        height,
+        8,
+        alpha ? PNG_COLOR_TYPE_RGBA : PNG_COLOR_TYPE_RGB,
+        PNG_INTERLACE_NONE,
+        PNG_COMPRESSION_TYPE_BASE,
+        PNG_FILTER_TYPE_BASE
+    );
+
+    png_write_info(png_ptr, info_ptr);
+
+    auto row = std::make_unique<png_byte[]>(pixsize * width);
+    for (uint y = 0; y < height; y++) {
+        for (uint x = 0; x < width; x++) {
+            for (uint i = 0; i < pixsize; i++) {
+                row[x * pixsize + i] =
+                    (png_byte)data[(y * width + x) * pixsize + i];
+            }
+        }
+        png_write_row(png_ptr, row.get());
+    }
+
+    png_write_end(png_ptr, nullptr);
+    png_free_data(png_ptr, info_ptr, PNG_FREE_ALL, -1);
+    png_destroy_write_struct(&png_ptr, &info_ptr);
+    return util::Buffer<ubyte>(buffer.data(), buffer.size());
+}
+
 // returns 0 if all-right, 1 otherwise
 static int png_write(
     const char* filename, uint width, uint height, const ubyte* data, bool alpha
@@ -110,12 +164,22 @@ static void read_in_memory(png_structp pngPtr, png_bytep dst, png_size_t toread)
     reader.offset += toread;
 }
 
+void png_error_handler(png_structp pngPtr, png_const_charp errorMessage) {
+    logger.error() << "libpng error: " << errorMessage;
+    if (pngPtr) {
+        longjmp(png_jmpbuf(pngPtr), 1);
+    }
+    abort(); // Should not be reached if longjmp works
+}
+
 std::unique_ptr<ImageData> png::load_image(const ubyte* bytes, size_t size) {
     if (size < 8 || !png_check_sig(bytes, 8)) {
         throw std::runtime_error("invalid png signature");
     }
     png_structp pngPtr = nullptr;
-    pngPtr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
+    pngPtr = png_create_read_struct(
+        PNG_LIBPNG_VER_STRING, nullptr, png_error_handler, nullptr
+    );
     if (pngPtr == nullptr) {
         throw std::runtime_error("failed png_create_read_struct");
     }
@@ -124,6 +188,11 @@ std::unique_ptr<ImageData> png::load_image(const ubyte* bytes, size_t size) {
     if(infoPtr == nullptr) {
         png_destroy_read_struct(&pngPtr, nullptr, nullptr);
         throw std::runtime_error("failed png_create_info_struct");
+    }
+
+    if (setjmp(png_jmpbuf(pngPtr))) {
+        png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
+        throw std::runtime_error("failed to decode png");
     }
 
     InMemoryReader reader {bytes, size, 0};
@@ -182,13 +251,13 @@ std::unique_ptr<ImageData> png::load_image(const ubyte* bytes, size_t size) {
     }
     png_read_image(pngPtr, rowPointers.get());
 
-    ImageFormat format = ImageFormat::rgba8888;
+    ImageFormat format = ImageFormat::RGBA8888;
     switch (colorType) {
         case PNG_COLOR_TYPE_RGBA:
-            format = ImageFormat::rgba8888;
+            format = ImageFormat::RGBA8888;
             break;
         case PNG_COLOR_TYPE_RGB:
-            format = ImageFormat::rgb888;
+            format = ImageFormat::RGB888;
             break;
         default:
             png_destroy_read_struct(&pngPtr, &infoPtr, nullptr);
@@ -227,6 +296,16 @@ void png::write_image(const std::string& filename, const ImageData* image) {
         image->getWidth(),
         image->getHeight(),
         (const ubyte*)image->getData(),
-        image->getFormat() == ImageFormat::rgba8888
+        image->getFormat() == ImageFormat::RGBA8888
+    );
+}
+
+util::Buffer<ubyte> png::encode_image(const ImageData& image) {
+    auto format = image.getFormat();
+    return write_to_memory(
+        image.getWidth(),
+        image.getHeight(),
+        image.getData(),
+        format == ImageFormat::RGBA8888
     );
 }

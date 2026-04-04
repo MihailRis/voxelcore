@@ -9,7 +9,8 @@
 #include "content/Content.hpp"
 #include "content/ContentControl.hpp"
 #include "engine/Engine.hpp"
-#include "../lua_custom_types.hpp"
+#include "engine/EnginePaths.hpp"
+#include "../usertypes/lua_type_voxelfragment.hpp"
 
 using namespace scripting;
 
@@ -44,7 +45,7 @@ static int l_create_fragment(lua::State* L) {
 
 static int l_load_fragment(lua::State* L) {
     dv::value map;
-    if (!lua::isstring(L, 1)) {
+    if (lua::isstring(L, 1)) {
         io::path path = lua::require_string(L, 1);
         if (!io::exists(path)) {
             throw std::runtime_error("file "+path.string()+" does not exist");
@@ -104,5 +105,5 @@ const luaL_Reg generationlib[] = {
     {"load_fragment", lua::wrap<l_load_fragment>},
     {"get_generators", lua::wrap<l_get_generators>},
     {"get_default_generator", lua::wrap<l_get_default_generator>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

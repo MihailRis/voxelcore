@@ -2,6 +2,7 @@
 #include "coders/json.hpp"
 #include "engine/Engine.hpp"
 #include "network/Network.hpp"
+#include "devtools/Project.hpp"
 
 #include <variant>
 #include <utility>
@@ -13,11 +14,13 @@ enum NetworkEventType {
     CONNECTED_TO_SERVER,
     DATAGRAM,
     RESPONSE,
+    CONNECTION_ERROR,
 };
 
 struct ConnectionEventDto {
     u64id_t server;
     u64id_t client;
+    std::string comment {};
 };
 
 struct ResponseEventDto {
@@ -131,7 +134,7 @@ static int l_post(lua::State* L, network::Network& network) {
     auto headers = read_headers(L, 3);
     int currentRequestId = request_id++;
 
-    engine->getNetwork().post(
+    network.post(
         url,
         string,
         [currentRequestId](std::vector<char> bytes) {
@@ -155,7 +158,7 @@ static int l_post(lua::State* L, network::Network& network) {
 
 static int l_close(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
-    if (auto connection = network.getConnection(id)) {
+    if (auto connection = network.getConnection(id, false)) {
         connection->close(true);
     }
     return 0;
@@ -163,7 +166,7 @@ static int l_close(lua::State* L, network::Network& network) {
 
 static int l_closeserver(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
-    if (auto server = network.getServer(id)) {
+    if (auto server = network.getServer(id, false)) {
         server->close();
     }
     return 0;
@@ -171,7 +174,7 @@ static int l_closeserver(lua::State* L, network::Network& network) {
 
 static int l_send(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
-    auto connection = network.getConnection(id);
+    auto connection = network.getConnection(id, false);
     if (connection == nullptr ||
         connection->getState() == network::ConnectionState::CLOSED) {
         return 0;
@@ -201,7 +204,7 @@ static int l_send(lua::State* L, network::Network& network) {
 static int l_udp_server_send_to(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
 
-    if (auto server = network.getServer(id)) {
+    if (auto server = network.getServer(id, false)) {
         if (server->getTransportType() != network::TransportType::UDP)
             throw std::runtime_error("the server must work on UDP transport");
 
@@ -238,7 +241,7 @@ static int l_recv(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
     int length = lua::tointeger(L, 2);
 
-    auto connection = engine->getNetwork().getConnection(id);
+    auto connection = network.getConnection(id, false);
 
     if (connection == nullptr || connection->getTransportType() != network::TransportType::TCP) {
         return 0;
@@ -268,7 +271,7 @@ static int l_recv(lua::State* L, network::Network& network) {
 static int l_available(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
 
-    if (auto connection = network.getConnection(id)) {
+    if (auto connection = network.getConnection(id, false)) {
         return lua::pushinteger(L, dynamic_cast<network::TcpConnection*>(connection)->available());
     }
 
@@ -282,6 +285,11 @@ static int l_connect_tcp(lua::State* L, network::Network& network) {
         push_event(NetworkEvent(
             CONNECTED_TO_SERVER,
             ConnectionEventDto {0, cid}
+        ));
+    }, [](u64id_t cid, std::string errorMessage) {
+        push_event(NetworkEvent(
+            CONNECTION_ERROR,
+            ConnectionEventDto {0, cid, std::move(errorMessage)}
         ));
     });
     return lua::pushinteger(L, id);
@@ -345,7 +353,7 @@ static int l_open_udp(lua::State* L, network::Network& network) {
 
 static int l_is_alive(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
-    if (auto connection = network.getConnection(id)) {
+    if (auto connection = network.getConnection(id, false)) {
         return lua::pushboolean(
             L,
             connection->getState() != network::ConnectionState::CLOSED ||
@@ -360,7 +368,7 @@ static int l_is_alive(lua::State* L, network::Network& network) {
 
 static int l_is_connected(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
-    if (auto connection = network.getConnection(id)) {
+    if (auto connection = network.getConnection(id, false)) {
         return lua::pushboolean(
             L, connection->getState() == network::ConnectionState::CONNECTED
         );
@@ -370,7 +378,7 @@ static int l_is_connected(lua::State* L, network::Network& network) {
 
 static int l_get_address(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
-    if (auto connection = network.getConnection(id)) {
+    if (auto connection = network.getConnection(id, false)) {
         lua::pushstring(L, connection->getAddress());
         lua::pushinteger(L, connection->getPort());
         return 2;
@@ -380,7 +388,7 @@ static int l_get_address(lua::State* L, network::Network& network) {
 
 static int l_is_serveropen(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
-    if (auto server = network.getServer(id)) {
+    if (auto server = network.getServer(id, false)) {
         return lua::pushboolean(L, server->isOpen());
     }
     return lua::pushboolean(L, false);
@@ -388,7 +396,7 @@ static int l_is_serveropen(lua::State* L, network::Network& network) {
 
 static int l_get_serverport(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
-    if (auto server = network.getServer(id)) {
+    if (auto server = network.getServer(id, false)) {
         return lua::pushinteger(L, server->getPort());
     }
     return 0;
@@ -402,7 +410,37 @@ static int l_get_total_download(lua::State* L, network::Network& network) {
     return lua::pushinteger(L, network.getTotalDownload());
 }
 
-static int l_pull_events(lua::State* L, network::Network& network) {
+static int l_find_free_port(lua::State* L, network::Network& network) {
+    int port = network.findFreePort();
+    if (port == -1) {
+        return 0;
+    }
+    return lua::pushinteger(L, port);
+}
+
+static int l_set_nodelay(lua::State* L, network::Network& network) {
+    u64id_t id = lua::tointeger(L, 1);
+    bool noDelay = lua::toboolean(L, 2);
+    if (auto connection = network.getConnection(id, false)) {
+        if (connection->getTransportType() == network::TransportType::TCP) {
+            dynamic_cast<network::TcpConnection*>(connection)->setNoDelay(noDelay);
+        }
+    }
+    return 0;
+}
+
+static int l_is_nodelay(lua::State* L, network::Network& network) {
+    u64id_t id = lua::tointeger(L, 1);
+    if (auto connection = network.getConnection(id, false)) {
+        if (connection->getTransportType() == network::TransportType::TCP) {
+            bool noDelay = dynamic_cast<network::TcpConnection*>(connection)->isNoDelay();
+            return lua::pushboolean(L, noDelay);
+        }
+    }
+    return lua::pushboolean(L, false);
+}
+
+static int l_pull_events(lua::State* L) {
     std::vector<NetworkEvent> local_queue;
     {
         std::lock_guard lock(events_queue_mutex);
@@ -417,7 +455,8 @@ static int l_pull_events(lua::State* L, network::Network& network) {
         const auto& event = local_queue[i];
         switch (event.type) {
             case CLIENT_CONNECTED:
-            case CONNECTED_TO_SERVER: {
+            case CONNECTED_TO_SERVER:
+            case CONNECTION_ERROR: {
                 const auto& dto = std::get<ConnectionEventDto>(event.payload);
                 lua::pushinteger(L, event.type);
                 lua::rawseti(L, 1);
@@ -427,6 +466,9 @@ static int l_pull_events(lua::State* L, network::Network& network) {
 
                 lua::pushinteger(L, dto.client);
                 lua::rawseti(L, 3);
+
+                lua::pushlstring(L, dto.comment);
+                lua::rawseti(L, 4);
                 break;
             }
             case DATAGRAM: {
@@ -478,11 +520,22 @@ static int l_pull_events(lua::State* L, network::Network& network) {
     return 1;
 }
 
+static int l_is_available(lua::State* L) {
+    return lua::pushboolean(L, engine->getNetwork() != nullptr);
+}
+
 template <int(*func)(lua::State*, network::Network&)>
 int wrap(lua_State* L) {
     int result = 0;
     try {
-        result = func(L, engine->getNetwork());
+        auto network = engine->getNetwork();
+        const auto& permissions = engine->getProject().permissions;
+        if (network == nullptr || !permissions.has(Permissions::NETWORK)) {
+            throw std::runtime_error(
+                "network subsystem is not available in the project"
+            );
+        }
+        result = func(L, *network);
     }
     // transform exception with description into lua_error
     catch (std::exception& e) {
@@ -501,7 +554,9 @@ const luaL_Reg networklib[] = {
     {"__post", wrap<l_post>},
     {"get_total_upload", wrap<l_get_total_upload>},
     {"get_total_download", wrap<l_get_total_download>},
-    {"__pull_events", wrap<l_pull_events>},
+    {"find_free_port", wrap<l_find_free_port>},
+    {"is_available", lua::wrap<l_is_available>},
+    {"__pull_events", lua::wrap<l_pull_events>},
     {"__open_tcp", wrap<l_open_tcp>},
     {"__open_udp", wrap<l_open_udp>},
     {"__closeserver", wrap<l_closeserver>},
@@ -517,5 +572,7 @@ const luaL_Reg networklib[] = {
     {"__get_address", wrap<l_get_address>},
     {"__is_serveropen", wrap<l_is_serveropen>},
     {"__get_serverport", wrap<l_get_serverport>},
-    {NULL, NULL}
+    {"__set_nodelay", wrap<l_set_nodelay>},
+    {"__is_nodelay", wrap<l_is_nodelay>},
+    {nullptr, nullptr}
 };

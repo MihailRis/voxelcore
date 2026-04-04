@@ -20,7 +20,7 @@ function data_buffer:set_order(order: string)
 Должен равняться одному из перечисленных в [**bit_converter**](core_bit_converter.md)
 
 ```lua
-function data_buffer:put_byte(byte: integer)
+function data_buffer:put_byte(byte: int)
 ```
 Записывает байт в буффер
 
@@ -50,27 +50,27 @@ function data_buffer:put_float64(float: number)
 Конвертирует плавающее число двойной точности в байты и записывает их в буффер
 
 ```lua
-function data_buffer:put_uint16(int: integer)
+function data_buffer:put_uint16(int: int)
 ```
 Конвертирует беззнаковое 2-х байтовое число в байты и записывает их в буффер
 
 ```lua
-function data_buffer:put_uint32(int: integer)
+function data_buffer:put_uint32(int: int)
 ```
 Конвертирует беззнаковое 4-х байтовое число в байты и записывает их в буффер
 
 ```lua
-function data_buffer:put_sint16(int: integer)
+function data_buffer:put_sint16(int: int)
 ```
 Конвертирует знаковое 2-х байтовое число в байты и записывает их в буффер
 
 ```lua
-function data_buffer:put_sint32(int: integer)
+function data_buffer:put_sint32(int: int)
 ```
 Конвертирует знаковое 4-х байтовое число в байты и записывает их в буффер
 
 ```lua
-function data_buffer:put_int64(int: integer)
+function data_buffer:put_int64(int: int)
 ```
 Конвертирует знаковое 8-и байтовое число в байты и записывает их в буффер
 
@@ -91,7 +91,7 @@ sint32 = 8
 ```
 
 ```lua
-function data_buffer:get_byte() -> integer
+function data_buffer:get_byte() -> int
 ```
 Возвращает следующий байт из буффера
 
@@ -121,27 +121,27 @@ function data_buffer:get_float64() -> number
 Читает следующее плавающее число двойной точности из буффера
 
 ```lua
-function data_buffer:get_uint16() -> integer
+function data_buffer:get_uint16() -> int
 ```
 Читает следующее 2-х байтовое беззнаковое целое число из буффера
 
 ```lua
-function data_buffer:get_uint32() -> integer
+function data_buffer:get_uint32() -> int
 ```
 Читает следующее 4-х байтовое беззнаковое целое число из буффера
 
 ```lua
-function data_buffer:get_sint16() -> integer
+function data_buffer:get_sint16() -> int
 ```
 Читает следующее 2-х байтовое знаковое целое число из буффера
 
 ```lua
-function data_buffer:get_sint32() -> integer
+function data_buffer:get_sint32() -> int
 ```
 Читает следующее 4-х байтовое знаковое целое число из буффера
 
 ```lua
-function data_buffer:get_int64() -> integer
+function data_buffer:get_int64() -> int
 ```
 Читает следующее 8-х байтовое знаковое целое число из буффера
 
@@ -151,12 +151,12 @@ function data_buffer:get_number() -> number
 Читает следующее число (см. data_buffer:put_number)
 
 ```lua
-function data_buffer:size() -> integer
+function data_buffer:size() -> int
 ```
 Возвращает размер буффера
 
 ```lua
-function data_buffer:set_position(integer: pos)
+function data_buffer:set_position(int: pos)
 ```
 Устанавливает текущую позицию в буффере
 

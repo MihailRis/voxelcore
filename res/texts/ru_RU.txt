@@ -25,6 +25,8 @@ Grant %{0} pack modification permission?=Выдать разрешение на 
 Error at line %{0}=Ошибка на строке %{0}
 Run=Запустить
 Filter=Фильтр
+Are you sure you want to open the link: =Вы уверены, что хотите открыть ссылку:
+Grant '%{0}' pack audio recording permission?=Выдать паку '%{0}' разрешение на запись звука?
 
 editor.info.tooltip=CTRL+S - Сохранить\nCTRL+R - Запустить\nCTRL+Z - Отменить\nCTRL+Y - Повторить
 devtools.traceback=Стек вызовов (от последнего)
@@ -36,9 +38,12 @@ error.dependency-version-not-met=Версия зависимости не соо
 pack.remove-confirm=Удалить весь поставляемый паком/паками контент из мира (безвозвратно)?
 
 # Подсказки
+audio.acoustic-effects.tooltip=Акустические эффекты могут не поддерживаться системой
 graphics.gamma.tooltip=Кривая яркости освещения
 graphics.backlight.tooltip=Подсветка, предотвращающая полную темноту
-graphics.dense-render.tooltip=Включает прозрачность блоков, таких как листья.
+graphics.dense-render.tooltip=Включает прозрачность блоков, таких как листья
+graphics.soft-lighting.tooltip=Включает мягкое освещение у блоков
+graphics.advanced-render.tooltip=Использовать графический конвейер, поддерживающий продвинутые эффекты, такие как тени и SSAO
 
 # Меню
 menu.Apply=Применить
@@ -79,6 +84,7 @@ world.delete-confirm=Удалить мир безвозвратно?
 settings.Ambient=Фон
 settings.Backlight=Подсветка
 settings.Dense blocks render=Плотный рендер блоков
+settings.Soft lighting=Мягкое освещение
 settings.Camera Shaking=Тряска Камеры
 settings.Camera Inertia=Инерция Камеры
 settings.Camera FOV Effects=Эффекты поля зрения
@@ -102,6 +108,12 @@ settings.Limit Background FPS=Ограничить фоновую частоту
 settings.Advanced render=Продвинутый рендер
 settings.Shadows quality=Качество теней
 settings.Conflict=Найдены возможные конфликты
+settings.Windowed=Оконный
+settings.Borderless=Безрамочный
+settings.Microphone=Микрофон
+settings.microphone.None=Нет
+settings.Clouds quality=Качество облаков
+settings.Acoustic effects=Акустические эффекты
 
 # Управление
 chunks.reload=Перезагрузить Чанки

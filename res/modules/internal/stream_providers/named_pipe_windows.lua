@@ -62,7 +62,7 @@ function lib.read(handle, len)
 
     if not has_data then
         return out
-    elseif hasData == -1 then
+    elseif has_data == -1 then
         error("failed to read from named pipe: "..tostring(C.GetLastError()))
     end
 
@@ -84,8 +84,8 @@ end
 
 function lib.write(handle, bytearray)
     local len = #bytearray
-    
     local buffer = FFI.new("uint8_t[?]", len)
+
     for i = 1, len do
         buffer[i-1] = bytearray[i]
     end
@@ -95,6 +95,10 @@ function lib.write(handle, bytearray)
     if C.WriteFile(handle, buffer, len, written, nil) == 0 then
         error("failed to write to named pipe: "..tostring(C.GetLastError()))
     end
+end
+
+function lib.seek(handle, mode, offset)
+    error("cannot seek the named pipe")
 end
 
 function lib.flush(handle)

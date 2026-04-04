@@ -1,7 +1,7 @@
 #param vec3 u_ssaoSamples[64]
-#param int u_kernelSize = 16
-#param float u_radius = 0.4
-#param float u_bias = 0.006
+#param int u_kernelSize = 32
+#param float u_radius = 0.2
+#param float u_bias = 0.001
 
 vec4 effect() {
     vec2 noiseScale = u_screenSize / 4.0;

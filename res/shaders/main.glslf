@@ -30,7 +30,7 @@ void main() {
         texColor.rgb = u_debugNormals ? (a_normal * 0.5 + 0.5) : vec3(1.0);
 
     f_color = texColor;
-    f_color.rgb *= min(vec3(1.0), a_torchLight.rgb + a_skyLight);
+    f_color.rgb *= max(a_torchLight.rgb, a_skyLight);
 
 #ifndef ADVANCED_RENDER
     vec3 fogColor = texture(u_skybox, a_dir).rgb;

@@ -1,7 +1,7 @@
 function on_open()
     local worlds = world.get_list()
     for _, info in ipairs(worlds) do
-        local major, minor = core.get_version()
+        local major, minor = app.get_version()
         if info.version[1] > major or info.version[2] > minor then
             info.versionColor = "#A02010"
         else

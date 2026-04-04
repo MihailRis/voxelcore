@@ -126,5 +126,5 @@ const luaL_Reg pathfindinglib[] = {
     {"set_max_visited", lua::wrap<l_set_max_visited_blocks>},
     {"set_jump_height", lua::wrap<l_set_jump_height>},
     {"avoid_tag", lua::wrap<l_avoid_tag>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

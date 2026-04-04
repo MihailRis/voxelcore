@@ -2,17 +2,17 @@
 
 ```lua
 -- Проверяет, открыт ли мир
-world.is_open() -> bool
+world.is_open() -> boolean
 
 -- Возвращает информацию о мирах.
-world.get_list() -> массив таблиц {
+world.get_list() -> table<{
     -- название мира
-    name: str,
+    name: string,
     -- предпросмотр (автоматически загружаемая текстура)
-    icon: str,
+    icon: string,
     -- версия движка, на которой был сохранен мир
     version: {int, int}
-}
+}>
 
 -- Возвращает текущее игровое время от 0.0 до 1.0, где 0.0 и 1.0 - полночь, 0.5 - полдень.
 world.get_day_time() -> number
@@ -33,16 +33,16 @@ world.get_total_time() -> number
 world.get_seed() -> int
 
 -- Возвращает имя генератора.
-world.get_generator() -> str
+world.get_generator() -> string
 
 -- Проверяет существование мира по имени.
-world.exists(name: str) -> bool
+world.exists(name: string) -> boolean
 
 -- Проверяет является ли текущее время днём. От 0.333(8 утра) до 0.833(8 вечера).
-world.is_day() -> bool
+world.is_day() -> boolean
 
 -- Проверяет является ли текущее время ночью. От 0.833(8 вечера) до 0.333(8 утра).
-world.is_night() -> bool
+world.is_night() -> boolean
 
 -- Возвращает общее количество загруженных в память чанков
 world.count_chunks() -> int
@@ -60,7 +60,7 @@ world.set_chunk_data(
     x: int, z: int,
     -- сжатые данные чанка
     data: Bytearray
-) -> bool
+) -> boolean
 
 -- Сохраняет данные чанка в регион.
 -- Изменения будет записаны в файл только после сохранения мира.

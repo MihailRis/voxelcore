@@ -63,10 +63,10 @@ bjson.tobytes(
     value: table, 
     -- сжатие
     [опционально] compression: bool=true
-) --> Bytearray
+) -> Bytearray
 
 -- Декодирует массив байт в таблицу
-bjson.frombytes(bytes: table | Bytearray) --> table
+bjson.frombytes(bytes: table | Bytearray) -> table
 ```
 
 ## Сохранение данных в мире

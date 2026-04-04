@@ -11,7 +11,7 @@
 ## Типы данных
 
 На данной странице будут использоваться условные обозначения типов.
-- vector - массив из двух, трех или четырех чисел
+- vecn - массив из двух, трех или четырех чисел
 - vec2 - массив из двух чисел
 - vec3 - массив из трех чисел
 - vec4 - массив из четырех чисел
@@ -27,76 +27,79 @@
 
 ```lua
 -- возвращает результат сложения векторов
-vecn.add(a: vector, b: vector)
+vecn.add(a: vecn, b: vecn) -> vecn
 
 -- возвращает результат сложения вектора и скаляра
-vecn.add(a: vector, b: number)
+vecn.add(a: vecn, b: number) -> vecn
 
 -- записывает результат сложения двух векторов в dst
-vecn.add(a: vector, b: vector, dst: vector)
+vecn.add(a: vecn, b: vecn, dst: vecn)
 ```
 
 #### Вычитание - *vecn.sub(...)*
 
 ```lua
 -- возвращает результат вычитания векторов
-vecn.sub(a: vector, b: vector)
+vecn.sub(a: vecn, b: vecn) -> vecn
 
 -- возвращает результат вычитания скаляра из вектора
-vecn.sub(a: vector, b: number)
+vecn.sub(a: vecn, b: number) -> vecn
 
 -- записывает результат вычитания двух векторов в dst
-vecn.sub(a: vector, b: vector, dst: vector)
+vecn.sub(a: vecn, b: vecn, dst: vecn)
 ```
 
 #### Умножение - *vecn.mul(...)*
 
 ```lua
 -- возвращает результат умножения векторов
-vecn.mul(a: vector, b: vector)
+vecn.mul(a: vecn, b: vecn) -> vecn
 
 -- возвращает результат умножения вектора на скаляр
-vecn.mul(a: vector, b: number)
+vecn.mul(a: vecn, b: number) -> vecn
+
+-- записывает результат умножения двух векторов в dst
+vecn.mul(a: vecn, b: vecn, dst: vecn)
 ```
 
 #### Инверсия - *vecn.inv(...)*
 
 ```lua
 -- возвращает результат инверсии (противоположный) вектора
-vecn.inverse(a: vector)
+vecn.inverse(a: vecn) -> vecn
 
 -- записывает инвертированный вектор в dst
-vecn.inverse(v: vector, dst: vector)
+vecn.inverse(v: vecn, dst: vecn)
 ```
 
 ####  Деление - *vecn.div(...)*
 
 ```lua
 -- возвращает результат деления векторов
-vecn.div(a: vector, b: vector)
+vecn.div(a: vecn, b: vecn) -> vecn
 
 -- возвращает результат деления вектора на скаляр
-vecn.div(a: vector, b: number)
+vecn.div(a: vecn, b: number) -> vecn
 
 -- записывает результат деления двух векторов в dst
-vecn.div(a: vector, b: vector, dst: vector)
+vecn.div(a: vecn, b: vecn, dst: vecn)
 ```
 
 #### Нормализация - *vecn.norm(...)*
 
 ```lua
 -- возвращает нормализованный вектор
-vecn.normalize(a: vector)
+vecn.normalize(a: vecn) -> vecn
 
 -- записывает нормализованный вектор в dst
-vecn.normalize(v: vector, dst: vector)
+vecn.normalize(v: vecn, dst: vecn)
 ```
 
 #### Длина вектора - *vecn.len(...)*
 
 ```lua
 -- возвращает длину вектора
-vecn.length(a: vector)
+vecn.length(a: vecn) -> number
 
 ```
 
@@ -104,53 +107,56 @@ vecn.length(a: vector)
 
 ```lua
 -- возвращает расстояние между двумя векторами
-vecn.distance(a: vector, b: vector)
+vecn.distance(a: vecn, b: vecn) -> number
 ```
 
 #### Абсолютное значение - *vecn.abs(...)*
 
 ```lua
 -- возвращает вектор с абсолютными значениями
-vecn.abs(a: vector)
+vecn.abs(a: vecn) -> vecn
 
 -- записывает абсолютное значение вектора в dst
-vecn.abs(v: vector, dst: vector)
+vecn.abs(v: vecn, dst: vecn)
 ```
 
 #### Округление - *vecn.round(...)*
 
 ```lua
 -- возвращает вектор с округленными значениями
-vecn.round(a: vector)
+vecn.round(a: vecn) -> vecn
 
 -- записывает округленный вектор в dst
-vecn.round(v: vector, dst: vector)
+vecn.round(v: vecn, dst: vecn)
 ```
 
 #### Степень - *vecn.pow(...)*
 
 ```lua
 -- возвращает вектор с элементами, возведенными в степень
-vecn.pow(a: vector, b: number)
+vecn.pow(a: vecn, b: number) -> vecn
+
+-- возвращает вектор с элементами, возведенными в значения другого вектора
+vecn.pow(a: vecn, b: vecn) -> vecn
 
 -- записывает вектор, возведенный в степень, в dst
-vecn.pow(v: vector, exponent: number, dst: vector)
+vecn.pow(v: vecn, exponent: number, dst: vecn)
 ```
 
 #### Скалярное произведение - *vecn.dot(...)*
 ```lua
 -- возвращает скалярное произведение векторов
-vecn.dot(a: vector, b: vector)
+vecn.dot(a: vecn, b: vecn) -> number
 ```
 
 #### Смешивание - *vecn.mix(...)*
 
 ```lua
 -- возвращает вектор a * (1.0 - t) + b * t
-vecn.mix(a: vector, b: vector, t: number)
+vecn.mix(a: vecn, b: vecn, t: number) -> vecn
 
 -- записывает в dst вектор a * (1.0 - t) + b * t
-vecn.mix(a: vector, b: vector, t: number, dst: vector)
+vecn.mix(a: vecn, b: vecn, t: number, dst: vecn)
 ```
 
 #### Перевод в строку - *vecn.tostring(...)*
@@ -158,7 +164,7 @@ vecn.mix(a: vector, b: vector, t: number, dst: vector)
 > Возвращает только тогда, когда содержимым является вектор
 ```lua
 -- возвращает строку представляющую содержимое вектора
-vecn.tostring(a: vector)
+vecn.tostring(a: vecn) -> string
 ```
 
 ## Специфические функции
@@ -167,16 +173,16 @@ vecn.tostring(a: vector)
 
 ```lua
 -- возвращает случайный вектор, координаты которого равномерно распределены на сфере заданного радиуса
-vec3.spherical_rand(radius: number)
+vec3.spherical_rand(radius: number) -> vec3
 
 -- записывает случайный вектор, координаты которого равномерно распределены на сфере заданного радиуса в dst
 vec3.spherical_rand(radius: number, dst: vec3)
 
 -- возвращает угол направления вектора v в градусах [0, 360]
-vec2.angle(v: vec2)
+vec2.angle(v: vec2) -> number
 
 -- возвращает угол направления вектора {x, y} в градусах [0, 360]
-vec2.angle(x: number, y: number) 
+vec2.angle(x: number, y: number) -> number 
 
 -- возвращает повернутый вектор на угол в градусах против часовой стрелки
 vec2.rotate(v: vec2, angle: number) -> vec2

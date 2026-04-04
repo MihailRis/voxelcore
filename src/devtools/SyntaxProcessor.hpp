@@ -18,7 +18,9 @@ namespace devtools {
     class SyntaxProcessor {
     public:
         std::unique_ptr<FontStylesScheme> highlight(
-            const std::string& ext, std::wstring_view source
+            const FontStylesScheme& colorScheme,
+            const std::string& ext,
+            std::wstring_view source
         ) const;
 
         void addSyntax(std::unique_ptr<Syntax> syntax);

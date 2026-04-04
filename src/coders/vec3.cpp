@@ -23,6 +23,10 @@ enum AttributeType {
     COLOR
 };
 
+enum MaterialFlag {
+    SHADELESS = 1
+};
+
 struct VertexAttribute {
     AttributeType type;
     int flags;
@@ -62,7 +66,7 @@ static VertexAttribute load_attribute(ByteReader& reader) {
 static model::Mesh build_mesh(
     const std::vector<VertexAttribute>& attrs, 
     const util::Buffer<uint16_t>& indices,
-    const std::string& texture
+    const Material& material
 ) {
     const glm::vec3* coords = nullptr;
     const glm::vec2* uvs = nullptr;
@@ -112,7 +116,11 @@ static model::Mesh build_mesh(
         }
         vertices.push_back(std::move(vertex));
     }
-    return model::Mesh {texture, std::move(vertices)};
+    return model::Mesh {
+        material.name,
+        std::move(vertices),
+        (material.flags & MaterialFlag::SHADELESS) == 0
+    };
 }
 
 static model::Mesh load_mesh(
@@ -154,7 +162,7 @@ static model::Mesh load_mesh(
     return build_mesh(
         attributes,
         indices,
-        materials.at(materialId).name
+        materials.at(materialId)
     );
 }
 

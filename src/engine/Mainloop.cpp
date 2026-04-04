@@ -18,6 +18,7 @@ Mainloop::Mainloop(Engine& engine) : engine(engine) {
 void Mainloop::run() {
     auto& time = engine.getTime();
     auto& window = engine.getWindow();
+    auto& settings = engine.getSettings();
 
     engine.setLevelConsumer([this](auto level, int64_t localPlayer) {
         if (level == nullptr) {
@@ -38,13 +39,17 @@ void Mainloop::run() {
     logger.info() << "main loop started";
     while (!window.isShouldClose()){
         time.update(window.time());
+        engine.applicationTick();
         engine.updateFrontend();
 
         if (!window.isIconified()) {
             engine.renderFrame();
         }
         engine.postUpdate();
-        engine.nextFrame();
+        engine.nextFrame(
+            settings.display.adaptiveFpsInMenu.get() &&
+            dynamic_cast<const MenuScreen*>(engine.getScreen().get()) != nullptr
+        );
     }
     logger.info() << "main loop stopped";
 }

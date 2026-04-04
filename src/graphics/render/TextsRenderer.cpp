@@ -45,7 +45,7 @@ void TextsRenderer::renderNote(
         }
         opacity = preset.xrayOpacity;
     }
-    const auto& font = assets.require<Font>(FONT_DEFAULT);
+    auto& font = assets.require<Font>(FONT_DEFAULT);
 
     glm::vec3 xvec = note.getAxisX();
     glm::vec3 yvec = note.getAxisY();

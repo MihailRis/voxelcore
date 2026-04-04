@@ -15,14 +15,14 @@
 ```lua
 -- Возвращает индекс слота эффектов по имени (пак:имя_слота).
 -- При отсутствии указанного слота возвращает -1
-gfx.posteffects.index(name: str) --> int
+gfx.posteffects.index(name: string) -> int
 
 -- Назначает эффект на слот
-gfx.posteffects.set_effect(slot: int, effect: str)
+gfx.posteffects.set_effect(slot: int, effect: string)
 
 -- Возвращает интенсивность эффекта (от 0.0 до 1.0)
 -- Если слот пуст, возвращает 0.0
-gfx.posteffects.get_intensity(slot: int) --> number
+gfx.posteffects.get_intensity(slot: int) -> number
 
 -- Устанавливает интенсивность эффекта (от 0.0 до 1.0)
 -- (Корректность обработки параметра между значениями 0.0 и 1.0 зависит
@@ -30,7 +30,7 @@ gfx.posteffects.get_intensity(slot: int) --> number
 gfx.posteffects.set_intensity(slot: int, intensity: number)
 
 -- Возвращает true если слот не пуст и интенсивность эффекта ненулевая
-gfx.posteffects.is_active(slot: int) --> bool
+gfx.posteffects.is_active(slot: int) -> boolean
 
 -- Устанавливает значения параметров (директивы 'param')
 gfx.posteffects.set_params(slot: int, params: table)
@@ -40,9 +40,9 @@ gfx.posteffects.set_array(
     -- индекс слота эффектов
     slot: int,
     -- имя параметра (массива)
-    name: str
+    name: string
     -- строка данных (используйте функцию Bytearray_as_string)
-    data: str
+    data: string
 )
 
 -- Пример заполнения массива `#param vec3 u_имяМассива[64]`:

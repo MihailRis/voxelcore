@@ -1,6 +1,10 @@
 #include "Players.hpp"
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/norm.hpp>
+
 #include "Player.hpp"
+#include "content/Content.hpp"
 #include "items/Inventories.hpp"
 #include "world/Level.hpp"
 #include "world/World.hpp"
@@ -18,6 +22,48 @@ Player* Players::get(int64_t id) const {
         return nullptr;
     }
     return found->second.get();
+}
+
+std::vector<Player*> Players::getAllInRadius(
+    const glm::vec3& center, float radius
+) const {
+    std::vector<Player*> foundPlayers;
+
+    for (const auto& pair : players) {
+        auto player = pair.second.get();
+        auto relativePos = player->getPosition() - center;
+        if (!player->isSuspended() && glm::length2(relativePos) <= radius) {
+            foundPlayers.emplace_back(player);
+        }
+    }
+    return foundPlayers;
+}
+
+std::vector<Player*> Players::getAll() const {
+    std::vector<Player*> allPlayers;
+    allPlayers.reserve(players.size());
+    for (const auto& pair : players) {
+        allPlayers.emplace_back(pair.second.get());
+    }
+    return allPlayers;
+}
+
+Player* Players::getNearest(const glm::vec3& position) const {
+    Player* nearest = nullptr;
+    float nearestDist2 = std::numeric_limits<float>::max();
+    for (const auto& pair : players) {
+        auto player = pair.second.get();
+        if (player->isSuspended()) {
+            continue;
+        }
+        auto relativePos = player->getPosition() - position;
+        auto dist2 = glm::length2(relativePos);
+        if (dist2 < nearestDist2) {
+            nearestDist2 = dist2;
+            nearest = player;
+        }
+    }
+    return nearest;
 }
 
 Player* Players::create(int64_t id) {
@@ -53,7 +99,7 @@ void Players::suspend(int64_t id) {
         }
         player->setSuspended(true);
         level.entities->despawn(player->getEntity());
-        player->setEntity(0);
+        player->setEntity(ENTITY_AUTO);
     }
 }
 
@@ -102,6 +148,6 @@ void Players::deserialize(const dv::value& src) {
         if (inventory->getId() == 0) {
             inventory->setId(level.getWorld()->getNextInventoryId());
         }
-        level.inventories->store(player->getInventory());
+        level.inventories->store(inventory);
     }
 }

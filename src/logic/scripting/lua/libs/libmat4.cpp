@@ -229,6 +229,20 @@ static int l_look_at(lua::State* L) {
     }
 }
 
+static int l_perspective(lua::State *L) {
+    uint argc = lua::check_argc(L, 4, 5);
+
+    double fov = glm::radians(lua::tonumber(L, 1));
+    double ratio = lua::tonumber(L, 2);
+    double near = lua::tonumber(L, 3);
+    double far = lua::tonumber(L, 4);
+
+    glm::mat4 mat = glm::perspective(fov, ratio, near, far);
+
+    if (argc == 5) return lua::setmat4(L, 5, mat);
+    else return lua::pushmat4(L, mat);
+}
+
 static int l_from_quat(lua::State* L) {
     uint argc = lua::check_argc(L, 1, 2);
     auto quat = lua::toquat(L, 1);
@@ -280,6 +294,8 @@ const luaL_Reg mat4lib[] = {
     {"determinant", lua::wrap<l_determinant>},
     {"decompose", lua::wrap<l_decompose>},
     {"look_at", lua::wrap<l_look_at>},
+    {"perspective", lua::wrap<l_perspective>},
     {"from_quat", lua::wrap<l_from_quat>},
     {"tostring", lua::wrap<l_tostring>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};

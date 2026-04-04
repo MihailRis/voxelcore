@@ -5,8 +5,6 @@
 #include <queue>
 #include <vector>
 
-#include "typedefs.hpp"
-
 namespace util {
     /// @brief Thread-safe pool of same-sized buffers
     /// @tparam T array type

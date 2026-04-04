@@ -1,23 +1,77 @@
-#include <unordered_map>
+#define VC_ENABLE_REFLECTION
+#include "lua_type_canvas.hpp"
 
 #include "graphics/core/ImageData.hpp"
 #include "graphics/core/Texture.hpp"
-#include "logic/scripting/lua/lua_custom_types.hpp"
 #include "logic/scripting/lua/lua_util.hpp"
+#include "coders/imageio.hpp"
 #include "engine/Engine.hpp"
 #include "assets/Assets.hpp"
+
+#include <unordered_map>
 
 using namespace lua;
 
 LuaCanvas::LuaCanvas(
-    std::shared_ptr<Texture> inTexture, std::shared_ptr<ImageData> inData
+    std::shared_ptr<Texture> texture,
+    std::shared_ptr<ImageData> data,
+    UVRegion region
 )
-    : mTexture(std::move(inTexture)), mData(std::move(inData)) {
+    : texture(std::move(texture)),
+      data(std::move(data)),
+      region(std::move(region)) {
+}
+
+void LuaCanvas::update(int extrusion) {
+    if (!hasTexture()) {
+        return;
+    }
+    if (region.isFull()) {
+        texture->reload(*data);
+    } else {
+        uint texWidth = texture->getWidth();
+        uint texHeight = texture->getHeight();
+        uint imgWidth = data->getWidth();
+        uint imgHeight = data->getHeight();
+
+        uint x = static_cast<uint>(region.u1 * texWidth);
+        uint y = static_cast<uint>(region.v1 * texHeight);
+        uint w = static_cast<uint>((region.u2 - region.u1) * texWidth);
+        uint h = static_cast<uint>((region.v2 - region.v1) * texHeight);
+
+        w = std::min<uint>(w, imgWidth);
+        h = std::min<uint>(h, imgHeight);
+
+        if (extrusion > 0) {
+            auto extruded = std::make_unique<ImageData>(
+                data->getFormat(),
+                w + extrusion * 2,
+                h + extrusion * 2
+            );
+            extruded->blit(*data, extrusion, extrusion);
+            for (uint j = 0; j < extrusion; j++) {
+                extruded->extrude(extrusion - j, extrusion - j, w + j*2, h + j*2);
+            }
+            texture->reloadPartial(
+                *extruded,
+                x - extrusion,
+                y - extrusion,
+                w + extrusion * 2,
+                h + extrusion * 2
+            );
+        } else {
+            texture->reloadPartial(*data, x, y, w, h);
+        }
+    }
 }
 
 void LuaCanvas::createTexture() {
-    mTexture = Texture::from(mData.get());
-    mTexture->setMipMapping(false, true);
+    texture = Texture::from(data.get());
+    texture->setMipMapping(false, true);
+}
+
+void LuaCanvas::unbindTexture() {
+    texture.reset();
 }
 
 union RGBA {
@@ -41,7 +95,7 @@ static RGBA* get_at(const ImageData& data, uint x, uint y) {
 
 static RGBA* get_at(State* L, uint x, uint y) {
     if (auto canvas = touserdata<LuaCanvas>(L, 1)) {
-        return get_at(canvas->data(), x, y);
+        return get_at(canvas->getData(), x, y);
     }
     return nullptr;
 }
@@ -53,7 +107,13 @@ static int l_at(State* L) {
     if (auto pixel = get_at(L, x, y)) {
         return pushinteger(L, pixel->rgba);
     }
+    return 0;
+}
 
+static int l_unbind_texture(State* L) {
+    if (auto canvas = touserdata<LuaCanvas>(L, 1)) {
+        canvas->unbindTexture();
+    }
     return 0;
 }
 
@@ -65,7 +125,9 @@ static RGBA get_rgba(State* L, int first) {
             rgba.rgba = static_cast<uint>(tointeger(L, first));
             break;
         case 3:
-            rgba.a = static_cast<ubyte>(tointeger(L, first + 3));
+            if (lua::isnumber(L, first + 3)) {
+                rgba.a = static_cast<ubyte>(tointeger(L, first + 3));
+            }
             [[fallthrough]];
         case 2:
             rgba.r = static_cast<ubyte>(tointeger(L, first));
@@ -97,7 +159,7 @@ static LuaCanvas& require_canvas(State* L, int idx) {
 
 static int l_clear(State* L) {
     auto& canvas = require_canvas(L, 1);
-    auto& image = canvas.data();
+    auto& image = canvas.getData();
     ubyte* data = image.getData();
     RGBA rgba {};
     if (gettop(L) == 1) {
@@ -122,7 +184,7 @@ static int l_line(State* L) {
 
     RGBA rgba = get_rgba(L, 6);
     if (auto canvas = touserdata<LuaCanvas>(L, 1)) {
-        auto& image = canvas->data();
+        auto& image = canvas->getData();
         image.drawLine(
             x1, y1, x2, y2, glm::ivec4 {rgba.r, rgba.g, rgba.b, rgba.a}
         );
@@ -135,17 +197,37 @@ static int l_blit(State* L) {
     auto& src = require_canvas(L, 2);
     int dst_x = tointeger(L, 3);
     int dst_y = tointeger(L, 4);
-    dst.data().blit(src.data(), dst_x, dst_y);
+    dst.getData().blit(src.getData(), dst_x, dst_y);
+    return 0;
+}
+
+static int l_rect(State* L) {
+    auto& canvas = require_canvas(L, 1);
+    auto& image = canvas.getData();
+    int x = tointeger(L, 2);
+    int y = tointeger(L, 3);
+    int w = tointeger(L, 4);
+    int h = tointeger(L, 5);
+    RGBA rgba = get_rgba(L, 6);
+    image.drawRect(x, y, w, h, glm::ivec4 {rgba.r, rgba.g, rgba.b, rgba.a});
     return 0;
 }
 
 static int l_set_data(State* L) {
     auto& canvas = require_canvas(L, 1);
-    auto& image = canvas.data();
+    auto& image = canvas.getData();
     auto data = image.getData();
 
     if (lua::isstring(L, 2)) {
         auto ptr = reinterpret_cast<ubyte*>(std::stoull(lua::tostring(L, 2)));
+        int len = lua::touinteger(L, 3);
+        if (len < image.getDataSize()) {
+            throw std::runtime_error(
+                "data size mismatch expected " +
+                std::to_string(image.getDataSize()) + ", got " +
+                std::to_string(len)
+            );
+        }
         std::memcpy(data, ptr, image.getDataSize());
         return 0;
     }
@@ -164,11 +246,16 @@ static int l_set_data(State* L) {
     return 0;
 }
 
+static int l_get_data(State* L) {
+    auto& canvas = require_canvas(L, 1);
+    auto& image = canvas.getData();
+    auto data = image.getData();
+    return create_bytearray(L, data, image.getDataSize());
+}
+
 static int l_update(State* L) {
     if (auto canvas = touserdata<LuaCanvas>(L, 1)) {
-        if (canvas->hasTexture()) {
-            canvas->texture().reload(canvas->data());
-        }
+        canvas->update();
     }
     return 0;
 }
@@ -186,14 +273,80 @@ static int l_create_texture(State* L) {
     return 0;
 }
 
+static int l_mul(State* L) {
+    auto canvas = touserdata<LuaCanvas>(L, 1);
+    if (canvas == nullptr) {
+        return 0;
+    }
+    if (lua::isnumber(L, 2)) {
+        RGBA rgba = get_rgba(L, 2);
+        canvas->getData().mulColor(glm::ivec4 {rgba.r, rgba.g, rgba.b, rgba.a});
+    } else if (auto other = touserdata<LuaCanvas>(L, 2)) {
+        canvas->getData().mulColor(other->getData());
+    }
+    return 0;
+}
+
+static int l_add(State* L) {
+    auto canvas = touserdata<LuaCanvas>(L, 1);
+    if (canvas == nullptr) {
+        return 0;
+    }
+    if (lua::istable(L, 2)) {
+        RGBA rgba = get_rgba(L, 2);
+        canvas->getData().addColor(glm::ivec4 {rgba.r, rgba.g, rgba.b, rgba.a}, 1);
+    } else if (auto other = touserdata<LuaCanvas>(L, 2)) {
+        canvas->getData().addColor(other->getData(), 1);
+    }
+    return 0;
+}
+
+static int l_sub(State* L) {
+    auto canvas = touserdata<LuaCanvas>(L, 1);
+    if (canvas == nullptr) {
+        return 0;
+    }
+    if (lua::istable(L, 2)) {
+        RGBA rgba = get_rgba(L, 2);
+        canvas->getData().addColor(glm::ivec4 {rgba.r, rgba.g, rgba.b, rgba.a}, -1);
+    } else if (auto other = touserdata<LuaCanvas>(L, 2)) {
+        canvas->getData().addColor(other->getData(), -1);
+    }
+    return 0;
+}
+
+static int l_encode(State* L) {
+    auto canvas = touserdata<LuaCanvas>(L, 1);
+    if (canvas == nullptr) {
+        return 0;
+    }
+    auto format = imageio::ImageFileFormat::PNG;
+    if (lua::isstring(L, 2)) {
+        auto name = lua::require_string(L, 2);
+        if (!imageio::ImageFileFormatMeta.getItem(name, format)) {
+            throw std::runtime_error("unsupported image file format");
+        }
+    }
+
+    auto buffer = imageio::encode(format, canvas->getData());
+    return lua::create_bytearray(L, buffer.data(), buffer.size());
+}
+
 static std::unordered_map<std::string, lua_CFunction> methods {
     {"at", lua::wrap<l_at>},
     {"set", lua::wrap<l_set>},
     {"line", lua::wrap<l_line>},
     {"blit", lua::wrap<l_blit>},
     {"clear", lua::wrap<l_clear>},
+    {"rect", lua::wrap<l_rect>},
     {"update", lua::wrap<l_update>},
     {"create_texture", lua::wrap<l_create_texture>},
+    {"unbind_texture", lua::wrap<l_unbind_texture>},
+    {"mul", lua::wrap<l_mul>},
+    {"add", lua::wrap<l_add>},
+    {"sub", lua::wrap<l_sub>},
+    {"encode", lua::wrap<l_encode>},
+    {"get_data", lua::wrap<l_get_data>},
     {"_set_data", lua::wrap<l_set_data>},
 };
 
@@ -202,7 +355,7 @@ static int l_meta_index(State* L) {
     if (texture == nullptr) {
         return 0;
     }
-    auto& data = texture->data();
+    auto& data = texture->getData();
     if (isnumber(L, 2)) {
         if (auto pixel = get_at(data, static_cast<uint>(tointeger(L, 2)))) {
             return pushinteger(L, pixel->rgba);
@@ -231,7 +384,7 @@ static int l_meta_newindex(State* L) {
     if (texture == nullptr) {
         return 0;
     }
-    auto& data = texture->data();
+    auto& data = texture->getData();
     if (isnumber(L, 2) && isnumber(L, 3)) {
         if (auto pixel = get_at(data, static_cast<uint>(tointeger(L, 2)))) {
             pixel->rgba = static_cast<uint>(tointeger(L, 3));
@@ -248,7 +401,24 @@ static int l_meta_meta_call(lua::State* L) {
     return newuserdata<LuaCanvas>(
         L,
         nullptr,
-        std::make_shared<ImageData>(ImageFormat::rgba8888, size.x, size.y)
+        std::make_shared<ImageData>(ImageFormat::RGBA8888, size.x, size.y)
+    );
+}
+
+static int l_canvas_decode(lua::State* L) {
+    auto bytes = bytearray_as_string(L, 1);
+    auto formatName = require_lstring(L, 2);
+    imageio::ImageFileFormat format;
+    if (!imageio::ImageFileFormatMeta.getItem(formatName, format)) {
+        throw std::runtime_error("unsupported image format");
+    }
+    return newuserdata<LuaCanvas>(
+        L,
+        nullptr,
+        imageio::decode(
+            format,
+            {reinterpret_cast<const unsigned char*>(bytes.data()), bytes.size()}
+        )
     );
 }
 
@@ -263,5 +433,8 @@ int LuaCanvas::createMetatable(State* L) {
     pushcfunction(L, lua::wrap<l_meta_meta_call>);
     setfield(L, "__call");
     setmetatable(L);
+
+    pushcfunction(L, lua::wrap<l_canvas_decode>);
+    setfield(L, "decode");
     return 1;
 }

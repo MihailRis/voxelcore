@@ -29,6 +29,7 @@ do -- setup visuals
         0, 0, 0, 1
     }
     rig:set_matrix(0, matrix)
+    body:set_material(block.material(id))
 end
 
 function on_grounded()

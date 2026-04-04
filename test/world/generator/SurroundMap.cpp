@@ -46,7 +46,7 @@ void visualize(const SurroundMap& map, int mul, int max) {
     int ox = areaMap.getOffsetX();
     int oy = areaMap.getOffsetY();
     
-    ImageData image(ImageFormat::rgb888, w, h);
+    ImageData image(ImageFormat::RGB888, w, h);
     ubyte* bytes = image.getData();
     for (int y = 0; y < h; y++) {
         for (int x = 0; x < w; x++) {

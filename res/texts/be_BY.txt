@@ -25,6 +25,8 @@ Grant %{0} pack modification permission?=Выдаць дазвол на мады
 Error at line %{0}=Памылка ў радку %{0}
 Run=Запусціць
 Filter=Фільтр
+Are you sure you want to open the link: =Ці вы ўпэўненыя, што хочаце адкрыць спасылку: 
+Grant '%{0}' pack audio recording permission?=Выдаць паку «%{0}» дазвол на запіс гуку?
 
 editor.info.tooltip=CTRL+S - Захаваць\nCTRL+R - Запусціць\nCTRL+Z - Скасаваць\nCTRL+Y - Паўтарыць
 devtools.traceback=Стэк выклікаў (ад апошняга)
@@ -32,12 +34,14 @@ devtools.output=Вывод
 
 error.pack-not-found=Не ўдалося знайсці пакет
 error.dependency-not-found=Выкарыстоўваная залежнасць не знойдзена
+error.dependency-version-not-met=Версія залежнасці не адпавядае неабходнай
 pack.remove-confirm=Выдаліць увесь кантэнт, які пастаўляецца пакетам/пакетамі, са свету (беззваротна)?
 
 # Падказкі
 graphics.gamma.tooltip=Крывая яркасці асвятлення
 graphics.backlight.tooltip=Падсветка, якая прадухіляе поўную цемру
 graphics.dense-render.tooltip=Уключае празрыстасць блокаў, такіх як лісце.
+graphics.soft-lighting.tooltip=Уключае мяккае асвятленне ў блоках
 
 # Меню
 menu.Apply=Ужыць
@@ -59,7 +63,6 @@ menu.Quit=Выхад
 menu.Save and Quit to Menu=Захаваць і Выйсці ў Меню
 menu.Settings=Налады
 menu.Reset settings=Скінуць налады
-menu.Contents Menu=Меню кантэнт-пакаў
 menu.Open data folder=Адкрыць тэчку з дадзенымі
 menu.Open content folder=Адкрыць тэчку [content]
 
@@ -79,6 +82,7 @@ world.delete-confirm=Выдаліць свет беззваротна?
 settings.Ambient=Фон
 settings.Backlight=Падсветка
 settings.Dense blocks render=Шчыльны рэндэр блокаў
+settings.Soft lighting=Мяккае асвятленне
 settings.Camera Shaking=Труска камеры
 settings.Camera Inertia=Інэрцыя камеры
 settings.Camera FOV Effects=Эфекты поля зроку
@@ -99,6 +103,13 @@ settings.V-Sync=Вертыкальная сінхранізацыя
 settings.Key=Кнопка
 settings.Controls Search Mode=Пошук па прывязанай кнопцы кіравання
 settings.Limit Background FPS=Абмежаваць фонавую частату кадраў
+settings.Advanced render=Прасунуты рэндэр 
+settings.Shadows quality=Якасць ценяў
+settings.Conflict=Знойдзены магчымыя канфлікты
+settings.Windowed=Ваконны
+settings.Borderless=Безрамкавы
+settings.Microphone=Мікрафон
+settings.microphone.None=Няма
 
 # Кіраванне
 chunks.reload=Перазагрузіць чанкі

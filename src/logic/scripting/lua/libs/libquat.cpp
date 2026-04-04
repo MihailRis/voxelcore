@@ -44,8 +44,18 @@ static int l_tostring(lua::State* L) {
     return lua::pushstring(L, ss.str());
 }
 
+static int l_from_euler(lua::State *L) {
+    uint argc = lua::check_argc(L, 1, 2);
+    glm::vec3 euler = glm::radians(lua::tovec3(L, 1));
+
+    if (argc == 2) return lua::setquat(L, 2, glm::quat(euler));
+    return lua::pushquat(L, glm::quat(euler));
+}
+
 const luaL_Reg quatlib[] = {
     {"from_mat4", lua::wrap<l_from_mat4>},
+    {"from_euler", lua::wrap<l_from_euler>},
     {"slerp", lua::wrap<l_slerp>},
     {"tostring", lua::wrap<l_tostring>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};

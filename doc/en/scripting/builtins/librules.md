@@ -60,7 +60,7 @@ Resets the rule value to the default value.
 
 | Name                   | Description                                                 | Default |
 | ---------------------- | ----------------------------------------------------------- | ------- |
-| cheat-commands         | Allow commands whose names are in the console.cheats array. | true    |
+| allow-cheats           | Allow commands whose names are in the console.cheats array. | true    |
 | allow-content-access   | Allow the content access panel.                             | true    |
 | allow-flight           | Allow flight.                                               | true    |
 | allow-noclip           | Allow noclip.                                               | true    |

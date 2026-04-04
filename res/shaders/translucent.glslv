@@ -12,6 +12,8 @@ layout (location = 3) in vec4 v_normal;
 
 out vec4 a_torchLight;
 
+uniform float u_dayTime;
+
 void main() {
     a_modelpos = u_model * vec4(v_position, 1.0f);
     vec3 pos3d = a_modelpos.xyz - u_cameraPos;
@@ -25,7 +27,7 @@ void main() {
     a_texCoord = v_texCoord;
 
     a_dir = a_modelpos.xyz - u_cameraPos;
-    vec3 skyLightColor = pick_sky_color(u_skybox);
+    vec3 skyLightColor = pick_sky_color(u_skybox, u_dayTime, u_minSkyLight);
     a_skyLight = skyLightColor.rgb*v_light.a;
 
     mat4 viewmodel = u_view * u_model;

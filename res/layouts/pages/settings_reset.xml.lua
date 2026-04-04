@@ -11,7 +11,7 @@ function reset(category)
 end
 
 function reset_setting(name)
-	core.set_setting(name, core.get_setting_info(name).def)
+	app.set_setting(name, app.get_setting_info(name).def)
 end
 
 function reset_audio()

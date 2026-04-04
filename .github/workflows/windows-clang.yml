@@ -2,9 +2,15 @@ name: Windows Build (CLang)
 
 on:
   push:
-    branches: [ "main", "dev", "release-**"]
+    branches: [ "main", "release-**"]
   pull_request:
-    branches: [ "main", "dev" ]
+   branches: [ "main", "dev" ]
+  workflow_call:
+    inputs:
+      build_name:
+        required: true
+        type: string
+        description: 'Build name passed as VC_BUILD_NAME define'
 
 jobs:
   build-windows:
@@ -47,7 +53,7 @@ jobs:
             export VCPKG_ROOT=$(pwd)/vcpkg
             mkdir build
             cd build
-            cmake -G "MinGW Makefiles" -DVCPKG_TARGET_TRIPLET=x64-mingw-static -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake ..
+            cmake -G "MinGW Makefiles" -DVCPKG_TARGET_TRIPLET=x64-mingw-static -DVC_BUILD_NAME="${{ inputs.build_name }}" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake ..
             cmake --build . --config Release
       - name: Package for Windows
         run: |

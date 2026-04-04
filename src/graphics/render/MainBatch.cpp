@@ -16,7 +16,7 @@ MainBatch::MainBatch(size_t capacity)
     const ubyte pixels[] = {
             255, 255, 255, 255,
     };
-    ImageData image(ImageFormat::rgba8888, 1, 1, pixels);
+    ImageData image(ImageFormat::RGBA8888, 1, 1, pixels);
     blank = Texture::from(&image);
 }
 
@@ -83,50 +83,58 @@ inline glm::vec4 do_tint(float value) {
 }
 
 void MainBatch::cube(
-        const glm::vec3 &coord,
-        const glm::vec3 &size,
-        const UVRegion(&texfaces)[6],
-        const glm::vec4 &tint,
-        bool shading
+    const glm::vec3& coord,
+    const glm::vec3& size,
+    const UVRegion(&texfaces)[6],
+    const glm::vec4& lights,
+    const glm::vec3 tints[],
+    float emission,
+    uint8_t cullingBits
 ) {
     const glm::vec3 X(1.0f, 0.0f, 0.0f);
     const glm::vec3 Y(0.0f, 1.0f, 0.0f);
     const glm::vec3 Z(0.0f, 0.0f, 1.0f);
 
+    if (cullingBits & 0x20)
     quad(
         coord + Z * size.z * 0.5f,
         X, Y, Z, glm::vec2(size.x, size.y),
-        (shading ? do_tint(0.8) * tint : tint),
-        glm::vec3(1.0f), texfaces[5]
+        do_tint((1.0f - emission) * 0.8 + emission) * lights,
+        tints[5], texfaces[5]
     );
+    if (cullingBits & 0x10)
     quad(
         coord - Z * size.z * 0.5f,
         -X, Y, -Z, glm::vec2(size.x, size.y),
-        (shading ? do_tint(0.9f) * tint : tint),
-        glm::vec3(1.0f), texfaces[4]
+        do_tint((1.0f - emission) * 0.9 + emission) * lights,
+        tints[4], texfaces[4]
     );
+    if (cullingBits & 0x8)
     quad(
         coord + Y * size.y * 0.5f,
         -X, Z, Y, glm::vec2(size.x, size.z),
-        (shading ? do_tint(1.0f) * tint : tint),
-        glm::vec3(1.0f), texfaces[3]
+        do_tint((1.0f - emission) * 1.0 + emission) * lights,
+        tints[3], texfaces[3]
     );
+    if (cullingBits & 0x4)
     quad(
         coord - Y * size.y * 0.5f,
         X, Z, -Y, glm::vec2(size.x, size.z),
-        (shading ? do_tint(0.7f) * tint : tint),
-        glm::vec3(1.0f), texfaces[2]
+        do_tint((1.0f - emission) * 0.7 + emission) * lights,
+        tints[2], texfaces[2]
     );
+    if (cullingBits & 0x2)
     quad(
         coord + X * size.x * 0.5f,
         -Z, Y, X, glm::vec2(size.z, size.y),
-        (shading ? do_tint(0.8f) * tint : tint),
-        glm::vec3(1.0f), texfaces[1]
+        do_tint((1.0f - emission) * 0.8 + emission) * lights,
+        tints[1], texfaces[1]
     );
+    if (cullingBits & 0x1)
     quad(
         coord - X * size.x * 0.5f,
         Z, Y, -X, glm::vec2(size.z, size.y),
-        (shading ? do_tint(0.9f) * tint : tint),
-        glm::vec3(1.0f), texfaces[1]
+        do_tint((1.0f - emission) * 0.9 + emission) * lights,
+        tints[0], texfaces[0]
     );
 }

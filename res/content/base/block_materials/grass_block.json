@@ -2,5 +2,6 @@
     "steps-sound": "steps/grass",
     "place-sound": "blocks/ground_place",
     "break-sound": "blocks/ground_break",
-    "hit-sound": "blocks/ground_hit"
+    "hit-sound": "blocks/ground_hit",
+    "sound-absorption": 0.8
 }

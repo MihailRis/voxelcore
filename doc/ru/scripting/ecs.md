@@ -32,7 +32,9 @@ entity:require_component(name: str) -> компонент
 -- Включает/выключает компонент по имени
 entity:set_enabled(name: str, enable: bool)
 
--- Возвращает id игрока, к которому привязана сущность
+-- Возвращает id игрока, к которому привязана сущность, в ином же случае возвращает -1.
+-- Во время инициализации компонентов при спавне сущности так же возвращает -1,
+-- так как привязка происходит после инициализации. 
 entity:get_player() -> int или nil
 ```
 
@@ -114,6 +116,24 @@ body:set_crouching(enabled: bool)
 body:get_body_type() -> str
 -- Устанавливает тип физического тела
 body:set_body_type(type: str)
+
+-- Возвращает материал тела (то же, что и у блоков)
+body:get_material() -> str
+-- Устанавливает материал тела
+body:set_material(material: str)
+
+-- Возвращает массу тела
+body:get_mass() -> number
+-- Устанавливает массу тела
+body:set_mass(mass: number)
+
+-- Возвращает упругость тела
+body:get_elasticity() -> number
+-- Устанавливает упругость тела
+body:set_elasticity(elasticity: number)
+
+-- Возвращает скорость поверхности, на которой находится тело, либо {0,0,0}
+body:get_ground_vel() -> vec3
 ```
 
 ### Skeleton

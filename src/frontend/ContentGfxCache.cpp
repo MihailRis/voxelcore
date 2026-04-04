@@ -62,7 +62,7 @@ void ContentGfxCache::refreshVariant(
                 }
             }
         }
-        models[def.rt.id] = std::move(model);
+        models[modelKey(def.rt.id, variantIndex)] = std::move(model);
     }
 }
 
@@ -70,7 +70,7 @@ void ContentGfxCache::refresh(const Block& def, const Atlas& atlas) {
     refreshVariant(def, def.defaults, 0, atlas);
     if (def.variants) {
         const auto& variants = def.variants->variants;
-        for (int i = 1; i < variants.size() - 1; i++) {
+        for (int i = 1; i < variants.size(); i++) {
             refreshVariant(def, variants[i], i, atlas);
         }
         def.variants->variants.at(0) = def.defaults;
@@ -94,8 +94,8 @@ void ContentGfxCache::refresh() {
 
 ContentGfxCache::~ContentGfxCache() = default;
 
-const model::Model& ContentGfxCache::getModel(blockid_t id) const {
-    const auto& found = models.find(id);
+const model::Model& ContentGfxCache::getModel(blockid_t id, uint8_t variant) const {
+    const auto& found = models.find(modelKey(id, variant));
     if (found == models.end()) {
         throw std::runtime_error("model not found");
     }

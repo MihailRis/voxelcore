@@ -39,12 +39,12 @@ jobs:
     #   make && make install INSTALL_INC=/usr/include/lua
       run: |
           sudo apt-get update
-          sudo apt-get install libglfw3-dev libglfw3 libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libgtest-dev libcurl4-openssl-dev
+          sudo apt-get install libglfw3-dev libglfw3 libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libgtest-dev libcurl4-openssl-dev libfreetype6-dev
           # fix luajit paths
           sudo ln -s /usr/lib/x86_64-linux-gnu/libluajit-5.1.a /usr/lib/x86_64-linux-gnu/liblua-5.1.a
           sudo ln -s /usr/include/luajit-2.1 /usr/include/lua
           # install EnTT
-          git clone https://github.com/skypjack/entt.git
+          git clone --branch v3.16.0 https://github.com/skypjack/entt.git
           cd entt/build
           cmake -DCMAKE_BUILD_TYPE=Release -DENTT_INSTALL=on ..
           sudo make install

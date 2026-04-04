@@ -1,6 +1,6 @@
 console_mode = "console"
 
-history = session.get_entry("commands_history")
+history = session.get("commands_history")
 history_pointer = #history
 
 events.on("core:open_traceback", function()

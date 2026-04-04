@@ -18,7 +18,7 @@ private:
     std::unique_ptr<WorldGenerator> generator;
 
     /// @brief Process one chunk: load it or calculate lights for it
-    bool loadVisible(const Player& player, uint padding) const;
+    bool loadVisible(const Player& player, uint padding, bool isLocalPlayer) const;
     bool buildLights(const Player& player, const std::shared_ptr<Chunk>& chunk) const;
     void createChunk(const Player& player, int x, int y) const;
 public:
@@ -29,7 +29,11 @@ public:
 
     /// @param maxDuration milliseconds reserved for chunks loading
     void update(
-        int64_t maxDuration, int loadDistance, uint padding, Player& player
+        int64_t maxDuration,
+        int loadDistance,
+        uint padding,
+        Player& player,
+        bool isLocalPlayer
     ) const;
 
     bool isInLoadingZone(const Player& player, uint padding, int x, int z) const;

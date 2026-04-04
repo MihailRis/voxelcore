@@ -6,19 +6,19 @@
 
 ```lua
 -- Генерирует случайное число в диапазоне [0..1)
-random.random() --> number
+random.random() -> number
 
 -- Генерирует случайное целое число в диапазоне [0..n]
-random.random(n) --> number
+random.random(n) -> number
 
 -- Генерирует случайное целое число в диапазоне [a..b]
-random.random(a, b) --> number
+random.random(a, b) -> number
 
 -- Генерирует случайный массив байт длиной n
 random.bytes(n: number) -> Bytearray
 
 -- Генерирует UUID версии 4
-random.uuid() -> str
+random.uuid() -> string
 ```
 
 ## Псевдослучайные числа
@@ -29,9 +29,9 @@ random.uuid() -> str
 local rng = random.Random()
 
 -- Используется аналогично math.random
-local a = rng:random() --> [0..1)
-local b = rng:random(10) --> [0..10]
-local c = rng:random(5, 20) --> [5..20]
+local a = rng:random() --> [0; 1)
+local b = rng:random(10) --> [0; 10]
+local c = rng:random(5, 20) --> [5; 20]
 
 -- Устанавливает состояние генератора для генерации воспроизводимой последовательности случайных чисел
 rng:seed(42)

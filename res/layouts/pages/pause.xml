@@ -1,8 +1,8 @@
 <panel size='400' color='0' interval='1' context='menu'>
-    <button onclick='menu:reset()'>@Continue</button>
+    <button onclick='gui.close_menu()'>@Continue</button>
     <button onclick='menu.page="content?mode=world"'>@Content</button>
     <button onclick='menu.page="settings"'>@Settings</button>
-    <button onclick='core.close_world(true)'>
+    <button onclick='app.close_world(true)'>
         @Save and Quit to Menu
     </button>
 </panel>

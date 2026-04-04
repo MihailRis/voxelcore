@@ -13,20 +13,24 @@ hud.close_inventory()
 -- Возвращает invid или id виртуального инвентаря.
 hud.open(
     -- Макет UI
-    layoutid: str, 
+    layoutid: string, 
     -- Не открывать инвентарь игрока
-    [опционально] disablePlayerInventory: bool, 
+    [опционально] disablePlayerInventory: boolean, 
     -- Инвентарь, к которому будет привязан UI макет
     [опционально] invid: int
 ) -> int
 
+-- Возвращает true если указаный макет UI открыт.
+hud.is_open(
+    layoutid: string
+) -> boolean
 
 -- Открывает инвентарь и UI блока.
 -- Если блок не имеет макета UI - бросается исключение.
 -- Возвращает id инвентаря блока 
 -- (при *"inventory-size"=0* создаётся виртуальный инвентарь, 
 --  который удаляется после закрытия), и id макета UI. 
-hud.open_block(x: int, y: int, z: int) -> int, str
+hud.open_block(x: int, y: int, z: int) -> int, string
 ```
 
 > [!NOTE]
@@ -37,19 +41,22 @@ hud.open_block(x: int, y: int, z: int) -> int, str
 -- Также показывает инвентарь игрока, если playerinv - **true**.
 -- Через args можно указать массив значений параметров, что будут переданы
 -- в on_open показываемого оверлея.
-hud.show_overlay(layoutid: str, playerinv: bool, [опционально] args: table)
+hud.show_overlay(layoutid: string, playerinv: boolean, [опционально] args: table)
 
 -- Добавляет постоянный элемент на экран. Элемент не удаляется при 
 -- закрытии инвентаря. Чтобы не перекрывать затенение в режиме 
 -- инвентаря нужно установить z-index элемента меньшим чем -1. 
 -- В случае тега inventory, произойдет привязка слотов к инвентарю игрока.
-hud.open_permanent(layoutid: str)
+hud.open_permanent(layoutid: string)
 
 -- Удаляет элемент с экрана.
-hud.close(layoutid: str)
+hud.close(layoutid: string)
 
 -- Дает ID инвентаря открытого блока или 0.
 hud.get_block_inventory() -> int
+
+-- Дает ID второго открытого инвентаря (блок, виртуальный инвентарь...) или 0.
+hud.get_second_inventory() -> int
 
 -- Дает ID игрока, к которому привязан пользовательский интерфейс.
 hud.get_player() -> int
@@ -61,13 +68,16 @@ hud.pause()
 hud.resume()
 
 -- Возвращает true если открыто меню паузы.
-hud.is_paused() -> bool
+hud.is_paused() -> boolean
 
 -- Возвращает true если открыт инвентарь или оверлей.
-hud.is_inventory_open() -> bool
+hud.is_inventory_open() -> boolean
+
+-- Возвращает true если открыт инвентарь игрока.
+hud.is_player_inventory_open() -> boolean
 
 -- Устанавливает разрешение на паузу. При значении false меню паузы не приостанавливает игру.
-hud.set_allow_pause(flag: bool)
+hud.set_allow_pause(flag: boolean)
 
 -- Функция, управляющая именованным скелетом 'hand' (см. gfx.skeletons)
 hud.hand_controller: function()

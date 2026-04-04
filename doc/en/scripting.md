@@ -37,6 +37,7 @@ Subsections:
     - [quat](scripting/builtins/libquat.md)
     - [random](scripting/builtins/librandom.md)
     - [rules](scripting/builtins/librules.md)
+    - [session](scripting/builtins/libsession.md)
     - [time](scripting/builtins/libtime.md)
     - [utf8](scripting/builtins/libutf8.md)
     - [vec2, vec3, vec4](scripting/builtins/libvecn.md)

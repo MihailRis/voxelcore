@@ -135,7 +135,7 @@ void ModelBatch::setLightsOffset(const glm::vec3& offset) {
 
 void ModelBatch::setTexture(const std::string& name,
                             const texture_names_map* varTextures) {
-    if (varTextures && name.at(0) == '$') {
+    if (varTextures && !name.empty() && name.at(0) == '$') {
         const auto& found = varTextures->find(name);
         if (found == varTextures->end()) {
             return batch->setTexture(nullptr);

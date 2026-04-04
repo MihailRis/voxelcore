@@ -11,7 +11,7 @@ local pathfinding = entity:require_component("core:pathfinding")
 pathfinding.set_target(target: vec3)
 
 -- Возвращает текущую цель движения
-pathfinding.get_target() --> vec3
+pathfinding.get_target() -> vec3
 
 -- Устанавливает высоту преодолимого прыжком препятствия
 pathfinding.set_jump_height(height: number)
@@ -24,7 +24,7 @@ pathfinding.reset_route()
 
 -- Возвращает следующую точку маршрута, по текущим координатам.
 -- (следует использовать компонент core:mob - функция mob.follow_waypoints)
-pathfinding.next_waypoint() --> vec3 или nil
+pathfinding.next_waypoint() -> vec3 или nil
 
 -- Устанавливает интервал перестройки маршрута в тактах обновления.
 pathfinding.set_refresh_interval(interval: number)
@@ -82,7 +82,7 @@ mob.follow_waypoints(
 mob.set_dir(dir: vec3)
 
 -- Проверяет, включён ли режим полёта
-mob.is_flight() --> bool
+mob.is_flight() -> bool
 
 -- Включает/выключает режим полёта
 mob.set_flight(flag: bool)

@@ -1,41 +1,40 @@
 #pragma once
 
-#include <vector>
-#include <memory>
-#include <algorithm>
-#include <string>
-
+#include "commons.hpp"
 #include "typedefs.hpp"
 
 #include "presets/WeatherPreset.hpp"
 #include "world/Weather.hpp"
 #include "window/Camera.hpp"
 
-class Level;
-class Player;
-class Camera;
-class Batch3D;
-class LineBatch;
-class ChunksRenderer;
-class ParticlesRenderer;
-class BlockWrapsRenderer;
-class PrecipitationRenderer;
-class HandsRenderer;
-class NamedSkeletons;
-class LinesRenderer;
-class TextsRenderer;
-class Shader;
-class Frustum;
-class Engine;
-class LevelFrontend;
-class Skybox;
-class PostProcessing;
-class DrawContext;
-class ModelBatch;
+#include <vector>
+#include <memory>
+#include <algorithm>
+#include <string>
+
 class Assets;
-class Shadows;
-class GBuffer;
+class Batch3D;
+class BlockWrapsRenderer;
+class ChunksRenderer;
 class DebugLinesRenderer;
+class DrawContext;
+class Engine;
+class Frustum;
+class HandsRenderer;
+class Level;
+class LevelFrontend;
+class LineBatch;
+class ModelBatch;
+class NamedSkeletons;
+class ParticlesRenderer;
+class Player;
+class PostProcessing;
+class PrecipitationRenderer;
+class Shader;
+class Shadows;
+class Skybox;
+class TextsRenderer;
+class CloudsRenderer;
 struct EngineSettings;
 
 struct CompileTimeShaderSettings {
@@ -58,6 +57,8 @@ class WorldRenderer {
     std::unique_ptr<Skybox> skybox;
     std::unique_ptr<Shadows> shadowMapping;
     std::unique_ptr<DebugLinesRenderer> debugLines;
+    std::unique_ptr<PrecipitationRenderer> precipitation;
+    std::unique_ptr<CloudsRenderer> cloudsRenderer;
     Weather weather {};
     
     float timer = 0.0f;
@@ -94,17 +95,15 @@ class WorldRenderer {
         const DrawContext& context, 
         const Camera& camera, 
         const EngineSettings& settings,
-        float delta,
-        bool pause,
         bool hudVisible
     );
+
+    void refreshSettings(Shader** shaders);
 public:
     std::unique_ptr<ParticlesRenderer> particles;
     std::unique_ptr<TextsRenderer> texts;
     std::unique_ptr<BlockWrapsRenderer> blockWraps;
-    std::unique_ptr<PrecipitationRenderer> precipitation;
     std::unique_ptr<NamedSkeletons> skeletons;
-    std::unique_ptr<LinesRenderer> lines;
 
     static bool showChunkBorders;
     static bool showEntitiesDebug;
@@ -112,12 +111,12 @@ public:
     WorldRenderer(Engine& engine, LevelFrontend& frontend, Player& player);
     ~WorldRenderer();
 
+    void update(const Camera& camera, float delta);
+
     void renderFrame(
         const DrawContext& context, 
         Camera& camera, 
         bool hudVisible,
-        bool pause,
-        float delta,
         PostProcessing& postProcessing
     );
 

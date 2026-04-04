@@ -1,18 +1,10 @@
 function run_script(path)
-    debug.log("starting application script "..path)
-
-    local code = file.read(path)
-    local chunk, err = loadstring(code, path)
-    if chunk == nil then
-        error(err)
-    end
-    setfenv(chunk, setmetatable({app=__vc_app}, {__index=_G}))
-    start_coroutine(chunk, path)
+    __vc_start_app_script(path, path)
 end
 
 function refresh()
     document.list:clear()
-    
+
     local allpacks = table.merge(pack.get_available(), pack.get_installed())
     local infos = pack.get_info(allpacks)
     for _, name in ipairs(allpacks) do

@@ -4,14 +4,17 @@ A library for managing audio/visual weather effects.
 
 Weather settings:
 
-| Property     | Description                    | Default |
-| ------------ | ------------------------------ | ------- |
-| fall         | Precipitation (see table 2)    | {}      |
-| clouds       | Cloudiness [0.0, 1.0]          | 0.0     |
-| fog_opacity  | Maximum fog density [0.0, 1.0] | 0.0     |
-| fog_dencity  | Fog density                    | 1.0     |
-| fog_curve    | Fog curve                      | 1.0     |
-| thunder_rate | Thunder rate [0.0, 1.0]        | 0.0     |
+| Property      | Description                      | Default           |
+| ------------- | -------------------------------- | ----------------- |
+| fall          | Precipitation (see table 2)      | {}                |
+| clouds        | Cloudiness [0.0, 1.0]            | 0.0               |
+| fog_opacity   | Maximum fog density [0.0, 1.0]   | 0.0               |
+| fog_dencity   | Fog density                      | 1.0               |
+| fog_curve     | Fog curve                        | 1.0               |
+| thunder_rate  | Thunder rate [0.0, 1.0]          | 0.0               |
+| sky_tint      | Sky color multiplier             | {1, 1, 1}         |
+| clouds_tint   | Cloud color multiplier           | {1, 1, 1}         |
+| min_sky_light | Minimum sky-emitted light (moon) | {0.2, 0.25, 0.33} |
 
 Precipitation:
 

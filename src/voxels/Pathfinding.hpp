@@ -11,11 +11,13 @@
 #include <unordered_set>
 #include <vector>
 
+#include "typedefs.hpp"
+
 class Block;
 class Level;
 class GlobalChunks;
 
-template <typename T>
+template <typename T, typename IdType>
 class ContentUnitIndices;
 
 namespace voxels {
@@ -82,7 +84,7 @@ namespace voxels {
     private:
         const Level& level;
         const GlobalChunks& chunks;
-        const ContentUnitIndices<Block>& blockDefs;
+        const ContentUnitIndices<Block, blockid_t>& blockDefs;
         std::unordered_map<int, Agent> agents;
         int nextAgent = 1;
 

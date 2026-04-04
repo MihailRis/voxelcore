@@ -1,6 +1,6 @@
 local function configure_SSAO()
     -- Temporary using slot to configure built-in SSAO effect
-    local slot = gfx.posteffects.index("core:default")
+    local slot = gfx.posteffects.index("core:ssao")
     gfx.posteffects.set_effect(slot, "ssao")
 
     -- Generating random SSAO samples
@@ -18,8 +18,18 @@ local function configure_SSAO()
         Bytearray.append(buffer, byteutil.pack("fff", x, y, z))
     end
     gfx.posteffects.set_array(slot, "u_ssaoSamples", Bytearray_as_string(buffer))
-    -- SSAO effect configured, so 'core:default' slot may be reused now 
-    -- for test purposes
+
+    local function update_ssao_quality(value)
+        value = math.min(value, 3)
+        gfx.posteffects.set_params(slot, {
+            u_kernelSize = value * 16,
+            u_radius = 0.4 / value,
+            u_bias = 0.006 / value / value,
+        })
+    end
+    events.on("core:setting.graphics.ssao.set", update_ssao_quality)
+
+    update_ssao_quality(__vc_app.get_setting("graphics.ssao"))
 end
 
 local function update_hand()

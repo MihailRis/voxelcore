@@ -1,7 +1,9 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 #include <unordered_map>
+#include <glm/vec3.hpp>
 
 #include "typedefs.hpp"
 #include "interfaces/Serializable.hpp"
@@ -33,6 +35,10 @@ public:
     void resume(int64_t id);
 
     void remove(int64_t id);
+
+    std::vector<Player*> getAllInRadius(const glm::vec3& center, float radius) const;
+    std::vector<Player*> getAll() const;
+    Player* getNearest(const glm::vec3& position) const;
 
     dv::value serialize() const override;
 

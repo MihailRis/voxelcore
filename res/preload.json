@@ -8,7 +8,8 @@
         "translucent",
         "background",
         "skybox_gen",
-        "shadows"
+        "shadows",
+        "clouds"
     ],
     "post-effects": [
         "default",
@@ -48,7 +49,8 @@
         "gui/world",
         "gui/hud",
         "gui/entity",
-        "gui/half_block"
+        "gui/half_block",
+        "misc/blank"
     ],
     "fonts": [
         {

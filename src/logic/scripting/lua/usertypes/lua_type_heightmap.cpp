@@ -1,9 +1,4 @@
-#include "../lua_custom_types.hpp"
-
-#include <cstring>
-#include <sstream>
-#include <iomanip>
-#include <filesystem>
+#include "lua_type_heightmap.hpp"
 
 #include "util/functional_util.hpp"
 #define FNL_IMPL
@@ -13,7 +8,14 @@
 #include "graphics/core/ImageData.hpp"
 #include "maths/Heightmap.hpp"
 #include "engine/Engine.hpp"
+#include "engine/EnginePaths.hpp"
 #include "../lua_util.hpp"
+#include "lua_type_heightmap.hpp"
+
+#include <cstring>
+#include <sstream>
+#include <iomanip>
+#include <filesystem>
 
 using namespace lua;
 
@@ -54,7 +56,7 @@ static int l_dump(lua::State* L) {
         io::path file = require_string(L, 2);
         uint w = heightmap->getWidth();
         uint h = heightmap->getHeight();
-        ImageData image(ImageFormat::rgb888, w, h);
+        ImageData image(ImageFormat::RGB888, w, h);
         auto heights = heightmap->getValues();
         auto raster = image.getData();
         for (uint y = 0; y < h; y++) {
@@ -272,7 +274,7 @@ static int l_meta_meta_call(lua::State* L) {
     auto width = tointeger(L, 2);
     auto height = tointeger(L, 3);
     if (width <= 0 || height <= 0) {
-        throw std::runtime_error("width and height must be greather than 0");
+        throw std::runtime_error("width and height must be greater than 0");
     }
     return newuserdata<LuaHeightmap>(
         L, static_cast<uint>(width), static_cast<uint>(height)

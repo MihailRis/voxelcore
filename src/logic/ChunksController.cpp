@@ -15,6 +15,7 @@
 #include "voxels/Chunks.hpp"
 #include "voxels/GlobalChunks.hpp"
 #include "world/Level.hpp"
+#include "world/LevelEvents.hpp"
 #include "world/World.hpp"
 #include "world/generator/WorldGenerator.hpp"
 
@@ -32,7 +33,11 @@ ChunksController::ChunksController(Level& level)
 ChunksController::~ChunksController() = default;
 
 void ChunksController::update(
-    int64_t maxDuration, int loadDistance, uint padding, Player& player
+    int64_t maxDuration,
+    int loadDistance,
+    uint padding,
+    Player& player,
+    bool isLocalPlayer
 ) const {
     const auto& position = player.getPosition();
     int centerX = floordiv<CHUNK_W>(glm::floor(position.x));
@@ -49,7 +54,7 @@ void ChunksController::update(
 
     for (uint i = 0; i < MAX_WORK_PER_FRAME; i++) {
         timeutil::Timer timer;
-        if (loadVisible(player, padding)) {
+        if (loadVisible(player, padding, isLocalPlayer)) {
             int64_t mcs = timer.stop();
             if (mcstotal + mcs < maxDuration * 1000) {
                 mcstotal += mcs;
@@ -76,7 +81,9 @@ bool ChunksController::isInLoadingZone(
     return distance < minDistance;
 }
 
-bool ChunksController::loadVisible(const Player& player, uint padding) const {
+bool ChunksController::loadVisible(
+    const Player& player, uint padding, bool isLocalPlayer
+) const {
     auto& chunks = *player.chunks;
     int sizeX = chunks.getWidth();
     int sizeY = chunks.getHeight();
@@ -112,7 +119,7 @@ bool ChunksController::loadVisible(const Player& player, uint padding) const {
             auto& chunk = chunks.getChunks()[index];
             if (chunk != nullptr) {
                 if (chunk->flags.loaded && !chunk->flags.lighted) {
-                    if (buildLights(player, chunk)) {
+                    if (isLocalPlayer && buildLights(player, chunk)) {
                         return true;
                     }
                 }
@@ -149,7 +156,7 @@ bool ChunksController::buildLights(
         }
     }
     if (surrounding == MIN_SURROUNDING) {
-        if (lighting) {
+        if (lighting && chunk->lightmap) {
             bool lightsCache = chunk->flags.loadedLights;
             if (!lightsCache) {
                 lighting->buildSkyLight(chunk->x, chunk->z);
@@ -169,17 +176,16 @@ void ChunksController::createChunk(const Player& player, int x, int z) const {
         }
         return;
     }
-    auto chunk = level.chunks->create(x, z);
+    auto chunk = level.chunks->create(x, z, lighting != nullptr);
     player.chunks->putChunk(chunk);
     auto& chunkFlags = chunk->flags;
-
     if (!chunkFlags.loaded) {
         generator->generate(chunk->voxels, x, z);
         chunkFlags.unsaved = true;
     }
     chunk->updateHeights();
-
-    if (!chunkFlags.loadedLights) {
+    level.events->trigger(LevelEventType::CHUNK_PRESENT, chunk.get());
+    if (!chunkFlags.loadedLights && chunk->lightmap) {
         Lighting::prebuildSkyLight(*chunk, *level.content.getIndices());
     }
     chunkFlags.loaded = true;

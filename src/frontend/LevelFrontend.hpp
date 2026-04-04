@@ -2,24 +2,24 @@
 
 #include <memory>
 
-class Level;
 class Assets;
-class Player;
-class Engine;
 class ContentGfxCache;
+class Engine;
+class Level;
 class LevelController;
+class PlayerController;
 struct EngineSettings;
 
 class LevelFrontend {
     Level& level;
-    LevelController* controller;
+    LevelController& controller;
     Assets& assets;
     std::unique_ptr<ContentGfxCache> contentCache;
 public:
     LevelFrontend(
         Engine& engine,
-        Player* currentPlayer,
-        LevelController* controller,
+        PlayerController& currentPlayer,
+        LevelController& controller,
         const EngineSettings& settings
     );
     ~LevelFrontend();
@@ -27,5 +27,5 @@ public:
     Level& getLevel();
     const ContentGfxCache& getContentGfxCache() const;
     ContentGfxCache& getContentGfxCache();
-    LevelController* getController() const;
+    LevelController& getController() const;
 };

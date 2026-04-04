@@ -3,8 +3,8 @@ local gui_util = {
 }
 
 --- Parse `pagename?arg1=value1&arg2=value2` queries
---- @param query page query string
---- @return page_name, args_table
+--- @param query string page query string
+--- @return string, string -> page_name, args_table
 function gui_util.parse_query(query)
     local args = {}
     local name
@@ -23,8 +23,7 @@ function gui_util.parse_query(query)
     return name, args
 end
 
---- @param query page query string
---- @return document_id
+--- @param query string page query string
 function gui_util.load_page(query)
     local name, args = gui_util.parse_query(query)
     for i = #gui_util.local_dispatchers, 1, -1 do
@@ -35,7 +34,7 @@ function gui_util.load_page(query)
     local filename = file.find(string.format("layouts/pages/%s.xml", name))
     if filename then
         name = file.prefix(filename)..":pages/"..name
-        gui.load_document(filename, name, args)
+        gui.load_document(filename, name, args, { app = __vc_app })
         return name
     end
 end
@@ -53,19 +52,21 @@ end
 
 -- class designed for simple UI-nodes access via properties syntax
 local Element = {}
+local __gui_getattr = gui.getattr
+local __gui_setattr = gui.setattr
 function Element.new(docname, name)
     return setmetatable({docname=docname, name=name}, {
         __index=function(self, k)
-            return gui.getattr(self.docname, self.name, k)
+            return __gui_getattr(self.docname, self.name, k)
         end,
         __newindex=function(self, k, v)
-            gui.setattr(self.docname, self.name, k, v)
+            __gui_setattr(self.docname, self.name, k, v)
         end,
         __ipairs=function(self)
             local i = 0
             return function()
                 i = i + 1
-                local elem = gui.getattr(self.docname, self.name, i)
+                local elem = __gui_getattr(self.docname, self.name, i)
                 if elem == nil then
                     return
                 end
@@ -103,8 +104,8 @@ function RadioGroup:set(key)
 end
 function RadioGroup:__call(elements, onset, default)
     local group = setmetatable({
-        elements=elements, 
-        callback=onset, 
+        elements=elements,
+        callback=onset,
         current=nil
     }, {__index=self})
     group:set(default)
@@ -115,5 +116,87 @@ setmetatable(RadioGroup, RadioGroup)
 gui_util.Document = Document
 gui_util.Element = Element
 gui_util.RadioGroup = RadioGroup
+
+function gui.show_message(text, actual_callback)
+    local id = "dialog_"..random.uuid()
+
+    local callback = function()
+        gui.root[id]:destruct()
+        if actual_callback then
+            actual_callback()
+        end
+    end
+    gui.root.root:add(string.format([[
+        <container id='%s' color='#00000080' size-func='-1,-1' z-index='10'>
+            <panel color='#507090E0' size='300' padding='16'
+                   gravity='center-center' interval='4'>
+                <label>%s</label>
+                <button onclick='DATA.callback()'>@OK</button>
+            </panel>
+        </container>
+    ]], id, string.escape_xml(text)), {callback=callback})
+    input.add_callback("key:escape", callback, gui.root[id])
+end
+
+function gui.show_input_dialog(text, actual_callback, validator, confirm_text)
+    local id = "dialog_"..random.uuid()
+
+    local callback = function()
+        if not gui.root[id.."_input"].valid then
+            return
+        end
+        gui.root[id]:destruct()
+        if actual_callback then
+            actual_callback(gui.root[id.."_input"].text)
+        end
+    end
+    gui.root.root:add(string.format([[
+        <container id='%s' color='#00000080' size-func='-1,-1' z-index='10'>
+            <panel color='#507090E0' size='600' padding='16'
+                   gravity='center-center' interval='4'>
+                <label>%s</label>
+                <textbox id='%s_input' validator='DATA.validator'/>
+                <button onclick='DATA.callback()'>%s</button>
+            </panel>
+        </container>
+    ]], id, string.escape_xml(text), id, string.escape_xml(confirm_text or gui.str("OK"))), {
+        callback=callback,
+        validator=validator or function() return #text > 0 end
+    })
+    input.add_callback("key:escape", function() gui.root[id]:destruct() end, gui.root[id])
+    input.add_callback("key:enter", callback, gui.root[id])
+    gui.root[id.."_input"].focused = true
+end
+
+
+function gui.ask(text, on_yes, on_no, yes_text, no_text)
+    on_yes = on_yes or function() end
+    on_no = on_no or function() end
+    yes_text = yes_text == "" and "Yes" or (yes_text or "Yes")
+    no_text = no_text or "No"
+
+    local id = "dialog_"..random.uuid()
+
+    local yes_callback = function()
+        gui.root[id]:destruct()
+        on_yes()
+    end
+    local no_callback = function()
+        gui.root[id]:destruct()
+        on_no()
+    end
+    gui.root.root:add(string.format([[
+        <container id='%s' color='#00000080' size-func='-1,-1' z-index='10'>
+            <panel color='#507090E0' size='600' padding='16'
+                   gravity='center-center' interval='4'>
+                <label margin='4'>%s</label>
+                <button onclick='DATA.on_yes()'>@%s</button>
+                <button onclick='DATA.on_no()'>@%s</button>
+            </panel>
+        </container>
+    ]], id, string.escape_xml(text)), {on_yes=yes_callback, on_no=no_callback},
+        string.escape_xml(yes_text), string.escape_xml(no_text))
+    input.add_callback("key:escape", no_callback, gui.root[id])
+end
 
 return gui_util

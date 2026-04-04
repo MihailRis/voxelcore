@@ -1,7 +1,5 @@
 #include "BlocksController.hpp"
 
-#include <set>
-
 #include "content/Content.hpp"
 #include "items/Inventories.hpp"
 #include "items/Inventory.hpp"
@@ -18,13 +16,18 @@
 #include "world/World.hpp"
 #include "objects/Player.hpp"
 #include "objects/Players.hpp"
+#include "util/random.hpp"
+
+#include <random>
+
+static inline constexpr int CHUNK_RANDOM_TICK_SEGMENTS = 4;
 
 BlocksController::BlocksController(const Level& level, Lighting* lighting)
     : level(level),
       chunks(*level.chunks),
       lighting(lighting),
       randTickClock(20, 3),
-      blocksTickClock(20, 1),
+      blocksTickClock(20, 3),
       worldTickClock(20, 1) {
 }
 
@@ -108,10 +111,17 @@ void BlocksController::updateBlock(int x, int y, int z) {
     if (vox == nullptr) return;
     const auto& def = level.content.getIndices()->blocks.require(vox->id);
     if (def.grounded) {
-        const auto& vec = get_ground_direction(def, vox->state.rotation);
-        if (!blocks_agent::is_solid_at(chunks, x + vec.x, y + vec.y, z + vec.z)) {
-            breakBlock(nullptr, def, x, y, z);
-            return;
+        if (def.rt.extended) {
+            auto origin = blocks_agent::seek_origin(chunks, {x, y, z}, def, vox->state);
+            if (!blocks_agent::check_grounding(chunks, def, vox->state.rotation, origin)) {
+                breakBlock(nullptr, def, origin.x, origin.y, origin.z);
+                return;
+            }
+        } else {
+            if (!blocks_agent::check_grounding(chunks, def, vox->state.rotation, {x, y, z})) {
+                breakBlock(nullptr, def, x, y, z);
+                return;
+            }        
         }
     }
     if (def.rt.funcsset.update) {
@@ -124,7 +134,7 @@ void BlocksController::update(float delta, uint padding) {
         randomTick(randTickClock.getPart(), randTickClock.getParts(), padding);
     }
     if (blocksTickClock.update(delta)) {
-        onBlocksTick(blocksTickClock.getPart(), blocksTickClock.getParts());
+        onBlocksTick(blocksTickClock.getTickId(), blocksTickClock.getParts());
     }
     if (worldTickClock.update(delta)) {
         scripting::on_world_tick(worldTickClock.getTickRate());
@@ -145,16 +155,36 @@ void BlocksController::onBlocksTick(int tickid, int parts) {
 }
 
 void BlocksController::randomTick(
-    const Chunk& chunk, int segments, const ContentIndices* indices
+    const Chunk& chunk, const ContentIndices* indices
 ) {
+    const int segments = CHUNK_RANDOM_TICK_SEGMENTS;
     const int segheight = CHUNK_H / segments;
 
+    static std::array<int, CHUNK_VOL / segments> randomPattern;
+    static bool randomPatternInitialized = false;
+    if (!randomPatternInitialized) {
+        randomPatternInitialized = true;
+        for (int i = 0; i < randomPattern.size(); i++) {
+            randomPattern[i] = i;
+        }
+        auto randomDevice = std::random_device{};
+        auto randomEngine =
+            util::seeded_random_engine<std::mt19937_64>(randomDevice);
+        std::shuffle(randomPattern.begin(), randomPattern.end(), randomEngine);
+    }
+
     for (int s = 0; s < segments; s++) {
-        for (int i = 0; i < 4; i++) {
-            int bx = random.rand() % CHUNK_W;
-            int by = random.rand() % segheight + s * segheight;
-            int bz = random.rand() % CHUNK_D;
-            const voxel& vox = chunk.voxels[vox_index(bx, by, bz)];
+        int repetions = 4;
+        for (int i = 0; i < repetions; i++) {
+            int segmentY = s * segheight;
+            if (segmentY > chunk.top) {
+                break;
+            }
+            size_t index = randomPattern[(s * repetions + i + randomTickId) % randomPattern.size()];
+            int bx = index % CHUNK_W;
+            int bz = (index / CHUNK_W) % CHUNK_D;
+            int by = (index / (CHUNK_W * CHUNK_D)) + segmentY;
+            const voxel& vox = chunk.voxels[index + segmentY * CHUNK_W * CHUNK_D];
             auto& block = indices->blocks.require(vox.id);
             if (block.rt.funcsset.randupdate) {
                 scripting::random_update_block(
@@ -171,15 +201,10 @@ void BlocksController::randomTick(
 void BlocksController::randomTick(int tickid, int parts, uint padding) {
     auto indices = level.content.getIndices();
 
-    std::set<uint64_t> chunksIterated;
-
     for (const auto& [pid, player] : *level.players) {
         const auto& chunks = *player->chunks;
-        int offsetX = chunks.getOffsetX();
-        int offsetY = chunks.getOffsetY();
         int width = chunks.getWidth();
         int height = chunks.getHeight();
-        int segments = 4;
 
         for (uint z = padding; z < height - padding; z++) {
             for (uint x = padding; x < width - padding; x++) {
@@ -188,23 +213,18 @@ void BlocksController::randomTick(int tickid, int parts, uint padding) {
                     continue;
                 }
                 auto& chunk = chunks.getChunks()[index];
-                if (chunk == nullptr || !chunk->flags.lighted) {
+                if (chunk == nullptr || !chunk->flags.ready) {
                     continue;
                 }
-                union {
-                    int32_t pos[2];
-                    uint64_t key;
-                } posU;
-                posU.pos[0] = x + offsetX;
-                posU.pos[1] = z + offsetY;
-                if (chunksIterated.find(posU.key) != chunksIterated.end()) {
+                if (chunk->lastRandomTickId == randomTickId) {
                     continue;
                 }
-                chunksIterated.insert(posU.key);
-                randomTick(*chunk, segments, indices);
+                chunk->lastRandomTickId = randomTickId;
+                randomTick(*chunk, indices);
             }
         }
     }
+    randomTickId++;
 }
 
 int64_t BlocksController::createBlockInventory(int x, int y, int z) {
@@ -266,7 +286,7 @@ void BlocksController::onBlockInteraction(
 }
 
 void BlocksController::listenBlockInteraction(
-    const on_block_interaction& callback
+    const OnBlockInteraction& callback
 ) {
     blockInteractionCallbacks.push_back(callback);
 }

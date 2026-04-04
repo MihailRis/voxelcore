@@ -68,5 +68,5 @@ const luaL_Reg timelib[] = {
     {"utc_time", lua::wrap<l_utc_time>},
     {"utc_offset", lua::wrap<l_utc_offset>},
     {"local_time", lua::wrap<l_local_time>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

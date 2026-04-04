@@ -114,13 +114,27 @@ mat4.decompose(m: matrix)
 } или nil
 ```
 
-## Отслеживание точки *mat4.look_at(...)*
+## Отслеживание точки - *mat4.look_at(...)*
 
 ```lua
--- cоздает матрицу вида с точки 'eye' на точку 'center', где вектор 'up' определяет верх.
+-- cоздаёт матрицу вида с точки 'eye' на точку 'center', где вектор 'up' определяет верх.
 mat4.look_at(eye: vec3, center: vec3, up: vec3)
 -- записывает матрицу вида в dst
 mat4.look_at(eye: vec3, center: vec3, up: vec3, dst: matrix)
+```
+
+## Расчёт матрицы перспективы - *mat4.perspective*
+
+```lua
+-- возвращает расчитанную матрицу перспективы.
+-- параметр fov принимает значение вертикального поля зрения в градусах.
+-- параметр ratio задаёт отношение сторон (сторона X к стороне Y, пример: для монитора 800:600 отношение сторон равно 4 к 3, или 4 / 3).
+-- параметр near задаёт расстояние от камеры до плоскости Near.
+-- параметр far задаёт расстояние от камеры до плоскости Far.
+mat4.perspective(fov: number, ratio: number, near: number, far: number) -> mat4
+
+-- расчитывает матрицу перспективы на основе переданных значений и записывает её в переменную dst.
+mat4.perspective(fov: number, ratio: number, near: number, far: number, dst: mat4) -> nil
 ```
 
 ## Перевод в строку - *mat4.tostring(...)*
@@ -129,5 +143,5 @@ mat4.look_at(eye: vec3, center: vec3, up: vec3, dst: matrix)
 -- возвращает строку представляющую содержимое матрицы
 mat4.tostring(m: matrix)
 -- возвращает строку представляющую содержимое матрицы, многострочную, если multiline = true
-mat4.tostring(m: matrix, multiline: bool)
+mat4.tostring(m: matrix, multiline: boolean)
 ```

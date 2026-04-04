@@ -95,6 +95,27 @@ Example:
 0. A rectangular area with a width, height and length of 0.4 m, centered at 0.0.
 1. Radial area with a radius of 1.6 m.
 
+### *solid*
+
+Makes the entity's hitbox an obstacle. When enabling this property for `dynamic` body, a mass must be specified.
+
+### *mass*
+
+Defines the entity's mass. Kilograms are used as the default.
+For `kinematic` bodies, an infinite mass is used instead.
+
+### *elasticity*
+
+Defines the entity's elasticity (affects the bounce on collision).
+
+### *step-height*
+
+Defines the maximum height of an obstacle an entity can step onto without jumping.
+
+### *material*
+
+Defines the entity's material (same as for blocks).
+
 ## View
 
 ### *skeleton-name*

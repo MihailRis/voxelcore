@@ -1,7 +1,7 @@
 function on_open()
     document.langs_btn.text = string.format(
         "%s: %s", gui.str("Language", "settings"),
-        gui.get_locales_info()[core.get_setting("ui.language")].name
+        gui.get_locales_info()[app.get_setting("ui.language")].name
     )
     sections = RadioGroup({
         audio=document.s_aud,

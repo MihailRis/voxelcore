@@ -10,7 +10,7 @@
 
 UiDocument::UiDocument(
     std::string id, 
-    uidocscript script, 
+    UiDocScript script, 
     const std::shared_ptr<gui::UINode>& root,
     scriptenv env
 ) : id(std::move(id)), script(script), root(root), env(std::move(env)) {
@@ -23,11 +23,12 @@ void UiDocument::rebuildIndices() {
     map["root"] = root;
 }
 
-const UINodesMap& UiDocument::getMap() const {
-    return map;
+void UiDocument::pushIndices(const std::shared_ptr<gui::UINode>& node) {
+    gui::UINode::getIndices(node, map);
+    map["root"] = root;
 }
 
-UINodesMap& UiDocument::getMapWriteable() {
+const UINodesMap& UiDocument::getMap() const {
     return map;
 }
 
@@ -44,10 +45,10 @@ std::shared_ptr<gui::UINode> UiDocument::get(const std::string& id) const {
     if (found == map.end()) {
         return nullptr;
     }
-    return found->second;
+    return found->second.lock();
 }
 
-const uidocscript& UiDocument::getScript() const {
+const UiDocScript& UiDocument::getScript() const {
     return script;
 }
 
@@ -72,7 +73,7 @@ std::unique_ptr<UiDocument> UiDocument::read(
     gui::UiXmlReader reader(gui, scriptenv(env));
     auto view = reader.readXML(file.string(), *xmldoc->getRoot());
     view->setId("root");
-    uidocscript script {};
+    UiDocScript script {};
     auto scriptFile = io::path(file.string()+".lua");
     if (io::is_regular_file(scriptFile)) {
         scripting::load_layout_script(

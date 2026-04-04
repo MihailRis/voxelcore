@@ -162,8 +162,8 @@ std::shared_ptr<Task> WorldConverter::startTask(
     }
     auto pool = std::make_shared<util::ThreadPool<ConvertTask, int>>(
         "converter-pool",
-        [=]() { return std::make_shared<ConverterWorker>(converter); },
-        [=](int&) {}
+        [=]() { return std::make_unique<ConverterWorker>(converter); },
+        [=](int&&) {}
     );
     auto& converterTasks = converter->tasks;
     while (!converterTasks.empty()) {

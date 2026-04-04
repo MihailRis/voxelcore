@@ -20,7 +20,7 @@ Batch3D::Batch3D(size_t capacity)
     const ubyte pixels[] = {
         255, 255, 255, 255,
     };
-    ImageData image(ImageFormat::rgba8888, 1, 1, pixels);
+    ImageData image(ImageFormat::RGBA8888, 1, 1, pixels);
     blank = Texture::from(&image);
     currentTexture = nullptr;
 }

@@ -6,7 +6,8 @@
 #include "../ContentPack.hpp"
 
 #include "io/io.hpp"
-#include "io/engine_paths.hpp"
+#include "data/dv_util.hpp"
+#include "engine/EnginePaths.hpp"
 #include "logic/scripting/scripting.hpp"
 #include "util/stringutil.hpp"
 #include "world/generator/GeneratorDef.hpp"
@@ -217,6 +218,9 @@ void ContentLoader::loadGenerator(
 
     map.at("sea-level").get(def.seaLevel);
     map.at("wide-structs-chunks-radius").get(def.wideStructsChunksRadius);
+    map.at("player-spawn-radius").get(def.playerSpawnRadius);
+    map.at("player-min-spawn-height").get(def.playerMinSpawnHeight);
+    map.at("player-max-spawn-height").get(def.playerMaxSpawnHeight);
     if (map.has("heightmap-inputs")) {
         for (const auto& element : map["heightmap-inputs"]) {
             int index = element.asInteger();

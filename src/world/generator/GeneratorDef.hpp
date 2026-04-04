@@ -7,6 +7,7 @@
 #include <unordered_map>
 
 #include "typedefs.hpp"
+#include "constants.hpp"
 #include "maths/Heightmap.hpp"
 #include "StructurePlacement.hpp"
 
@@ -211,6 +212,10 @@ struct GeneratorDef {
 
     /// @brief Heightmap blocks per dot
     uint heightsBPD = 4;
+
+    float playerSpawnRadius = DEFAULT_PLAYER_SPAWN_RADIUS;
+    int playerMinSpawnHeight = CHUNK_H / 4;
+    int playerMaxSpawnHeight = CHUNK_H;
 
     /// @brief Biome parameter maps interpolation method
     InterpolationType biomesInterpolation = InterpolationType::LINEAR;

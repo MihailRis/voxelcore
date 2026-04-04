@@ -9,8 +9,8 @@
 namespace gl {
     inline GLenum to_glenum(ImageFormat imageFormat) {
         switch (imageFormat) {
-            case ImageFormat::rgb888: return GL_RGB;
-            case ImageFormat::rgba8888: return GL_RGBA;
+            case ImageFormat::RGB888: return GL_RGB;
+            case ImageFormat::RGBA8888: return GL_RGBA;
             default: 
                 return 0;
         }

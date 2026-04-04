@@ -57,7 +57,10 @@ network.tcp_connect(
     -- Function called upon successful connection
     -- Sending will not work before connection
     -- Socket is passed as the only argument
-    callback: function(Socket)
+    callback: function(Socket),
+    -- Function called when a connection error occurs
+    -- Arguments passed: socket and error text
+    [optional] error_callback: function(Socket, str)
 ) --> Socket
 ```
 
@@ -78,6 +81,16 @@ socket:recv(
 ) -> nil|table|Bytearray
 -- Returns nil on error (socket is closed or does not exist).
 -- If there is no data yet, returns an empty byte array.
+
+-- Asynchronous version for use in coroutines.
+-- Waits for the entire specified number of bytes to be received.
+-- If socket closes, function works like socket:recv
+socket:recv_async(
+    -- Size of the byte array to read
+    length: int,
+    -- Use table instead of Bytearray
+    [optional] usetable: bool=false
+) -> nil|table|Bytearray
 
 -- Closes the connection
 socket:close()
@@ -128,4 +141,11 @@ network.get_total_upload() --> int
 -- Returns the approximate amount of data received (including connections to localhost)
 -- in bytes.
 network.get_total_download() --> int
+```
+
+## Other
+
+```lua
+-- Looks for a free port to use.
+network.find_free_port() --> int or nil
 ```

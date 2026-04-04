@@ -34,24 +34,26 @@ Access to nested elements is performed by index (starting from one).
 
 Properties that apply to all elements:
 
-| Name          | Type    | Read | Write | Description                                 |
-| ------------- | ------- | ---- | ----- | ------------------------------------------- |
-| id            | string  | yes  | *no*  | element id                                  |
-| pos           | vec2    | yes  | yes   | element position inside a container         |
-| wpos          | vec2    | yes  | yes   | element position inside the window          |
-| size          | vec2    | yes  | yes   | element size                                |
-| interactive   | bool    | yes  | yes   | ability to interact with the element        |
-| enabled       | bool    | yes  | yes   | visually indicated version of *interactive* |
-| visible       | bool    | yes  | yes   | element visibility                          |
-| focused       | bool    | yes  | yes   | focus on element                            |
-| color         | rgba    | yes  | yes   | element color                               |
-| hoverColor    | rgba    | yes  | yes   | hover color                                 |
-| pressedColor  | rgba    | yes  | yes   | color when pressed                          |
-| tooltip       | string  | yes  | yes   | tooltip text                                |
-| tooltipDelay  | float   | yes  | yes   | tooltip delay                               |
-| contentOffset | vec2    | yes  | *no*  | element content offset                      |
-| cursor        | string  | yes  | yes   | cursor displayed on hover                   |
-| parent        | Element | yes  | *no*  | parent element or nil                       |
+| Name          | Type    | Read | Write | Description                                      |
+| ------------- | ------- | ---- | ----- | ------------------------------------------------ |
+| id            | string  | yes  | *no*  | element id                                       |
+| exists        | bool    | yes  | *no*  | checks if element exists                         |
+| pos           | vec2    | yes  | yes   | element position inside a container              |
+| wpos          | vec2    | yes  | yes   | element position inside the window               |
+| size          | vec2    | yes  | yes   | element size                                     |
+| interactive   | bool    | yes  | yes   | ability to interact with the element             |
+| enabled       | bool    | yes  | yes   | visually indicated version of *interactive*      |
+| visible       | bool    | yes  | yes   | element visibility                               |
+| focused       | bool    | yes  | yes   | focus on element                                 |
+| color         | rgba    | yes  | yes   | element color                                    |
+| hoverColor    | rgba    | yes  | yes   | hover color                                      |
+| pressedColor  | rgba    | yes  | yes   | color when pressed                               |
+| tooltip       | string  | yes  | yes   | tooltip text                                     |
+| tooltipDelay  | float   | yes  | yes   | tooltip delay                                    |
+| contentOffset | vec2    | yes  | *no*  | element content offset                           |
+| cursor        | string  | yes  | yes   | cursor displayed on hover                        |
+| parent        | Element | yes  | *no*  | parent element or nil                            |
+| zIndex        | bool    | yes  | *no*  | z-index value. In panel, it determines the order |
 
 Common element methods:
 
@@ -165,10 +167,11 @@ Properties:
 
 Properties:
 
-| Name   | Type   | Read | Write | Description      |
-| ------ | ------ | ---- | ----- | ---------------- |
-| src    | string | yes  | yes   | texture name     |
-| region | vec4   | yes  | yes   | image sub-region |
+| Name     | Type   | Read | Write | Description      |
+| -------- | ------ | ---- | ----- | ---------------- |
+| src      | string | yes  | yes   | texture name     |
+| fallback | string | yes  | yes   | fallback texture |
+| region   | vec4   | yes  | yes   | image sub-region |
 
 ## Canvas
 
@@ -193,9 +196,23 @@ Here, *color* can be specified in the following ways:
 | data:blit(src: Canvas, dst_x: int, dst_y: int)           | draws the src canvas at the specified coordinates       |
 | data:clear()                                             | clears the canvas                                       |
 | data:clear(*color*)                                      | fills the canvas with the specified RGBA color          |
+| data:rect(x: int, y: int, w: int, h: int, *color*)       | fills the rectangle with the specified RGBA color       |
 | data:update()                                            | applies changes to the canvas and uploads it to the GPU |
-| data:set_data(data: table<int>)                          | replaces pixel data (width * height * 4 numbers)        |
+| data:set_data(data: Bytearray | table<int>)              | replaces pixel data (width * height * 4 numbers)        |
+| data:get_data()                                          | creates a Bytearray object with the image's pixel data  |
 | data:create_texture(name: str)                           | creates and shares texture to renderer                  |
+| data:unbind_texture()                                    | unbinds the texture from the canvas                     |
+| data:mul(*color* or Canvas)                              | multiplies a color by the specified color or canvas     |
+| data:add(*color* or Canvas)                              | adds a color or another canvas to a color               |
+| data:sub(*color* or Canvas)                              | subtracts a color or another canvas to a color          |
+| data:encode(format: str)                                 | encodes image to specified format and returns bytearray |
+
+To decode a byte array into a Canvas, use the static method:
+```lua
+Canvas.decode(data: Bytearray, format: str) -> Canvas
+```
+
+Currently, only png is supported.
 
 ## Inline frame (iframe)
 
@@ -221,3 +238,12 @@ Properties:
 | Name      | Type | Read | Write | Description                                       |
 | --------- | ---- | ---- | ----- | ------------------------------------------------- |
 | inventory | int  | yes  | yes   | id of the inventory to which the element is bound |
+
+## Slot
+
+Properties:
+
+| Name      | Type | Read | Write | Description                                        |
+| --------- | ---- | ---- | ----- | -------------------------------------------------- |
+| inventory | int  | yes  | no    | id of the inventory to which the element is bound  |
+| slotIndex | int  | yes  | no    | index of the slot to which the element is attached |

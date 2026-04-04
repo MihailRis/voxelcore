@@ -104,9 +104,9 @@ void WorldFiles::writePacks(const std::vector<ContentPack>& packs) {
     io::write_string(packsFile, ss.str());
 }
 
-template <class T>
+template <class T, typename IdType>
 static void write_indices(
-    const ContentUnitIndices<T>& indices, dv::value& list
+    const ContentUnitIndices<T, IdType>& indices, dv::value& list
 ) {
     for (auto unit : indices.getIterable()) {
         list.add(unit->name);

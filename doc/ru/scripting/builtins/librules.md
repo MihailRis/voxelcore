@@ -3,9 +3,9 @@
 ```lua
 rules.create(
     -- имя правила
-    name: str,
+    name: string,
     -- значение по-умолчанию
-    default: bool,
+    default: boolean,
     -- функция-обработчик изменения значения
     [опционально] handler: function
 ) -> int
@@ -21,7 +21,7 @@ rules.create(
 ```lua
 rules.listen(
     -- имя правила
-    name: str,
+    name: string,
     -- функция-обработчик изменения значения
     handler: function
 ) -> int
@@ -32,26 +32,26 @@ rules.listen(
 Также позволяет подписаться на правило до его создания.
 
 ```lua
-rules.unlisten(name: str, id: int)
+rules.unlisten(name: string, id: int)
 ```
 
 Удаляет обработчик правила по id, если он существует.
 
 ```lua
-rules.get(name: str) -> bool | nil
+rules.get(name: string) -> boolean | nil
 ```
 
 Возвращает значение правила или nil, если оно ещё не было создано.
 
 ```lua
-rules.set(name: str, value: bool)
+rules.set(name: string, value: boolean)
 ```
 
 Устанавливает значение правила, вызывая обработчики. Может использоваться и
 до создания правила.
 
 ```lua
-rules.reset(name: str)
+rules.reset(name: string)
 ```
 
 Сбрасывает значение правила к значению по-умолчанию.
@@ -62,7 +62,7 @@ rules.reset(name: str)
 
 | Имя                    | Описание                                                        | По-умолчанию |
 | ---------------------- | --------------------------------------------------------------- | ------------ |
-| cheat-commands         | Разрешить команды, имена которых есть в массиве console.cheats. | true         |
+| allow-cheats           | Разрешить команды, имена которых есть в массиве console.cheats. | true         |
 | allow-content-access   | Разрешить панель доступа к контенту.                            | true         |
 | allow-flight           | Разрешить полёт                                                 | true         |
 | allow-noclip           | Разрешить включение noclip.                                     | true         |

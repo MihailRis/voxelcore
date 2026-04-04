@@ -5,12 +5,18 @@
 using std::chrono::duration_cast;
 using std::chrono::high_resolution_clock;
 using std::chrono::microseconds;
+using std::chrono::nanoseconds;
 
 timeutil::Timer::Timer() {
     start = high_resolution_clock::now();
 }
 int64_t timeutil::Timer::stop() {
     return duration_cast<microseconds>(high_resolution_clock::now() - start)
+        .count();
+}
+
+int64_t timeutil::Timer::stopNs() {
+    return duration_cast<nanoseconds>(high_resolution_clock::now() - start)
         .count();
 }
 

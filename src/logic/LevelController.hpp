@@ -5,6 +5,7 @@
 #include "BlocksController.hpp"
 #include "ChunksController.hpp"
 #include "util/Clock.hpp"
+#include "util/CallbacksSet.hpp"
 
 class Engine;
 class Level;
@@ -13,6 +14,7 @@ struct EngineSettings;
 
 /// @brief LevelController manages other controllers
 class LevelController {
+    Engine& engine;
     EngineSettings& settings;
     std::unique_ptr<Level> level;
     // Sub-controllers
@@ -20,13 +22,18 @@ class LevelController {
     std::unique_ptr<ChunksController> chunks;
 
     util::Clock playerTickClock;
+
+    Player* clientPlayer;
 public:
-    LevelController(Engine* engine, std::unique_ptr<Level> level, Player* clientPlayer);
+    CallbacksSet<> preQuitCallbacks;
+
+    LevelController(Engine& engine, std::unique_ptr<Level> level, Player* clientPlayer);
 
     /// @param delta time elapsed since the last update
     /// @param pause is world and player simulation paused
     void update(float delta, bool pause);
 
+    void processBeforeQuit();
     void saveWorld();
 
     void onWorldQuit();

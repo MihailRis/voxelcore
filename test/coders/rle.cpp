@@ -5,7 +5,7 @@
 
 static void test_encode_decode(
     size_t(*encodefunc)(const ubyte*, size_t, ubyte*),
-    size_t(*decodefunc)(const ubyte*, size_t, ubyte*),
+    size_t(*decodefunc)(const ubyte*, size_t, ubyte*, size_t),
     int dencity
 ) {
     const size_t initial_size = 50'000;
@@ -20,7 +20,7 @@ static void test_encode_decode(
     uint8_t encoded[initial_size * 2];
     size_t encoded_size = encodefunc(initial, initial_size, encoded);
     uint8_t decoded[initial_size * 2];
-    size_t decoded_size = decodefunc(encoded, encoded_size, decoded);
+    size_t decoded_size = decodefunc(encoded, encoded_size, decoded, initial_size);
     
     EXPECT_EQ(decoded_size, initial_size);
 

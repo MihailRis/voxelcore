@@ -7,28 +7,42 @@
 
 using namespace scripting;
 
+static Level& require_level() {
+    if (level == nullptr) {
+        throw std::runtime_error("level is not initialized");
+    }
+    return *level;
+}
+
+static const Content& require_content() {
+    if (content == nullptr) {
+        throw std::runtime_error("content is not initialized");
+    }
+    return *content;
+}
+
 template <int (*getterfunc)(lua::State*, const Camera&)>
 static int l_camera_getter(lua::State* L) {
     size_t index = static_cast<size_t>(lua::tointeger(L, 1));
-    return getterfunc(L, *level->cameras.at(index));
+    return getterfunc(L, *require_level().cameras.at(index));
 }
 
 template <void (*setterfunc)(lua::State*, Camera&, int)>
 static int l_camera_setter(lua::State* L) {
     size_t index = static_cast<size_t>(lua::tointeger(L, 1));
-    setterfunc(L, *level->cameras.at(index), 2);
+    setterfunc(L, *require_level().cameras.at(index), 2);
     return 0;
 }
 
 static int l_index(lua::State* L) {
     auto name = lua::require_string(L, 1);
-    auto& indices = content->getIndices(ResourceType::CAMERA);
+    auto& indices = require_content().getIndices(ResourceType::CAMERA);
     return lua::pushinteger(L, indices.indexOf(name));
 }
 
 static int l_name(lua::State* L) {
     size_t index = static_cast<size_t>(lua::tointeger(L, 1));
-    auto& indices = content->getIndices(ResourceType::CAMERA);
+    auto& indices = require_content().getIndices(ResourceType::CAMERA);
     return lua::pushstring(L, indices.getName(index));
 }
 
@@ -89,7 +103,7 @@ static int getter_up(lua::State* L, const Camera& camera) {
 
 static int l_look_at(lua::State* L) {
     size_t index = static_cast<size_t>(lua::tointeger(L, 1));
-    auto& camera = *level->cameras.at(index);
+    auto& camera = *require_level().cameras.at(index);
     auto center = lua::tovec<3>(L, 2);
     auto matrix = glm::inverse(
         glm::lookAt(glm::vec3(), center - camera.position, glm::vec3(0, 1, 0))
@@ -125,4 +139,5 @@ const luaL_Reg cameralib[] = {
     {"get_right", lua::wrap<l_camera_getter<getter_right>>},
     {"get_up", lua::wrap<l_camera_getter<getter_up>>},
     {"look_at", lua::wrap<l_look_at>},
-    {NULL, NULL}};
+    {nullptr, nullptr}
+};

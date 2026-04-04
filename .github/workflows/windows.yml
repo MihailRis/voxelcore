@@ -2,7 +2,7 @@ name: MSVC Build
 
 on:
   push:
-    branches: [ "main", "dev", "release-**"]
+    branches: [ "main", "release-**"]
   pull_request:
     branches: [ "main", "dev" ]
 
@@ -32,18 +32,18 @@ jobs:
           VCPKG_ROOT: ${{ github.workspace }}/vcpkg
         run: |
           cmake --preset default-vs-msvc-windows
-          cmake --build --preset default-vs-msvc-windows --config Release
+          cmake --build --preset default-vs-msvc-windows --config RelWithDebInfo
       - name: Run tests
         run: ctest --preset default-vs-msvc-windows
       - name: Run engine tests
         run: |
-            build/vctest/Release/vctest.exe -e build/Release/VoxelEngine.exe -d dev/tests -u build
+            build/vctest/RelWithDebInfo/vctest.exe -e build/RelWithDebInfo/VoxelEngine.exe -d dev/tests -u build
         timeout-minutes: 1
       - name: Package for Windows
         run: |
           mkdir packaged
-          cp -r build/Release/* packaged/
-          cp build/vctest/Release/vctest.exe packaged/
+          cp -r build/RelWithDebInfo/* packaged/
+          cp build/vctest/RelWithDebInfo/vctest.exe packaged/
           cp C:/Windows/System32/msvcp140.dll packaged/msvcp140.dll
           mv packaged/VoxelEngine.exe packaged/VoxelCore.exe
         working-directory: ${{ github.workspace }}

@@ -1,4 +1,4 @@
-settings = session.get_entry('new_world')
+settings = session.get('new_world')
 
 function world_name_validator(name)
     return name:match("^[%w-\\.\\ ]+$") ~= nil and not world.exists(name)
@@ -20,8 +20,8 @@ function create_world()
     local name = document.name_box.text
     local seed = document.seed_box.text
     local generator = settings.generator
-    session.reset_entry('new_world')
-    core.new_world(name, seed, generator)
+    session.reset('new_world')
+    app.new_world(name, seed, generator)
 end
 
 function world_name_placeholder()

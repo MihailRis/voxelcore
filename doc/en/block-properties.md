@@ -56,6 +56,11 @@ Enables translucency support in block textures (examples: water, ice).
 Should only be used when needed, as it impacts performance.
 Not required for full transparency (grass, flowers).
 
+### *solid*
+
+Explicitly specifies that the block is solid - completely overlapping the blocks behind it.
+Used by blocks with the `custom` model type, which must support culling of invisible geometry, as with the `block` type. If `false` specified then ignored.
+
 ### *rotation*
 
 Rotation profile (set of available block rotations and behaviour of placing block rotation) from list:
@@ -98,6 +103,32 @@ Properties available for variance:
 
 Variants are managed via `block.set_variant(x, y, z, index)`.
 
+### Custom model variants (geometry switching)
+
+You can use different custom models for different variants. Provide a separate `model-name` for each variant that needs different geometry. The renderer caches geometry per (block id, variant).
+
+The base model (specified in root) becomes variant 0. The variants array maps to indices 1+.
+
+Example (default + two custom variants):
+```json
+{
+    "model": "custom",
+    "model-name": "stairs_middle",
+    "state-based": {
+        "bits": 4,
+        "variants": [
+            { "model": "custom", "model-name": "stairs_left" },
+            { "model": "custom", "model-name": "stairs_right" }
+        ]
+    }
+}
+```
+
+In this example:
+- Variant 0 = `stairs_middle` (from root)
+- Variant 1 = `stairs_left` (from variants[0])
+- Variant 2 = `stairs_right` (from variants[1])
+
 ## Lighting
 
 ### *emission*
@@ -132,6 +163,8 @@ Face culling mode:
 - **default** - normal face culling
 - **optional** - face culling among blocks of the same rendering group can be disabled via the `graphics.dense-render` setting.
 - **disabled** - face culling among blocks of the same rendering group disabled.
+
+In `optional` mode, disabling `graphics.dense-render` will use the `*_opaque` texture variant (if available).
 
 ## Physics
 
@@ -190,10 +223,6 @@ Item will be chosen on MMB click on the block.
 
 Example: block `door:door_open` is hidden, so you need to specify `picking-item: "door:door.item"` to bind it to not hidden `door:door` block item.
 
-### *script-name*
-
-Used to specify block script name (to reuse one script to multiple blocks). Name must not contain `packid:scripts/` and extension. Just name.
-
 ### *ui-layout*
 
 Block UI XML layout name. Default: string block id.
@@ -211,6 +240,15 @@ Number of block inventory slots. Default - 0 (no inventory).
 ### *size*
 
 Array of three integers. Default value is `[1, 1, 1]`.
+
+### *grounding-behaviour*
+
+Defines the behavior of the extended grounded block. Available behavior options:
+
+- "partial" - at least one segment must be grounded (default)
+- "complete" - all segments must be grounded
+- "origin" - origin segment must be grounded
+
 
 ## Block fields
 
@@ -289,6 +327,16 @@ It should be noted that the `item` refers specifically to the item. That is, to 
 Example: `base:dirt.item`.
 
 To generate loot, the function `block_loot(block_id: int)` in the `base:util` module should be used.
+
+## Other properties
+
+### *script-name*
+
+Used to specify block script name (to reuse one script to multiple blocks). Name must not contain `packid:scripts/` and extension. Just name.
+
+### Tick Interval - *tick-interval*
+
+The interval in ticks (1/20th of a second). A value of 20 results in an on_block_tick call interval of one second.
 
 ## Methods
 

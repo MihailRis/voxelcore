@@ -17,6 +17,7 @@ console.add_command(
     "clear",
     "Clears the console",
     function()
+        if not hud then error("command is unavailable in headless mode") return end
         local document = Document.new("core:console")
         document.log.text = ""
     end
@@ -93,7 +94,7 @@ console.add_command(
         if entity then
             entity.transform:set_pos({x, y, z})
         end
-    end
+    end, true
 )
 console.add_command(
     "echo value:str",
@@ -108,7 +109,7 @@ console.add_command(
     function(args, kwargs)
         world.set_day_time(args[1])
         return "Time set to " .. args[1]
-    end
+    end, true
 )
 
 console.add_command(
@@ -123,7 +124,7 @@ console.add_command(
             world.set_day_time_speed(1.0)
             return "Daily cycle has started"
         end
-    end
+    end, true
 )
 
 console.add_command(
@@ -144,7 +145,7 @@ console.add_command(
         local h = math.floor(math.abs(y2-y1+1) + 0.5)
         local d = math.floor(math.abs(z2-z1+1) + 0.5)
         return tostring(w * h * d) .. " blocks set"
-    end
+    end, true
 )
 
 console.add_command(
@@ -154,7 +155,7 @@ console.add_command(
         local eid = entities.spawn("base:player", {player.get_pos(args[1])}):get_uid()
         player.set_entity(args[1], eid)
         return "spawned new player entity #" .. tostring(eid)
-    end
+    end, true
 )
 
 
@@ -164,7 +165,7 @@ console.add_command(
     function(args, kwargs)
         local eid = entities.spawn(args[1], {args[2], args[3], args[4]})
         return string.format("spawned %s at %s, %s, %s", unpack(args))
-    end
+    end, true
 )
 
 console.add_command(
@@ -177,7 +178,7 @@ console.add_command(
             entity:despawn()
             return "despawned entity #" .. tostring(eid)
         end
-    end
+    end, true
 )
 
 console.add_command(
@@ -231,7 +232,7 @@ console.add_command(
         local rotation = args[5]
         local fragment = generation.load_fragment(filename)
         fragment:place({x, y, z}, rotation)
-    end
+    end, true
 )
 
 console.add_command(
@@ -242,7 +243,7 @@ console.add_command(
         local value = args[2]
         rules.set(name, value)
         return "rule '"..name.."' set to "..tostring(value)
-    end
+    end, true
 )
 
 console.add_command(
@@ -285,7 +286,7 @@ console.add_command(
         local preset = json.parse(file.read(filename))
         gfx.weather.change(preset, args[2], args[1])
         return "weather set to "..filename.." preset ("..tostring(args[2]).." s)"
-    end
+    end, true
 )
 
 console.add_command(
@@ -313,14 +314,3 @@ console.add_command(
         return "available presets:" .. presets
     end
 )
-
-console.cheats = {
-    "blocks.fill",
-    "tp",
-    "fragment.place",
-    "time.set",
-    "time.daycycle",
-    "entity.despawn",
-    "player.respawn",
-    "weather.set",
-}

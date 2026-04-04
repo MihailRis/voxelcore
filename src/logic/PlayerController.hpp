@@ -18,6 +18,8 @@ struct Hitbox;
 struct CameraSettings;
 struct EngineSettings;
 
+using FootstepCallback = std::function<void(const Hitbox&)>;
+
 class CameraControl {
     Player& player;
     std::shared_ptr<Camera> camera;
@@ -57,6 +59,7 @@ class PlayerController {
     CameraControl camControl;
     BlocksController& blocksController;
     float interactionTimer = 0.0f;
+    FootstepCallback footstepCallback;
     
     void updateKeyboard(const Input& inputEvents);
     void resetKeyboard();
@@ -89,5 +92,8 @@ public:
     void postUpdate(
         float delta, int windowHeight, const Input* inputEvents, bool pause
     );
-    Player* getPlayer();
+
+    Player& getPlayer();
+
+    void setFootstepCallback(FootstepCallback&& callback);
 };

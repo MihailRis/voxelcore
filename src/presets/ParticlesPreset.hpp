@@ -60,6 +60,8 @@ struct ParticlesPreset : public Serializable {
     ParticleSpawnShape spawnShape = ParticleSpawnShape::BALL;
     /// @brief Spawn spread
     glm::vec3 spawnSpread {};
+    /// @brief Particles spawn zone offset
+    glm::vec3 spawnOffset {};
     /// @brief Texture name
     std::string texture = "";
     /// @brief Size of random sub-uv region

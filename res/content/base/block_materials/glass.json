@@ -1,5 +1,6 @@
 {
     "steps-sound": "steps/glass",
     "place-sound": "blocks/glass_place",
-    "break-sound": "blocks/glass_break"
+    "break-sound": "blocks/glass_break",
+    "sound-absorption": 0.3
 }

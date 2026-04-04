@@ -51,7 +51,7 @@ class ContentUnitLUT {
 public:
     ContentUnitLUT(
         size_t count,
-        const ContentUnitIndices<U>& unitIndices,
+        const ContentUnitIndices<U, T>& unitIndices,
         T missingValue,
         ContentType type
     )

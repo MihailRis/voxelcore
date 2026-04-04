@@ -23,10 +23,12 @@ struct ItemDef;
 class Inventory;
 class UiDocument;
 struct BlockFuncsSet;
+struct BlockFuncNamesCache;
 struct ItemFuncsSet;
+struct ItemFuncNamesCache;
 struct WorldFuncsSet;
 struct UserComponent;
-struct uidocscript;
+struct UiDocScript;
 class BlocksController;
 class LevelController;
 class Entity;
@@ -76,13 +78,14 @@ namespace scripting {
         const io::path& script
     );
 
-    std::unique_ptr<Process> start_coroutine(const io::path& script);
+    std::unique_ptr<Process> start_app_script(const io::path& script);
 
     void on_world_load(LevelController* controller);
     void on_world_tick(int tps);
     void on_world_save();
+    void process_before_quit();
     void on_world_quit();
-    void cleanup();
+    void cleanup(const std::vector<std::string>& nonReset);
     void on_blocks_tick(const Block& block, int tps);
     void update_block(const Block& block, const glm::ivec3& pos);
     void random_update_block(const Block& block, const glm::ivec3& pos);
@@ -105,6 +108,7 @@ namespace scripting {
 
     void on_inventory_open(const Player* player, const Inventory& inventory);
     void on_inventory_closed(const Player* player, const Inventory& inventory);
+    void on_inventory_interact(int invid, int slot, int action, int mode);
 
     void on_player_tick(Player* player, int tps);
 
@@ -167,7 +171,8 @@ namespace scripting {
         const std::string& prefix,
         const io::path& file,
         const std::string& fileName,
-        BlockFuncsSet& funcsset
+        BlockFuncsSet& funcsset,
+        BlockFuncNamesCache& namesCache
     );
 
     /// @brief Load script associated with an Item
@@ -181,14 +186,17 @@ namespace scripting {
         const std::string& prefix,
         const io::path& file,
         const std::string& fileName,
-        ItemFuncsSet& funcsset
+        ItemFuncsSet& funcsset,
+        ItemFuncNamesCache& namesCache
     );
 
     /// @brief Load component script
+    /// @param env environment
     /// @param name component full name (packid:name)
     /// @param file component script file path
     /// @param fileName script file path using the engine format
     void load_entity_component(
+        const scriptenv& env,
         const std::string& name,
         const io::path& file,
         const std::string& fileName
@@ -224,7 +232,7 @@ namespace scripting {
         const std::string& prefix,
         const io::path& file,
         const std::string& fileName,
-        uidocscript& script
+        UiDocScript& script
     );
 
     /// @brief Finalize lua state. Using scripting after will lead to Lua panic

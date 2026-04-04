@@ -10,6 +10,7 @@ namespace timeutil {
     public:
         Timer();
         int64_t stop();
+        int64_t stopNs();
     };
 
     /**

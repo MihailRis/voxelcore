@@ -15,7 +15,7 @@ Batch2D::Batch2D(size_t capacity) : capacity(capacity), color(1.0f){
     const ubyte pixels[] = {
         0xFF, 0xFF, 0xFF, 0xFF
     };
-    ImageData image(ImageFormat::rgba8888, 1, 1, pixels);
+    ImageData image(ImageFormat::RGBA8888, 1, 1, pixels);
     blank = Texture::from(&image);
     currentTexture = nullptr;
 }

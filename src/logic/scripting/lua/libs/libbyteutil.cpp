@@ -137,7 +137,7 @@ static int l_unpack(lua::State* L) {
     for (size_t i = 0; format[i]; i++) {
         switch (format[i]) {
             case 'b':
-                lua::pushinteger(L, reader.get());
+                lua::pushinteger(L, static_cast<int8_t>(reader.get()));
                 break;
             case 'B':
                 lua::pushinteger(L, reader.get() & 0xFF);
@@ -208,5 +208,5 @@ const luaL_Reg byteutillib[] = {
     {"tpack", lua::wrap<l_tpack>},
     {"unpack", lua::wrap<l_unpack>},
     {"get_size", lua::wrap<l_get_size>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

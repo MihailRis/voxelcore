@@ -85,12 +85,12 @@ std::unique_ptr<ubyte[]> compression::decompress(
             throw std::invalid_argument("compression method is NONE");
         case Method::EXTRLE8: {
             auto decompressed = std::make_unique<ubyte[]>(dstlen);
-            extrle::decode(src, srclen, decompressed.get());
+            extrle::decode(src, srclen, decompressed.get(), dstlen);
             return decompressed;
         }
         case Method::EXTRLE16: {
             auto decompressed = std::make_unique<ubyte[]>(dstlen);
-            size_t decoded = extrle::decode16(src, srclen, decompressed.get());
+            size_t decoded = extrle::decode16(src, srclen, decompressed.get(), dstlen);
             if (decoded != dstlen) {
                 throw std::runtime_error(
                     "expected decompressed size " + std::to_string(dstlen) +
@@ -110,6 +110,40 @@ std::unique_ptr<ubyte[]> compression::decompress(
             return decompressed;
         }
         default:
-            throw std::runtime_error("not implemented");
+            throw std::runtime_error("method not implemented");
+    }
+}
+
+void compression::decompress(const util::span<ubyte> src, ubyte* dst, size_t dstlen, Method method) {
+    switch (method) {
+        case Method::NONE:
+            throw std::invalid_argument("compression method is NONE");
+        case Method::EXTRLE8:
+            extrle::decode(src.data(), src.size(), dst, dstlen);
+            break;
+        case Method::EXTRLE16: {
+            size_t decoded =
+                extrle::decode16(src.data(), src.size(), dst, dstlen);
+            if (decoded != dstlen) {
+                throw std::runtime_error(
+                    "expected decompressed size " + std::to_string(dstlen) +
+                    " got " + std::to_string(decoded)
+                );
+            }
+            break;
+        }
+        case Method::GZIP: {
+            auto buffer = gzip::decompress(src.data(), src.size());
+            if (buffer.size() != dstlen) {
+                throw std::runtime_error(
+                    "expected decompressed size " + std::to_string(dstlen) +
+                    " got " + std::to_string(buffer.size())
+                );
+            }
+            std::memcpy(dst, buffer.data(), buffer.size());
+            break;
+        }
+        default:
+            throw std::runtime_error("method not implemented");
     }
 }

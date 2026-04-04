@@ -1,0 +1,11 @@
+[flat]
+parameters = []
+layers = [
+    {height=1, block="base:grass_block"},
+    {height=5, block="base:dirt"},
+    {height=-1, block="base:stone"},
+    {height=1, block="base:bazalt"}
+]
+sea-layers = [
+    {height=-1, block="base:grass_block"}
+]

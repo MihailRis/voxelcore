@@ -6,7 +6,6 @@
 #include <unordered_map>
 
 #include "data/dv.hpp"
-#include "lua_custom_types.hpp"
 #include "lua_wrapper.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
@@ -249,7 +248,7 @@ namespace lua {
     inline lua::Number tonumber(lua::State* L, int idx) {
 #ifndef NDEBUG
         if (lua_type(L, idx) != LUA_TNUMBER && !lua_isnoneornil(L, idx)) {
-            throw std::runtime_error("integer expected");
+            throw std::runtime_error("number expected");
         }
 #endif
         return lua_tonumber(L, idx);
@@ -275,6 +274,15 @@ namespace lua {
         }
         return nullptr;
     }
+
+    template <class T>
+    inline T& require_userdata(lua::State* L, int idx) {
+        if (void* rawptr = lua_touserdata(L, idx)) {
+            return *static_cast<T*>(rawptr);
+        }
+        throw std::runtime_error("invalid 'self' value");
+    }
+    
     template <class T, typename... Args>
     inline int newuserdata(lua::State* L, Args&&... args) {
         const auto& found = usertypeNames.find(typeid(T));
@@ -605,10 +613,13 @@ namespace lua {
         return 0;
     }
     int create_environment(lua::State*, int parent);
+    int restore_pack_environment(lua::State*, const std::string& packid);
     void remove_environment(lua::State*, int id);
 
     inline void close(lua::State* L) {
-        lua_close(L);
+        if (L) {
+            lua_close(L);
+        }
     }
 
     inline void addfunc(
@@ -759,9 +770,12 @@ namespace lua {
     }
 
     inline std::string_view bytearray_as_string(lua::State* L, int idx) {
-        lua::requireglobal(L, "Bytearray_as_string");
         lua::pushvalue(L, idx);
+        lua::requireglobal(L, "Bytearray_as_string");
+        lua::pushvalue(L, -2);
         lua::call(L, 1, 1);
-        return lua::tolstring(L, -1);
+        auto view = lua::tolstring(L, -1);
+        lua::pop(L, 2);
+        return view;
     }
 }

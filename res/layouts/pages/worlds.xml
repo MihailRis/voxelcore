@@ -1,9 +1,8 @@
 <panel size='400' color='0' interval='1' context='menu'>
-    
     <button onclick='menu.page="new_world"'>@New World</button>
     
     <panel id='worlds' size='390,1' padding='5' color='#FFFFFF11' max-length='400'>
     </panel>
-    <button pos='485,525' size='500,40' onclick='core.open_folder("user:worlds")'>@Open worlds folder</button>
+    <button pos='485,525' size='500,40' onclick='app.open_folder("user:worlds")'>@Open worlds folder</button>
     <button onclick='menu:back()'>@Back</button>
 </panel>

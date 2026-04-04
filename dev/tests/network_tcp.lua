@@ -1,5 +1,5 @@
 for i=1,3 do
-    print(string.format("iteration %s", i + 1))
+    print(string.format("iteration %s", i))
     local text = ""
     local complete = false
 

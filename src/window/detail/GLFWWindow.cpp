@@ -99,7 +99,7 @@ static bool initialize_gl(int width, int height) {
 
 #ifndef __APPLE__
     glEnable(GL_DEBUG_OUTPUT);
-    glDebugMessageCallback(gl_message_callback, 0);
+    glDebugMessageCallback(gl_message_callback, nullptr);
 #endif
 
     glViewport(0, 0, width, height);
@@ -180,14 +180,18 @@ public:
         : window(window) {
     }
 
-    void pollEvents() override {
+    void pollEvents(bool waitForRefresh) override {
         delta.x = 0.0f;
         delta.y = 0.0f;
         scroll = 0;
         currentFrame++;
         codepoints.clear();
         pressedKeys.clear();
-        glfwPollEvents();
+        if (waitForRefresh) {
+            glfwWaitEventsTimeout(0.5);
+        } else {
+            glfwPollEvents();
+        }
 
         for (auto& [_, binding] : bindings.getAll()) {
             if (!binding.enabled) {
@@ -328,8 +332,8 @@ private:
     GLFWwindow* window;
     bool cursorLocked = false;
     bool cursorDrag = false;
-    glm::vec2 delta;
-    glm::vec2 cursor;
+    glm::vec2 delta {};
+    glm::vec2 cursor {};
 };
 static_assert(!std::is_abstract<GLFWInput>());
 
@@ -377,6 +381,18 @@ public:
         prevSwap = time();
     }
 
+    void setShouldRefresh() override {
+        shouldRefresh = true;
+    }
+
+    bool checkShouldRefresh() override {
+        if (shouldRefresh) {
+            shouldRefresh = false;
+            return true;
+        }
+        return false;
+    }
+
     bool isMaximized() const override {
         return glfwGetWindowAttrib(window, GLFW_MAXIMIZED);
     }
@@ -402,25 +418,32 @@ public:
             return;
         }
         cursor = shape;
-        // NULL cursor is valid for GLFW
+        // nullptr cursor is valid for GLFW
         glfwSetCursor(window, standard_cursors[static_cast<int>(shape)]);
     }
 
-    void toggleFullscreen() override {
-        fullscreen = !fullscreen;
-    
+    void setMode(WindowMode mode) override {
+        Window::mode = mode;
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
-        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+        const GLFWvidmode* glfwMode = glfwGetVideoMode(monitor);
     
         if (input.isCursorLocked()){
             input.toggleCursor();
         }
-    
-        if (fullscreen) {
+
+        if (mode == WindowMode::FULLSCREEN) {
+            const int width = glfwMode->width;
+            const int height = glfwMode->height;
+            const int refreshRate = glfwMode->refreshRate;
             glfwGetWindowPos(window, &posX, &posY);
-            glfwSetWindowMonitor(
-                window, monitor, 0, 0, mode->width, mode->height, mode->refreshRate
-            );
+            glfwSetWindowMonitor(window, monitor, 0, 0, width, height, refreshRate);
+        }
+        else if(mode == WindowMode::BORDERLESS) {
+            glfwGetWindowPos(window, &posX, &posY);
+            glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_FALSE);
+            glfwSetWindowAttrib(window, GLFW_RESIZABLE, GLFW_FALSE);
+            glfwSetWindowSize(window, glfwMode->width, glfwMode->height);
+            glfwSetWindowPos(window, 0, 0);
         } else {
             glfwSetWindowMonitor(
                 window,
@@ -431,6 +454,8 @@ public:
                 settings->height.get(),
                 GLFW_DONT_CARE
             );
+            glfwSetWindowAttrib(window, GLFW_DECORATED, GLFW_TRUE);
+            glfwSetWindowAttrib(window, GLFW_RESIZABLE, GLFW_TRUE);
             window_size_callback(window, settings->width.get(), settings->height.get());
         }
     
@@ -439,8 +464,16 @@ public:
         input.setCursorPosition(xPos, yPos);
     }
 
-    bool isFullscreen() const override {
-        return fullscreen;
+    WindowMode getMode() const override {
+        return mode;
+    }
+
+    void focus() override {
+        glfwFocusWindow(window);
+    }
+
+    void setTitle(const std::string& title) override {
+        glfwSetWindowTitle(window, title.c_str());
     }
 
     void setIcon(const ImageData* image) override {
@@ -459,7 +492,7 @@ public:
         glViewport(0, 0, width, height);
         size = {width, height};
 
-        if (!isFullscreen() && !isMaximized()) {
+        if (mode == WindowMode::WINDOWED && !isMaximized()) {
             settings->width.set(width);
             settings->height.set(height);
         }
@@ -528,7 +561,7 @@ public:
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glReadPixels(0, 0, size.x, size.y, GL_RGB, GL_UNSIGNED_BYTE, data.get());
         return std::make_unique<ImageData>(
-            ImageFormat::rgb888, size.x, size.y, data.release()
+            ImageFormat::RGB888, size.x, size.y, data.release()
         );
     }
 
@@ -542,19 +575,20 @@ public:
 private:
     GLFWwindow* window;
     CursorShape cursor = CursorShape::ARROW;
-    bool fullscreen = false;
     int framerate = -1;
     std::stack<glm::vec4> scissorStack;
-    glm::vec4 scissorArea;
+    glm::vec4 scissorArea {};
     double prevSwap = 0.0;
     int posX = 0;
     int posY = 0;
+    bool shouldRefresh = true;
 };
 static_assert(!std::is_abstract<GLFWWindow>());
 
 static void mouse_button_callback(GLFWwindow* window, int button, int action, int) {
     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
     handler->input.onMouseCallback(button, action == GLFW_PRESS);
+    handler->setShouldRefresh();
 }
 
 static void character_callback(GLFWwindow* window, unsigned int codepoint) {
@@ -566,6 +600,8 @@ static void key_callback(
     GLFWwindow* window, int key, int /*scancode*/, int action, int /*mode*/
 ) {
     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+    handler->setShouldRefresh();
+
     auto& input = handler->input;
     if (key == GLFW_KEY_UNKNOWN) {
         return;
@@ -591,16 +627,18 @@ static void window_size_callback(GLFWwindow* window, int width, int height) {
 static void scroll_callback(GLFWwindow* window, double, double yoffset) {
     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
     handler->input.scroll += yoffset;
+    handler->setShouldRefresh();
 }
 
 static void cursor_pos_callback(GLFWwindow* window, double xpos, double ypos) {
     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
     handler->input.setCursorPosition(xpos, ypos);
+    handler->setShouldRefresh();
 }
 
 static void iconify_callback(GLFWwindow* window, int iconified) {
     auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
-    if (handler->isFullscreen() && iconified == 0) {
+    if (handler->getMode() == WindowMode::FULLSCREEN && iconified == 0) {
         GLFWmonitor* monitor = glfwGetPrimaryMonitor();
         const GLFWvidmode* mode = glfwGetVideoMode(monitor);
         glfwSetWindowMonitor(
@@ -621,6 +659,11 @@ static void create_standard_cursors() {
     }
 }
 
+static void refresh_callback(GLFWwindow* window) {
+    auto handler = static_cast<GLFWWindow*>(glfwGetWindowUserPointer(window));
+    handler->setShouldRefresh();
+}
+
 static void setup_callbacks(GLFWwindow* window) {
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
@@ -629,6 +672,7 @@ static void setup_callbacks(GLFWwindow* window) {
     glfwSetCharCallback(window, character_callback);
     glfwSetScrollCallback(window, scroll_callback);
     glfwSetWindowIconifyCallback(window, iconify_callback);
+    glfwSetWindowRefreshCallback(window, refresh_callback);
 }
 
 std::tuple<

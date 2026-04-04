@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "assets/Assets.hpp"
+#include "assets/assets_util.hpp"
 #include "graphics/core/Atlas.hpp"
 #include "graphics/core/Batch2D.hpp"
 #include "graphics/core/DrawContext.hpp"
@@ -16,37 +17,25 @@ Image::Image(GUI& gui, std::string texture, glm::vec2 size)
     setInteractive(false);
 }
 
+util::TextureRegion Image::refreshTexture(const Assets& assets) {
+    auto region = util::get_texture_region(assets, texture, fallback);
+    if (region.texture && autoresize) {
+        setSize(glm::vec2(
+            region.texture->getWidth() * region.region.getWidth(),
+            region.texture->getHeight() * region.region.getHeight()
+        ));
+    }
+    return region;
+}
+
 void Image::draw(const DrawContext& pctx, const Assets& assets) {
     glm::vec2 pos = calcPos();
     auto batch = pctx.getBatch2D();
 
-    Texture* texture = nullptr;
-    auto separator = this->texture.find(':');
-    if (separator == std::string::npos) {
-        texture = assets.get<Texture>(this->texture);
-        batch->texture(texture);
-        if (texture && autoresize) {
-            setSize(glm::vec2(texture->getWidth(), texture->getHeight()));
-        }
-    } else {
-        auto atlasName = this->texture.substr(0, separator);
-        if (auto atlas = assets.get<Atlas>(atlasName)) {
-            if (auto region =
-                    atlas->getIf(this->texture.substr(separator + 1))) {
-                texture = atlas->getTexture();
-                batch->texture(atlas->getTexture());
-                batch->setRegion(*region);
-                if (autoresize) {
-                    setSize(glm::vec2(
-                        texture->getWidth() * region->getWidth(),
-                        texture->getHeight() * region->getHeight()
-                    ));
-                }
-            } else {
-                batch->texture(nullptr);
-            }
-        }
-    }
+    auto textureRegion = refreshTexture(assets);
+    
+    batch->texture(textureRegion.texture);
+    batch->setRegion(textureRegion.region);
     batch->rect(
         pos.x,
         pos.y,
@@ -73,8 +62,16 @@ const std::string& Image::getTexture() const {
     return texture;
 }
 
+const std::string& Image::getFallback() const {
+    return fallback;
+}
+
 void Image::setTexture(const std::string& name) {
     texture = name;
+}
+
+void Image::setFallback(const std::string& name) {
+    fallback = name;
 }
 
 void Image::setRegion(const UVRegion& region) {

@@ -15,6 +15,9 @@ struct ItemFuncsSet {
     bool on_block_break_by : 1;
 };
 
+struct ItemFuncNamesCache {
+};
+
 enum class ItemIconType {
     NONE,    // invisible (core:empty) must not be rendered
     SPRITE,  // textured quad: icon is `atlas_name:texture_name`
@@ -37,7 +40,7 @@ struct ItemDef {
     std::string caption;
 
     /// @brief Item description will shown in inventory
-    std::string description;
+    std::string description = "";
 
     dv::value properties = nullptr;
 
@@ -60,7 +63,7 @@ struct ItemDef {
     std::string icon = "blocks:notfound";
 
     std::string placingBlock = "core:air";
-    std::string scriptName = name.substr(name.find(':') + 1);
+    std::string scriptName;
 
     std::string modelName = name + ".model";
 
@@ -75,6 +78,8 @@ struct ItemDef {
         bool emissive = false;
 
         std::set<int> tags;
+
+        ItemFuncNamesCache eventNames;
     } rt {};
 
     ItemDef(const std::string& name);

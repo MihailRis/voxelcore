@@ -23,12 +23,10 @@ std::unique_ptr<ubyte[]> Lightmap::encode() const {
     return buffer;
 }
 
-std::unique_ptr<light_t[]> Lightmap::decode(const ubyte* buffer) {
-    auto lights = std::make_unique<light_t[]>(CHUNK_VOL);
+void Lightmap::decode(const ubyte* src) {
     for (uint i = 0; i < CHUNK_VOL; i+=2) {
-        ubyte b = buffer[i/2];
-        lights[i] = ((b & 0xF) << 12);
-        lights[i+1] = ((b & 0xF0) << 8);
+        ubyte b = src[i/2];
+        map[i] = ((b & 0xF) << 12);
+        map[i+1] = ((b & 0xF0) << 8);
     } 
-    return lights;
 }

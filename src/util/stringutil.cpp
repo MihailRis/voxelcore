@@ -60,6 +60,33 @@ std::string util::escape(std::string_view s, bool escapeUnicode) {
     return ss.str();
 }
 
+std::wstring util::escape_xml(std::wstring_view s) {
+    std::wstringstream ss;
+    for (wchar_t c : s) {
+        switch (c) {
+            case L'&':
+                ss << L"&amp;";
+                break;
+            case L'<':
+                ss << L"&lt;";
+                break;
+            case L'>':
+                ss << L"&gt;";
+                break;
+            case '"':
+                ss << L"&quot;";
+                break;
+            case '\'':
+                ss << L"&apos;";
+                break;
+            default:
+                ss << c;
+                break;
+        }
+    }
+    return ss.str();
+}
+
 std::string util::quote(const std::string& s) {
     return escape(s, false);
 }

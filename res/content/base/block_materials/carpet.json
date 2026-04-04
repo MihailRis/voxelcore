@@ -1,5 +1,6 @@
 {
     "steps-sound": "steps/carpet",
     "place-sound": "blocks/carpet_place",
-    "break-sound": "blocks/carpet_break"
+    "break-sound": "blocks/carpet_break",
+    "sound-absorption": 0.96
 }

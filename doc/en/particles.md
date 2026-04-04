@@ -22,6 +22,7 @@ Particles are a table, all fields of which are optional.
 | max_angular_vel | Maximum angular velocity (radians per sec). Non-negative.             | 0.0             |
 | spawn_shape     | Shape of particle spawn area. (ball/sphere/box)                       | ball            |
 | spawn_spread    | Size of particle spawn area.                                          | {0, 0, 0}       |
+| spawn_offset    | Offset of particle spawn area.                                        | {0, 0, 0}       |
 | random_sub_uv   | Size of random texture subregion (1 - entire texture will be used).   | 1.0             |
 
 ## *gfx.particles* library

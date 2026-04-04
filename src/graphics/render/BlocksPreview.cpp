@@ -67,7 +67,7 @@ std::unique_ptr<ImageData> BlocksPreview::draw(
             glm::vec3 poff = glm::vec3(0.0f, 0.0f, 1.0f);
             offset.y += (1.0f - hitbox).y * 0.5f;
             shader.uniformMatrix("u_apply", glm::translate(glm::mat4(1.0f), offset));
-            const auto& model = cache.getModel(def.rt.id);
+            const auto& model = cache.getModel(def.rt.id, 0);
             
             for (const auto& mesh : model.meshes) {
                 for (const auto& vertex : mesh.vertices) {
@@ -137,5 +137,5 @@ std::unique_ptr<Atlas> BlocksPreview::build(
         builder.add(def.name, draw(cache, shader, fbo, batch, def, iconSize));
     }
     fbo.unbind();
-    return builder.build(2);
+    return builder.build(ATLAS_EXTRUSION);
 }

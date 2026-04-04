@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <glm/gtc/constants.hpp>
 
 #include "BlocksController.hpp"
 #include "content/Content.hpp"
@@ -21,6 +22,7 @@
 #include "scripting/scripting.hpp"
 #include "settings.hpp"
 #include "voxels/Block.hpp"
+#include "voxels/blocks_agent.hpp"
 #include "voxels/Chunks.hpp"
 #include "voxels/voxel.hpp"
 #include "window/Camera.hpp"
@@ -28,19 +30,23 @@
 #include "window/input.hpp"
 #include "world/Level.hpp"
 
-const float INTERACTION_RELOAD = 0.160f;
-const float STEPS_SPEED = 2.2f;
-const float CAM_SHAKE_OFFSET = 0.0075f;
-const float CAM_SHAKE_OFFSET_Y = 0.031f;
-const float CAM_SHAKE_SPEED = STEPS_SPEED;
-const float CAM_SHAKE_DELTA_K = 10.0f;
-const float ZOOM_SPEED = 16.0f;
-const float CROUCH_ZOOM = 0.9f;
-const float RUN_ZOOM = 1.1f;
-const float C_ZOOM = 0.1f;
-const float CROUCH_SHIFT_Y = -0.2f;
+namespace {
+    const float INTERACTION_RELOAD = 0.160f;
+    const float STEPS_SPEED = 2.2f;
+    const float CAM_SHAKE_OFFSET = 0.0075f;
+    const float CAM_SHAKE_OFFSET_Y = 0.031f;
+    const float CAM_SHAKE_SPEED = STEPS_SPEED;
+    const float CAM_SHAKE_DELTA_K = 10.0f;
+    const float ZOOM_SPEED = 16.0f;
+    const float CROUCH_ZOOM = 0.9f;
+    const float RUN_ZOOM = 1.1f;
+    const float C_ZOOM = 0.1f;
+    const float CROUCH_SHIFT_Y = -0.2f;
+}
 
-CameraControl::CameraControl(Player& player, const CameraSettings& settings)
+CameraControl::CameraControl(
+    Player& player, const CameraSettings& settings
+)
     : player(player),
       camera(player.fpCamera),
       settings(settings),
@@ -101,7 +107,7 @@ glm::vec3 CameraControl::updateCameraShaking(
     glm::vec3 offset {};
     const float k = CAM_SHAKE_DELTA_K;
     const float ov = CAM_SHAKE_OFFSET_Y;
-    const glm::vec3& vel = hitbox.velocity;
+    auto vel = hitbox.getSurfaceVelocity();
 
     if (settings.shaking.get()) {
         shake = shake * (1.0f - delta * k);
@@ -191,24 +197,35 @@ void CameraControl::update(
 
     refreshPosition();
 
+    auto castRay = [](Player& player, Camera& camera, const glm::vec3& front)
+         -> glm::vec3 {
+        auto blockEnd = player.chunks->rayCastToObstacle(camera.position, front, 3.0f);
+        auto entityRay = player.getLevel().entities->rayCast(
+            camera.position, front, 3.0f, player.getEntity(), true
+        );
+        if (entityRay.has_value() &&
+            entityRay->distance < glm::distance(camera.position, blockEnd)) {
+            return (camera.position + front * entityRay->distance);
+        } else {
+            return blockEnd;
+        }
+    };
+
     camera->updateVectors();
     if (player.currentCamera == spCamera) {
         spCamera->position =
-            chunks.rayCastToObstacle(camera->position, camera->front, 3.0f) -
-            0.4f * camera->front;
+            castRay(player, *camera, camera->front) - 0.4f * camera->front;
         spCamera->dir = -camera->dir;
         spCamera->front = -camera->front;
         spCamera->right = -camera->right;
     } else if (player.currentCamera == tpCamera) {
-        tpCamera->position =
-            chunks.rayCastToObstacle(camera->position, -camera->front, 3.0f) +
-            0.4f * camera->front;
+        tpCamera->position = castRay(player, *camera, camera->front * -1.0f) +
+                             0.4f * camera->front;
         tpCamera->dir = camera->dir;
         tpCamera->front = camera->front;
         tpCamera->right = camera->right;
     }
-    if (player.currentCamera == spCamera || player.currentCamera == tpCamera ||
-        player.currentCamera == camera) {
+    if (player.isCurrentCameraBuiltin()) {
         player.currentCamera->setFov(glm::radians(settings.fov.get()));
     }
 }
@@ -226,41 +243,24 @@ PlayerController::PlayerController(
 }
 
 void PlayerController::onFootstep(const Hitbox& hitbox) {
-    auto pos = hitbox.position;
-    auto half = hitbox.halfsize;
-
-    for (int offsetZ = -1; offsetZ <= 1; offsetZ++) {
-        for (int offsetX = -1; offsetX <= 1; offsetX++) {
-            int x = std::floor(pos.x + half.x * offsetX);
-            int y = std::floor(pos.y - half.y * 1.1f);
-            int z = std::floor(pos.z + half.z * offsetZ);
-            auto vox = player.chunks->get(x, y, z);
-            if (vox) {
-                auto& def = level.content.getIndices()->blocks.require(vox->id);
-                if (!def.obstacle) {
-                    continue;
-                }
-                blocksController.onBlockInteraction(
-                    &player, glm::ivec3(x, y, z), def, BlockInteraction::step
-                );
-                return;
-            }
-        }
+    if (footstepCallback) {
+        footstepCallback(hitbox);
     }
 }
 
 void PlayerController::updateFootsteps(float delta) {
+    constexpr float GLM_PI = glm::pi<float>();
     auto hitbox = player.getHitbox();
     if (hitbox && hitbox->grounded) {
-        const glm::vec3& vel = hitbox->velocity;
+        glm::vec3 vel = hitbox->getSurfaceVelocity();
         float f = glm::length(glm::vec2(vel.x, vel.z));
         stepsTimer += delta * f * STEPS_SPEED;
-        if (stepsTimer >= M_PI) {
-            stepsTimer = fmod(stepsTimer, M_PI);
+        if (stepsTimer >= GLM_PI) {
+            stepsTimer = fmod(stepsTimer, GLM_PI);
             onFootstep(*hitbox);
         }
     } else {
-        stepsTimer = M_PI;
+        stepsTimer = GLM_PI;
     }
 }
 
@@ -280,7 +280,7 @@ void PlayerController::postUpdate(
         updateFootsteps(delta);
     }
 
-    if (!pause && input) {
+    if (!pause && input && player.isCurrentCameraBuiltin()) {
         camControl.updateMouse(this->input, windowHeight);
     }
     camControl.refreshRotation();
@@ -445,10 +445,7 @@ void PlayerController::processRightClick(
         return;
     }
     if (def.grounded) {
-        const auto& vec = get_ground_direction(def, state.rotation);
-        if (!chunks.isSolidBlock(
-                coord.x + vec.x, coord.y + vec.y, coord.z + vec.z
-            )) {
+        if (!blocks_agent::check_grounding(chunks, def, state.rotation, coord)) {
             return;
         }
     }
@@ -488,7 +485,10 @@ void PlayerController::updateInteraction(const Input& inputEvents, float delta) 
     }
     const auto& bindings = inputEvents.getBindings();
     bool xkey = bindings.active(BIND_PLAYER_FAST_INTERACTOIN);
-    float maxDistance = xkey ? 200.0f : 10.0f;
+    float maxDistance = player.getMaxInteractionDistance();
+    if (xkey) {
+        maxDistance *= 100.0;
+    }
     bool longInteraction = interactionTimer <= 0 || xkey;
     bool lclick = bindings.jactive(BIND_PLAYER_DESTROY) ||
                   (longInteraction && bindings.active(BIND_PLAYER_DESTROY));
@@ -550,6 +550,10 @@ void PlayerController::updateInteraction(const Input& inputEvents, float delta) 
     }
 }
 
-Player* PlayerController::getPlayer() {
-    return &player;
+Player& PlayerController::getPlayer() {
+    return player;
+}
+
+void PlayerController::setFootstepCallback(FootstepCallback&& callback) {
+    footstepCallback = std::move(callback);
 }

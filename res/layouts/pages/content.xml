@@ -15,7 +15,7 @@
         <textbox id='search_textbox' multiline='false' size='440,25' sub-consumer='function(x) refresh_search() end'></textbox>  
     </panel>  
   
-    <image onclick='core.open_folder("user:content")' interactive='true' src='gui/folder_icon'   
+    <image onclick='app.open_folder("user:content")' interactive='true' src='gui/folder_icon'   
         size='32' margin='0,0,18,66' gravity='bottom-right'  
         color='#FFFFFF50' hover-color='#FFFFFF10'/>  
   

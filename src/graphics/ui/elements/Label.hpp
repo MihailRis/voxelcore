@@ -3,6 +3,8 @@
 #include "UINode.hpp"
 #include "constants.hpp"
 
+#include "graphics/core/FontMetics.hpp"
+
 class Font;
 struct FontStylesScheme;
 
@@ -13,14 +15,15 @@ namespace gui {
     };
 
     struct LabelCache {
-        Font* font = nullptr;
+        FontMetrics metrics;
+
         std::vector<LineScheme> lines;
         /// @brief Reset cache flag
         bool resetFlag = true;
         size_t wrapWidth = -1;
         int multilineWidth = 0;
     
-        void prepare(Font* font, size_t wrapWidth);
+        void prepare(const std::shared_ptr<Font>& font, FontMetrics metrics, size_t wrapWidth);
         void update(std::wstring_view text, bool multiline, bool wrap);
 
         size_t getTextLineOffset(size_t line) const;
@@ -40,7 +43,7 @@ namespace gui {
         float lineInterval = 1.5f;
 
         /// @brief Vertical alignment (only when multiline is set to false)
-        Align valign = Align::center;
+        Align valign = Align::CENTER;
 
         /// @brief Line separators and wrapping will be ignored if set to false
         bool multiline = false;

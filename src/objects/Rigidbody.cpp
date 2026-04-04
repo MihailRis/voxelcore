@@ -22,6 +22,8 @@ dv::value Rigidbody::serialize(bool saveVelocity, bool saveBodySettings) const {
         if (hitbox.crouching) {
             bodymap["crouch"] = hitbox.crouching;
         }
+        bodymap["mass"] = mass;
+        bodymap["elasticity"] = elasticity;
     }
     return bodymap;
 }
@@ -33,6 +35,8 @@ void Rigidbody::deserialize(const dv::value& root) {
     BodyTypeMeta.getItem(bodyTypeName, hitbox.type);
     root["crouch"].asBoolean(hitbox.crouching);
     root["damping"].asNumber(hitbox.linearDamping);
+    root["mass"].asNumber(mass);
+    root["elasticity"].asNumber(elasticity);
 }
 
 template <void (*callback)(const Entity&, size_t, entityid_t)>
@@ -49,6 +53,8 @@ static sensorcallback create_sensor_callback(Entities& entities) {
 void Rigidbody::initialize(
     const EntityDef& def, entityid_t id, Entities& entities
 ) {
+    mass = def.mass;
+    elasticity = def.elasticity;
     sensors.resize(def.radialSensors.size() + def.boxSensors.size());
     for (auto& [i, box] : def.boxSensors) {
         SensorParams params {};
@@ -80,4 +86,6 @@ void Rigidbody::initialize(
             create_sensor_callback<scripting::on_sensor_enter>(entities),
             create_sensor_callback<scripting::on_sensor_exit>(entities)};
     }
+    hitbox.stepHeight = def.stepHeight;
+    hitbox.material = def.material;
 }

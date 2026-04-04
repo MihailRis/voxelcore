@@ -5,7 +5,7 @@
 ## Основные функции
 
 ```lua
-cameras.get(name: str) -> table
+cameras.get(name: string) -> table
 -- или
 cameras.get(index: int) -> table
 ```
@@ -22,7 +22,7 @@ local cam = cameras.get("пак:имя-камеры")
 cam:get_index() -> int
 
 -- возвращает имя камеры
-cam:get_name() -> str
+cam:get_name() -> string
 
 -- возвращает позицию камеры
 cam:get_pos() -> vec3
@@ -45,14 +45,14 @@ cam:get_fov() -> number
 cam:set_fov(fov: number)
 
 -- возвращает true если ось Y отражена
-cam:is_flipped() -> bool
+cam:is_flipped() -> boolean
 -- отражает ось Y при значении true
-cam:set_flipped(flipped: bool)
+cam:set_flipped(flipped: boolean)
 
 -- проверяет, включен ли режим перспективы
-cam:is_perspective() -> bool
+cam:is_perspective() -> boolean
 -- включает/выключает режим перспективы
-cam:set_perspective(perspective: bool)
+cam:set_perspective(perspective: boolean)
 
 -- возвращает вектор направления камеры
 cam:get_front() -> vec3
@@ -68,4 +68,4 @@ cam:look_at(point: vec3)
 cam:look_at(point: vec3, t: number)
 ```
 
-Переключение камеры возможно через функцию player.set_camera.
+Переключение камеры возможно через функцию [player.set_camera](libplayer.md#камеры).

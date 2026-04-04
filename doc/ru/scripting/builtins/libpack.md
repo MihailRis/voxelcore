@@ -1,15 +1,15 @@
 # Библиотека *pack*
 
-```python
-pack.is_installed(packid: str) -> bool
+```lua
+pack.is_installed(packid: string) -> boolean
 ```
 
 Проверяет наличие установленного пака в мире
 
 ```lua
-pack.data_file(packid: str, filename: str) -> str
+pack.data_file(packid: string, filename: string) -> string
 -- и
-pack.shared_file(packid: str, filename: str) -> str
+pack.shared_file(packid: string, filename: string) -> string
 ```
 
 Возвращает путь к файлу данных 
@@ -33,46 +33,46 @@ file.write(pack.shared_file(PACK_ID, "example.txt"), text)
 
 Используйте для хранения данных общих для всех миров.
 
-```python
-pack.get_folder(packid: str) -> str
+```lua
+pack.get_folder(packid: string) -> string
 ```
 
 Возвращает путь к папке установленного контент-пака.
 
-```python
-pack.is_installed(packid: str) -> bool
+```lua
+pack.is_installed(packid: string) -> boolean
 ```
 
 Проверяет наличие контент-пака в мире
 
-```python
-pack.get_installed() -> массив строк
+```lua
+pack.get_installed() -> table<string>
 ```
 
 Возращает id всех установленных в мире контент-паков.
 
-```python
-pack.get_available() -> массив строк
+```lua
+pack.get_available() -> table<string>
 ```
 
 Возвращает id всех доступных, но не установленных в мире контент-паков.
 
-```python
-pack.get_base_packs() -> массив строк
+```lua
+pack.get_base_packs() -> table<string>
 ```
 
 Возвращает id всех базовых паков (неудаляемых)
 
 ```lua
-pack.get_info(packid: str) -> {
-	id: str,
-	title: str,
-	creator: str,
-	description: str,
-	version: str,
-    path: str,
-	icon: str, -- отсутствует в headless режиме
-	dependencies: опциональный массив строк
+pack.get_info(packid: string) -> {
+	id: string,
+	title: string,
+	creator: string,
+	description: string,
+	version: string,
+    path: string,
+	icon: string, -- отсутствует в headless режиме
+	dependencies: table<string> -- опциональный
 }
 ```
 
@@ -82,23 +82,24 @@ pack.get_info(packid: str) -> {
 	- `!` - required
 	- `?` - optional
 	- `~` - weak
+    
 	например `!teal`
 
 Для получения информации о нескольких паках используйте таблицу id, чтобы не
 производить сканирование для каждого пака:
 
 ```lua
-pack.get_info(packids: table) -> {id={...}, id2={...}, ...}
+pack.get_info(packids: table<string>) -> table<string, table>
 ```
 
 ```lua
-pack.assemble(packis: table) -> table
+pack.assemble(packids: table<string>) -> table<string>
 ```
 
-Проверяет корректность конфигурации и добавляет зависимости, возвращая полную.
+Проверяет корректность конфигурации и добавляет зависимости, возвращая полную конфигурацию.
 
 ```lua
-pack.request_writeable(packid: str, callback: function(str))
+pack.request_writeable(packid: string, callback: function(string))
 ```
 
 Запрашивает у пользователя право на модификацию пака. При подтвержении новая точка входа будет передана в callback.

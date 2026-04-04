@@ -1,5 +1,5 @@
 <panel id='bind_%{id}' size='400,40' padding='4' color='0' orientation='horizontal'>
     <bindbox binding='%{id}'/>
-    <image id="bindmark_%{id}"src='gui/left_half_block' size='4,28' visible="false"/>
+    <image id="bindmark_%{id}" src='gui/left_half_block' size='4,28' visible="false"/>
     <label id='bindlabel_%{id}' color="#ffffffff" margin='6'>%{name}</label>
 </panel>

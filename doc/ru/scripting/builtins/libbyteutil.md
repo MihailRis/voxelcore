@@ -3,8 +3,8 @@
 Библиотека предоставляет функции для работы с массивами байт, представленными в виде таблиц или Bytearray.
 
 ```lua
-byteutil.pack(format: str, ...) -> Bytearray
-byteutil.tpack(format: str, ...) -> table
+byteutil.pack(format: string, ...) -> Bytearray
+byteutil.tpack(format: string, ...) -> table
 ```
 
 Возвращает массив байт, содержащий переданные значения, упакованные в соответствии со строкой формата. Аргументы должны точно соответствовать значениям, требуемым форматом.
@@ -24,24 +24,26 @@ byteutil.tpack(format: str, ...) -> table
 
 Символы значений описывают тип и размер.
 
-| Символ | Аналог в С++ | Тип Lua  | Размер  |
-| ------ | ------------ | -------- | ------- |
-| `b`    | int8_t       | number   | 1 байт  |
-| `B`    | uint8_t      | number   | 1 байт  |
-| `?`    | bool         | boolean  | 1 байт  |
-| `h`    | int16_t      | number   | 2 байта |
-| `H`    | uint16_t     | number   | 2 байта |
-| `i`    | int32_t      | number   | 4 байта |
-| `I`    | uint32_t     | number   | 4 байта |
-| `l`    | int64_t      | number   | 8 байта |
-| `L`    | uint64_t     | number   | 8 байта |
+| Символ    | Аналог в С++    | Тип Lua  | Размер  |
+| --------- | --------------- | -------- | ------- |
+| `b`       | int8_t          | number   | 1 байт  |
+| `B`       | uint8_t         | number   | 1 байт  |
+| `?`       | bool            | boolean  | 1 байт  |
+| `h`       | int16_t         | number   | 2 байта |
+| `H`       | uint16_t        | number   | 2 байта |
+| `i`       | int32_t         | number   | 4 байта |
+| `I`       | uint32_t        | number   | 4 байта |
+| `f`       | float32_t       | number   | 4 байта |
+| `l`       | int64_t         | number   | 8 байтов |
+| `L`       | uint64_t        | number   | 8 байтов |
+| `d`       | float64_t       | number   | 8 байтов |
 
 > [!WARNING]
 > Из-за отсутствия в Lua целочисленного типа для значений `l` и `L` гарантируется
 > только выходной размер в 8 байт, значение может отличаться от ожидаемого.
 
 ```lua
-byteutil.unpack(format: str, bytes: table|Bytearray) -> ...
+byteutil.unpack(format: string, bytes: table|Bytearray) -> ...
 ```
 
 Извлекает значения из массива байт, ориентируясь на строку формата.

@@ -18,6 +18,7 @@ bool Clock::update(float delta) {
             tickTimer = std::fmod(tickTimer, delay);
             tickPartsUndone = tickParts - 1;
         }
+        ++tickId;
         return true;
     }
     return false;

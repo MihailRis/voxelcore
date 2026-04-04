@@ -10,7 +10,7 @@
 #include "graphics/ui/elements/Menu.hpp"
 #include "frontend/locale.hpp"
 #include "world/files/WorldFiles.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "world/Level.hpp"
 #include "world/World.hpp"
 #include "api_lua.hpp"
@@ -87,10 +87,10 @@ static int l_pack_get_info(
     lua::setfield(L, "path");
 
     if (!engine->isHeadless()) {
-        auto assets = engine->getAssets();
+        auto& assetsLoader = engine->acquireBackgroundLoader();
         std::string icon = pack.id + ".icon";
         if (!AssetsLoader::loadExternalTexture(
-                assets, icon, {pack.folder / "icon.png"}
+                assetsLoader, icon, {pack.folder / "icon.png"}
             )) {
             icon = "gui/no_icon";
         }
@@ -268,5 +268,5 @@ const luaL_Reg packlib[] = {
     {"get_base_packs", lua::wrap<l_pack_get_base_packs>},
     {"assemble", lua::wrap<l_pack_assemble>},
     {"request_writeable", lua::wrap<l_pack_request_writeable>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

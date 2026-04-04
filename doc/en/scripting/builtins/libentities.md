@@ -36,6 +36,15 @@ entities.def_index(name: str) -> int
 -- Returns number of available entity definitions
 entities.defs_count() -> int
 
+```
+
+> [!NOTE]
+> The following functions for retrieving multiple entities return tables with integer keys (uid).
+> For iteration, use `pairs`, and for calculating the table size, use `table.count_pairs`.
+> Using `ipairs` will yield incorrect results, since the returned table is not an array.
+
+```lua
+
 -- Returns a table of all loaded entities
 entities.get_all() -> table
 
@@ -54,8 +63,9 @@ entities.get_all_in_radius(center: vec3, radius: number) -> array<int>
 ```
 
 ```lua
-entities.raycast(start: vec3, dir: vec3, max_distance: number,
- ignore: int, [optional] destination: table, [optional] filter: table) -> table or nil
+entities.raycast(start: vec3, dir: vec3, max_distance: number, ignore: int, [optional] destination: table,
+    [optional] filter: table, [optional] include_non_selectable = false
+) -> table or nil
 ```
 
 The function is an extended version of [block.raycast](libblock.md#raycast). Returns a table with the results if the ray touches a block or entity.

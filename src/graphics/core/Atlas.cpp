@@ -49,6 +49,14 @@ ImageData* Atlas::getImage() const {
     return image.get();
 }
 
+std::shared_ptr<Texture> Atlas::shareTexture() const {
+    return texture;
+}
+
+std::shared_ptr<ImageData> Atlas::shareImageData() const {
+    return image;
+}
+
 void AtlasBuilder::add(const std::string& name, std::unique_ptr<ImageData> image) {
     entries.push_back(atlasentry{name, std::shared_ptr<ImageData>(image.release())});
     names.insert(name);
@@ -87,7 +95,7 @@ std::unique_ptr<Atlas> AtlasBuilder::build(uint extrusion, bool prepare, uint ma
         }
     }
 
-    auto canvas = std::make_unique<ImageData>(ImageFormat::rgba8888, width, height);
+    auto canvas = std::make_unique<ImageData>(ImageFormat::RGBA8888, width, height);
     std::unordered_map<std::string, UVRegion> regions;
     std::vector<rectangle> rects = packer.getResult();
     for (uint i = 0; i < entries.size(); i++) {

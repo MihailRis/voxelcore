@@ -7,7 +7,7 @@ function on_menu_clear()
     end
 end
 
-function on_menu_setup()
+local function setup_backround()
     local controller = {}
     function controller.resize_menu_bg()
         local w, h = unpack(gui.get_viewport())
@@ -17,11 +17,16 @@ function on_menu_setup()
         end
         return w, h
     end
-    gui.root.root:add(
-        "<image id='menubg' src='gui/menubg' size-func='DATA.resize_menu_bg' "..
-        "z-index='-1' interactive='true'/>", controller)
-    menubg = gui.root.menubg
+    local bgid = random.uuid()
+    gui.root.root:add(string.format(
+        "<image id='%s' src='gui/menubg' size-func='DATA.resize_menu_bg' "..
+        "z-index='-1' interactive='true'/>", bgid), controller)
+    menubg = gui.root[bgid]
     controller.resize_menu_bg()
+end
+
+function on_menu_setup()
+    setup_backround()
     menu.page = "main"
     menu.visible = true
 end

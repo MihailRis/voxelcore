@@ -105,6 +105,19 @@ glm::vec4 Attribute::asColor() const {
     }
 }
 
+int Attribute::asNumbers(float* dst, size_t dstSize) const {
+    size_t pos = 0;
+    size_t count = 0;
+    while (pos < text.length() && count < dstSize) {
+        size_t end = text.find(',', pos);
+        dst[count++] = util::parse_double(
+            text, pos, std::min<size_t>(end - pos, text.length() - pos)
+        );
+        pos = end + 1;
+    }
+    return count;
+}
+
 Node::Node(std::string tag) : tag(std::move(tag)) {
 }
 
@@ -383,7 +396,11 @@ public:
     void parseSubElements(Node& node) {
         skipWhitespace();
         while (hasNext()) {
-            if (peek() != '@') {
+            char c = peek();
+            if (c == '}') {
+                break;
+            }
+            if (c != '@') {
                 throw error("unexpected character in element");
             }
             nextChar();
@@ -402,14 +419,12 @@ public:
             if (!hasNext()) {
                 break;
             }
-            char c = peek();
+            c = peek();
             if (c == '{') {
                 nextChar();
                 parseSubElements(*subnode);
                 expect('}');
                 skipWhitespace();
-            } else if (c == '}') {
-                break;
             }
         }
     }

@@ -13,13 +13,16 @@
 static inline std::string SAVED_DATA_VARNAME = "SAVED_DATA";
 
 void Entity::setInterpolatedPosition(const glm::vec3& position) {
-    getSkeleton().interpolation.refresh(position);
+    if (auto skeleton = getSkeleton()) {
+        skeleton->interpolation.refresh(position);
+    }
 }
 
 glm::vec3 Entity::getInterpolatedPosition() const {
-    const auto& skeleton = getSkeleton();
-    if (skeleton.interpolation.isEnabled()) {
-        return skeleton.interpolation.getCurrent();
+    if (auto skeleton = getSkeleton()) {
+        if (skeleton->interpolation.isEnabled()) {
+            return skeleton->interpolation.getCurrent();
+        }
     }
     return getTransform().pos;
 }
@@ -30,8 +33,8 @@ void Entity::destroy() {
     }
 }
 
-rigging::Skeleton& Entity::getSkeleton() const {
-    return registry.get<rigging::Skeleton>(entity);
+rigging::Skeleton* Entity::getSkeleton() const {
+    return registry.try_get<rigging::Skeleton>(entity);
 }
 
 void Entity::setRig(const rigging::SkeletonConfig* rigConfig) {
@@ -50,8 +53,8 @@ dv::value Entity::serialize() const {
     const auto& def = eid.def;
     const auto& transform = getTransform();
     const auto& rigidbody = getRigidbody();
-    const auto& skeleton = getSkeleton();
     const auto& scripts = getScripting();
+    auto skeleton = getSkeleton();
 
     auto root = dv::object();
     root["def"] = def.name;
@@ -61,13 +64,15 @@ dv::value Entity::serialize() const {
     root[COMP_RIGIDBODY] =
         rigidbody.serialize(def.save.body.velocity, def.save.body.settings);
 
-    if (skeleton.config->getName() != def.skeletonName) {
-        root["skeleton"] = skeleton.config->getName();
-    }
-    if (def.save.skeleton.pose || def.save.skeleton.textures) {
-        root[COMP_SKELETON] = skeleton.serialize(
-            def.save.skeleton.pose, def.save.skeleton.textures
-        );
+    if (skeleton != nullptr && skeleton->config != nullptr) {
+        if (skeleton->config->getName() != def.skeletonName) {
+            root["skeleton-name"] = skeleton->config->getName();
+        }
+        if (def.save.skeleton.pose || def.save.skeleton.textures) {
+            root[COMP_SKELETON] = skeleton->serialize(
+                def.save.skeleton.pose, def.save.skeleton.textures
+            );
+        }
     }
     if (!scripts.components.empty()) {
         auto& compsMap = root.object("comps");

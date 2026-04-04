@@ -7,6 +7,7 @@
 #include "settings.hpp"
 #include "voxels/voxel.hpp"
 #include "util/Interpolation.hpp"
+#include "maths/util.hpp"
 
 class Chunks;
 class Camera;
@@ -46,9 +47,10 @@ class Player : public Serializable {
     int64_t id;
     std::string name;
     float speed;
+    
     int chosenSlot;
     glm::vec3 position;
-    glm::vec3 spawnpoint {};
+    glm::vec3 spawnpoint {std::nanf(""), std::nanf(""), std::nanf("")};
     std::shared_ptr<Inventory> inventory;
     bool suspended = false;
     bool flight = false;
@@ -56,10 +58,15 @@ class Player : public Serializable {
     bool infiniteItems = true;
     bool instantDestruction = true;
     bool loadingChunks = true;
+    float interactionDistance = 10.0f;
+
     entityid_t eid = ENTITY_AUTO;
     entityid_t selectedEid = 0;
 
     glm::vec3 rotation {};
+    util::PseudoRandom random;
+
+    void attemptToChooseSpawnpoint();
 public:
     util::VecInterpolation<3, float, true> rotationInterpolation {true};
 
@@ -85,11 +92,10 @@ public:
     void updateSelectedEntity();
     void postUpdate();
 
-    void attemptToFindSpawnpoint();
-
     void setChosenSlot(int index);
 
     int getChosenSlot() const;
+
     float getSpeed() const;
 
     bool isSuspended() const;
@@ -110,6 +116,9 @@ public:
     bool isLoadingChunks() const;
     void setLoadingChunks(bool flag);
 
+    float getMaxInteractionDistance() const;
+    void setMaxInteractionDistance(float distance);
+
     entityid_t getEntity() const;
     void setEntity(entityid_t eid);
 
@@ -123,6 +132,8 @@ public:
     const glm::vec3& getPosition() const {
         return position;
     }
+
+    bool isCurrentCameraBuiltin() const;
 
     Hitbox* getHitbox();
 
@@ -139,5 +150,9 @@ public:
 
     inline u64id_t getId() const {
         return id;
+    }
+
+    Level& getLevel() const {
+        return level;
     }
 };

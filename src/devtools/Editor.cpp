@@ -1,7 +1,7 @@
 #include "Editor.hpp"
 
 #include "engine/Engine.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "coders/syntax_parser.hpp"
 #include "SyntaxProcessor.hpp"
 

@@ -38,15 +38,23 @@ struct AABB {
         return AABB(a + pos, b + pos);
     }
 
+    AABB operator+(const glm::vec3& offset) const {
+        return translated(offset);
+    }
+
+    AABB operator-(const glm::vec3& offset) const {
+        return translated(-offset);
+    }
+
     /// @brief Multiply AABB size from center
-    inline void scale(const glm::vec3 mul) {
+    inline void scale(const glm::vec3& mul) {
         glm::vec3 center = (a + b) * 0.5f;
         a = (a - center) * mul + center;
         b = (b - center) * mul + center;
     }
 
     /// @brief Multiply AABB size from given origin
-    inline void scale(const glm::vec3 mul, const glm::vec3 orig) {
+    inline void scale(const glm::vec3& mul, const glm::vec3& orig) {
         glm::vec3 beg = min();
         glm::vec3 end = max();
         glm::vec3 center = glm::mix(beg, end, orig);
@@ -91,14 +99,15 @@ struct AABB {
         addPoint(matrix * glm::vec4(pb.x, pa.y, pb.z, 1.0f));
     }
 
-    inline bool intersect(const AABB& aabb) {
+    inline bool intersects(const AABB& aabb) const {
         return (
-            a.x <= aabb.b.x && b.x >= aabb.a.x && a.y <= aabb.b.y &&
-            b.y >= aabb.a.y && a.z <= aabb.b.z && b.z >= aabb.a.z
+            a.x <= aabb.b.x && b.x >= aabb.a.x &&
+            a.y <= aabb.b.y && b.y >= aabb.a.y &&
+            a.z <= aabb.b.z && b.z >= aabb.a.z
         );
     }
 
-    inline bool intersect(const AABB& aabb, float margin) {
+    inline bool intersects(const AABB& aabb, float margin) const {
         return (
             a.x <= aabb.b.x + margin && b.x >= aabb.a.x - margin &&
             a.y <= aabb.b.y + margin && b.y >= aabb.a.y - margin &&

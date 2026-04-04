@@ -6,7 +6,7 @@
 #include <utility>
 
 #include "debug/Logger.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 #include "typedefs.hpp"
 #include "util/stringutil.hpp"
 #include "coders/json.hpp"

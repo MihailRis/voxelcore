@@ -1,14 +1,15 @@
 #pragma once
 
+#include "io/io.hpp"
+#include "data/dv.hpp"
+#include "CoreParameters.hpp"
+
 #include <unordered_map>
-#include <stdexcept>
 #include <optional>
 #include <string>
 #include <vector>
 #include <tuple>
-
-#include "io.hpp"
-#include "data/dv.hpp"
+#include <set>
 
 struct PathsRoot {
     std::string name;
@@ -42,35 +43,34 @@ private:
     std::vector<PathsRoot> roots;
 };
 
+struct Project;
+
 class EnginePaths {
 public:
     ResPaths resPaths;
 
-    void prepare();
+    EnginePaths(CoreParameters& params);
 
-    void setUserFilesFolder(std::filesystem::path folder);
-    const std::filesystem::path& getUserFilesFolder() const;
-
-    void setResourcesFolder(std::filesystem::path folder);
-    const std::filesystem::path& getResourcesFolder() const;
-
-    void setScriptFolder(std::filesystem::path folder);
-
-    void setProjectFolder(std::filesystem::path folder);
+    std::filesystem::path getResourcesFolder() const;
+    std::filesystem::path getUserFilesFolder() const;
 
     io::path getWorldFolderByName(const std::string& name);
     io::path getWorldsFolder() const;
 
     void setCurrentWorldFolder(io::path folder);
-    io::path getCurrentWorldFolder();
-    io::path getNewScreenshotFile(const std::string& ext);
+    io::path getNewScreenshotFile(const std::string& ext) const;
 
     std::string mount(const io::path& file);
     void unmount(const std::string& name);
 
     std::string createWriteableDevice(const std::string& name);
+    std::string createMemoryDevice();
 
     void setEntryPoints(std::vector<PathsRoot> entryPoints);
+
+    void setupProject(const Project& project);
+
+    bool isWriteable(const std::string& entryPoint) const;
 
     std::vector<io::path> scanForWorlds() const;
 
@@ -80,14 +80,15 @@ public:
     static inline io::path CONTROLS_FILE = "user:controls.toml";
     static inline io::path SETTINGS_FILE = "user:settings.toml";
 private:
-    std::filesystem::path userFilesFolder {"."};
-    std::filesystem::path resourcesFolder {"res"};
-    std::filesystem::path projectFolder = resourcesFolder;
+    std::filesystem::path resourcesFolder;
+    std::filesystem::path userFilesFolder;
+    std::filesystem::path projectFolder;
     io::path currentWorldFolder;
     std::optional<std::filesystem::path> scriptFolder;
     std::vector<PathsRoot> entryPoints;
     std::unordered_map<std::string, std::string> writeables;
     std::vector<std::string> mounted;
+    std::set<std::string> initiallyWriteables;
 
     void cleanup();
 };

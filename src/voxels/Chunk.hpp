@@ -27,7 +27,7 @@ public:
     int x, z;
     int bottom, top;
     voxel voxels[CHUNK_VOL] {};
-    Lightmap lightmap;
+    std::shared_ptr<Lightmap> lightmap;
     struct {
         bool modified : 1;
         bool ready : 1;
@@ -38,20 +38,20 @@ public:
         bool entities : 1;
         bool blocksData : 1;
         bool dirtyHeights : 1;
+        bool inventoriesRemoved : 1;
     } flags {};
+
+    uint64_t lastRandomTickId = -1;
 
     /// @brief Block inventories map where key is index of block in voxels array
     ChunkInventoriesMap inventories;
     /// @brief Blocks metadata heap
     BlocksMetadata blocksMetadata;
 
-    Chunk(int x, int z);
+    Chunk(int x, int z, std::shared_ptr<Lightmap> lightmap=nullptr);
 
     /// @brief Refresh `bottom` and `top` values
     void updateHeights();
-
-    // unused
-    std::unique_ptr<Chunk> clone() const;
 
     /// @brief Creates new block inventory given size
     /// @return inventory id or 0 if block does not exists
@@ -83,5 +83,11 @@ public:
             glm::vec3(x * CHUNK_W, -INFINITY, z * CHUNK_D),
             glm::vec3((x + 1) * CHUNK_W, INFINITY, (z + 1) * CHUNK_D)
         );
+    }
+
+    bool isBlockInside(int x, int z) const {
+        x -= this->x * CHUNK_W;
+        z -= this->z * CHUNK_D;
+        return x >= 0 && z >= 0 && x < CHUNK_W && z < CHUNK_D;
     }
 };

@@ -260,7 +260,7 @@ std::unique_ptr<ImageData> GBuffer::toImage() const {
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, data.get());
     glBindTexture(GL_TEXTURE_2D, 0);
     return std::make_unique<ImageData>(
-        ImageFormat::rgb888, width, height, std::move(data)
+        ImageFormat::RGB888, width, height, std::move(data)
     );
 }
 

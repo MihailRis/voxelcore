@@ -54,6 +54,9 @@ The main properties described in the configuration file:
 - **heights-bpd** - number of blocks per point of the height map. Default: 4.
 - **wide-structs-chunks-radius** - maximum radius for placing 'wide' structures, measured in chunks.
 - **heightmap-inputs** - an array of parameter map numbers that will be passed by the inputs table to the height map generation function.
+- **player-spawn-radius** - radius of the player spawn zone.
+- **player-min-spawn-height**, **player-max-spawn-height** - specifying the **preferred** vertical spawn zone.
+  Specifying a minimum height allows you to minimize the chance of spawning in underground voids, just as specifying a maximum allows you to minimize the chance of spawning on suspiciously dense cloud.
 
 ## Global variables
 
@@ -426,6 +429,22 @@ Where:
 - filler_block - the numeric id of the block that the structure will consist of.
 - point_a, point_b - vec3, vec3 positions of the start and end of the tunnel.
 - radius - radius of the tunnel in blocks
+
+Single block:
+```lua
+{":block", block_id, position, [rotation], [priority]}
+```
+
+Where:
+- block_id: numeric runtime id of the block to place.
+- position: vec3 world position in blocks, relative to the current chunk start.
+- rotation: 0–3, rotation around the Y axis. Default: 0. For extended blocks (size > 1), all segments use this rotation.
+- priority: integer order. Higher values are placed later and overwrite lower‑priority placements.
+
+Notes:
+- `:block` automatically expands extended blocks into all their segments and replaces any voxels occupying those cells.
+- Placement is chunk‑border safe: the engine distributes the placement to all affected chunk prototypes based on the block’s size/AABB.
+- Use `:block` for single blocks; use `:line` for tunnels or continuous lines.
 
 ### Small structures placement
 

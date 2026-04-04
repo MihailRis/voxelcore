@@ -1,14 +1,15 @@
 #include "Chunk.hpp"
 
-#include <utility>
-
 #include "content/ContentReport.hpp"
 #include "items/Inventory.hpp"
 #include "lighting/Lightmap.hpp"
 #include "util/data_io.hpp"
 #include "voxel.hpp"
 
-Chunk::Chunk(int xpos, int zpos) : x(xpos), z(zpos) {
+#include <utility>
+
+Chunk::Chunk(int xpos, int zpos, std::shared_ptr<Lightmap> lightmap)
+    : x(xpos), z(zpos), lightmap(std::move(lightmap)) {
     bottom = 0;
     top = CHUNK_H;
 }
@@ -39,6 +40,7 @@ void Chunk::addBlockInventory(
 void Chunk::removeBlockInventory(uint x, uint y, uint z) {
     if (inventories.erase(vox_index(x, y, z))) {
         flags.unsaved = true;
+        flags.inventoriesRemoved = true;
     }
 }
 
@@ -54,15 +56,6 @@ std::shared_ptr<Inventory> Chunk::getBlockInventory(uint x, uint y, uint z)
         return nullptr;
     }
     return found->second;
-}
-
-std::unique_ptr<Chunk> Chunk::clone() const {
-    auto other = std::make_unique<Chunk>(x, z);
-    for (uint i = 0; i < CHUNK_VOL; i++) {
-        other->voxels[i] = voxels[i];
-    }
-    other->lightmap.set(&lightmap);
-    return other;
 }
 
 /**

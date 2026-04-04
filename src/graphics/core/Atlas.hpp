@@ -14,8 +14,8 @@ class ImageData;
 class Texture;
 
 class Atlas {
-    std::unique_ptr<Texture> texture;
-    std::unique_ptr<ImageData> image;
+    std::shared_ptr<Texture> texture;
+    std::shared_ptr<ImageData> image;
     std::unordered_map<std::string, UVRegion> regions;
 public:
     /// @param image atlas raster
@@ -36,6 +36,9 @@ public:
 
     Texture* getTexture() const;
     ImageData* getImage() const;
+
+    std::shared_ptr<Texture> shareTexture() const;
+    std::shared_ptr<ImageData> shareImageData() const;
 };
 
 struct atlasentry {
@@ -54,7 +57,7 @@ public:
 
     /// @brief Build atlas from all added images
     /// @param extrusion textures extrusion pixels 
-    /// (greather is less mip-mapping artifacts)
+    /// (greater is less mip-mapping artifacts)
     /// @param prepare generate atlas texture (calls .prepare()) 
     /// @param maxResolution max atlas resolution
     std::unique_ptr<Atlas> build(uint extrusion, bool prepare=true, uint maxResolution=0);

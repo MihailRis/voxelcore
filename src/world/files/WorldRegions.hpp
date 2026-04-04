@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <condition_variable>
 #include <functional>
 #include <glm/glm.hpp>
@@ -7,12 +8,12 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "coders/compression.hpp"
+#include "io/io.hpp"
+#include "maths/voxmaths.hpp"
 #include "typedefs.hpp"
 #include "util/BufferPool.hpp"
 #include "voxels/Chunk.hpp"
-#include "maths/voxmaths.hpp"
-#include "coders/compression.hpp"
-#include "io/io.hpp"
 #include "world_regions_fwd.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
@@ -52,8 +53,10 @@ public:
 
 struct regfile {
     io::rafile file;
+    io::path filename;
     int version;
     bool inUse = false;
+    std::array<uint32_t, REGION_CHUNKS_COUNT> offsets;
 
     regfile(io::path filename);
     regfile(const regfile&) = delete;
@@ -206,12 +209,12 @@ public:
     /// @brief Get chunk voxels data
     /// @param x chunk.x
     /// @param z chunk.z
-    /// @return voxels data buffer or nullptr
-    std::unique_ptr<ubyte[]> getVoxels(int x, int z);
+    /// @return true if data read
+    bool getVoxels(int x, int z, ubyte* dst);
 
     /// @brief Get cached lights for chunk at x,z
-    /// @return lights data or nullptr
-    std::unique_ptr<light_t[]> getLights(int x, int z);
+    /// @return true if data read
+    bool getLights(int x, int z, ubyte* dst);
     
     ChunkInventoriesMap fetchInventories(int x, int z);
 

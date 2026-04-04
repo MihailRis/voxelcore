@@ -1,12 +1,17 @@
 #include "rle.hpp"
 
+#include <stdexcept>
+
 #include "util/data_io.hpp"
 
-size_t rle::decode(const ubyte* src, size_t srclen, ubyte* dst) {
+size_t rle::decode(const ubyte* src, size_t srclen, ubyte* dst, size_t dstLength) {
     size_t offset = 0;
     for (size_t i = 0; i < srclen;) {
         ubyte len = src[i++];
         ubyte c = src[i++];
+        if (offset + len >= dstLength) {
+            throw std::runtime_error("buffer overflow");
+        }
         for (size_t j = 0; j <= len; j++) {
             dst[offset++] = c;
         }
@@ -37,13 +42,16 @@ size_t rle::encode(const ubyte* src, size_t srclen, ubyte* dst) {
     return offset;
 }
 
-size_t rle::decode16(const ubyte* src, size_t srclen, ubyte* dst) {
+size_t rle::decode16(const ubyte* src, size_t srclen, ubyte* dst, size_t dstLength) {
     auto src16 = reinterpret_cast<const uint16_t*>(src);
     auto dst16 = reinterpret_cast<uint16_t*>(dst);
     size_t offset = 0;
     for (size_t i = 0; i < srclen / 2;) {
         uint16_t len = dataio::le2h(src16[i++]);
         uint16_t c = dataio::le2h(src16[i++]);
+        if (offset + len >= dstLength) {
+            throw std::runtime_error("buffer overflow");
+        }
         for (size_t j = 0; j <= len; j++) {
             dst16[offset++] = c;
         }
@@ -76,7 +84,7 @@ size_t rle::encode16(const ubyte* src, size_t srclen, ubyte* dst) {
     return offset * 2;
 }
 
-size_t extrle::decode(const ubyte* src, size_t srclen, ubyte* dst) {
+size_t extrle::decode(const ubyte* src, size_t srclen, ubyte* dst, size_t dstLength) {
     size_t offset = 0;
     for (size_t i = 0; i < srclen;) {
         uint len = src[i++];
@@ -85,6 +93,9 @@ size_t extrle::decode(const ubyte* src, size_t srclen, ubyte* dst) {
             len |= (static_cast<uint>(src[i++])) << 7;
         }
         ubyte c = src[i++];
+        if (offset + len >= dstLength) {
+            throw std::runtime_error("buffer overflow");
+        }
         for (size_t j = 0; j <= len; j++) {
             dst[offset++] = c;
         }
@@ -125,7 +136,7 @@ size_t extrle::encode(const ubyte* src, size_t srclen, ubyte* dst) {
     return offset;
 }
 
-size_t extrle::decode16(const ubyte* src, size_t srclen, ubyte* dst8) {
+size_t extrle::decode16(const ubyte* src, size_t srclen, ubyte* dst8, size_t dstLength) {
     auto dst = reinterpret_cast<uint16_t*>(dst8);
     size_t offset = 0;
     for (size_t i = 0; i < srclen;) {
@@ -140,6 +151,9 @@ size_t extrle::decode16(const ubyte* src, size_t srclen, ubyte* dst8) {
         uint16_t c = src[i++];
         if (widechar) {
             c |= ((static_cast<uint>(src[i++])) << 8);
+        }
+        if (offset + len >= dstLength) {
+            throw std::runtime_error("buffer overflow");
         }
         for (size_t j = 0; j <= len; j++) {
             dst[offset++] = c;

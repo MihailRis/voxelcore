@@ -150,6 +150,56 @@ static int l_set_linear_damping(lua::State* L) {
     return 0;
 }
 
+static int l_set_material(lua::State* L) {
+    if (auto entity = get_entity(L, 1)) {
+        entity->getRigidbody().hitbox.material = lua::require_string(L, 2);
+    }
+    return 0;
+}
+
+static int l_get_material(lua::State* L) {
+    if (auto entity = get_entity(L, 1)) {
+        return lua::pushstring(L, entity->getRigidbody().hitbox.material);
+    }
+    return 0;
+}
+
+static int l_get_mass(lua::State* L) {
+    if (auto entity = get_entity(L, 1)) {
+        return lua::pushnumber(L, entity->getRigidbody().mass);
+    }
+    return 0;
+}
+
+static int l_set_mass(lua::State* L) {
+    if (auto entity = get_entity(L, 1)) {
+        entity->getRigidbody().mass = lua::tonumber(L, 2);
+    }
+    return 0;
+}
+
+static int l_get_elasticity(lua::State* L) {
+    if (auto entity = get_entity(L, 1)) {
+        return lua::pushnumber(L, entity->getRigidbody().elasticity);
+    }
+    return 0;
+}
+
+static int l_set_elasticity(lua::State* L) {
+    if (auto entity = get_entity(L, 1)) {
+        entity->getRigidbody().elasticity = lua::tonumber(L, 2);
+    }
+    return 0;
+}
+
+static int l_get_ground_vel(lua::State* L) {
+    if (auto entity = get_entity(L, 1)) {
+        return lua::pushvec3(L, entity->getRigidbody().hitbox.groundVelocity);
+    }
+    return 0;
+}
+
+
 const luaL_Reg rigidbodylib[] = {
     {"is_enabled", lua::wrap<l_is_enabled>},
     {"set_enabled", lua::wrap<l_set_enabled>},
@@ -169,4 +219,12 @@ const luaL_Reg rigidbodylib[] = {
     {"set_crouching", lua::wrap<l_set_crouching>},
     {"get_body_type", lua::wrap<l_get_body_type>},
     {"set_body_type", lua::wrap<l_set_body_type>},
-    {NULL, NULL}};
+    {"set_material", lua::wrap<l_set_material>},
+    {"get_material", lua::wrap<l_get_material>},
+    {"get_mass", lua::wrap<l_get_mass>},
+    {"set_mass", lua::wrap<l_set_mass>},
+    {"get_elasticity", lua::wrap<l_get_elasticity>},
+    {"set_elasticity", lua::wrap<l_set_elasticity>},
+    {"get_ground_vel", lua::wrap<l_get_ground_vel>},
+    {nullptr, nullptr}
+};

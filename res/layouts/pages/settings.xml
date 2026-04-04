@@ -1,4 +1,4 @@
-<container size='668,418' color='#0F1E2DB2' context='menu'>
+<container size='668,444' color='#0F1E2DB2' context='menu'>
     <panel pos='6' size='250' color='0' interval='1'>
         <button id='s_aud' onclick='sections:set("audio")'>@Audio</button>
         <button id='s_dsp' onclick='sections:set("display")'>@Display</button>
@@ -10,7 +10,7 @@
 
     <panel margin='6' gravity='bottom-left' size='250' color='0' interval='1'>
         <button onclick='menu.page="languages"' id='langs_btn'>-</button>
-        <button onclick='core.open_folder("user:")'>@Open data folder</button>
+        <button onclick='app.open_folder("user:")'>@Open data folder</button>
 		<button id='s_rst' onclick='sections:set("reset")'>@Reset settings</button>
         <button onclick='menu:back()'>@Back</button>
     </panel>

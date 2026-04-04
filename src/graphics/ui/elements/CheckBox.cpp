@@ -25,7 +25,8 @@ void CheckBox::draw(const DrawContext& pctx, const Assets&) {
     batch->rect(pos.x, pos.y, size.x, size.y);
 }
 
-void CheckBox::mouseRelease(int, int) {
+void CheckBox::mouseRelease(int x, int y) {
+    UINode::mouseRelease(x, y);
     checked = !checked;
     if (consumer) {
         consumer(checked);
@@ -52,7 +53,7 @@ FullCheckBox::FullCheckBox(
       checkbox(std::make_shared<CheckBox>(gui, checked)),
       label(std::make_shared<Label>(gui, text)) {
     setColor(glm::vec4(0.0f));
-    setOrientation(Orientation::horizontal);
+    setOrientation(Orientation::HORIZONTAL);
 
     add(checkbox);
 

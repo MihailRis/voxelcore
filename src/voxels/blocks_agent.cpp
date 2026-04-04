@@ -14,39 +14,60 @@ std::vector<BlockRegisterEvent> blocks_agent::pull_register_events() {
     return events;
 }
 
+static uint8_t get_events_bits(const Block& def) {
+    uint8_t bits = 0;
+    auto funcsset = def.rt.funcsset;
+    bits |= BlockRegisterEvent::UPDATING_BIT * funcsset.onblocktick;
+    bits |= BlockRegisterEvent::PRESENT_EVENT_BIT * funcsset.onblockpresent;
+    bits |= BlockRegisterEvent::REMOVED_EVENT_BIT * funcsset.onblockremoved;
+    return bits;
+}
+
 static void on_chunk_register_event(
     const ContentIndices& indices,
     const Chunk& chunk,
-    BlockRegisterEvent::Type type
+    bool present
 ) {
-    for (int i = 0; i < CHUNK_VOL; i++) {
-        const auto& def =
-            indices.blocks.require(chunk.voxels[i].id);
-        if (def.rt.funcsset.onblocktick) {
-            int x = i % CHUNK_W + chunk.x * CHUNK_W;
-            int z = (i / CHUNK_W) % CHUNK_D + chunk.z * CHUNK_D;
-            int y = (i / CHUNK_W / CHUNK_D);
-            block_register_events.push_back(BlockRegisterEvent {
-                type, def.rt.id, {x, y, z}
-            });
+    const auto& voxels = chunk.voxels;
+
+    int totalBegin = chunk.bottom * (CHUNK_W * CHUNK_D);
+    int totalEnd = chunk.top * (CHUNK_W * CHUNK_D);
+
+    uint8_t flagsCache[1024] {};
+
+    for (int i = totalBegin; i < totalEnd; i++) {
+        blockid_t id = voxels[i].id;
+        uint8_t bits = id < sizeof(flagsCache) ? flagsCache[id] : 0;
+        if ((bits & 0x80) == 0) {
+            const auto& def = indices.blocks.require(id);
+            bits = get_events_bits(def);
+            if (id < sizeof(flagsCache)) {
+                flagsCache[id] = bits | 0x80;
+            }
         }
+        bits &= 0x7F;
+        if (bits == 0) {
+            continue;
+        }
+        int x = i % CHUNK_W + chunk.x * CHUNK_W;
+        int z = (i / CHUNK_W) % CHUNK_D + chunk.z * CHUNK_D;
+        int y = (i / CHUNK_W / CHUNK_D);
+        block_register_events.push_back(BlockRegisterEvent {
+            static_cast<uint8_t>(bits | (present ? 1 : 0)), id, {x, y, z}
+        });
     }
 }
 
 void blocks_agent::on_chunk_present(
     const ContentIndices& indices, const Chunk& chunk
 ) {
-    on_chunk_register_event(
-        indices, chunk, BlockRegisterEvent::Type::REGISTER_UPDATING
-    );
+    on_chunk_register_event(indices, chunk, true);
 }
 
 void blocks_agent::on_chunk_remove(
     const ContentIndices& indices, const Chunk& chunk
 ) {
-    on_chunk_register_event(
-        indices, chunk, BlockRegisterEvent::Type::UNREGISTER_UPDATING
-    );
+    on_chunk_register_event(indices, chunk, false);
 }
 
 template <class Storage>
@@ -101,11 +122,14 @@ static void finalize_block(
             chunk.flags.blocksData = true;
         }
     }
-    if (def.rt.funcsset.onblocktick) {
-        block_register_events.push_back(BlockRegisterEvent {
-            BlockRegisterEvent::Type::UNREGISTER_UPDATING, def.rt.id, {x, y, z}
-        });
+
+    uint8_t bits = get_events_bits(def);
+    if (bits == 0) {
+        return;
     }
+    block_register_events.push_back(BlockRegisterEvent {
+        bits, def.rt.id, {x, y, z}
+    });
 }
 
 template <class Storage>
@@ -131,11 +155,13 @@ static void initialize_block(
     refresh_chunk_heights(chunk, id == BLOCK_AIR, y);
     mark_neighboirs_modified(chunks, cx, cz, lx, lz);
 
-    if (def.rt.funcsset.onblocktick) {
-        block_register_events.push_back(BlockRegisterEvent {
-            BlockRegisterEvent::Type::REGISTER_UPDATING, def.rt.id, {x, y, z}
-        });
+    uint8_t bits = get_events_bits(def);
+    if (bits == 0) {
+        return;
     }
+    block_register_events.push_back(BlockRegisterEvent {
+        static_cast<uint8_t>(bits | 1), def.rt.id, {x, y, z}
+    });
 }
 
 template <class Storage>
@@ -197,7 +223,8 @@ static inline voxel* raycast_blocks(
     glm::vec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
-    std::set<blockid_t> filter
+    std::set<blockid_t> filter,
+    bool includeNonSelectable
 ) {
     const auto& blocks = chunks.getContentIndices().blocks;
     float px = start.x;
@@ -240,8 +267,8 @@ static inline voxel* raycast_blocks(
         }
 
         const auto& def = blocks.require(voxel->id);
-        if ((filter.empty() && def.selectable) ||
-            (!filter.empty() && filter.find(def.rt.id) == filter.end())) {
+        if (voxel->id != BLOCK_AIR && (def.selectable || includeNonSelectable) &&
+            (filter.empty() || filter.find(def.rt.id) == filter.end())) {
             end.x = px + t * dx;
             end.y = py + t * dy;
             end.z = pz + t * dz;
@@ -338,9 +365,10 @@ voxel* blocks_agent::raycast(
     glm::vec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
-    std::set<blockid_t> filter
+    std::set<blockid_t> filter,
+    bool includeNonSelectable
 ) {
-    return raycast_blocks(chunks, start, dir, maxDist, end, norm, iend, filter);
+    return raycast_blocks(chunks, start, dir, maxDist, end, norm, iend, filter, includeNonSelectable);
 }
 
 voxel* blocks_agent::raycast(
@@ -351,9 +379,10 @@ voxel* blocks_agent::raycast(
     glm::vec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
-    std::set<blockid_t> filter
+    std::set<blockid_t> filter,
+    bool includeNonSelectable
 ) {
-    return raycast_blocks(chunks, start, dir, maxDist, end, norm, iend, filter);
+    return raycast_blocks(chunks, start, dir, maxDist, end, norm, iend, filter, includeNonSelectable);
 }
 
 // reduce nesting on next modification
@@ -404,7 +433,8 @@ inline void get_voxels_impl(
                 }
             } else {
                 const voxel* cvoxels = chunk->voxels;
-                const light_t* clights = chunk->lightmap.getLights();
+                const light_t* clights =
+                    chunk->lightmap ? chunk->lightmap->getLights() : nullptr;
                 for (int ly = y; ly < y + h; ly++) {
                     for (int lz = std::max(z, cz * CHUNK_D);
                              lz < std::min(z + d, (cz + 1) * CHUNK_D);
@@ -421,7 +451,8 @@ inline void get_voxels_impl(
                                 CHUNK_D
                             );
                             voxels[vidx] = cvoxels[cidx];
-                            light_t light = clights[cidx];
+                            light_t light = clights ? clights[cidx]
+                                                    : Lightmap::SUN_LIGHT_ONLY;
                             if (backlight) {
                                 const auto block = blocks.get(voxels[vidx].id);
                                 if (block && block->lightPassing) {

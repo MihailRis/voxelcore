@@ -1,5 +1,6 @@
 {
     "steps-sound": "steps/sand",
     "place-sound": "blocks/ground_place",
-    "break-sound": "blocks/ground_break"
+    "break-sound": "blocks/ground_break",
+    "sound-absorption": 0.8
 }

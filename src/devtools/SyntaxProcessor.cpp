@@ -7,19 +7,15 @@
 using namespace devtools;
 
 static std::unique_ptr<FontStylesScheme> build_styles(
+    const FontStylesScheme& colorScheme,
     const std::vector<devtools::Token>& tokens
 ) {
     using devtools::TokenTag;
-    FontStylesScheme styles {
-        {
-            {false, false, false, false, glm::vec4(0.8f, 0.8f, 0.8f, 1)}, // default
-            {true, false, false, false, glm::vec4(0.9, 0.6f, 0.4f, 1)},   // keyword
-            {false, false, false, false, glm::vec4(0.4, 0.8f, 0.5f, 1)},  // string
-            {false, false, false, false, glm::vec4(0.3, 0.3f, 0.3f, 1)},  // comment
-            {true, false, false, false, glm::vec4(1.0f, 0.2f, 0.1f, 1)},  // unexpected
-        }, 
-        {}
-    };
+    FontStylesScheme styles {colorScheme.palette, {}};
+    if (styles.palette.empty()) {
+        styles.palette.push_back(FontStyle {
+            false, false, false, false, glm::vec4(0.8f, 0.8f, 0.8f, 1)});
+    }
     size_t offset = 0;
     for (int i = 0; i < tokens.size(); i++) {
         const auto& token = tokens.at(i);
@@ -47,6 +43,9 @@ static std::unique_ptr<FontStylesScheme> build_styles(
                 styleIndex = 0;
                 break;
         }
+        if (styleIndex >= styles.palette.size()) {
+            styleIndex = 0;
+        }
         styles.map.insert(
             styles.map.end(), token.end.pos - token.start.pos, styleIndex
         );
@@ -67,7 +66,9 @@ void SyntaxProcessor::addSyntax(
 }
 
 std::unique_ptr<FontStylesScheme> SyntaxProcessor::highlight(
-    const std::string& ext, std::wstring_view source
+    const FontStylesScheme& colorScheme,
+    const std::string& ext,
+    std::wstring_view source
 ) const {
     const auto& found = langsExtensions.find(ext);
     if (found == langsExtensions.end()) {
@@ -76,7 +77,7 @@ std::unique_ptr<FontStylesScheme> SyntaxProcessor::highlight(
     const auto& syntax = *found->second;
     try {
         auto tokens = tokenize(syntax, "<string>", source);
-        return build_styles(tokens);
+        return build_styles(colorScheme, tokens);
     } catch (const parsing_error& err) {
         return nullptr;
     }

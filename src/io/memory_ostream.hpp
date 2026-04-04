@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <streambuf>
 #include <cstring>

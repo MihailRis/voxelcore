@@ -9,6 +9,10 @@
 
 PacksManager::PacksManager() = default;
 
+const std::vector<io::path>& PacksManager::getSources() const {
+    return sources;
+}
+
 void PacksManager::setSources(std::vector<io::path> sources) {
     this->sources = std::move(sources);
 }
@@ -108,17 +112,15 @@ static bool resolve_dependencies(
             continue;
         }
 
-        auto dep_pack = found -> second;
+        auto dep_pack = found->second;
 
         if (Version::matchesPattern(dep.version) && Version::matchesPattern(dep_pack.version)
             && Version(dep_pack.version)
                 .processOperator(dep.op, Version(dep.version))
         ) {
             // dependency pack version meets the required one
-            continue;
         } else if (dep.version == "*" || dep.version == dep_pack.version){
             // fallback: dependency pack version also meets required one
-            continue;
         } else {
             throw contentpack_error(
                 dep.id,

@@ -4,28 +4,29 @@
 #include <algorithm>
 #include <memory>
 
-#include "engine/Engine.hpp"
 #include "coders/commons.hpp"
-#include "debug/Logger.hpp"
 #include "coders/json.hpp"
-#include "content/ContentReport.hpp"
 #include "content/ContentControl.hpp"
+#include "content/ContentReport.hpp"
 #include "content/PacksManager.hpp"
-#include "world/files/WorldConverter.hpp"
-#include "world/files/WorldFiles.hpp"
+#include "debug/Logger.hpp"
+#include "engine/Engine.hpp"
+#include "engine/EnginePaths.hpp"
 #include "frontend/locale.hpp"
 #include "frontend/menu.hpp"
 #include "frontend/screens/LevelScreen.hpp"
 #include "frontend/screens/MenuScreen.hpp"
-#include "graphics/ui/GUI.hpp"
 #include "graphics/ui/elements/Menu.hpp"
 #include "graphics/ui/gui_util.hpp"
-#include "objects/Players.hpp"
+#include "graphics/ui/GUI.hpp"
 #include "interfaces/Task.hpp"
+#include "LevelController.hpp"
+#include "objects/Players.hpp"
 #include "util/stringutil.hpp"
+#include "world/files/WorldConverter.hpp"
+#include "world/files/WorldFiles.hpp"
 #include "world/Level.hpp"
 #include "world/World.hpp"
-#include "LevelController.hpp"
 
 static debug::Logger logger("engine-control");
 
@@ -132,9 +133,8 @@ static void check_world(const EnginePaths& paths, const io::path& folder) {
 }
 
 static const Content* load_world_content(Engine& engine, const io::path& folder) {
-    auto& paths = engine.getPaths();
+    const auto& paths = engine.getPaths();
     auto& contentControl = engine.getContentControl();
-    paths.setCurrentWorldFolder(folder);
 
     check_world(paths, folder);
     call(engine, [&contentControl]() {
@@ -220,9 +220,10 @@ static void confirm(
 }
 
 void EngineController::openWorld(const std::string& name, bool confirmConvert) {
-    const auto& paths = engine.getPaths();
+    auto& paths = engine.getPaths();
     auto& debugSettings = engine.getSettings().debug;
     auto folder = paths.getWorldsFolder() / name;
+    paths.setCurrentWorldFolder(folder);
 
     auto content = load_world_content(engine, folder);
     auto worldFiles = std::make_shared<WorldFiles>(folder, debugSettings);
@@ -275,8 +276,8 @@ void EngineController::createWorld(
     auto folder = paths.getWorldsFolder() / name;
 
     call(engine, [this, &paths, folder]() {
-        engine.getContentControl().loadContent();
         paths.setCurrentWorldFolder(folder);
+        engine.getContentControl().loadContent();
     });
 
     auto& contentControl = engine.getContentControl();
@@ -365,7 +366,9 @@ void EngineController::reconfigPacks(
                 );
             }
         } else {
-            auto world = controller->getLevel()->getWorld();
+            auto level = controller->getLevel();
+            auto world = level->getWorld();
+            controller->processBeforeQuit();
             controller->saveWorld();
 
             auto names = PacksManager::getNames(world->getPacks());

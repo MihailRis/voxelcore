@@ -1,6 +1,6 @@
 # Documentation
 
-Documentation for 0.29.
+Documentation for 0.31.
 
 ## Sections
 
@@ -18,5 +18,6 @@ Documentation for 0.29.
 - [Rigging](rigging.md)
 - [Scripting](scripting.md)
 - [Text styles](text-styles.md)
+- [VCM models format](vcm.md)
 - [World generator engine](world-generator.md)
 - [XML UI building](xml-ui-layouts.md)

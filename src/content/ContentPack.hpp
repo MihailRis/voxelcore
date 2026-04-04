@@ -27,15 +27,15 @@ public:
 };
 
 enum class VersionOperator {
-    EQUAL, GREATHER, LESS,
-    GREATHER_OR_EQUAL, LESS_OR_EQUAL
+    EQUAL, GREATER, LESS,
+    GREATER_OR_EQUAL, LESS_OR_EQUAL
 };
 
 VC_ENUM_METADATA(VersionOperator)
     {"=", VersionOperator::EQUAL},
-    {">", VersionOperator::GREATHER},
+    {">", VersionOperator::GREATER},
     {"<", VersionOperator::LESS},
-    {">=", VersionOperator::GREATHER_OR_EQUAL},
+    {">=", VersionOperator::GREATER_OR_EQUAL},
     {"<=", VersionOperator::LESS_OR_EQUAL},
 VC_ENUM_END
 

@@ -8,14 +8,28 @@
 using namespace scripting;
 
 namespace {
+    Level& require_level() {
+        if (level == nullptr) {
+            throw std::runtime_error("world is not open");
+        }
+        return *level;
+    }
+
+    const Content& require_content() {
+        if (content == nullptr) {
+            throw std::runtime_error("content is not initialized");
+        }
+        return *content;
+    }
+
     void validate_itemid(itemid_t id) {
-        if (id >= indices->items.count()) {
+        if (id >= require_content().getIndices()->items.count()) {
             throw std::runtime_error("invalid item id");
         }
     }
 
     Inventory& get_inventory(int64_t id) {
-        auto inv = level->inventories->get(id);
+        auto inv = require_level().inventories->get(id);
         if (inv == nullptr) {
             throw std::runtime_error("inventory not found: " + std::to_string(id));
         }
@@ -23,7 +37,7 @@ namespace {
     }
 
     Inventory& get_inventory(int64_t id, int arg) {
-        auto inv = level->inventories->get(id);
+        auto inv = require_level().inventories->get(id);
         if (inv == nullptr) {
             throw std::runtime_error(
                 "inventory not found: " + std::to_string(id) + " argument " +
@@ -73,6 +87,7 @@ static int l_set(lua::State* L, ItemStack& item) {
     if (!data.isObject() && data != nullptr) {
         throw std::runtime_error("invalid data argument type (table expected)");
     }
+    validate_itemid(itemid);
     item.set(ItemStack(itemid, count, std::move(data)));
     return 0;
 }
@@ -136,7 +151,7 @@ static int l_unbind_block(lua::State* L) {
 
 static int l_create(lua::State* L) {
     auto invsize = lua::tointeger(L, 1);
-    auto inv = level->inventories->create(invsize);
+    auto inv = require_level().inventories->create(invsize);
     if (inv == nullptr) {
         return lua::pushinteger(L, 0);
     }
@@ -145,13 +160,13 @@ static int l_create(lua::State* L) {
 
 static int l_remove(lua::State* L) {
     auto invid = lua::tointeger(L, 1);
-    level->inventories->remove(invid);
+    require_level().inventories->remove(invid);
     return 0;
 }
 
 static int l_clone(lua::State* L) {
     auto id = lua::tointeger(L, 1);
-    auto clone = level->inventories->clone(id);
+    auto clone = require_level().inventories->clone(id);
     if (clone == nullptr) {
         return lua::pushinteger(L, 0);
     }
@@ -256,5 +271,5 @@ const luaL_Reg inventorylib[] = {
     {"create", lua::wrap<l_create>},
     {"remove", lua::wrap<l_remove>},
     {"clone", lua::wrap<l_clone>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

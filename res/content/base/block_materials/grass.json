@@ -1,5 +1,6 @@
 {
     "steps-sound": "steps/grass",
     "place-sound": "steps/grass",
-    "break-sound": "steps/grass"
+    "break-sound": "steps/grass",
+    "sound-absorption": 0.85
 }

@@ -18,11 +18,11 @@ local z = ...
 pf.set_target({x, y, z})
 
 --- Получение текущей цели агента
-local target = pf.get_target() --> vec3 или nil
+local target = pf.get_target() -> vec3 или nil
 --- ...
 
 --- Получение текущего маршрута агента
-local route = pf.get_route() --> table<vec3> или nil
+local route = pf.get_route() -> table<vec3> или nil
 --- ...
 ```
 
@@ -30,19 +30,19 @@ local route = pf.get_route() --> table<vec3> или nil
 
 ```lua
 --- Создание нового агента. Возвращает идентификатор созданного агента
-local agent = pathfinding.create_agent() --> int
+local agent = pathfinding.create_agent() -> int
 
 --- Удаление агента по идентификатору. Возвращает true, если агент существовал, иначе false
-pathfinding.remove_agent(agent: int) --> bool
+pathfinding.remove_agent(agent: int) -> boolean
 
 --- Установка состояния агента (включен/выключен)
-pathfinding.set_enabled(agent: int, enabled: bool)
+pathfinding.set_enabled(agent: int, enabled: boolean)
 
 --- Проверка состояния агента. Возвращает true, если агент включен, иначе false
-pathfinding.is_enabled(agent: int) --> bool
+pathfinding.is_enabled(agent: int) -> boolean
 
 --- Создание маршрута на основе заданных точек. Возвращает массив точек маршрута
-pathfinding.make_route(start: vec3, target: vec3) --> table<vec3>
+pathfinding.make_route(start: vec3, target: vec3) -> table<vec3>
 
 --- Асинхронное создание маршрута на основе заданных точек.
 --- Функция позволяет выполнять поиск пути в фоновом режиме, не блокируя основной поток выполнения
@@ -50,7 +50,7 @@ pathfinding.make_route_async(agent: int, start: vec3, target: vec3)
 
 --- Получение маршрута, который агент уже нашел. Используется для получения маршрута после асинхронного поиска.
 --- Если поиск ещё не завершён, возвращает nil. Если маршрут не найден, возвращает пустую таблицу.
-pathfinding.pull_route(agent: int) --> table<vec3> или nil
+pathfinding.pull_route(agent: int) -> table<vec3> или nil
 
 --- Установка максимального количества посещенных блоков для агента. Используется для ограничения объема работы алгоритма поиска пути.
 pathfinding.set_max_visited(agent: int, max_visited: int)

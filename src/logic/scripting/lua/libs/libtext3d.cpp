@@ -108,5 +108,5 @@ const luaL_Reg text3dlib[] = {
     {"set_axis_y", wrap_hud<l_set_axis_y>},
     {"set_rotation", wrap_hud<l_set_rotation>},
     {"update_settings", wrap_hud<l_update_settings>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

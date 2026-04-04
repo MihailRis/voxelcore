@@ -140,6 +140,12 @@ file.create_zip(directory: str, output_file: str) --> str
 Creates a ZIP archive from the contents of the specified directory.
 
 ```lua
+file.create_memory_device() --> str
+```
+
+Creates a memory file system and returns entry point name. Lives until content unload.
+
+```lua
 file.name(path: str) --> str
 ```
 

@@ -11,5 +11,6 @@ uniform float u_timer;
 uniform samplerCube u_skybox;
 uniform vec3 u_torchlightColor;
 uniform float u_torchlightDistance;
+uniform vec3 u_minSkyLight;
 
 #endif // GLSL_WORLD_UNIFORMS_

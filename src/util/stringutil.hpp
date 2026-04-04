@@ -10,6 +10,9 @@ namespace util {
     /// @brief Function used for string serialization in text formats
     std::string escape(std::string_view s, bool escapeUnicode=true);
 
+    /// @brief Escape all special XML characters 
+    std::wstring escape_xml(std::wstring_view s);
+
     /// @brief Function used for error messages
     std::string quote(const std::string& s);
 

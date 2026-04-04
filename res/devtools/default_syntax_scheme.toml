@@ -1,0 +1,19 @@
+[default]
+bold = false
+italic = false
+strikethrough = false
+underline = false
+color = [0.8, 0.8, 0.8, 1]
+
+[keyword]
+bold = true
+color = [0.9, 0.6, 0.4, 1]
+
+[literal]
+color = [0.4, 0.8, 0.5, 1]
+
+[comment]
+color = [0.5, 0.7, 1.0, 1]
+
+[error]
+color = [1.0, 0.2, 0.1, 1]

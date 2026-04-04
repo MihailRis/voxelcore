@@ -187,7 +187,7 @@ function vector3:rot(angle, axis, convert2deg)
             self.y = sx * x + cx * y
         end
     elseif axis == nil then
-        local cosx, sx, cy, sy = math.cos(angle), math.sin(angle), math.cos(angle), math.sin(angle)
+        local cx, sx, cy, sy = math.cos(angle), math.sin(angle), math.cos(angle), math.sin(angle)
         local x, y, z = self.x, self.y, self.z
         self.x = cx * x - sx * y
         self.y = sx * x + cx * y

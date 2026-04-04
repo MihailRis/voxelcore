@@ -60,6 +60,15 @@ struct WeatherPreset : Serializable {
     /// @brief Weather effects intensity
     float intensity = 0.0f;
 
+    /// @brief Skybox color multiplier 
+    glm::vec3 skyTint {1.0f, 1.0f, 1.0f};
+
+    /// @brief Clouds color multiplier
+    glm::vec3 cloudsTint {1.0f, 1.0f, 1.0f};
+
+    /// @brief Minimal sky-emitted lights (moon light)
+    glm::vec3 minSkyLight {0.2f, 0.25f, 0.33f};
+
     dv::value serialize() const override;
     void deserialize(const dv::value& src) override;
 };

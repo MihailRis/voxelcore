@@ -1,53 +1,53 @@
 #include "DebugLinesRenderer.hpp"
 
-#include "graphics/core/Shader.hpp"
-#include "window/Camera.hpp"
-#include "graphics/core/LineBatch.hpp"
 #include "graphics/core/DrawContext.hpp"
-#include "graphics/render/LinesRenderer.hpp"
-#include "world/Level.hpp"
+#include "graphics/core/LineBatch.hpp"
+#include "graphics/core/Shader.hpp"
+#include "maths/voxmaths.hpp"
 #include "voxels/Chunk.hpp"
 #include "voxels/Pathfinding.hpp"
-#include "maths/voxmaths.hpp"
+#include "window/Camera.hpp"
+#include "world/Level.hpp"
 
 bool DebugLinesRenderer::showPaths = false;
 
-static void draw_route(
-    LinesRenderer& lines, const voxels::Agent& agent
-) {
+static void draw_route(LineBatch& batch, const voxels::Agent& agent) {
     const auto& route = agent.route;
-    if (!route.found)
-        return;
+    if (!route.found) return;
+
+    batch.lineWidth(1.0f);
 
     for (int i = 1; i < route.nodes.size(); i++) {
-        const auto& a = route.nodes.at(i - 1);
-        const auto& b = route.nodes.at(i);
+        const auto& a = glm::vec3(route.nodes.at(i - 1).pos);
+        const auto& b = glm::vec3(route.nodes.at(i).pos);
+
+        glm::vec3 a_base = a + glm::vec3(0.5);
+        glm::vec3 b_base = b + glm::vec3(0.5);
+        glm::vec3 b_up = b + glm::vec3(0.5f, 1.0f, 0.5f);
 
         if (i == 1) {
-            lines.pushLine(
-                glm::vec3(a.pos) + glm::vec3(0.5f),
-                glm::vec3(a.pos) + glm::vec3(0.5f, 1.0f, 0.5f),
-                glm::vec4(1, 1, 1, 1)
+            glm::vec3 a_up = a + glm::vec3(0.5f, 1.0f, 0.5f);
+
+            batch.line(
+                a_base.x, a_base.y, a_base.z, a_up.x, a_up.y, a_up.z, 1, 1, 1, 1
             );
         }
-
-        lines.pushLine(
-            glm::vec3(a.pos) + glm::vec3(0.5f),
-            glm::vec3(b.pos) + glm::vec3(0.5f),
-            glm::vec4(1, 0, 1, 1)
+        batch.line(
+            a_base.x, a_base.y, a_base.z, b_base.x, b_base.y, b_base.z,
+            1, 0, 1, 1
         );
-
-        lines.pushLine(
-            glm::vec3(b.pos) + glm::vec3(0.5f),
-            glm::vec3(b.pos) + glm::vec3(0.5f, 1.0f, 0.5f),
-            glm::vec4(1, 1, 1, 1)
+        batch.line(
+            b_base.x, b_base.y, b_base.z, b_up.x, b_up.y, b_up.z, 1, 1, 1, 1
         );
     }
+
+    batch.flush();
 }
 
 void DebugLinesRenderer::drawBorders(
     LineBatch& batch, int sx, int sy, int sz, int ex, int ey, int ez
 ) {
+    batch.lineWidth(1.0f);
     int ww = ex - sx;
     int dd = ez - sz;
     /*corner*/ {
@@ -89,13 +89,12 @@ void DebugLinesRenderer::drawCoordSystem(
     batch.line(0.f, 0.f, 0.f, length, 0.f, 0.f, 1.f, 0.f, 0.f, 1.f);
     batch.line(0.f, 0.f, 0.f, 0.f, length, 0.f, 0.f, 1.f, 0.f, 1.f);
     batch.line(0.f, 0.f, 0.f, 0.f, 0.f, length, 0.f, 0.f, 1.f, 1.f);
+    batch.flush();
 }
-
 
 void DebugLinesRenderer::render(
     DrawContext& pctx,
     const Camera& camera,
-    LinesRenderer& renderer,
     LineBatch& linesBatch,
     Shader& linesShader,
     bool showChunkBorders
@@ -103,7 +102,7 @@ void DebugLinesRenderer::render(
     // In-world lines
     if (showPaths) {
         for (const auto& [_, agent] : level.pathfinding->getAgents()) {
-            draw_route(renderer, agent);
+            draw_route(linesBatch, agent);
         }
     }
     DrawContext ctx = pctx.sub(&linesBatch);

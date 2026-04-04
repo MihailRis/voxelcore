@@ -11,5 +11,5 @@
     <label ifnot='%{error}' pos='80,28' size='355,50' multiline='true' color='#FFFFFFB2'>
         %{description}
     </label>
-    <image pos='8,8' src='%{icon}' size='64'/>
+    <image pos='8,8' src='%{icon}' fallback='gui/no_icon' size='64'/>
 </container>

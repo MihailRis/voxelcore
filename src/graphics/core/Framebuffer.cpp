@@ -89,6 +89,10 @@ Texture* Framebuffer::getTexture() const {
     return texture.get();
 }
 
+std::shared_ptr<Texture> Framebuffer::getSharedTexture() const {
+    return texture;
+}
+
 uint Framebuffer::getWidth() const {
     return width;
 }

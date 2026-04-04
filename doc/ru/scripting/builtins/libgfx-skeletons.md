@@ -9,17 +9,17 @@
 
 ```lua
 -- Возвращает объектную обёртку над скелетом
-local skeleton = gfx.skeletons.get(name: str)
+local skeleton = gfx.skeletons.get(name: string)
 
 -- Возвращает индекс кости по имени или nil
-skeleton:index(name: str) -> int
+skeleton:index(name: string) -> int
 
 -- Возвращает имя модели, назначенной на кость с указанным индексом
-skeleton:get_model(index: int) -> str
+skeleton:get_model(index: int) -> string
 
 -- Переназначает модель кости с указанным индексом
 -- Сбрасывает до изначальной, если не указывать имя
-skeleton:set_model(index: int, name: str)
+skeleton:set_model(index: int, name: string)
 
 -- Возвращает матрицу трансформации кости с указанным индексом
 skeleton:get_matrix(index: int) -> mat4
@@ -28,18 +28,18 @@ skeleton:get_matrix(index: int) -> mat4
 skeleton:set_matrix(index: int, matrix: mat4)
 
 -- Возвращает текстуру по ключу (динамически назначаемые текстуры - '$имя')
-skeleton:get_texture(key: str) -> str
+skeleton:get_texture(key: string) -> string
 
 -- Назначает текстуру по ключу
-skeleton:set_texture(key: str, value: str)
+skeleton:set_texture(key: string, value: string)
 
 -- Проверяет статус видимости кости по индесу 
 -- или всего скелета, если индекс не указан
-skeleton:is_visible([опционально] index: int) -> bool
+skeleton:is_visible([опционально] index: int) -> boolean
 
 -- Устанавливает статус видимости кости по индексу
 -- или всего скелета, если индекс не указан
-skeleton:set_visible([опционально] index: int, status: bool)
+skeleton:set_visible([опционально] index: int, status: boolean)
 
 -- Возвращает цвет сущности
 skeleton:get_color() -> vec3

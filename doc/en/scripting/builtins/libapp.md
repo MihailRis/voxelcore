@@ -7,6 +7,8 @@ The script/test name without the path and extension is available as `app.script`
 local filename = "script:"..app.script..".lua"
 ```
 
+Since the control script may not belong to any of the packs, it does not belongs to its own package and has its own global namespace in which all global functions and tables are available, as well as the `app` library.
+
 ## Functions
 
 ```lua
@@ -156,3 +158,36 @@ app.get_setting_info(name: str) -> {
 ```
 
 Returns a table with information about a setting. Throws an exception if the setting does not exist.
+
+```lua
+app.focus()
+```
+
+Brings the window to front and sets input focus.
+
+```lua
+app.create_memory_device(
+    -- entry-point name
+    name: str
+)
+```
+
+Creates an in-memory filesystem.
+
+```lua
+app.get_content_sources() -> table<string>
+```
+
+Returns a list of content sources (paths), in descending priority order.
+
+``lua
+app.set_content_sources(sources: table<string>)
+```
+
+Sets a list of content sources (paths). Specified in descending priority order.
+
+``lua
+app.reset_content_sources()
+```
+
+Resets content sources.

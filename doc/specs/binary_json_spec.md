@@ -1,6 +1,6 @@
 # Binary JSON Format Specification
 
-Format version: 1.0
+Format version: 1.1
 
 This binary data format is developed for use as binary version of JSON in [VoxelEngine-Cpp](https://github.com/MihailRis/VoxelEngine-Cpp) and not compatible with [BSON](https://bsonspec.org/spec.html) due to elements/entries syntax and type codes differences
 
@@ -26,10 +26,10 @@ document  = uint32 (*entry) %x00        uint32 stores bytes number
 entry     = cstring value
 value     = %x01 document
           / %x02 (*value) %x00          list of values
-          / %x03 byte                   8 bit integer
-          / %x04 int16                  16 bit integer
-          / %x05 int32                  32 bit integer
-          / %x06 int64                  64 bit integer
+          / %x03 byte                   8 bit unsigned integer
+          / %x04 int16                  16 bit signed integer
+          / %x05 int32                  32 bit signed integer
+          / %x06 int64                  64 bit signed integer
           / %x07 float64                number
           / %x08 string                 utf-8 encoded string
           / %x09 uint32 (*byte)         bytes array

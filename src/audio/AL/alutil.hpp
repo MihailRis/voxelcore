@@ -1,17 +1,12 @@
 #pragma once
 
+#include "typedefs.hpp"
+
 #include <cstdint>
 #include <string>
 #include <type_traits>
 
-#include "typedefs.hpp"
-
-#ifdef __APPLE__
-#include <OpenAL/al.h>
-#else
 #include <AL/al.h>
-#endif
-
 #include <glm/glm.hpp>
 
 #define AL_CHECK(STATEMENT) \

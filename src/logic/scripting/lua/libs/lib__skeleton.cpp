@@ -1,6 +1,7 @@
 #include "objects/rigging.hpp"
 #include "libentity.hpp"
 
+#include "engine/Engine.hpp"
 #include "graphics/render/WorldRenderer.hpp"
 #include "graphics/render/NamedSkeletons.hpp"
 
@@ -21,17 +22,23 @@ static int index_range_check(
 }
 
 static rigging::Skeleton* get_skeleton(lua::State* L) {
+    if (scripting::engine->isHeadless()) {
+        return nullptr;
+    }
     if (lua::isstring(L, 1)) {
         return scripting::renderer->skeletons->getSkeleton(lua::tostring(L, 1));
     }
     if (auto entity = get_entity(L, 1)) {
-        return &entity->getSkeleton();
+        return entity->getSkeleton();
     }
     return nullptr;
 }
 
 static int l_get_model(lua::State* L) {
     if (auto skeleton = get_skeleton(L)) {
+        if (skeleton->config == nullptr) {
+            return 0;
+        }
         auto& rigConfig = *skeleton->config;
         auto index = index_range_check(*skeleton, lua::tointeger(L, 2));
         const auto& modelOverride = skeleton->modelOverrides[index];
@@ -92,6 +99,9 @@ static int l_set_texture(lua::State* L) {
 
 static int l_index(lua::State* L) {
     if (auto skeleton = get_skeleton(L)) {
+        if (skeleton->config == nullptr) {
+            return 0;
+        }
         if (auto bone = skeleton->config->find(lua::require_string(L, 2))) {
             return lua::pushinteger(L, bone->getIndex());
         }
@@ -169,5 +179,5 @@ const luaL_Reg skeletonlib[] = {
     {"is_interpolated", lua::wrap<l_is_interpolated>},
     {"set_interpolated", lua::wrap<l_set_interpolated>},
     {"exists", lua::wrap<l_exists>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

@@ -11,12 +11,12 @@ ImageData::ImageData(ImageFormat format, uint width, uint height)
     : format(format), width(width), height(height) {
     size_t pixsize;
     switch (format) {
-        case ImageFormat::rgb888: pixsize = 3; break;
-        case ImageFormat::rgba8888: pixsize = 4; break;
+        case ImageFormat::RGB888: pixsize = 3; break;
+        case ImageFormat::RGBA8888: pixsize = 4; break;
         default:
             throw std::runtime_error("format is not supported");
     }
-    data = std::make_unique<ubyte[]>(width * height * pixsize);
+    data = std::make_unique<ubyte[]>((width + width % 2) * (height + width % 2) * pixsize);
 }
 
 ImageData::ImageData(ImageFormat format, uint width, uint height, std::unique_ptr<ubyte[]> data) 
@@ -27,8 +27,8 @@ ImageData::ImageData(ImageFormat format, uint width, uint height, const ubyte* d
     : format(format), width(width), height(height) {
     size_t pixsize;
     switch (format) {
-        case ImageFormat::rgb888: pixsize = 3; break;
-        case ImageFormat::rgba8888: pixsize = 4; break;
+        case ImageFormat::RGB888: pixsize = 3; break;
+        case ImageFormat::RGBA8888: pixsize = 4; break;
         default:
             throw std::runtime_error("format is not supported");
     }
@@ -40,9 +40,9 @@ ImageData::~ImageData() = default;
 
 void ImageData::flipX() {
     switch (format) {
-        case ImageFormat::rgb888:
-        case ImageFormat::rgba8888: {
-            uint size = (format == ImageFormat::rgba8888) ? 4 : 3;
+        case ImageFormat::RGB888:
+        case ImageFormat::RGBA8888: {
+            uint size = (format == ImageFormat::RGBA8888) ? 4 : 3;
             for (uint y = 0; y < height; y++) {
                 for (uint x = 0; x < width / 2; x++) {
                     for (uint c = 0; c < size; c++) {
@@ -62,9 +62,9 @@ void ImageData::flipX() {
 
 void ImageData::flipY() {
     switch (format) {
-        case ImageFormat::rgb888:
-        case ImageFormat::rgba8888: {
-            uint size = (format == ImageFormat::rgba8888) ? 4 : 3;
+        case ImageFormat::RGB888:
+        case ImageFormat::RGBA8888: {
+            uint size = (format == ImageFormat::RGBA8888) ? 4 : 3;
             for (uint y = 0; y < height/2; y++) {
                 for (uint x = 0; x < width; x++) {
                     for (uint c = 0; c < size; c++) {
@@ -87,12 +87,23 @@ void ImageData::blit(const ImageData& image, int x, int y) {
         blitMatchingFormat(image, x, y);
         return;
     }
-    if (format == ImageFormat::rgba8888 && 
-        image.format == ImageFormat::rgb888) {
+    if (format == ImageFormat::RGBA8888 && 
+        image.format == ImageFormat::RGB888) {
         blitRGB_on_RGBA(image, x, y);
         return;
     }
     throw std::runtime_error("mismatching format");
+}
+
+std::unique_ptr<ImageData> ImageData::cropped(int x, int y, int width, int height) const {
+    width = std::min<int>(width, this->width - x);
+    height = std::min<int>(height, this->height - y);
+    if (width <= 0 || height <= 0) {
+        throw std::runtime_error("invalid crop dimensions");
+    }
+    auto subImage = std::make_unique<ImageData>(format, width, height);
+    subImage->blitMatchingFormat(*this, -x, -y);
+    return subImage;
 }
 
 static bool clip_line(int& x1, int& y1, int& x2, int& y2, int width, int height) {
@@ -177,10 +188,10 @@ static void draw_line(ImageData& image, int x1, int y1, int x2, int y2, const gl
 
 void ImageData::drawLine(int x1, int y1, int x2, int y2, const glm::ivec4& color) {
     switch (format) {
-        case ImageFormat::rgb888:
+        case ImageFormat::RGB888:
             draw_line<3>(*this, x1, y1, x2, y2, color);
             break;
-        case ImageFormat::rgba8888:
+        case ImageFormat::RGBA8888:
             draw_line<4>(*this, x1, y1, x2, y2, color);
             break;
         default:
@@ -212,10 +223,10 @@ static void draw_rect(ImageData& image, int dstX, int dstY, int width, int heigh
 
 void ImageData::drawRect(int x, int y, int width, int height, const glm::ivec4& color) {
     switch (format) {
-        case ImageFormat::rgb888:
+        case ImageFormat::RGB888:
             draw_rect<3>(*this, x, y, width, height, color);
             break;
-        case ImageFormat::rgba8888:
+        case ImageFormat::RGBA8888:
             draw_rect<4>(*this, x, y, width, height, color);
             break;
         default:
@@ -249,8 +260,8 @@ void ImageData::blitRGB_on_RGBA(const ImageData& image, int x, int y) {
 void ImageData::blitMatchingFormat(const ImageData& image, int x, int y) {
     uint comps;
     switch (format) {
-        case ImageFormat::rgb888: comps = 3; break;
-        case ImageFormat::rgba8888: comps = 4; break;
+        case ImageFormat::RGB888: comps = 3; break;
+        case ImageFormat::RGBA8888: comps = 4; break;
         default:
             throw std::runtime_error("only unsigned byte formats supported");    
     }
@@ -284,8 +295,8 @@ void ImageData::blitMatchingFormat(const ImageData& image, int x, int y) {
 void ImageData::extrude(int x, int y, int w, int h) {
     uint comps;
     switch (format) {
-        case ImageFormat::rgb888: comps = 3; break;
-        case ImageFormat::rgba8888: comps = 4; break;
+        case ImageFormat::RGB888: comps = 3; break;
+        case ImageFormat::RGBA8888: comps = 4; break;
         default:
             throw std::runtime_error("only unsigned byte formats supported");    
     }
@@ -409,9 +420,128 @@ void ImageData::fixAlphaColor() {
     }
 }
 
+static void check_matching(const ImageData& a, const ImageData& b) {
+    if (b.getWidth() != a.getWidth() ||
+        b.getHeight() != a.getHeight() ||
+        b.getFormat() != a.getFormat()) {
+        throw std::runtime_error("image sizes or formats do not match");
+    }
+}
+
+void ImageData::mulColor(const glm::ivec4& color) {    
+    uint comps;
+    switch (format) {
+        case ImageFormat::RGB888: comps = 3; break;
+        case ImageFormat::RGBA8888: comps = 4; break;
+        default:
+            throw std::runtime_error("only unsigned byte formats supported");    
+    }
+    for (uint y = 0; y < height; y++) {
+        for (uint x = 0; x < width; x++) {
+            uint idx = (y * width + x) * comps;
+            for (uint c = 0; c < comps; c++) {
+                float val = static_cast<float>(data[idx + c]) * color[c] / 255.0f;
+                data[idx + c] =
+                    static_cast<ubyte>(std::min(std::max(val, 0.0f), 255.0f));
+            }
+        }
+    }
+}
+
+void ImageData::addColor(const ImageData& other, int multiplier) {
+    check_matching(*this, other);
+
+    uint comps;
+    switch (format) {
+        case ImageFormat::RGB888: comps = 3; break;
+        case ImageFormat::RGBA8888: comps = 4; break;
+        default:
+            throw std::runtime_error("only unsigned byte formats supported");    
+    }
+    for (uint y = 0; y < height; y++) {
+        for (uint x = 0; x < width; x++) {
+            uint idx = (y * width + x) * comps;
+            for (uint c = 0; c < comps; c++) {
+                int val = data[idx + c] + other.data[idx + c] * multiplier;
+                data[idx + c] =
+                    static_cast<ubyte>(std::min(std::max(val, 0), 255));
+            }
+        }
+    }
+}
+
+void ImageData::extend(int newWidth, int newHeight) {
+    size_t comps;
+    switch (format) {
+        case ImageFormat::RGB888: comps = 3; break;
+        case ImageFormat::RGBA8888: comps = 4; break;
+        default:
+            throw std::runtime_error("only unsigned byte formats supported");    
+    }
+    auto newData = std::make_unique<ubyte[]>(newWidth * newHeight * comps);
+    for (uint y = 0; y < newHeight; y++) {
+        for (uint x = 0; x < newWidth; x++) {
+            for (size_t c = 0; c < comps; c++) {
+                if (x < width && y < height) {
+                    newData[(y * newWidth + x) * comps + c] =
+                        data[(y * width + x) * comps + c];
+                } else {
+                    newData[(y * newWidth + x) * comps + c] = 0;
+                }
+            }
+        }
+    }
+    data = std::move(newData);
+    width = newWidth;
+    height = newHeight;
+}
+
+void ImageData::addColor(const glm::ivec4& color, int multiplier) {
+    uint comps;
+    switch (format) {
+        case ImageFormat::RGB888: comps = 3; break;
+        case ImageFormat::RGBA8888: comps = 4; break;
+        default:
+            throw std::runtime_error("only unsigned byte formats supported");    
+    }
+    for (uint y = 0; y < height; y++) {
+        for (uint x = 0; x < width; x++) {
+            uint idx = (y * width + x) * comps;
+            for (uint c = 0; c < comps; c++) {
+                int val = data[idx + c] + color[c] * multiplier;
+                data[idx + c] =
+                    static_cast<ubyte>(std::min(std::max(val, 0), 255));
+            }
+        }
+    }
+}
+
+void ImageData::mulColor(const ImageData& other) {
+    check_matching(*this, other);
+
+    uint comps;
+    switch (format) {
+        case ImageFormat::RGB888: comps = 3; break;
+        case ImageFormat::RGBA8888: comps = 4; break;
+        default:
+            throw std::runtime_error("only unsigned byte formats supported");    
+    }
+    for (uint y = 0; y < height; y++) {
+        for (uint x = 0; x < width; x++) {
+            uint idx = (y * width + x) * comps;
+            for (uint c = 0; c < comps; c++) {
+                float val = static_cast<float>(data[idx + c]) *
+                            static_cast<float>(other.data[idx + c]) / 255.0f;
+                data[idx + c] =
+                    static_cast<ubyte>(std::min(std::max(val, 0.0f), 255.0f));
+            }
+        }
+    }
+}
+
 std::unique_ptr<ImageData> add_atlas_margins(ImageData* image, int grid_size) {
     // RGBA is only supported
-    assert(image->getFormat() == ImageFormat::rgba8888);
+    assert(image->getFormat() == ImageFormat::RGBA8888);
     assert(image->getWidth() == image->getHeight());
 
     int srcwidth = image->getWidth();

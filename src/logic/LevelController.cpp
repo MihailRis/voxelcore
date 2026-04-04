@@ -4,6 +4,7 @@
 
 #include "debug/Logger.hpp"
 #include "engine/Engine.hpp"
+#include "engine/EnginePaths.hpp"
 #include "world/files/WorldFiles.hpp"
 #include "maths/voxmaths.hpp"
 #include "objects/Entities.hpp"
@@ -22,12 +23,14 @@
 static debug::Logger logger("level-control");
 
 LevelController::LevelController(
-    Engine* engine, std::unique_ptr<Level> levelPtr, Player* clientPlayer
+    Engine& engine, std::unique_ptr<Level> levelPtr, Player* clientPlayer
 )
-    : settings(engine->getSettings()),
+    : engine(engine),
+      settings(engine.getSettings()),
       level(std::move(levelPtr)),
       chunks(std::make_unique<ChunksController>(*level)),
-      playerTickClock(20, 3) {
+      playerTickClock(20, 3),
+      clientPlayer(clientPlayer) {
     
     level->events->listen(LevelEventType::CHUNK_PRESENT, [](auto, Chunk* chunk) {
         scripting::on_chunk_present(*chunk, chunk->flags.loaded);
@@ -59,7 +62,7 @@ LevelController::LevelController(
             player->chunks->configure(
                 std::floor(position.x), std::floor(position.z), 1
             );
-            chunks->update(16, 1, 0, *player);
+            chunks->update(16, 1, 0, *player, player.get() == clientPlayer);
             if (player->chunks->get(
                     std::floor(position.x), 0, std::floor(position.z)
                 )) {
@@ -89,7 +92,8 @@ void LevelController::update(float delta, bool pause) {
             settings.chunks.loadSpeed.get(),
             settings.chunks.loadDistance.get(),
             settings.chunks.padding.get(),
-            *player
+            *player,
+            player.get() == clientPlayer
         );
     }
     if (!pause) {
@@ -121,6 +125,17 @@ void LevelController::update(float delta, bool pause) {
     level->entities->clean();
 }
 
+void LevelController::processBeforeQuit() {
+    preQuitCallbacks.notify();
+    // todo: move somewhere else
+    for (auto player : level->players->getAll()) {
+        if (player->chunks) {
+            player->chunks->saveAndClear();
+        }
+    }
+    scripting::process_before_quit();
+}
+
 void LevelController::saveWorld() {
     auto world = level->getWorld();
     if (world->isNameless()) {
@@ -136,6 +151,7 @@ void LevelController::saveWorld() {
 
 void LevelController::onWorldQuit() {
     scripting::on_world_quit();
+    engine.getPaths().setCurrentWorldFolder("");
 }
 
 Level* LevelController::getLevel() {

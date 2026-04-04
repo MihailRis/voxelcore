@@ -3,17 +3,15 @@
 
 #include <algorithm>
 #include <glm/glm.hpp>
-#include <iostream>
 
 #include "loading/ContentUnitLoader.hpp"
 #include "ContentBuilder.hpp"
 #include "ContentPack.hpp"
 #include "debug/Logger.hpp"
 #include "logic/scripting/scripting.hpp"
-#include "objects/rigging.hpp"
 #include "util/listutil.hpp"
 #include "util/stringutil.hpp"
-#include "io/engine_paths.hpp"
+#include "engine/EnginePaths.hpp"
 
 static debug::Logger logger("content-loader");
 
@@ -289,6 +287,7 @@ void ContentLoader::loadContent(const dv::value& root) {
             item.icon = def.name;
             item.placingBlock = def.name;
             item.tags = def.tags;
+            item.scriptFile = def.name + BLOCK_ITEM_SUFFIX + ".lua";
     
             for (uint j = 0; j < 4; j++) {
                 item.emission[j] = def.emission[j];
@@ -398,16 +397,6 @@ void ContentLoader::load() {
         }
     }
 
-    // Load skeletons
-    io::path skeletonsDir = folder / "skeletons";
-    foreach_file(skeletonsDir, [this](const io::path& file) {
-        std::string name = pack->id + ":" + file.stem();
-        std::string text = io::read_string(file);
-        builder.add(
-            rigging::SkeletonConfig::parse(text, file.string(), name)
-        );
-    });
-
     // Process content.json and load defined content units
     auto contentFile = pack->getContentFile();
     if (io::exists(contentFile)) {
@@ -452,7 +441,8 @@ static void load_script(const Content& content, T& def) {
             def.name,
             scriptfile,
             def.scriptFile,
-            def.rt.funcsset
+            def.rt.funcsset,
+            def.rt.eventNames
         );
     }
 }
@@ -492,6 +482,7 @@ void ContentLoader::loadScripts(Content& content) {
     load_scripts(content, content.items);
 
     for (const auto& [packid, runtime] : content.getPacks()) {
+        auto env = runtime->getEnvironment();
         const auto& pack = runtime->getInfo();
         const auto& folder = pack.folder;
         
@@ -500,9 +491,10 @@ void ContentLoader::loadScripts(Content& content) {
 
         // Load entity components
         io::path componentsDir = folder / "scripts/components";
-        foreach_file(componentsDir, [&pack](const io::path& file) {
+        foreach_file(componentsDir, [&pack, env](const io::path& file) {
             auto name = pack.id + ":" + file.stem();
             scripting::load_entity_component(
+                env,
                 name,
                 file,
                 pack.id + ":scripts/components/" + file.name()

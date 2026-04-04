@@ -16,11 +16,15 @@ struct AudioSettings {
     NumberSetting volumeUI {1.0f, 0.0f, 1.0f, setting_format::percent};
     NumberSetting volumeAmbient {1.0f, 0.0f, 1.0f, setting_format::percent};
     NumberSetting volumeMusic {1.0f, 0.0f, 1.0f, setting_format::percent};
+
+    StringSetting inputDevice {"auto"};
+
+    FlagSetting acousticEffects {true};
 };
 
 struct DisplaySettings {
-    /// @brief Is window in full screen mode
-    FlagSetting fullscreen {false};
+    /// @brief Window mode (windowed/fullscreen/borderless)
+    IntegerSetting windowMode {0, 0, 2};
     /// @brief Window width (pixels)
     IntegerSetting width {1280};
     /// @brief Window height (pixels)
@@ -31,6 +35,8 @@ struct DisplaySettings {
     IntegerSetting framerate {-1, -1, 120};
     /// @brief Limit framerate when window is iconified
     FlagSetting limitFpsIconified {false};
+    /// @brief Adaptive framerate in menu (experimental)
+    FlagSetting adaptiveFpsInMenu {false};
 };
 
 struct ChunksSettings {
@@ -75,14 +81,20 @@ struct GraphicsSettings {
     IntegerSetting chunkMaxVerticesDense {800'000, 0, 8'000'000};
     /// @brief Limit of chunk renderers count
     IntegerSetting chunkMaxRenderers {6, -4, 32};
+    /// @brief Particles renderer vertices buffer capacity
+    IntegerSetting particlesBatchVertices {4'096, 0, 1'000'000};
     /// @brief Advanced render pipeline
     FlagSetting advancedRender {true};
-    /// @brief Screen space ambient occlusion
-    FlagSetting ssao {true};
+    /// @brief Screen space ambient occlusion quality
+    IntegerSetting ssao {1, 0, 2};
     /// @brief Shadows quality
     IntegerSetting shadowsQuality {0, 0, 3};
     /// @brief Dense render distance
     IntegerSetting denseRenderDistance {56, 0, 10'000};
+    /// @brief Soft lighting for blocks
+    FlagSetting softLighting {true};
+    /// @brief Clouds quality level
+    IntegerSetting cloudsQuality {2, 0, 2};
 };
 
 struct PathfindingSettings {
@@ -109,6 +121,13 @@ struct UiSettings {
 struct NetworkSettings {
 };
 
+struct SystemSettings {
+    /// @brief Max background assets loaders
+    IntegerSetting maxBgAssetLoaders {3, -4, 16};
+    /// @brief Preserve assets during current frame from being destroyed
+    FlagSetting preserveAssetsDuringFrame {true};
+};
+
 struct EngineSettings {
     AudioSettings audio;
     DisplaySettings display;
@@ -119,4 +138,5 @@ struct EngineSettings {
     UiSettings ui;
     NetworkSettings network;
     PathfindingSettings pathfinding;
+    SystemSettings system;
 };

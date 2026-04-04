@@ -37,13 +37,13 @@ public:
         switch (op) {
             case VersionOperator::EQUAL:
                 return *this == other;
-            case VersionOperator::GREATHER:
+            case VersionOperator::GREATER:
                 return *this > other;
             case VersionOperator::LESS:
                 return *this < other;
             case VersionOperator::LESS_OR_EQUAL:
                 return *this <= other;
-            case VersionOperator::GREATHER_OR_EQUAL:
+            case VersionOperator::GREATER_OR_EQUAL:
                 return *this >= other;
             default:
                 return false;

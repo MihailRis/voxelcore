@@ -34,7 +34,9 @@ static int l_get_intensity(lua::State* L) {
 static int l_set_intensity(lua::State* L) {
     size_t index = static_cast<size_t>(lua::tointeger(L, 1));
     float value = lua::tonumber(L, 2);
-    post_processing->getEffect(index)->setIntensity(value);
+    if (auto effect = post_processing->getEffect(index)) {
+        effect->setIntensity(value);
+    }
     return 0;
 }
 
@@ -84,5 +86,5 @@ const luaL_Reg posteffectslib[] = {
     {"is_active", lua::wrap<l_is_active>},
     {"set_params", lua::wrap<l_set_params>},
     {"set_array", lua::wrap<l_set_array>},
-    {NULL, NULL}
+    {nullptr, nullptr}
 };

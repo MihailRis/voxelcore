@@ -38,6 +38,11 @@ struct RendererResult {
     ChunkMeshData meshData;
 };
 
+struct RendererJob {
+    std::shared_ptr<Chunk> chunk;
+    std::shared_ptr<VoxelsRenderVolume> volume;
+};
+
 class ChunksRenderer {
     const Chunks& chunks;
     const Assets& assets;
@@ -48,13 +53,16 @@ class ChunksRenderer {
     std::unordered_map<glm::ivec2, ChunkMesh> meshes;
     std::unordered_map<glm::ivec2, bool> inwork;
     std::vector<ChunksSortEntry> indices;
-    util::ThreadPool<std::shared_ptr<Chunk>, RendererResult> threadPool;
+    util::ThreadPool<RendererJob, RendererResult> threadPool;
     const Mesh<ChunkVertex>* retrieveChunk(
         size_t index, const Camera& camera, bool culling
     );
+    std::shared_ptr<VoxelsRenderVolume> prepareVoxelsVolume(const Chunk& chunk);
+
+    size_t enqueuedInFrame = 0;
 public:
     ChunksRenderer(
-        const Level* level,
+        const Level& level,
         const Chunks& chunks,
         const Assets& assets,
         const Frustum& frustum,
@@ -63,14 +71,14 @@ public:
     );
     virtual ~ChunksRenderer();
 
-    const Mesh<ChunkVertex>* render(
-        const std::shared_ptr<Chunk>& chunk, bool important
+    const ChunkMesh* render(
+        const std::shared_ptr<Chunk>& chunk, bool important, bool lowPriority
     );
     void unload(const Chunk* chunk);
     void clear();
 
-    const Mesh<ChunkVertex>* getOrRender(
-        const std::shared_ptr<Chunk>& chunk, bool important
+    const ChunkMesh* getOrRender(
+        const std::shared_ptr<Chunk>& chunk, bool important, bool lowPriority
     );
 
     void drawShadowsPass(

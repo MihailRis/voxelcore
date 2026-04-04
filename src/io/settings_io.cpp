@@ -22,7 +22,7 @@ struct SectionsBuilder {
         : map(map), sections(sections) {
     }
 
-    void section(std::string name) {
+    void addSection(std::string name) {
         sections.push_back(Section {std::move(name), {}});
     }
 
@@ -36,35 +36,38 @@ struct SectionsBuilder {
 SettingsHandler::SettingsHandler(EngineSettings& settings) {
     SectionsBuilder builder(map, sections);
 
-    builder.section("audio");
+    builder.addSection("audio");
     builder.add("enabled", &settings.audio.enabled, false);
     builder.add("volume-master", &settings.audio.volumeMaster);
     builder.add("volume-regular", &settings.audio.volumeRegular);
     builder.add("volume-ui", &settings.audio.volumeUI);
     builder.add("volume-ambient", &settings.audio.volumeAmbient);
     builder.add("volume-music", &settings.audio.volumeMusic);
+    builder.add("input-device", &settings.audio.inputDevice);
+    builder.add("acoustic-effects", &settings.audio.acousticEffects);
 
-    builder.section("display");
+    builder.addSection("display");
     builder.add("width", &settings.display.width);
     builder.add("height", &settings.display.height);
     builder.add("samples", &settings.display.samples);
     builder.add("framerate", &settings.display.framerate);
-    builder.add("fullscreen", &settings.display.fullscreen);
     builder.add("limit-fps-iconified", &settings.display.limitFpsIconified);
+    builder.add("window-mode", &settings.display.windowMode);
+    builder.add("adaptive-menu-fps", &settings.display.adaptiveFpsInMenu);
 
-    builder.section("camera");
+    builder.addSection("camera");
     builder.add("sensitivity", &settings.camera.sensitivity);
     builder.add("fov", &settings.camera.fov);
     builder.add("fov-effects", &settings.camera.fovEffects);
     builder.add("shaking", &settings.camera.shaking);
     builder.add("inertia", &settings.camera.inertia);
 
-    builder.section("chunks");
+    builder.addSection("chunks");
     builder.add("load-distance", &settings.chunks.loadDistance);
     builder.add("load-speed", &settings.chunks.loadSpeed);
     builder.add("padding", &settings.chunks.padding);
 
-    builder.section("graphics");
+    builder.addSection("graphics");
     builder.add("fog-curve", &settings.graphics.fogCurve);
     builder.add("backlight", &settings.graphics.backlight);
     builder.add("dense-render", &settings.graphics.denseRender);
@@ -74,23 +77,30 @@ SettingsHandler::SettingsHandler(EngineSettings& settings) {
     builder.add("chunk-max-vertices", &settings.graphics.chunkMaxVertices);
     builder.add("chunk-max-vertices-dense", &settings.graphics.chunkMaxVerticesDense);
     builder.add("chunk-max-renderers", &settings.graphics.chunkMaxRenderers);
+    builder.add("particles-batch-vertices", &settings.graphics.particlesBatchVertices);
     builder.add("advanced-render", &settings.graphics.advancedRender);
     builder.add("ssao", &settings.graphics.ssao);
     builder.add("shadows-quality", &settings.graphics.shadowsQuality);
     builder.add("dense-render-distance", &settings.graphics.denseRenderDistance);
+    builder.add("soft-lighting", &settings.graphics.softLighting);
+    builder.add("clouds-quality", &settings.graphics.cloudsQuality);
 
-    builder.section("ui");
+    builder.addSection("ui");
     builder.add("language", &settings.ui.language);
     builder.add("world-preview-size", &settings.ui.worldPreviewSize);
 
-    builder.section("pathfinding");
+    builder.addSection("pathfinding");
     builder.add("steps-per-async-agent", &settings.pathfinding.stepsPerAsyncAgent);
 
-    builder.section("debug");
+    builder.addSection("debug");
     builder.add("generator-test-mode", &settings.debug.generatorTestMode);
     builder.add("do-write-lights", &settings.debug.doWriteLights);
     builder.add("do-trace-shaders", &settings.debug.doTraceShaders);
     builder.add("enable-experimental", &settings.debug.enableExperimental);
+
+    builder.addSection("system");
+    builder.add("max-bg-asset-loaders", &settings.system.maxBgAssetLoaders);
+    builder.add("preserve-assets-during-frame", &settings.system.preserveAssetsDuringFrame);
 }
 
 dv::value SettingsHandler::getValue(const std::string& name) const {

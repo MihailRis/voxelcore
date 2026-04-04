@@ -1,101 +1,174 @@
 #include "BlockWrapsRenderer.hpp"
 
 #include "assets/Assets.hpp"
-#include "assets/assets_util.hpp"
 #include "constants.hpp"
 #include "content/Content.hpp"
 #include "graphics/core/Atlas.hpp"
 #include "graphics/core/Shader.hpp"
 #include "graphics/core/DrawContext.hpp"
 #include "graphics/render/MainBatch.hpp"
-#include "objects/Player.hpp"
+#include "lighting/Lightmap.hpp"
 #include "voxels/Block.hpp"
 #include "voxels/Chunks.hpp"
-#include "world/Level.hpp"
+
+#include <algorithm>
 
 BlockWrapsRenderer::BlockWrapsRenderer(
-    const Assets& assets, const Level& level, const Chunks& chunks
+    const Assets& assets, const Content& content, const Chunks& chunks
 )
     : assets(assets),
-      level(level),
+      content(content),
       chunks(chunks),
       batch(std::make_unique<MainBatch>(1024)) {
 }
 
 BlockWrapsRenderer::~BlockWrapsRenderer() = default;
 
-void BlockWrapsRenderer::draw(const BlockWrapper& wrapper) {
-    auto textureRegion = util::get_texture_region(assets, wrapper.texture, "");
+void BlockWrapsRenderer::draw(BlockWrapper& wrapper, const Texture* texture) {
+    if (wrapper.cullingBits == 0x0) {
+        return;
+    }
+
+    uint8_t cullingBits = wrapper.cullingBits;
+    for (int i = 0; i < 6; i++) {
+        if ((cullingBits & (1 << i)) == 0x0) {
+            continue;
+        }
+        cullingBits &= ~((wrapper.texRegions[i].texture != texture) << i);
+    }
+    if (cullingBits == 0x0) {
+        return;
+    }
+
+    const voxel* vox = chunks.get(wrapper.position);
+    if (vox == nullptr || vox->id == BLOCK_AIR) {
+        return;
+    }
+    // one frame can be invalid due to texture change but ok
+    const auto& def = content.getIndices()->blocks.require(vox->id);
+
+    if (wrapper.modelType != def.getModel(vox->state.userbits).type) {
+        wrapper.dirtySides = 0xFF;
+    }
+    glm::vec4 light(1, 1, 1, 0);
+    if (wrapper.emission < 1.0f) {
+        light = Lightmap::extractNormalized(chunks.getLight(wrapper.position));
+        light.r += wrapper.emission;
+        light.g += wrapper.emission;
+        light.b += wrapper.emission;
+    }
+    switch (wrapper.modelType) {
+        case BlockModelType::BLOCK:
+            batch->cube(
+                glm::vec3(wrapper.position) + glm::vec3(0.5f),
+                glm::vec3(1.01f),
+                wrapper.uvRegions,
+                light,
+                wrapper.tints.data(),
+                wrapper.emission,
+                cullingBits
+            );
+            break;
+        case BlockModelType::AABB: {
+            const auto& aabb =
+                (def.rotatable ? def.rt.hitboxes[vox->state.rotation]
+                                : def.hitboxes).at(0);
+            const auto& size = aabb.size();
+            batch->cube(
+                glm::vec3(wrapper.position) + aabb.center(),
+                size * glm::vec3(1.01f),
+                wrapper.uvRegions,
+                light,
+                wrapper.tints.data(),
+                wrapper.emission,
+                cullingBits
+            );
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void BlockWrapsRenderer::refreshWrapper(BlockWrapper& wrapper) {
+    clearOrder(&wrapper);
+
+    for (int i = 0; i < 6; i++) {
+        if ((wrapper.cullingBits & (1 << i)) == 0) {
+            continue;
+        }
+        auto texRegion =
+            util::get_texture_region(assets, wrapper.textureFaces[i], "");
+        wrapper.texRegions[i] = texRegion;
+        wrapper.uvRegions[i] = texRegion.region;
+
+        auto range = renderOrder.equal_range(texRegion.texture);
+        auto it =
+            std::find_if(range.first, range.second, [&wrapper](auto& elem) {
+                return elem.second == &wrapper;
+            });
+        if (it == range.second) {
+            renderOrder.emplace(texRegion.texture, &wrapper);
+        }
+    }
+    wrapper.dirtySides = 0x0;
+
+    const voxel* vox = chunks.get(wrapper.position);
+    if (vox == nullptr || vox->id == BLOCK_AIR) {
+        return;
+    }
+    const auto& def = content.getIndices()->blocks.require(vox->id);
+    wrapper.modelType = def.getModel(vox->state.userbits).type;
+    switch (wrapper.modelType) {
+        case BlockModelType::AABB: {
+            const auto& aabb =
+                (def.rotatable ? def.rt.hitboxes[vox->state.rotation]
+                                : def.hitboxes).at(0);
+            const auto& size = aabb.size();
+            wrapper.uvRegions[0].scale(size.z, size.y);
+            wrapper.uvRegions[1].scale(size.z, size.y);
+            wrapper.uvRegions[2].scale(size.x, size.z);
+            wrapper.uvRegions[3].scale(size.x, size.z);
+            wrapper.uvRegions[4].scale(size.x, size.y);
+            wrapper.uvRegions[5].scale(size.x, size.y);
+            break;
+        }
+        default:
+            break;
+    }
+}
+
+void BlockWrapsRenderer::draw(const DrawContext& pctx) {
+    auto ctx = pctx.sub();
 
     auto& shader = assets.require<Shader>("entity");
     shader.use();
     shader.uniform1i("u_alphaClip", false);
-
-    const UVRegion& cracksRegion = textureRegion.region;
-    UVRegion regions[6] {
-        cracksRegion, cracksRegion, cracksRegion,
-        cracksRegion, cracksRegion, cracksRegion
-    };
-    batch->setTexture(textureRegion.texture);
-
-    const voxel* vox = chunks.get(wrapper.position);
-    if (vox == nullptr) {
-        return;
-    }
-    if (vox->id != BLOCK_VOID) {
-        const auto& def = level.content.getIndices()->blocks.require(vox->id);
-        switch (def.getModel(vox->state.userbits).type) {
-            case BlockModelType::BLOCK:
-                batch->cube(
-                    glm::vec3(wrapper.position) + glm::vec3(0.5f),
-                    glm::vec3(1.01f),
-                    regions,
-                    glm::vec4(1,1,1,0),
-                    false
-                );
-                break;
-            case BlockModelType::AABB: {
-                const auto& aabb =
-                    (def.rotatable ? def.rt.hitboxes[vox->state.rotation]
-                                   : def.hitboxes)
-                        .at(0);
-                const auto& size = aabb.size();
-                regions[0].scale(size.z, size.y);
-                regions[1].scale(size.z, size.y);
-                regions[2].scale(size.x, size.z);
-                regions[3].scale(size.x, size.z);
-                regions[4].scale(size.x, size.y);
-                regions[5].scale(size.x, size.y);
-                batch->cube(
-                    glm::vec3(wrapper.position) + aabb.center(),
-                    size * glm::vec3(1.01f),
-                    regions,
-                    glm::vec4(1,1,1,0),
-                    false
-                );
-                break;
-            }
-            default:
-                break;
+    
+    for (const auto& [_, wrapper] : wrappers) {
+        if (wrapper->dirtySides) {
+            refreshWrapper(*wrapper);
         }
     }
-}
-
-void BlockWrapsRenderer::draw(const DrawContext& pctx, const Player& player) {
-    auto ctx = pctx.sub();
-    for (const auto& [_, wrapper] : wrappers) {
-        draw(*wrapper);
+    for (const auto& [texture, wrapper] : renderOrder) {
+        batch->setTexture(texture);
+        draw(*wrapper, texture);
     }
     batch->flush();
 }
 
 u64id_t BlockWrapsRenderer::add(
-    const glm::ivec3& position, const std::string& texture
+    const glm::ivec3& position,
+    const std::string& texture,
+    const glm::vec3& tint,
+    float emission
 ) {
     u64id_t id = nextWrapper++;
-    wrappers[id] = std::make_unique<BlockWrapper>(
-        BlockWrapper {position, texture}
-    );
+    wrappers[id] = std::make_unique<BlockWrapper>(BlockWrapper {
+        position,
+        {texture, texture, texture, texture, texture, texture},
+        {tint, tint, tint, tint, tint, tint},
+        emission});
     return id;
 }
 
@@ -108,5 +181,21 @@ BlockWrapper* BlockWrapsRenderer::get(u64id_t id) const {
 }
 
 void BlockWrapsRenderer::remove(u64id_t id) {
+    auto found = wrappers.find(id);
+    if (found == wrappers.end()) {
+        return;
+    }
+    clearOrder(found->second.get());
     wrappers.erase(id);
+}
+
+void BlockWrapsRenderer::clearOrder(const BlockWrapper* const wrapper) {
+    auto it = renderOrder.begin();
+    while (it != renderOrder.end()) {
+        if (it->second == wrapper) {
+            it = renderOrder.erase(it);
+        } else {
+            ++it;
+        }
+    }
 }

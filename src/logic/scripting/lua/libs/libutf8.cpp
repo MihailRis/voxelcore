@@ -3,7 +3,6 @@
 #include <vector>
 #include <cwctype>
 
-#include "../lua_custom_types.hpp"
 #include "util/stringutil.hpp"
 
 static int l_tobytes(lua::State* L) {
@@ -33,8 +32,7 @@ static int l_tostring(lua::State* L) {
         lua::pop(L);
         return lua::pushlstring(L, buffer.data(), size);
     } else {
-        lua::bytearray_as_string(L, 1);
-        return 1;
+        return lua::pushlstring(L, lua::bytearray_as_string(L, 1));
     }
 }
 
@@ -90,6 +88,11 @@ static int l_escape(lua::State* L) {
     return lua::pushstring(L, util::escape(string));
 }
 
+static int l_escape_xml(lua::State* L) {
+    auto string = lua::require_wstring(L, 1);
+    return lua::pushwstring(L, util::escape_xml(string));
+}
+
 const luaL_Reg utf8lib[] = {
     {"tobytes", lua::wrap<l_tobytes>},
     {"tostring", lua::wrap<l_tostring>},
@@ -100,5 +103,6 @@ const luaL_Reg utf8lib[] = {
     {"lower", lua::wrap<l_lower>},
     {"encode", lua::wrap<l_encode>},
     {"escape", lua::wrap<l_escape>},
-    {NULL, NULL}
+    {"escape_xml", lua::wrap<l_escape_xml>},
+    {nullptr, nullptr}
 };

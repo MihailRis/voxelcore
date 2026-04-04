@@ -2,5 +2,6 @@
     "steps-sound": "steps/wood",
     "place-sound": "blocks/wood_place",
     "break-sound": "blocks/wood_break",
-    "hit-sound": "blocks/wood_hit"
+    "hit-sound": "blocks/wood_hit",
+    "sound-absorption": 0.5
 }

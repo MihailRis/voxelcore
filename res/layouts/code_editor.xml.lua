@@ -110,7 +110,7 @@ function unlock_access()
 end
 
 local function reload_model(filename, name)
-    assets.parse_model("xml", document.editor.text, name)
+    assets.parse_model(file.ext(filename), document.editor.text, name)
 end
 
 function run_current_file()

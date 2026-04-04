@@ -22,9 +22,9 @@ ContentReport::ContentReport(
       regionsVersion(regionsVersion) {
 }
 
-template <class T>
+template <class T, typename IdType>
 static constexpr size_t get_entries_count(
-    const ContentUnitIndices<T>& indices, const dv::value& list
+    const ContentUnitIndices<T, IdType>& indices, const dv::value& list
 ) {
     return list != nullptr ? std::max(list.size(), indices.count())
                            : indices.count();

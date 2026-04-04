@@ -50,8 +50,8 @@ namespace lua {
     inline int type(lua::State* L, int idx) {
         return lua_type(L, idx);
     }
-    inline const char* type_name(lua::State* L, int idx) {
-        return lua_typename(L, idx);
+    inline const char* type_name(lua::State* L, int tp) {
+        return lua_typename(L, tp);
     }
     inline int rawget(lua::State* L, int idx = -2) {
         lua_rawget(L, idx);

@@ -30,4 +30,7 @@ utf8.lower(text: str) -> str
 
 -- Escapes a string
 utf8.escape(text: str) -> str
+
+-- Escapes special XML characters
+utf8.escape_xml(text: str) -> str
 ```

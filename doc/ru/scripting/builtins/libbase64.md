@@ -4,14 +4,14 @@
 
 ```lua
 -- Кодирует массив байт в base64 строку
-base64.encode(bytes: table|ByteArray) -> str
+base64.encode(bytes: table|Bytearray) -> string
 
--- Декодирует base64 строку в ByteArray или таблицу чисел, если второй аргумент установлен на true
-base64.decode(base64string: str, [опционально]usetable: bool=false) -> table|ByteArray
+-- Декодирует base64 строку в Bytearray или таблицу чисел, если второй аргумент установлен на true
+base64.decode(base64string: string, [опционально]usetable: boolean=false) -> table|Bytearray
 
 -- Кодирует массив байт в urlsafe-base64 строку ('-', '_' вместо '+', '/')
-base64.encode_urlsafe(bytes: table|ByteArray) -> str
+base64.encode_urlsafe(bytes: table|Bytearray) -> string
 
--- Декодирует urlsafe-base64 строку в ByteArray или таблицу чисел, если второй аргумент установлен на true
-base64.decode_urlsafe(base64string: str, [опционально]usetable: bool=false) -> table|ByteArray
+-- Декодирует urlsafe-base64 строку в Bytearray или таблицу чисел, если второй аргумент установлен на true
+base64.decode_urlsafe(base64string: string, [опционально]usetable: boolean=false) -> table|Bytearray
 ```

@@ -259,7 +259,7 @@ function io_stream:read_line()
 end
 
 function io_stream:write_line(str)
-    self:__write(utf8.tobytes(str .. LF))
+    self:__write(utf8.tobytes(str .. "\n"))
 end
 
 function io_stream:read(arg, useTable)
@@ -367,6 +367,10 @@ function io_stream:write(arg, ...)
             end
         else error("unknown argument type: "..argType) end
     end
+end
+
+function io_stream:seek(mode, offset)
+    self.ioLib.seek(self.descriptor, mode, offset)
 end
 
 function io_stream:is_alive()

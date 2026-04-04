@@ -1,4 +1,4 @@
-settings = session.get_entry('new_world')
+settings = session.get('new_world')
 
 function on_open()
     local names = generation.get_generators()

@@ -18,7 +18,7 @@ public:
         std::shared_ptr<rigging::Skeleton> skeleton
     );
 
-    void renderHands(const Camera& camera, float delta);
+    void render(const Camera& camera);
 private:
     const Assets& assets;
     ModelBatch& modelBatch;

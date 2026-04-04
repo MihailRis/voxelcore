@@ -39,8 +39,23 @@ struct EntityDef {
     /// @brief Skeleton ID
     std::string skeletonName = name;
 
+    /// @brief Solid entity material material
+    std::string material;
+
     /// @brief Does entity prevent blocks setup
     bool blocking = true;
+
+    /// @brief Is the entity solid (blocks other entities)
+    bool solid = false;
+
+    /// @brief Mass for physics calculations
+    float mass = 1.0f;
+
+    /// @brief Elasticity for physics calculations
+    float elasticity = 0.0f;
+
+    /// @brief Max obstacle height that does not require jumping
+    float stepHeight = 0.5f;
 
     /// @brief save-** flags
     struct {

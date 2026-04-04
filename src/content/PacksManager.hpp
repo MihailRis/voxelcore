@@ -12,6 +12,9 @@ class PacksManager {
 public:
     PacksManager();
 
+    /// @brief Get current content packs sources
+    const std::vector<io::path>& getSources() const;
+
     /// @brief Set content packs sources (search folders)
     void setSources(std::vector<io::path> sources);
 

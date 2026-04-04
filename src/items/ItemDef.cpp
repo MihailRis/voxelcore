@@ -2,9 +2,10 @@
 
 #include "util/stringutil.hpp"
 
-ItemDef::ItemDef(const std::string& name) : name(name) {
-    caption = util::id_to_caption(name);
-    description = "";
+ItemDef::ItemDef(const std::string& name)
+    : name(name), 
+      caption(util::id_to_caption(name)),
+      scriptName(name.substr(name.find(':') + 1)) {
 }
 void ItemDef::cloneTo(ItemDef& dst) {
     dst.caption = caption;

@@ -24,7 +24,7 @@ namespace gui {
             const glm::vec4& padding
         );
 
-        void listenChange(onstringchange&& callback);
+        void listenChange(OnStringChange&& callback);
 
         void setSelected(const Option& selected);
 
@@ -35,5 +35,7 @@ namespace gui {
         void setOptions(std::vector<Option>&& options);
 
         void drawBackground(const DrawContext& pctx, const Assets&) override;
+
+        std::shared_ptr<Label> getLabel() const;
     };
 }

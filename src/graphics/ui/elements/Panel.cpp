@@ -67,12 +67,12 @@ void Panel::remove(UINode* node) {
 }
 
 void Panel::refresh() {
-    UINode::refresh();
+    Container::refresh();
 
     float x = padding.x;
     float y = padding.y;
     glm::vec2 size = getSize();
-    if (orientation == Orientation::vertical) {
+    if (orientation == Orientation::VERTICAL) {
         float maxw = size.x;
         for (auto& node : nodes) {
             const glm::vec4 margin = node->getMargin();
@@ -81,7 +81,9 @@ void Panel::refresh() {
             float ex = x + margin.x;
             node->setPos(glm::vec2(ex, y));
 
-            float width = size.x - padding.x - padding.z - margin.x - margin.z;
+            int width = glm::floor(
+                size.x - padding.x - padding.z - margin.x - margin.z
+            );
             if (node->isResizing()) {
                 node->setMaxSize({width, node->getMaxSize().y});
                 node->setSize(glm::vec2(width, node->getSize().y));

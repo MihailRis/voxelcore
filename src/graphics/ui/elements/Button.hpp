@@ -19,7 +19,7 @@ namespace gui {
             GUI& gui,
             const std::wstring& text,
             glm::vec4 padding,
-            const onaction& action,
+            const OnAction& action,
             glm::vec2 size = glm::vec2(-1)
         );
 
@@ -29,6 +29,8 @@ namespace gui {
 
         virtual Align getTextAlign() const;
         virtual void setTextAlign(Align align);
+
+        std::shared_ptr<Label> getLabel() const;
 
         virtual void setText(std::wstring text);
         virtual std::wstring getText() const;

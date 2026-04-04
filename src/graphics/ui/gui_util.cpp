@@ -78,6 +78,7 @@ void guiutil::alert(
     }));
     menu.addPage("<alert>", panel, true);
     menu.setPage("<alert>");
+    gui.setActiveFrame(GUI::CORE_MAIN);
 }
 
 void guiutil::confirm(
@@ -101,11 +102,16 @@ void guiutil::confirm(
         gui, glm::vec2(600, 200), glm::vec4(8.0f), 8.0f
     );
 
-    panel->setGravity(Gravity::center_center);
+    panel->setGravity(Gravity::CENTER_CENTER);
     container->add(panel);
-
     panel->setColor(glm::vec4(0.0f, 0.0f, 0.0f, 0.5f));
-    panel->add(std::make_shared<Label>(gui, text));
+
+    auto label = std::make_shared<Label>(gui, text);
+    label->setSize(glm::vec2(600, 50));
+    label->setMultiline(true);
+    label->setTextWrapping(true);
+
+    panel->add(label);
     auto subpanel = std::make_shared<Panel>(gui, glm::vec2(600, 53));
     subpanel->setColor(glm::vec4(0));
 
@@ -150,6 +156,7 @@ void guiutil::confirm(
     panel->refresh();
     menu->addPage("<confirm>", container, true);
     menu->setPage("<confirm>");
+    gui.setActiveFrame(GUI::CORE_MAIN);
 }
 
 void guiutil::confirm_with_memo(
@@ -196,4 +203,5 @@ void guiutil::confirm_with_memo(
     panel->refresh();
     menu->addPage("<confirm>", panel, true);
     menu->setPage("<confirm>");
+    gui.setActiveFrame(GUI::CORE_MAIN);
 }

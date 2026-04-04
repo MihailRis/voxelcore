@@ -3,5 +3,5 @@
     <button onclick='menu.page="scripts"'>@Scripts</button>
     <button onclick='menu.page="settings"'>@Settings</button>
     <button onclick='menu.page="content_menu"'>@Content</button>
-    <button onclick='core.quit()'>@Quit</button>
+    <button onclick='app.quit(true)'>@Quit</button>
 </panel>

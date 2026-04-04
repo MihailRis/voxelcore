@@ -38,7 +38,7 @@ static dv::value perform_literal(std::string_view literal) {
         literal == "false" || literal == "False") {
         return literal[0] == 't';
     }
-    if (literal == "null" || literal == "Null") {
+    if (literal == "null" || literal == "Null" || literal == "~") {
         return nullptr;
     }
     return std::string(literal);
@@ -204,8 +204,9 @@ dv::value Parser::parseFullValue(int indent) {
         skipEmptyLines();
         int init_pos = pos;
         int next_indent = countIndent();
-        if (next_indent < indent) {
-            throw error("indentation error");
+        if (next_indent <= indent) {
+            pos = init_pos;
+            return nullptr;
         }
         if (source[pos] == '-') {
             pos = init_pos;
@@ -269,6 +270,10 @@ dv::value Parser::parseArray(int indent) {
             dv::value object = dv::object();
             object[std::string(name)] = parseFullValue(next_indent);
             skipEmptyLines();
+            if (!hasNext()) {
+                list.add(std::move(object));
+                break;
+            }
             next_indent = countIndent();
             if (next_indent > indent) {
                 pos = linestart;
