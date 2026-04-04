@@ -14,7 +14,7 @@
       "entt",
       "gtest",
       "curl",
-      "mbedtls"
+      "mbedtls",
       "freetype"
     ]
   }
