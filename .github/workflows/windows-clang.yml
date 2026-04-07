@@ -59,6 +59,7 @@ jobs:
                 git
       - name: Set up vcpkg
         shell: msys2 {0}
+        if: steps.cache-vcpkg.outputs.cache-hit != 'true'
         run: |
             git clone https://github.com/microsoft/vcpkg.git
             cd vcpkg
