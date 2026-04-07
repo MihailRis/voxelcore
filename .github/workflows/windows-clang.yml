@@ -33,6 +33,21 @@ jobs:
         with:
           path: C:/msys64
           key: msys2-clang64-${{ runner.os }}
+      - name: Cache vcpkg
+        id: cache-vcpkg
+        uses: actions/cache@v3
+        with:
+          path: vcpkg
+          key: vcpkg-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'vcpkg.lock') }}
+          restore-keys: |
+            vcpkg-${{ runner.os }}-
+      - name: Cache vcpkg packages
+        uses: actions/cache@v3
+        with:
+          path: vcpkg/packages
+          key: vcpkg-pkgs-${{ runner.os }}-${{ hashFiles('vcpkg.json', 'vcpkg.lock') }}
+          restore-keys: |
+            vcpkg-pkgs-${{ runner.os }}-
       - uses: msys2/setup-msys2@v2
         id: msys2
         name: Setup MSYS2
