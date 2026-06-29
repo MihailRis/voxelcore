@@ -28,17 +28,38 @@ local AX_X = 1
 local AX_Y = 2
 local AX_Z = 3
 
-local function compile_track(bone_index, lines)
-    local env = {
-        mat4 = mat4,
-    }
-    table.extend(env, math)
+local patterns =  {
+    {name="sint", pattern="sin(t)"},
+    {name="sint2", pattern="sin(t * 2)"},
+}
 
+local function process_expression(src, memoised)
+    for i, pattern in ipairs(patterns) do
+        local pattern_safe = string.pattern_safe(pattern.pattern)
+        if src:find(pattern_safe) then
+            memoised[pattern.name] = pattern.pattern
+            src = src:gsub(pattern_safe, pattern.name)
+        end
+    end
+    return src
+end
+
+local env = {
+    mat4 = mat4,
+    X = {1, 0, 0},
+    Y = {0, 1, 0},
+    Z = {0, 0, 1},
+    blank = core.blank,
+    DST = mat4.idt(),
+}
+table.extend(env, math)
+
+local function codegen_track(lines, memoised)
     local code = ""
     local translation = {false, false, false}
     local rotation = {false, false, false}
     for i, line in ipairs(lines) do
-        code = code .. "\n  local l" .. i .. " = (" .. line.expression .. ")"
+        code = code .. "\n  local l" .. i .. " = (" .. process_expression(line.expression, memoised) .. ")"
         if line.channel == CH_TRANSLATE then
             translation[line.axis] = i
         elseif line.channel == CH_ROTATE then
@@ -54,74 +75,94 @@ local function compile_track(bone_index, lines)
         (translation[3] and ("l" .. translation[3]) or '0').. "}, dst)"
     end
 
+    local axis_names = {"X", "Y", "Z"}
     for axis, var in ipairs(rotation) do
         if var then
-            code = code .. "\n  mat4.rotate(dst, {"
-            .. ((axis == 1) and '1' or '0') .. ", "
-            .. ((axis == 2) and '1' or '0') .. ", "
-            .. ((axis == 3) and '1' or '0') .. "}, l" ..  var .. ", dst)"
+            code = code .. "\n  mat4.rotate(dst, " .. axis_names[axis] .. ", l" ..  var .. ", dst)"
         end
     end
 
-    local src = "return function(dst, t, m)" .. code .. "\n  return dst\nend"
+    return code
+end
+
+local function compile_track(linesets)
+    local code = ""
+    local memoised = {}
+
+    for i, lineset in ipairs(linesets) do
+        local lineset_code = codegen_track(lineset.lines, memoised)
+        code = code .. "\n do" .. lineset_code .. "\n end\n" ..
+            " rig:set_matrix(" .. lineset.bone_index .. ", dst)\n"
+            -- " blank(" .. lineset.bone_index .. ", dst)\n"
+    end
+
+    local memoised_code = ""
+    for name, expression in pairs(memoised) do
+        memoised_code = memoised_code .. "\n local " .. name .. " = " .. expression
+    end
+
+    if #memoised_code > 0 then
+        code = memoised_code .. "\n" .. code
+    end
+
+    local src = "return function(rig, t, m)\n local dst = DST\n" .. code .. "\nend"
+    print(src)
     local generator, err = load(src, "<expr>", "bt", env)
     if not generator then
         error(err)
     end
-    print(src)
-    return {
-        bone_index = bone_index,
-        generator = generator()
-    }
+    return generator()
 end
 
-local tracks = {
-    compile_track(body_idx, {{
+local linesets = {
+    {bone_index=body_idx, lines={{
         channel = CH_TRANSLATE,
         axis = AX_Y,
         expression = "sin(t * 2) * 0.1 * m"
-    }}),
-    compile_track(leg_left, {{
+    }}},
+    {bone_index=leg_left, lines={{
         channel = CH_ROTATE,
         axis = AX_X,
         expression = "sin(t) * 45 * m"
-    }}),
-    compile_track(leg_right, {{
+    }}},
+    {bone_index=leg_right, lines={{
         channel = CH_ROTATE,
         axis = AX_X,
         expression = "-sin(t) * 45 * m"
-    }}),
-    compile_track(leg_left_btm, {{
+    }}},
+    {bone_index=leg_left_btm, lines={{
         channel = CH_ROTATE,
         axis = AX_X,
         expression = "(-sin(t * 2) * 45 - 45) * m"
-    }}),
-    compile_track(leg_right_btm, {{
+    }}},
+    {bone_index=leg_right_btm, lines={{
         channel = CH_ROTATE,
         axis = AX_X,
         expression = "(-sin(t * 2) * 45 - 45) * m"
-    }}),
-    compile_track(hand_left, {{
+    }}},
+    {bone_index=hand_left, lines={{
         channel = CH_ROTATE,
         axis = AX_X,
         expression = "-sin(t) * 45 * m"
-    }}),
-    compile_track(hand_right, {{
+    }}},
+    {bone_index=hand_right, lines={{
         channel = CH_ROTATE,
         axis = AX_X,
         expression = "sin(t) * 45 * m"
-    }}),
-    compile_track(hand_left_btm, {{
+    }}},
+    {bone_index=hand_left_btm, lines={{
         channel = CH_ROTATE,
         axis = AX_X,
         expression = "(sin(t * 2) * 45 + 45) * m"
-    }}),
-    compile_track(hand_right_btm, {{
+    }}},
+    {bone_index=hand_right_btm, lines={{
         channel = CH_ROTATE,
         axis = AX_X,
         expression = "(sin(t * 2) * 45 + 45) * m"
-    }}),
+    }}},
 }
+
+local track = compile_track(linesets)
 
 function on_render()
     local tm = time.uptime() * 10 + tm_offset
@@ -132,10 +173,11 @@ function on_render()
     speed = prev_speed
 
     local ttm = time.precise_time()
-    local matrix = mat4.idt()
-    for i, track in ipairs(tracks) do
-        rig:set_matrix(track.bone_index, track.generator(matrix, tm, speed))
-    end
+    -- local matrix = mat4.idt()
+    track(rig, tm, speed)
+    -- for i, track in ipairs(tracks) do
+        -- rig:set_matrix(track.bone_index, track.generator(matrix, tm, speed))
+    -- end
 
     -- rig:set_matrix(body_idx, mat4.translate({0, math.sin(tm * 2) * 0.1 * speed, 0}))
 
