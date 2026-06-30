@@ -33,8 +33,8 @@ namespace rigging {
 
     struct ModelReference {
         std::string name;
-        model::Model* model;
-        bool updateFlag;
+        std::weak_ptr<model::Model> model;
+        bool updateFlag = false;
 
         void refresh(const Assets& assets);
     };

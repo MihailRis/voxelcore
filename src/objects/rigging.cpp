@@ -13,7 +13,7 @@ using namespace rigging;
 
 void ModelReference::refresh(const Assets& assets) {
     if (updateFlag) {
-        model = assets.get<model::Model>(name);
+        model = assets.getShared<model::Model>(name);
         updateFlag = false;
     }
 }
@@ -29,14 +29,14 @@ Bone::Bone(
       name(std::move(name)),
       bones(std::move(bones)),
       offset(offset),
-      model({model, nullptr, true}) {
+      model({model, {}, true}) {
 }
 
 void Bone::setModel(const std::string& name) {
     if (model.name == name) {
         return;
     }
-    model = {name, nullptr, true};
+    model = {name, {}, true};
 }
 
 Skeleton::Skeleton(std::shared_ptr<const SkeletonConfig> config)
@@ -184,12 +184,14 @@ void SkeletonConfig::render(
             continue;
         }
         node->model.refresh(assets);
-        auto model = node->model.model;
+        auto model = node->model.model.lock().get(); // TODO: cache model pointer during frame
         auto& modelOverride = skeleton.modelOverrides.at(i);
         if (modelOverride.updateFlag) {
             modelOverride.refresh(assets);
         }
-        model = modelOverride.model ? modelOverride.model : model;
+        if (auto foundOverride = modelOverride.model.lock()) {
+            model = foundOverride.get();
+        }
         if (model) {
             batch.draw(
                 skeleton.calculated.matrices[i],
