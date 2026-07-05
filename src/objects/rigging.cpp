@@ -88,12 +88,22 @@ void Skeleton::deserialize(const dv::value& root) {
 
 void Skeleton::setConfig(std::shared_ptr<const SkeletonConfig> rigConfig) {
     config = std::move(rigConfig);
+
+    const auto& bones = config->getBones();
+
     pose.matrices.resize(
-        config->getBones().size(), glm::mat4(1.0f)
+        bones.size(), glm::mat4(1.0f)
     );
     calculated.matrices.resize(
-        config->getBones().size(), glm::mat4(1.0f)
+        bones.size(), glm::mat4(1.0f)
     );
+
+    modelOverrides.resize(bones.size());
+    flags.resize(bones.size());
+
+    for (size_t i = 0; i < bones.size(); i++) {
+        flags[i].visible = true;
+    }
 }
 
 static void get_all_nodes(std::vector<Bone*>& nodes, Bone* node) {
