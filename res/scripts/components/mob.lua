@@ -40,7 +40,7 @@ local function angle_delta(a, b)
     return normalize_angle(a - b)
 end
 
-local dir = mat4.mul(tsf:get_rot(), {0, 0, -1})
+local mob_dir = mat4.mul(tsf:get_rot(), {0, 0, -1})
 local flight = false
 
 function jump(multiplier)
@@ -87,12 +87,12 @@ function look_at(point, change_dir)
     local pos = tsf:get_pos()
     local viewdir = vec3.normalize(vec3.sub(point, pos))
 
-    local dot = vec3.dot(viewdir, dir)
+    local dot = vec3.dot(viewdir, mob_dir)
     if dot < 0.0 and not change_dir then
         viewdir = mat4.mul(tsf:get_rot(), {0, 0, -1})
     else
-        dir[1] = dir[1] * 0.8 + viewdir[1] * 0.13
-        dir[3] = dir[3] * 0.8 + viewdir[3] * 0.13
+        mob_dir[1] = mob_dir[1] * 0.8 + viewdir[1] * 0.13
+        mob_dir[3] = mob_dir[3] * 0.8 + viewdir[3] * 0.13
     end
 
     if not headIndex then
@@ -112,39 +112,36 @@ end
 
 function follow_waypoints(pathfinding)
     pathfinding = pathfinding or entity:require_component("core:pathfinding")
-     local pos = tsf:get_pos()
+
+    local pos = tsf:get_pos()
     local waypoint = pathfinding.next_waypoint()
     if not waypoint then
         return
     end
     local speed = props.movement_speed
     local vel = body:get_vel()
-    dir = vec3.sub(
+    mob_dir = vec3.sub(
         vec3.add(waypoint, {0.5, 0, 0.5}),
         {pos[1], math.floor(pos[2]), pos[3]}
     )
-    local upper = dir[2] > 0
-    dir[2] = 0.0
-    vec3.normalize(dir, dir)
-    move_horizontal(speed, {dir[1], dir[3]}, vel)
+    local upper = mob_dir[2] > 0
+    mob_dir[2] = 0.0
+    vec3.normalize(mob_dir, mob_dir)
+    move_horizontal(speed, {mob_dir[1], mob_dir[3]}, vel)
     if upper and body:is_grounded() then
         jump(1.0)
     end
 end
 
-function set_dir(new_dir)
-    dir = new_dir
-end
+function set_dir(new_dir) mob_dir = new_dir end
 
-function get_dir()
-    return dir
-end
+function get_dir() return mob_dir end
 
 function is_flight() return flight end
 
 function set_flight(flag) flight = flag end
 
-local prev_angle = (vec2.angle({dir[3], dir[1]})) % 360
+local prev_angle = (vec2.angle({mob_dir[3], mob_dir[1]})) % 360
 
 function on_physics_update(delta)
     local grounded = body:is_grounded()
@@ -154,7 +151,7 @@ function on_physics_update(delta)
         (flight or not grounded) and props.air_damping or props.ground_damping
     )
 
-    local new_angle = (vec2.angle({dir[3], dir[1]})) % 360
+    local new_angle = (vec2.angle({mob_dir[3], mob_dir[1]})) % 360
     local angle = prev_angle
 
     local adelta = angle_delta(
