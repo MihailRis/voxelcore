@@ -8,10 +8,15 @@ TEST(SmallHeap, Allocation) {
     auto index = 0;
     auto size = 4;
 
+    std::cout << 11 << std::endl;
     SmallHeap<uint16_t, uint8_t> map;
+    std::cout << 22 << std::endl;
     auto ptr = map.allocate(index, size);
+    std::cout << 33 << std::endl;
     EXPECT_EQ(map.sizeOf(ptr), size);
+    std::cout << 44 << std::endl;
     EXPECT_EQ(ptr, map.find(index));
+    std::cout << 55 << std::endl;
 }
 
 TEST(SmallHeap, MultipleAllocation) {
