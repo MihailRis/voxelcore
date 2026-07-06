@@ -11,9 +11,9 @@
 
 namespace util {    
     template<typename T>
-    inline T read_int_le(const uint8_t* src, ptrdiff_t offset=0) {
+    inline T read_int_le(const uint8_t* src) {
         T tmp;
-        std::memcpy(&tmp, src + offset * sizeof(T), sizeof(T));
+        std::memcpy(&tmp, src, sizeof(T));
         return dataio::le2h(tmp);
     }
 
@@ -126,7 +126,7 @@ namespace util {
             if (ptr == nullptr) {
                 return 0;
             }
-            return read_int_le<Tsize>(ptr, -1);
+            return read_int_le<Tsize>(ptr - sizeof(Tsize));
         }
 
         /// @return number of entries
@@ -177,7 +177,7 @@ namespace util {
             ) : buffer(buffer), index(index), offset(offset) {}
 
             Tsize size() const {
-                return read_int_le<Tsize>(buffer.data() + offset, -1);
+                return read_int_le<Tsize>(buffer.data() + offset - sizeof(Tsize));
             }
 
             bool operator!=(const const_iterator& o) const {
