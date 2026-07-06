@@ -27,7 +27,7 @@ jobs:
 
       - name: Configure
         run: |
-          cmake -DOPENAL_INCLUDE_DIR=$(brew --prefix openal-soft)/include \
+          cmake -DCMAKE_CXX_FLAGS="-fsanitize=address -fno-omit-frame-pointer" -DCMAKE_C_FLAGS="-fsanitize=address -fno-omit-frame-pointer" -DOPENAL_INCLUDE_DIR=$(brew --prefix openal-soft)/include \
            -DOPENAL_LIBRARY=$(brew --prefix openal-soft)/lib/libopenal.dylib \
            -S . -B build -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_TESTS=ON -DVOXELENGINE_BUILD_APPDIR=1 -DVC_BUILD_NAME="${{ inputs.build_name }}"
 
@@ -43,21 +43,6 @@ jobs:
 
       - name: Run tests
         run: ctest --output-on-failure --extra-verbose --test-dir build
-
-      - name: Ouput it
-        run: |
-          ls /Users/runner/
-          ls /Users/runner/Library
-          ls /Users/runner/Library/Logs/
-
-      - name: Dump crash logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: macos-system-logs
-          path: /Users/runner/Library/Logs/
-          if-no-files-found: warn
-
 
       - name: Run engine tests
         timeout-minutes: 1
