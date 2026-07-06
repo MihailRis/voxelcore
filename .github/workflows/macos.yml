@@ -43,11 +43,20 @@ jobs:
 
       - name: Run tests
         run: ctest --output-on-failure --extra-verbose --test-dir build
-      - name: Dump crash logs
-        if: failure()
+
+      - name: Ouput it
         run: |
-          cat ~/Library/Logs/DiagnosticReports/*.crash || true
-          cat ~/Library/Logs/DiagnosticReports/*.diag || true
+          ls /Users/runner/
+          ls /Users/runner/Library
+          ls /Users/runner/Library/Logs/
+
+      - name: Dump crash logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-system-logs
+          path: /Users/runner/Library/Logs/
+          if-no-files-found: warn
 
 
       - name: Run engine tests
