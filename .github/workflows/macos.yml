@@ -29,7 +29,7 @@ jobs:
         run: |
           cmake -DOPENAL_INCLUDE_DIR=$(brew --prefix openal-soft)/include \
            -DOPENAL_LIBRARY=$(brew --prefix openal-soft)/lib/libopenal.dylib \
-           -S . -B build -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_TESTS=ON -DVOXELENGINE_BUILD_APPDIR=1 -DVC_BUILD_NAME="${{ inputs.build_name }}"
+           -S . -B build -DCMAKE_BUILD_TYPE=Debug -DVOXELENGINE_BUILD_TESTS=ON -DVOXELENGINE_BUILD_APPDIR=1 -DVC_BUILD_NAME="${{ inputs.build_name }}"
 
       - name: Build
         run: |
@@ -39,10 +39,10 @@ jobs:
         run: chmod +x dev/fix_dylibs.sh
 
       - name: Fix dylibs
-        run: ./dev/fix_dylibs.sh VoxelEngine Release build
+        run: ./dev/fix_dylibs.sh VoxelEngine Debug build
 
       - name: Run tests
-        run: ctest --output-on-failure --test-dir build
+        run: ctest --output-on-failure --extra-verbose --test-dir build
 
       - name: Run engine tests
         timeout-minutes: 1
