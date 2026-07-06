@@ -10,7 +10,7 @@ TEST(SmallHeap, Allocation) {
 
     SmallHeap<uint16_t, uint8_t> map;
     auto ptr = map.allocate(index, size);
-    std::cout << "ptr: " << ptr << " begin: " << map.begin().data() << std::endl;
+    std::cout << "ptr: " << (void*)ptr << " begin: " << (void*)map.begin().data() << std::endl;
     EXPECT_EQ(map.sizeOf(ptr), size);
     EXPECT_EQ(ptr, map.find(index));
 }

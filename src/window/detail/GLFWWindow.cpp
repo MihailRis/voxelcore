@@ -41,6 +41,7 @@ static bool is_gl_extension_supported(const char *extension) {
     return supported_gl_extensions.find(extension) != supported_gl_extensions.end();
 }
 
+#ifndef __APPLE__
 static const char* gl_error_name(int error) {
     switch (error) {
         case GL_DEBUG_TYPE_ERROR: return "ERROR";
@@ -63,7 +64,6 @@ static const char* gl_severity_name(int severity) {
     return "UNKNOWN";
 }
 
-#ifndef __APPLE__
 static void GLAPIENTRY gl_message_callback(
     GLenum source,
     GLenum type,
