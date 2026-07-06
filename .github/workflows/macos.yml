@@ -43,6 +43,12 @@ jobs:
 
       - name: Run tests
         run: ctest --output-on-failure --extra-verbose --test-dir build
+      - name: Dump crash logs
+        if: failure()
+        run: |
+          cat ~/Library/Logs/DiagnosticReports/*.crash || true
+          cat ~/Library/Logs/DiagnosticReports/*.diag || true
+
 
       - name: Run engine tests
         timeout-minutes: 1
