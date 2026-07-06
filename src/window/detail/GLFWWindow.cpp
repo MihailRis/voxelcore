@@ -33,6 +33,7 @@ static void init_gl_extensions_list() {
     }
 }
 
+[[maybe_unused]]
 static bool is_gl_extension_supported(const char *extension) {
     if (!extension || !*extension) {
         return false;
@@ -62,6 +63,7 @@ static const char* gl_severity_name(int severity) {
     return "UNKNOWN";
 }
 
+#ifndef __APPLE__
 static void GLAPIENTRY gl_message_callback(
     GLenum source,
     GLenum type,
@@ -80,6 +82,7 @@ static void GLAPIENTRY gl_message_callback(
     logger.warning() << "GL:" << gl_error_name(type) << ":"
               << gl_severity_name(severity) << ": " << message;
 }
+#endif
 
 static bool initialize_gl(int width, int height) {
     glewExperimental = GL_TRUE;
