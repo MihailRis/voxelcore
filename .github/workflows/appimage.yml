@@ -3,6 +3,8 @@ name: x86-64 AppImage
 on:
   push:
     branches: [ "main", "release-**"]
+  pull_request:
+    branches: [ "main", "dev" ]
   workflow_call:
     inputs:
       build_name:
