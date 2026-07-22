@@ -167,10 +167,10 @@ function this.compile_track(linesets)
     local memoised = {}
     local keysets = {}
 
-    for i, lineset in ipairs(linesets) do
+    for bone, lineset in pairs(linesets) do
         local lineset_code = codegen_track(lineset.lines, memoised, keysets)
         code = code .. "\n do" .. lineset_code .. "\n end\n" ..
-            " rig:set_matrix(" .. lineset.bone_index .. ", dst)\n"
+            " rig:set_matrix(rig:index(" .. string.escape(bone) .. "), dst)\n"
     end
 
     local memoised_code = ""

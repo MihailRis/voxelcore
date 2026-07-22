@@ -2,7 +2,6 @@
 #include "api_lua.hpp"
 
 static const char* TAG_ATTR = "#";
-static const char* DEFAULT_ROOT_TAG = "root";
 
 static int push_xml(lua::State* L, const xml::xmlelement& elem) {
     if (elem.isText()) {
