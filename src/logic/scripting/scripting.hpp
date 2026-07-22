@@ -142,6 +142,7 @@ namespace scripting {
     void on_entity_grounded(const Entity& entity, float force);
     void on_entity_fall(const Entity& entity);
     void on_entity_save(const Entity& entity);
+    void on_entity_player_set(const Entity& entity, int64_t pid);
     void on_entities_update(int tps, int parts, int part);
     void on_entities_physics_update(float delta);
     void on_entities_render(float delta);

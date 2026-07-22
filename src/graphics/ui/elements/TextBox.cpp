@@ -353,7 +353,9 @@ void TextBox::draw(const DrawContext& pctx, const Assets& assets) {
 
 void TextBox::drawBackground(const DrawContext& pctx, const Assets& assets) {
     auto font = assets.getShared<Font>(label->getFontName());
-    rawTextCache.prepare(font, font->getMetrics(), label->getSize().x);
+    if (font != nullptr) {
+        rawTextCache.prepare(font, font->getMetrics(), label->getSize().x);
+    }
 
     glm::vec2 pos = calcPos();
 

@@ -166,8 +166,7 @@ std::optional<Entities::RaycastResult> Entities::rayCast(
     glm::vec3 start,
     glm::vec3 dir,
     float maxDistance,
-    entityid_t ignore,
-    bool solidOnly
+    const RaycastSettings& settings
 ) {
     Ray ray(start, dir);
     auto view = registry->view<EntityId, Transform, Rigidbody>();
@@ -176,10 +175,18 @@ std::optional<Entities::RaycastResult> Entities::rayCast(
     glm::ivec3 foundNormal;
 
     for (auto [entity, eid, transform, body] : view.each()) {
-        if (eid.uid == ignore || !body.enabled || (solidOnly && !eid.def.solid)) {
+        if (eid.uid == settings.ignoredUid || !body.enabled ||
+            (settings.solidEntitiesOnly && !eid.def.solid)) {
             continue;
         }
-        auto& hitbox = body.hitbox;
+        if (settings.entitiesFilter) {
+            bool matches = settings.entitiesFilter->find(eid.def.rt.id) !=
+                           settings.entitiesFilter->end();
+            if (matches == settings.entityFilterExcludeMode) {
+                continue;
+            }
+        }
+        const auto& hitbox = body.hitbox;
         glm::ivec3 normal;
         double distance;
         if (ray.intersectAABB(

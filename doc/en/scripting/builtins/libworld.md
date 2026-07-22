@@ -70,4 +70,45 @@ world.save_chunk_data(
     -- compressed chunk data
     data: Bytearray
 )
+
+-- Casts a ray from the start point in the dir direction.
+world.raycast(
+    params: table {
+        [==[ required parameters ]==]
+        -- starting point
+        start: vec3,
+        -- ray direction vector
+        dir: vec3,
+        -- maximum distance
+        distance: number,
+
+        [==[ additional parameters (entities) ]==]
+        -- consider entities
+        entities: bool = true,
+        -- uid of the ignored entity
+        ignore_uid: number = 0 (ENTITY_NONE),
+        -- id of the entity types used for filtering
+        filter_entities: table<string|number> = nil,
+        -- exclusion filtering mode:
+        --   if true, filter_entities defines the list of ignored entity types
+        entities_exclusion: bool = false,
+
+        [==[ additional parameters (blocks) ]==]
+        -- id of the block types used for filtering
+        filter_blocks: table<string|number> = nil,
+        -- exclusion filtering mode:
+        --   if true, filter_blocks defines the list Ignored
+        blocks_exclusion: bool = true,
+        -- include blocks with selectable=false
+        nonselect_blocks: bool = false;
+    }
+) -> {
+    block: int or nil, -- block id
+    entity: int or nil, -- entity uid
+    endpoint: vec3, -- ray touchpoint
+    iendpoint: vec3, -- position of the block touched by the ray
+    length: number, -- ray length
+    normal: vec3, -- normal vector of the surface touched by the ray
+} or nil if the ray did not touch a block or entity
+```
 ```

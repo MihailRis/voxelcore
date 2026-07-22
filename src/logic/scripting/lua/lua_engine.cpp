@@ -66,6 +66,7 @@ static void create_libs(State* L, StateType stateType) {
     openlib(L, "vec2", vec2lib);
     openlib(L, "vec3", vec3lib);
     openlib(L, "vec4", vec4lib);
+    openlib(L, "xml", xmllib);
     openlib(L, "yaml", yamllib);
 
     openlib(L, "__vc_app", applib);

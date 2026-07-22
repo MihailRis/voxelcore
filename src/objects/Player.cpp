@@ -81,7 +81,7 @@ void Player::updateEntity() {
     }
 }
 
-Hitbox* Player::getHitbox() {
+Hitbox* Player::getHitbox() const {
     if (auto entity = level.entities->get(eid)) {
         return &entity->getRigidbody().hitbox;
     }

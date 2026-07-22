@@ -159,6 +159,8 @@ The function returns a table with the results or nil if the ray does not hit any
 
 The result will use the destination table instead of creating a new one if the optional argument specified.
 
+Use `world.raycast(...)` for more detailed configuration.
+
 ## Model and physics
 
 ```lua

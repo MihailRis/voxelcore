@@ -312,6 +312,8 @@ entities.get_all = function(uids)
         return stdcomp.get_all(uids)
     end
 end
+world.raycast = entities.__world_raycast
+entities.__world_raycast = nil
 
 __vc_scripts_registry = require "core:internal/scripts_registry"
 

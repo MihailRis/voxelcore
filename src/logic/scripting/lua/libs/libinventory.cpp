@@ -237,6 +237,14 @@ static int l_get_all_data(lua::State* L, ItemStack& stack) {
     return lua::pushvalue(L, stack.getFields());
 }
 
+static int l_set_all_data(lua::State* L, ItemStack& stack) {
+    if (!lua::istable(L, 3)) {
+        throw std::runtime_error("table expected as argument 1");
+    }
+    stack.setFields(lua::tovalue(L, 3), lua::toboolean(L, 4));
+    return 0;
+}
+
 static int l_has_data(lua::State* L, ItemStack& stack) {
     auto key = lua::tostring(L, 3);
     if (key == nullptr) {
@@ -267,6 +275,7 @@ const luaL_Reg inventorylib[] = {
     {"get_data", lua::wrap<wrap_slot<l_get_data>>},
     {"set_data", lua::wrap<wrap_slot<l_set_data>>},
     {"get_all_data", lua::wrap<wrap_slot<l_get_all_data>>},
+    {"set_all_data", lua::wrap<wrap_slot<l_set_all_data>>},
     {"has_data", lua::wrap<wrap_slot<l_has_data>>},
     {"create", lua::wrap<l_create>},
     {"remove", lua::wrap<l_remove>},

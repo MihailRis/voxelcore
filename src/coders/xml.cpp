@@ -528,3 +528,11 @@ std::string xml::stringify(
 
     return ss.str();
 }
+
+std::string xml::stringify(
+    const Node& element, bool nice, const std::string& indentStr
+) {
+    std::stringstream ss;
+    stringifyElement(ss, element, nice, indentStr, 0);
+    return ss.str();
+}

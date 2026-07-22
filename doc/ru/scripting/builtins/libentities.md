@@ -30,6 +30,9 @@ entities.def_name(id: int) -> string
 -- Возвращает значение свойства 'hitbox' сущности
 entities.def_hitbox(id: int) -> vec3
 
+-- Возвращает true если сущность является осязаемым препятствием.
+entities.def_solid(id: int) -> boolean
+
 -- Возвращает индекс определения сущности по имени (числовой ID).
 entities.def_index(name: string) -> int
 
@@ -50,12 +53,12 @@ entities.get_all() -> table
 -- Возвращает таблицу загруженных сущностей по переданному списку UID
 entities.get_all(uids: table<int>) -> table
 
--- Возвращает список UID сущностей, попадающих в прямоугольную область
+-- Возвращает список UID сущностей, позиции которых попадают в прямоугольную область
 -- pos - минимальный угол области
 -- size - размер области
 entities.get_all_in_box(pos: vec3, size: vec3) -> table<int>
 
--- Возвращает список UID сущностей, попадающих в радиус
+-- Возвращает список UID сущностей, позиции которых попадают в радиус
 -- center - центр области
 -- radius - радиус области
 entities.get_all_in_radius(center: vec3, radius: number) -> table<int>
@@ -70,3 +73,5 @@ entities.raycast(start: vec3, dir: vec3, max_distance: number, ignore: int, [opt
 Функция является расширенным вариантом [block.raycast](libblock.md#raycast). Возвращает таблицу с результатами если луч касается блока, либо сущности.
 
 Соответственно это повлияет на наличие полей *entity* и *block*.
+
+Для более тонкой настройки используйте `world.raycast(...)`.

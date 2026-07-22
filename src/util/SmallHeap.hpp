@@ -11,8 +11,10 @@
 
 namespace util {    
     template<typename T>
-    inline T read_int_le(const uint8_t* src, size_t offset=0) {
-        return dataio::le2h(*(reinterpret_cast<const T*>(src) + offset));
+    inline T read_int_le(const uint8_t* src) {
+        T tmp;
+        std::memcpy(&tmp, src, sizeof(T));
+        return dataio::le2h(tmp);
     }
 
     /// @brief Simple heap implementation for memory-optimal sparse array of 
@@ -87,8 +89,7 @@ namespace util {
                     std::memset(found, 0, entrySize);
                     return found;
                 }
-                this->free(found);
-                return allocate(index, size);
+                free(found);
             }
             for (size_t i = 0; i < entriesCount; i++) {
                 auto data = buffer.data() + offset;
@@ -110,9 +111,12 @@ namespace util {
             entriesCount++;
 
             auto data = buffer.data() + offset;
-            *reinterpret_cast<Tindex*>(data) = dataio::h2le(index);
+            
+            Tindex indexTmp = dataio::h2le(index);
+            Tsize sizeTmp = dataio::h2le(size);
+            std::memcpy(data, &indexTmp, sizeof(Tindex));
             data += sizeof(Tindex);
-            *reinterpret_cast<Tsize*>(data) = dataio::h2le(size);
+            std::memcpy(data, &sizeTmp, sizeof(Tsize));
             return data + sizeof(Tsize);
         }
 
@@ -122,7 +126,7 @@ namespace util {
             if (ptr == nullptr) {
                 return 0;
             }
-            return read_int_le<Tsize>(ptr, -1);
+            return read_int_le<Tsize>(ptr - sizeof(Tsize));
         }
 
         /// @return number of entries
@@ -147,7 +151,8 @@ namespace util {
             ubyte* dst = out.data();
             const ubyte* src = buffer.data();
 
-            *reinterpret_cast<Tindex*>(dst) = dataio::h2le(entriesCount);
+            Tindex countTmp = dataio::h2le(entriesCount);
+            std::memcpy(dst, &countTmp, sizeof(Tindex));
             dst += sizeof(Tindex);
 
             std::memcpy(dst, src, buffer.size());
@@ -172,7 +177,7 @@ namespace util {
             ) : buffer(buffer), index(index), offset(offset) {}
 
             Tsize size() const {
-                return read_int_le<Tsize>(buffer.data() + offset, -1);
+                return read_int_le<Tsize>(buffer.data() + offset - sizeof(Tsize));
             }
 
             bool operator!=(const const_iterator& o) const {

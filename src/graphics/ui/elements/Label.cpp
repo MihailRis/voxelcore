@@ -207,6 +207,9 @@ uint Label::getLinesNumber() const {
 void Label::draw(const DrawContext& pctx, const Assets& assets) {
     auto batch = pctx.getBatch2D();
     auto font = assets.getShared<Font>(fontName);
+    if (font == nullptr) {
+        return;
+    }
     cache.prepare(
         font,
         font->getMetrics(),

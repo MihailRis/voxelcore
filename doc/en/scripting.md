@@ -58,9 +58,58 @@ not part of Lua syntax.
 - quat - array of four numbers - quaternion
 - matrix - array of 16 numbers - matrix
 
-## Core functions
+## Namespaces
+
+Currently, the engine uses a namespace hierarchy that minimizes conflicts between individual modules, scripts, and even packs.
+
+The following structure is relevant:
+
+- Global namespace (_G), which is the root namespace. Writing to it outside of engine core modules is highly undesirable, as it can waste hours of debugging time.
+    - Pack namespace - created each time content is loaded for each pack included in the configuration. This namespace is used by modules, as well as item and block scripts.
+        - [Component namespace](scripting/ecs.md#built-in-components).
+        - [UI document namespace](scripting/ui.md).
+- Isolated world generator namespace.
+
+## Modules
+
+A module is a global object with a lifetime limited to the lifetime of the loaded content, used both for interaction between different packages and as a substitute for global variables within the package itself.
+
+The module must be located in `contentpack/modules/**` (subfolders are allowed, but you will need to specify them)
 
 ```lua
-require "packid:module_name" -- load Lua module from pack-folder/modules/
--- no extension included, just name
+local module_name = require "contentpack:module_name" -- imports the module
+
+-- If the module is in the same pack in which it is imported, you can use the shortcut:
+local module_name = require "module_name"
+
+-- When using nested folders:
+local module_name = require "contentpack:path/to/module_name" -- the path does not include `modules`
+local module_name = require "path/to/module_name" -- if in the same pack
 ```
+
+The module will have the namespace of the folder in which it is located, regardless of the namespace from which the first import was performed.
+
+When creating a module, you should follow the following approach, which is what *require* expects:
+
+```lua
+local this = {
+    variable_name = ... -- public variables
+}
+
+-- private module variables
+local variable_name = ...
+
+-- private module functions
+local function function_name(...)
+    ...
+end
+
+-- public module functions
+function this.function_name(...)
+    ...
+end
+
+return this -- the result that require will return and cache
+```
+
+When reimported, the module will not be reloaded; instead, require will return the cached result.

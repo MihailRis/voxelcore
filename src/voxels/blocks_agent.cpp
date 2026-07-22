@@ -223,8 +223,7 @@ static inline voxel* raycast_blocks(
     glm::vec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
-    std::set<blockid_t> filter,
-    bool includeNonSelectable
+    const RaycastSettings& settings
 ) {
     const auto& blocks = chunks.getContentIndices().blocks;
     float px = start.x;
@@ -240,9 +239,8 @@ static inline voxel* raycast_blocks(
     int iy = std::floor(py);
     int iz = std::floor(pz);
 
-    int stepx = (dx > 0.0f) ? 1 : -1;
-    int stepy = (dy > 0.0f) ? 1 : -1;
-    int stepz = (dz > 0.0f) ? 1 : -1;
+    glm::ivec3 step {
+        (dx > 0.0f) ? 1 : -1, (dy > 0.0f) ? 1 : -1, (dz > 0.0f) ? 1 : -1};
 
     constexpr float infinity = std::numeric_limits<float>::infinity();
     constexpr float epsilon = 1e-6f;  // 0.000001
@@ -250,31 +248,31 @@ static inline voxel* raycast_blocks(
     float tyDelta = (std::fabs(dy) < epsilon) ? infinity : std::fabs(1.0f / dy);
     float tzDelta = (std::fabs(dz) < epsilon) ? infinity : std::fabs(1.0f / dz);
 
-    float xdist = (stepx > 0) ? (ix + 1 - px) : (px - ix);
-    float ydist = (stepy > 0) ? (iy + 1 - py) : (py - iy);
-    float zdist = (stepz > 0) ? (iz + 1 - pz) : (pz - iz);
+    float xdist = (step.x > 0) ? (ix + 1 - px) : (px - ix);
+    float ydist = (step.y > 0) ? (iy + 1 - py) : (py - iy);
+    float zdist = (step.z > 0) ? (iz + 1 - pz) : (pz - iz);
 
     float txMax = (txDelta < infinity) ? txDelta * xdist : infinity;
     float tyMax = (tyDelta < infinity) ? tyDelta * ydist : infinity;
     float tzMax = (tzDelta < infinity) ? tzDelta * zdist : infinity;
 
     int steppedIndex = -1;
-
+    bool includeNonSelectable = settings.includeNonSelectable;
+    
     while (t <= maxDist) {
         voxel* voxel = get(chunks, ix, iy, iz);
         if (voxel == nullptr) {
             return nullptr;
         }
 
+        auto filter = settings.filter;
         const auto& def = blocks.require(voxel->id);
-        if (voxel->id != BLOCK_AIR && (def.selectable || includeNonSelectable) &&
-            (filter.empty() || filter.find(def.rt.id) == filter.end())) {
-            end.x = px + t * dx;
-            end.y = py + t * dy;
-            end.z = pz + t * dz;
-            iend.x = ix;
-            iend.y = iy;
-            iend.z = iz;
+        if (voxel->id != BLOCK_AIR &&
+            (def.selectable || includeNonSelectable) &&
+            ((filter == nullptr || filter->find(def.rt.id) == filter->end()) ==
+                                      settings.blocksFilterExcludeMode)) {
+            end = start + t * dir;
+            iend = {ix, iy, iz};
 
             if (!def.rt.solid) {
                 const std::vector<AABB>& hitboxes =
@@ -309,51 +307,43 @@ static inline voxel* raycast_blocks(
 
                 if (hit) return voxel;
             } else {
-                iend.x = ix;
-                iend.y = iy;
-                iend.z = iz;
-
-                norm.x = norm.y = norm.z = 0;
-                if (steppedIndex == 0) norm.x = -stepx;
-                if (steppedIndex == 1) norm.y = -stepy;
-                if (steppedIndex == 2) norm.z = -stepz;
+                iend = {ix, iy, iz};
+                norm = {0, 0, 0};
+                if (steppedIndex != -1) {
+                    norm[steppedIndex] = -step[steppedIndex];
+                }
                 return voxel;
             }
         }
         if (txMax < tyMax) {
             if (txMax < tzMax) {
-                ix += stepx;
+                ix += step.x;
                 t = txMax;
                 txMax += txDelta;
                 steppedIndex = 0;
             } else {
-                iz += stepz;
+                iz += step.z;
                 t = tzMax;
                 tzMax += tzDelta;
                 steppedIndex = 2;
             }
         } else {
             if (tyMax < tzMax) {
-                iy += stepy;
+                iy += step.y;
                 t = tyMax;
                 tyMax += tyDelta;
                 steppedIndex = 1;
             } else {
-                iz += stepz;
+                iz += step.z;
                 t = tzMax;
                 tzMax += tzDelta;
                 steppedIndex = 2;
             }
         }
     }
-    iend.x = ix;
-    iend.y = iy;
-    iend.z = iz;
-
-    end.x = px + t * dx;
-    end.y = py + t * dy;
-    end.z = pz + t * dz;
-    norm.x = norm.y = norm.z = 0;
+    iend = {ix, iy, iz};
+    end = start + t * dir;
+    norm = {0, 0, 0};
     return nullptr;
 }
 
@@ -365,10 +355,9 @@ voxel* blocks_agent::raycast(
     glm::vec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
-    std::set<blockid_t> filter,
-    bool includeNonSelectable
+    const RaycastSettings& settings
 ) {
-    return raycast_blocks(chunks, start, dir, maxDist, end, norm, iend, filter, includeNonSelectable);
+    return raycast_blocks(chunks, start, dir, maxDist, end, norm, iend, settings);
 }
 
 voxel* blocks_agent::raycast(
@@ -379,10 +368,9 @@ voxel* blocks_agent::raycast(
     glm::vec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
-    std::set<blockid_t> filter,
-    bool includeNonSelectable
+    const RaycastSettings& settings
 ) {
-    return raycast_blocks(chunks, start, dir, maxDist, end, norm, iend, filter, includeNonSelectable);
+    return raycast_blocks(chunks, start, dir, maxDist, end, norm, iend, settings);
 }
 
 // reduce nesting on next modification

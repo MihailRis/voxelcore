@@ -22,6 +22,7 @@
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"
 #include "voxels/Chunks.hpp"
+#include "voxels/blocks_agent.hpp"
 #include "window/Camera.hpp"
 #include "world/Level.hpp"
 #include "WorldRenderer.hpp"
@@ -98,7 +99,7 @@ void Decorator::updateAcoustics(const Camera& camera) {
 
     auto& chunks = *player.chunks;
     const auto& start = camera.position;
-    float rayLength = 40.0f;
+    float length = 40.0f;
 
     auto& blocks = level.content.getIndices()->blocks;
 
@@ -107,7 +108,7 @@ void Decorator::updateAcoustics(const Camera& camera) {
     float averageDistance = 0.0f;
     float averageAbsorption = 0.0f;
     float speedOfSound = 300.0f;
-    float minDistance = rayLength;
+    float minDistance = length;
     for (int i = 0; i < rays; i++) {
         float u1 = random.randFloat();
         float u2 = random.randFloat();
@@ -121,12 +122,13 @@ void Decorator::updateAcoustics(const Camera& camera) {
         glm::vec3 end;
         glm::ivec3 norm;
         glm::ivec3 iend;
-        auto vox = chunks.rayCast(start, dir, rayLength, end, norm, iend);
+        blocks_agent::RaycastSettings raycast {};
+        auto vox = chunks.rayCast(start, dir, length, end, norm, iend, raycast);
         if (vox == nullptr) {
             continue;
         }
         auto distance = glm::distance(start, end);
-        if (distance >= rayLength * 0.98f) {
+        if (distance >= length * 0.98f) {
             continue;
         }
         if (distance < minDistance) {
@@ -149,7 +151,7 @@ void Decorator::updateAcoustics(const Camera& camera) {
         averageAbsorption /= hit;
     }
 
-    float decayTime = 20.0f * (averageDistance / rayLength);
+    float decayTime = 20.0f * (averageDistance / length);
     float escapeRatio = static_cast<float>(rays - hit) / static_cast<float>(rays);
 
     acoustics.reverbGain = glm::pow(hit / static_cast<float>(rays), 3.0f);

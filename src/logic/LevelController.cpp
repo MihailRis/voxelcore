@@ -82,7 +82,6 @@ void LevelController::update(float delta, bool pause) {
             continue;
         }
         player->rotationInterpolation.updateTimer(delta);
-        player->updateEntity();
         glm::vec3 position = player->getPosition();
         player->chunks->configure(
             glm::floor(position.x),
@@ -96,9 +95,9 @@ void LevelController::update(float delta, bool pause) {
             *player,
             player.get() == clientPlayer
         );
+        player->updateEntity();
     }
     if (!pause) {
-        // update all objects that needed
         blocks->update(delta, settings.chunks.padding.get());
         level->entities->update(delta);
         for (const auto& [_, player] : *level->players) {

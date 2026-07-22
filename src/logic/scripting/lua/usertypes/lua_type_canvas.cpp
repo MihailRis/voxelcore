@@ -81,16 +81,17 @@ union RGBA {
     uint8_t arr[4];
     uint32_t rgba;
 };
+static_assert(sizeof(RGBA) == 4);
 
-static RGBA* get_at(const ImageData& data, uint index) {
-    if (index >= data.getWidth() * data.getHeight()) {
-        return nullptr;
-    }
+static RGBA* get_at(const ImageData& data, size_t index) {
     return reinterpret_cast<RGBA*>(data.getData() + index * sizeof(RGBA));
 }
 
 static RGBA* get_at(const ImageData& data, uint x, uint y) {
-    return get_at(data, y * data.getWidth() + x);
+    if (x >= data.getWidth() || y >= data.getHeight()) {
+        return nullptr;
+    }
+    return get_at(data, static_cast<size_t>(y) * data.getWidth() + x);
 }
 
 static RGBA* get_at(State* L, uint x, uint y) {

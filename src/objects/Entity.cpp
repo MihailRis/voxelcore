@@ -113,6 +113,11 @@ int64_t Entity::getPlayer() const {
 }
 
 void Entity::setPlayer(int64_t id) {
-    registry.get<EntityId>(entity).player = id;
+    auto& eid = registry.get<EntityId>(entity);
+    if (eid.player == id) {
+        return;
+    }
+    eid.player = id;
+    scripting::on_entity_player_set(*this, id);
 }
 

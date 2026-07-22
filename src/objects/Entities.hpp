@@ -5,6 +5,7 @@
 #include <optional>
 #include <vector>
 
+#include "constants.hpp"
 #include "physics/Hitbox.hpp"
 #include "Transform.hpp"
 #include "Rigidbody.hpp"
@@ -46,12 +47,6 @@ class Entities final {
     );
     void preparePhysics(float delta);
 public:
-    struct RaycastResult {
-        entityid_t entity;
-        glm::ivec3 normal;
-        float distance;
-    };
-
     Entities(Level& level);
 
     ~Entities();
@@ -82,20 +77,33 @@ public:
 
     std::optional<Entity> get(entityid_t id);
 
+    struct RaycastSettings {
+        /// @param ignore Ignored entity uid
+        entityid_t ignoredUid;
+        /// @param solidEntitiesOnly If true, only entities with solid hitboxes 
+        /// will be checked
+        bool solidEntitiesOnly = false;
+        bool entityFilterExcludeMode = false;
+        const std::set<entitydefid_t>* entitiesFilter = nullptr;
+    };
+
+    struct RaycastResult {
+        entityid_t entity;
+        glm::ivec3 normal;
+        float distance;
+    };
+
     /// @brief Entities raycast. No blocks check included, use combined with
     /// Chunks.rayCast
     /// @param start Ray start
     /// @param dir Ray direction normalized vector
     /// @param maxDistance Max ray length
-    /// @param ignore Ignored entity ID
-    /// @param solidOnly If true, only entities with solid hitboxes will be checked
     /// @return An optional structure containing entity, normal and distance
     std::optional<RaycastResult> rayCast(
         glm::vec3 start,
         glm::vec3 dir,
         float maxDistance,
-        entityid_t ignore = -1,
-        bool solidOnly = false
+        const RaycastSettings& settings
     );
 
     void loadEntities(dv::value map);
