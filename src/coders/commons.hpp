@@ -73,4 +73,6 @@ public:
         uint linestart
     );
     std::string errorLog() const;
+
+    std::runtime_error toRuntimeError() const;
 };

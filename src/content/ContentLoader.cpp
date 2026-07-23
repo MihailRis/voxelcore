@@ -178,7 +178,16 @@ void ContentUnitLoader<DefT>::loadUnit(
 ) {
     auto folder = pack.folder;
     auto configFile = folder / (defsDir + "/" + name + ".json");
-    if (io::exists(configFile)) loadUnit(def, full, configFile);
+    if (io::exists(configFile)) {
+        try {
+            loadUnit(def, full, configFile);
+        } catch (const std::runtime_error& err) {
+            throw std::runtime_error(
+                "file " + util::quote(configFile.string()) + ": " +
+                std::string(err.what())
+            );
+        }
+    }
 }
 
 void ContentLoader::loadBlockMaterial(

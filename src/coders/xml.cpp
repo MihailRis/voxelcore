@@ -385,10 +385,22 @@ public:
         }
         if (c == '(') {
             nextChar();
-            // TODO: replace with array parsing after moving to dv::value's
-            std::string value = std::string(readUntil(')'));
+            int depth = 1;
+            size_t start = pos;
+            while (hasNext()) {
+                char c = nextChar();
+                if (c == '(') {
+                    depth++;
+                } else if (c == ')') {
+                    depth--;
+                    if (depth == 0) {
+                        goBack(1);
+                        break;
+                    }
+                }
+            }
             expect(')');
-            return value;
+            return std::string(source.substr(start, pos - start - 1));
         }
         return std::string(readUntilWhitespace());
     }

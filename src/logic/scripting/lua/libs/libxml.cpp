@@ -1,4 +1,5 @@
 #include "coders/xml.hpp"
+#include "coders/commons.hpp"
 #include "api_lua.hpp"
 
 static const char* TAG_ATTR = "#";
@@ -72,17 +73,26 @@ static int l_tostring(lua::State* L) {
 
 static int l_parse(lua::State* L) {
     auto string = lua::require_string(L, 1);
-    auto document = xml::parse("[string]", string);
-    return push_xml(L, *document->getRoot());
+    try {
+        auto document = xml::parse("[string]", string);
+        return push_xml(L, *document->getRoot());
+    } catch (const parsing_error& err) {
+        throw err.toRuntimeError();
+    }
 }
-
 
 static int l_parse_vcd(lua::State* L) {
     auto string = lua::require_string(L, 1);
     auto rootTag = lua::tostring(L, 2);
-    auto document = xml::parse_vcm(
-        "[string]", string, rootTag ? rootTag : ""
-    );
+
+    std::unique_ptr<xml::Document> document;
+    try {
+        document = xml::parse_vcm(
+            "[string]", string, rootTag ? rootTag : ""
+        );
+    } catch (const parsing_error& err) {
+        throw err.toRuntimeError();
+    }
     const auto& root = *document->getRoot();
     if (rootTag != nullptr) {
         return push_xml(L, root);
