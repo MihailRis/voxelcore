@@ -3,13 +3,11 @@ local this = {}
 local CH_TRANSLATE = 1
 local CH_ROTATE = 2
 
-local AX_X = 1
-local AX_Y = 2
-local AX_Z = 3
-
 local INT_CONST = 1
 local INT_LINEAR = 2
 local INT_BEZIER = 3
+
+local TRACE_CODEGEN = false
 
 local function bezier(a, b, c, d, u)
     local s = 1 - u
@@ -32,20 +30,9 @@ local function bezier_interpolation(k0, k1, t)
     local u = t
 
     for i=1,8 do
-        local x = bezier(
-            k0.frame,
-            k0.rx,
-            k1.lx,
-            k1.frame,
-            u
-        )
-        local dx = bezier_derivative(
-            k0.frame,
-            k0.rx,
-            k1.lx,
-            k1.frame,
-            u
-        )
+        local x = bezier(k0.frame, k0.rx, k1.lx, k1.frame, u)
+        local dx = bezier_derivative(k0.frame, k0.rx, k1.lx, k1.frame, u)
+
         if math.abs(dx) < 1e-8 then
             break
         end
@@ -173,7 +160,7 @@ local curve_to_interp = {
     bezier = INT_BEZIER,
 }
 
-function this.parse_track(root)
+local function parse_track(root)
     local linesets = {}
     for i, node in ipairs(root) do
         if type(node) == "string" then
@@ -221,7 +208,7 @@ function this.parse_track(root)
 end
 
 
-function this.compile_track(linesets)
+function this.compile_track(linesets, track_name)
     local code = ""
     local memoised = {}
     local keysets = {}
@@ -242,11 +229,30 @@ function this.compile_track(linesets)
     end
 
     local src = "return function(rig, t, m)\n local dst = DST\n" .. code .. "\nend"
+
+    if TRACE_CODEGEN then
+        debug.log("["..string.escape(track_name or "nil").." codegen trace]:\n"..code)
+    end
+
     local generator, err = load(src, "<expr>", "bt", table.extend({keysets = keysets}, env))
     if not generator then
         error(err)
     end
     return generator()
+end
+
+local cached_tracks = {}
+
+function this.load_vca(filepath)
+    local track = cached_tracks[filepath]
+    if track then
+        return track
+    end
+    local source = file.read(filepath)
+    local raw_track = parse_track(xml.parse_vcd(source, "track"))
+    track = this.compile_track(raw_track, filepath)
+    cached_tracks[filepath] = track
+    return track
 end
 
 return this
