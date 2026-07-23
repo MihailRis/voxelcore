@@ -162,6 +162,44 @@ local function codegen_track(lines, memoised, keysets)
     return code
 end
 
+local action_to_channel = {
+    move = CH_TRANSLATE,
+    rotate = CH_ROTATE
+}
+
+function this.parse_track(root)
+    local linesets = {}
+    for i, node in ipairs(root) do
+        if type(node) == "string" then
+            goto continue
+        end
+        local tag = node['#']
+        local bone = node.bone
+
+        local lineset = linesets[bone]
+        if not lineset then
+            lineset = {lines = {}}
+            linesets[bone] = lineset
+        end
+
+        local line
+        if node.func then
+            line = {
+                axis = ("xyz"):find(node.by),
+                channel = action_to_channel[tag],
+                expression = node.func,
+            }
+        elseif #node > 0 then
+            error("not implemented")
+        end
+
+        table.insert(lineset.lines, line)
+        ::continue::
+    end
+    return linesets
+end
+
+
 function this.compile_track(linesets)
     local code = ""
     local memoised = {}
