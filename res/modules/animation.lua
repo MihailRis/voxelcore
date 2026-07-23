@@ -167,6 +167,12 @@ local action_to_channel = {
     rotate = CH_ROTATE
 }
 
+local curve_to_interp = {
+    const = INT_CONST,
+    linear = INT_LINEAR,
+    bezier = INT_BEZIER,
+}
+
 function this.parse_track(root)
     local linesets = {}
     for i, node in ipairs(root) do
@@ -182,14 +188,29 @@ function this.parse_track(root)
             linesets[bone] = lineset
         end
 
-        local line
+        local line = {
+            axis = ("xyz"):find(node.by),
+            channel = action_to_channel[tag]
+        }
         if node.func then
-            line = {
-                axis = ("xyz"):find(node.by),
-                channel = action_to_channel[tag],
-                expression = node.func,
-            }
-        elseif #node > 0 then
+            line.expression = node.func
+        elseif node.curve then
+            line.interp = curve_to_interp[node.curve]
+            line.keys = {}
+            for j, key_node in ipairs(node) do
+                local keyframe = {
+                    frame = tonumber(key_node.frame),
+                    value = tonumber(key_node.value),
+                }
+                if line.interp == INT_BEZIER then
+                    keyframe.lx = tonumber(key_node.lx)
+                    keyframe.ly = tonumber(key_node.ly)
+                    keyframe.rx = tonumber(key_node.rx)
+                    keyframe.ry = tonumber(key_node.ry)
+                end
+                table.insert(line.keys, keyframe)
+            end
+        else
             error("not implemented")
         end
 
