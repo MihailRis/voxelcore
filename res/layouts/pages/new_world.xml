@@ -11,7 +11,7 @@
         @World generator
     </button>
     <button id='content_btn' onclick='save_state() menu.page="content"'/>
-    <button onclick='create_world()' margin='1,20,1,1'>
+    <button onclick='create_world()' margin='0,20,0,1'>
         @Create World
     </button>
     <button onclick='menu:back()'>@Back</button>

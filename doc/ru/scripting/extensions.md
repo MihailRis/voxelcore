@@ -158,6 +158,12 @@ math.sum(x: number, ... | t: table) -> number
 
 -- Возвращает целое число, указывающее знак числа (-1/0/1)
 math.sign(x: number) -> int
+
+-- Одномерный шум с значениями в диапазоне [-1..1].
+math.noise(x: number, [опционально] octaves: int = 1) -> number
+
+-- Двумерный шум с значениями в диапазоне [-1..1].
+math.noise2d(x: number, y: number [опционально] octaves: int = 1) -> number
 ```
 
 ## Расширения для bit
