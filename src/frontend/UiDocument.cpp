@@ -7,6 +7,9 @@
 #include "graphics/ui/elements/InventoryView.hpp"
 #include "graphics/ui/gui_xml.hpp"
 #include "logic/scripting/scripting.hpp"
+#include "debug/Logger.hpp"
+
+static debug::Logger logger("ui-document");
 
 UiDocument::UiDocument(
     std::string id, 
@@ -15,6 +18,19 @@ UiDocument::UiDocument(
     scriptenv env
 ) : id(std::move(id)), script(script), root(root), env(std::move(env)) {
     rebuildIndices();
+}
+
+UiDocument::~UiDocument() {
+    try {
+        scripting::on_ui_destroy(*this);
+    } catch (const std::exception& err) {
+        logger.error() << "an error occurred on calling on_destroy event for document '"
+          << id << "': " << err.what();
+    } catch (...) {
+        logger.error() << "unknown exception caught on calling on_destroy "
+                          "event for document '"
+                       << id << "'";
+    }
 }
 
 void UiDocument::rebuildIndices() {

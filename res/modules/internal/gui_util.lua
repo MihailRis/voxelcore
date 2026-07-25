@@ -77,15 +77,18 @@ function Element.new(docname, name)
 end
 
 -- the engine automatically creates an instance for every ui document (layout)
-local Document = {}
-function Document.new(docname)
-    return setmetatable({name=docname}, {
-        __index=function(self, k)
-            local elem = Element.new(self.name, k)
-            rawset(self, k, elem)
-            return elem
+local Document = {
+    __index=function(self, k)
+        if type(k) ~= "string" then
+            error("element id is not a string")
         end
-    })
+        local elem = Element.new(self.name, k)
+        rawset(self, k, elem)
+        return elem
+    end
+}
+function Document.new(docname)
+    return setmetatable({name=docname}, Document)
 end
 
 local RadioGroup = {}

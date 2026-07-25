@@ -14,6 +14,7 @@ function events.on(event, func)
         events.handlers[event] = {}
     end
     table.insert(events.handlers[event], func)
+    return func
 end
 
 function events.reset(event, func)
@@ -22,6 +23,14 @@ function events.reset(event, func)
     else
         events.handlers[event] = {func}
     end
+end
+
+function events.remove(event, handler)
+    local handlers = events.handlers[event]
+    if not handlers then
+        return
+    end
+    table.remove_value(handlers, handler)
 end
 
 function events.remove_by_prefix(prefix)

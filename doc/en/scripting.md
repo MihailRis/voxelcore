@@ -42,6 +42,7 @@ Subsections:
     - [utf8](scripting/builtins/libutf8.md)
     - [vec2, vec3, vec4](scripting/builtins/libvecn.md)
     - [world](scripting/builtins/libworld.md)
+- [Extensions for standard libraries](scripting/extensions.md)
 - [Module core:bit_converter](scripting/modules/core_bit_converter.md)
 - [Module core:data_buffer](scripting/modules/core_data_buffer.md)
 - [Module core:vector2, core:vector3](scripting/modules/core_vector2_vector3.md)

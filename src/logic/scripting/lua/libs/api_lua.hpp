@@ -44,6 +44,7 @@ extern const luaL_Reg posteffectslib[]; // gfx.posteffects
 extern const luaL_Reg quatlib[];
 extern const luaL_Reg randomlib[];
 extern const luaL_Reg compressionlib[];
+extern const luaL_Reg testlib[];
 extern const luaL_Reg text3dlib[]; // gfx.text3d
 extern const luaL_Reg timelib[];
 extern const luaL_Reg tomllib[];

@@ -23,6 +23,10 @@ function file.parent(path)
     return dir
 end
 
+function file.remove_ext(path)
+    return string.format("%s/%s", file.parent(path), file.stem(path))
+end
+
 function file.path(path)
     local pos = path:find(':')
     return path:sub(pos + 1)

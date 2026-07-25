@@ -9,6 +9,7 @@ int close(int fd);
 ssize_t read(int fd, void *buf, size_t count);
 ssize_t write(int fd, const void *buf, size_t count);
 int fcntl(int fd, int cmd, ...);
+int ioctl(int fd, unsigned long request, ...);
 
 const char *strerror(int errnum);
 ]]
@@ -20,6 +21,7 @@ local O_WRONLY   = 0x1
 local O_RDWR     = 0x2
 local O_NONBLOCK = 0x800
 local F_GETFL    = 3
+local FIONREAD   = 0x541B
 
 local function getError()
     local err = FFI.errno()
@@ -58,12 +60,16 @@ function lib.write(fd, bytearray)
     end
 end
 
-function lib.seek(fd, mode, offset)
-    error("cannot seek the named pipe")
-end
+function lib.available(fd)
+    if fd == nil or fd < 0 then return 0 end
 
-function lib.flush(fd)
-    -- no flush on unix
+    local bytes_ready = FFI.new("int[1]", 0)
+
+    if C.ioctl(fd, FIONREAD, bytes_ready) == -1 then
+        return 0
+    end
+
+    return tonumber(bytes_ready[0])
 end
 
 function lib.is_alive(fd)

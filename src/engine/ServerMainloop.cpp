@@ -1,13 +1,14 @@
 #include "ServerMainloop.hpp"
 
 #include "Engine.hpp"
-#include "logic/scripting/scripting.hpp"
+#include "devtools/AppScriptsControl.hpp"
 #include "logic/LevelController.hpp"
 #include "interfaces/Process.hpp"
 #include "debug/Logger.hpp"
 #include "world/Level.hpp"
 #include "world/World.hpp"
 #include "util/platform.hpp"
+#include "devtools/Project.hpp"
 
 #include <chrono>
 
@@ -32,21 +33,12 @@ void ServerMainloop::run() {
         setLevel(std::move(level));
     });
 
-    auto process = scripting::start_app_script(
-        "script:" + coreParams.scriptFile.filename().u8string()
-    );
-
     double targetDelta = 1.0 / static_cast<double>(coreParams.tps);
     double delta = targetDelta;
     auto begin = system_clock::now();
     auto startupTime = begin;
 
-    while (process->isActive()) {
-        if (engine.isQuitSignal()) {
-            process->terminate();
-            logger.info() << "script has been terminated due to quit signal";
-            break;
-        }
+    while (!engine.isQuitSignal() && !engine.getAppScripts().isFinished()) {
         if (coreParams.testMode) {
             time.step(delta);
         } else {
@@ -55,7 +47,6 @@ void ServerMainloop::run() {
                 duration_cast<microseconds>(now - startupTime).count() / 1e6);
             delta = time.getDelta();
         }
-        process->update();
         if (controller) {
             controller->getLevel()->getWorld()->updateTimers(delta);
             controller->update(glm::min(delta, 0.2), false);

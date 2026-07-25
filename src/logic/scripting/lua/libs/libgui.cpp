@@ -420,15 +420,19 @@ static int p_get_data(UINode* node, lua::State* L) {
     return 0;
 }
 
-static const std::string& request_node_id(const DocumentNode& docnode) {
-    std::string id = docnode.node->getId();
+static const std::string& request_node_id(UiDocument& document, UINode& node) {
+    const std::string& id = node.getId();
     if (id.empty()) {
-        id = "#" + std::to_string(
-            reinterpret_cast<std::ptrdiff_t>(docnode.node.get()));
+        node.setId( "#" + std::to_string(
+            reinterpret_cast<std::ptrdiff_t>(&node)));
+        document.pushIndices(node.shared_from_this());
+        return node.getId();
     }
-    docnode.node->setId(std::move(id));
-    docnode.document->pushIndices(docnode.node);
-    return docnode.node->getId();
+    return id;
+}
+
+static const std::string& request_node_id(const DocumentNode& docnode) {
+    return request_node_id(*docnode.document, *docnode.node);
 }
 
 /// @brief Push UI-document node object to stack
@@ -443,15 +447,14 @@ static int push_document_node(lua::State* L, const std::string& id) {
 
 static int p_get_parent(UINode* node, lua::State* L) {
     auto parent = node->getParent();
-    if (!parent) {
+    if (parent == nullptr) {
         return 0;
     }
     auto docname = lua::require_string(L, 1);
     auto element = lua::require_string(L, 2);
     auto docnode = get_document_node_impl(L, docname, element);
 
-    const auto& id = request_node_id(docnode);
-
+    const auto& id = request_node_id(*docnode.document, *parent);
     return push_document_node(L, id);
 }
 
@@ -1144,7 +1147,7 @@ static int l_gui_load_document(lua::State* L) {
     auto document = documentPtr.get();
     engine->requireAssets().store(std::move(documentPtr), alias);
 
-    scripting::on_ui_open(document, {args});
+    scripting::on_ui_open(*document, {args});
     return 0;
 }
 
