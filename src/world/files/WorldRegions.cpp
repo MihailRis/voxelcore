@@ -184,7 +184,7 @@ void WorldRegions::put(Chunk* chunk, std::vector<ubyte> entitiesData) {
     }
     // Writing block inventories
     if (!chunk->inventories.empty() || chunk->flags.inventoriesRemoved) {
-        uint datasize;
+        uint32_t datasize;
         auto data = write_inventories(chunk->inventories, datasize);
         put(chunk->x,
             chunk->z,

@@ -70,7 +70,7 @@ std::unique_ptr<Atlas> AtlasBuilder::build(uint extrusion, bool prepare, uint ma
     if (maxResolution == 0) {
         maxResolution = Texture::MAX_RESOLUTION;
     }
-    auto sizes = std::make_unique<uint[]>(entries.size() * 2);
+    auto sizes = std::make_unique<uint32_t[]>(entries.size() * 2);
     uint index = 0;
     for (auto& entry : entries) {
         auto image = entry.image;

@@ -158,7 +158,7 @@ Chunk* Chunks::getChunkByVoxel(int32_t x, int32_t y, int32_t z) const {
     return nullptr;
 }
 
-Chunk* Chunks::getChunk(int x, int z) const {
+Chunk* Chunks::getChunk(int32_t x, int32_t z) const {
     if (auto ptr = areaMap.getIf(x, z)) {
         return ptr->get();
     }
