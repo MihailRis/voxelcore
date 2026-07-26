@@ -42,8 +42,13 @@ std::vector<ubyte> gzip::compress(const ubyte* src, size_t size) {
 
 std::vector<ubyte> gzip::decompress(const ubyte* src, size_t size) {
     // getting uncompressed data length from gzip footer
+    // (byte-by-byte: the footer is not aligned, dereferencing it as uint32
+    // is UB and produces garbage on strict-alignment targets)
     size_t decompressed_size =
-        *reinterpret_cast<const uint32_t*>(src + size - 4);
+        static_cast<size_t>(src[size - 4]) |
+        (static_cast<size_t>(src[size - 3]) << 8) |
+        (static_cast<size_t>(src[size - 2]) << 16) |
+        (static_cast<size_t>(src[size - 1]) << 24);
     std::vector<ubyte> buffer;
     buffer.resize(decompressed_size);
 
