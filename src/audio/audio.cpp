@@ -7,10 +7,20 @@
 #include "io/io.hpp"
 #include "coders/ogg.hpp"
 #include "coders/wav.hpp"
+#ifndef VC_NO_AL
 #include "AL/ALAudio.hpp"
+#endif
 #include "NoAudio.hpp"
 #include "debug/Logger.hpp"
 #include "util/ObjectsKeeper.hpp"
+
+#ifdef VC_AUDIO_CUSTOM_BACKEND
+namespace audio {
+    /// @brief Platform-provided audio backend factory
+    /// (implemented by ports built with VC_AUDIO_CUSTOM_BACKEND)
+    Backend* create_custom_backend(AudioSettings& settings);
+}
+#endif
 
 static debug::Logger logger("audio");
 
@@ -162,10 +172,18 @@ void audio::initialize(
     bool enabled, bool inputEnabled, AudioSettings& settings
 ) {
     enabled = enabled && settings.enabled.get();
+#ifndef VC_NO_AL
     if (enabled) {
         logger.info() << "initializing ALAudio backend";
         backend = ALAudio::create(settings).release();
     }
+#endif
+#ifdef VC_AUDIO_CUSTOM_BACKEND
+    if (enabled && backend == nullptr) {
+        logger.info() << "initializing custom audio backend";
+        backend = create_custom_backend(settings);
+    }
+#endif
     if (backend == nullptr) {
         if (enabled) {
             std::cerr << "could not to initialize audio" << std::endl;
