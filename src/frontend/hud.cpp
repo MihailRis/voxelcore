@@ -385,9 +385,11 @@ void Hud::openInventory(bool playerInventory) {
         auto& content = frontend.getLevel().content;
         auto inventory = player.getInventory();
         auto inventoryDocument = assets.get<UiDocument>("core:inventory");
-        inventoryView = std::dynamic_pointer_cast<InventoryView>(inventoryDocument->getRoot());
-        inventoryView->bind(inventory, &content);
-        add(HudElement(HudElementMode::INVENTORY, inventoryDocument, inventoryView, false));
+        if (inventoryDocument != nullptr) {
+            inventoryView = std::dynamic_pointer_cast<InventoryView>(inventoryDocument->getRoot());
+            inventoryView->bind(inventory, &content);
+            add(HudElement(HudElementMode::INVENTORY, inventoryDocument, inventoryView, false));
+        }
     }
     gui.setActiveFrame(GUI::CORE_MAIN);
 }
