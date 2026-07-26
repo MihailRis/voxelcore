@@ -66,7 +66,11 @@ static int l_set_model(lua::State* L) {
 static int l_get_matrix(lua::State* L) {
     if (auto skeleton = get_skeleton(L)) {
         auto index = index_range_check(*skeleton, lua::tointeger(L, 2));
-        return lua::pushmat4(L, skeleton->pose.matrices[index]);
+        if (lua::istable(L, 3)) {
+            lua::setmat4(L, 3, skeleton->pose.matrices[index]);
+        } else {
+            return lua::pushmat4(L, skeleton->pose.matrices[index]);
+        }
     }
     return 0;
 }
@@ -75,6 +79,14 @@ static int l_set_matrix(lua::State* L) {
     if (auto skeleton = get_skeleton(L)) {
         auto index = index_range_check(*skeleton, lua::tointeger(L, 2));
         skeleton->pose.matrices[index] = lua::tomat4(L, 3);
+    }
+    return 0;
+}
+
+static int l_reset_pose(lua::State* L) {
+    if (auto skeleton = get_skeleton(L)) {
+        auto& pose = skeleton->pose;
+        std::fill(pose.matrices.begin(), pose.matrices.end(), glm::mat4(1.0f));
     }
     return 0;
 }
@@ -169,6 +181,7 @@ const luaL_Reg skeletonlib[] = {
     {"set_model", lua::wrap<l_set_model>},
     {"get_matrix", lua::wrap<l_get_matrix>},
     {"set_matrix", lua::wrap<l_set_matrix>},
+    {"reset_pose", lua::wrap<l_reset_pose>},
     {"get_texture", lua::wrap<l_get_texture>},
     {"set_texture", lua::wrap<l_set_texture>},
     {"index", lua::wrap<l_index>},
