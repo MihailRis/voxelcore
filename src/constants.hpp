@@ -30,7 +30,13 @@ inline constexpr entityid_t ENTITY_NONE = 0;
 inline constexpr entityid_t ENTITY_AUTO = std::numeric_limits<entityid_t>::max();
 
 inline constexpr int CHUNK_W = 16;
-inline constexpr int CHUNK_H = 256;
+// Chunk height may be lowered at build time on memory-constrained
+// platforms (every loaded chunk stores CHUNK_VOL voxels + lightmaps).
+// Note: worlds are not portable between builds with different CHUNK_H.
+#ifndef VC_CHUNK_H
+#define VC_CHUNK_H 256
+#endif
+inline constexpr int CHUNK_H = VC_CHUNK_H;
 inline constexpr int CHUNK_D = 16;
 
 inline constexpr int EXTENDED_BLOCK_LIMIT = CHUNK_W; // must not be greater than chunk width and depth
@@ -62,7 +68,11 @@ inline constexpr uint vox_index(uint x, uint y, uint z, uint w=CHUNK_W, uint d=C
 }
 
 /// @brief pixel size of an item inventory icon
-inline constexpr int ITEM_ICON_SIZE = 48;
+/// (overridable at build time for low-resolution screens)
+#ifndef VC_ITEM_ICON_SIZE
+#define VC_ITEM_ICON_SIZE 48
+#endif
+inline constexpr int ITEM_ICON_SIZE = VC_ITEM_ICON_SIZE;
 
 inline constexpr int TRANSLUCENT_BLOCKS_SORT_INTERVAL = 8;
 

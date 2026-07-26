@@ -90,7 +90,13 @@ static inline auto load_inventories(
     return invs;
 }
 
-static util::ObjectsPool<Chunk> chunks_pool(1'024);
+// Number of preallocated chunks. Overridable at build time: on
+// memory-constrained platforms preallocation may cost more RAM than the
+// platform has (pool size * sizeof(Chunk)); 0 makes allocation fully lazy.
+#ifndef VC_CHUNKS_POOL_SIZE
+#define VC_CHUNKS_POOL_SIZE 1'024
+#endif
+static util::ObjectsPool<Chunk> chunks_pool(VC_CHUNKS_POOL_SIZE);
 static util::ObjectsPool<Lightmap> lightmaps_pool;
 
 std::shared_ptr<Chunk> GlobalChunks::create(int x, int z, bool lighting) {
