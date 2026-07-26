@@ -80,6 +80,14 @@ gfx.text3d.set_rotation(id: int, rotation: mat4)
 Устанавливает вращение текста (Устанавливает повернутые вектора X,Y).
 
 ```lua
+gfx.text3d.get_entity(id: int) -> int
+gfx.text3d.set_entity(id: int, entity: int)
+```
+
+Геттер и сеттер сущности, к позиции которой привязан 3D текст.
+Позиция, устанавливаемая через `gfx.text3d.set_pos`, в таком случае, относительна позиции сущности.
+
+```lua
 gfx.text3d.update_settings(id: int, preset: table)
 ```
 

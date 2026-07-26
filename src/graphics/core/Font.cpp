@@ -26,12 +26,21 @@ Font::Font(
       pages(std::move(pages)),
       glyphs(std::move(glyphs)),
       fontFile(std::move(fontFile)) {
+    if (this->fontFile.has_value()) {
+        if (auto fontPtr = this->fontFile->lock()) {
+            monospace = fontPtr->isMonospace();
+        }
+    }
 }
 
 Font::~Font() = default;
 
 int Font::getYOffset() const {
     return yoffset;
+}
+
+bool Font::isMonospace() const {
+    return monospace;
 }
 
 int Font::getLineHeight() const {
@@ -53,7 +62,7 @@ bool Font::isPrintableChar(uint codepoint) const {
 
 int FontMetrics::calcWidth(std::wstring_view text, size_t offset, size_t length) const {
     auto font = this->font.has_value() ? this->font->lock() : nullptr;
-    if (font == nullptr) {
+    if (font == nullptr || font->isMonospace()) {
         return std::min(text.length() - offset, length) * _glyphInterval;
     }
     int totalWidth = 0;

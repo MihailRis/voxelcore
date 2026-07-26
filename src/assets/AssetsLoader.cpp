@@ -287,7 +287,7 @@ void AssetsLoader::addDefaults(AssetsLoader& loader, const Content* content) {
             for (const auto& file : io::directory_iterator(skeletonsDir)) {
                 loader.add(
                     AssetType::SKELETON,
-                    file.string(),
+                    (file.parent() / file.stem()).string(),
                     entry.first + ":" + file.stem()
                 );
             }

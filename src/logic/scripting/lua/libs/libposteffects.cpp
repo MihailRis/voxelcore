@@ -65,7 +65,7 @@ static int l_set_params(lua::State* L) {
 static int l_set_array(lua::State* L) {
     size_t index = static_cast<size_t>(lua::tointeger(L, 1));
     auto key = lua::require_string(L, 2);
-    auto data = lua::require_lstring(L, 3);
+    auto data = lua::bytearray_as_string(L, 3);
     auto effect = post_processing->getEffect(index);
     if (effect == nullptr) {
         return 0;

@@ -24,7 +24,7 @@ function gui_util.parse_query(query)
 end
 
 --- @param query string page query string
-function gui_util.load_page(query)
+function gui_util.load_page(app, query)
     local name, args = gui_util.parse_query(query)
     for i = #gui_util.local_dispatchers, 1, -1 do
         local newname, newargs = gui_util.local_dispatchers[i](name, args)
@@ -34,7 +34,7 @@ function gui_util.load_page(query)
     local filename = file.find(string.format("layouts/pages/%s.xml", name))
     if filename then
         name = file.prefix(filename)..":pages/"..name
-        gui.load_document(filename, name, args, { app = __vc_app })
+        gui.load_document(filename, name, args, { app = app })
         return name
     end
 end
@@ -77,15 +77,18 @@ function Element.new(docname, name)
 end
 
 -- the engine automatically creates an instance for every ui document (layout)
-local Document = {}
-function Document.new(docname)
-    return setmetatable({name=docname}, {
-        __index=function(self, k)
-            local elem = Element.new(self.name, k)
-            rawset(self, k, elem)
-            return elem
+local Document = {
+    __index=function(self, k)
+        if type(k) ~= "string" then
+            error("element id is not a string")
         end
-    })
+        local elem = Element.new(self.name, k)
+        rawset(self, k, elem)
+        return elem
+    end
+}
+function Document.new(docname)
+    return setmetatable({name=docname}, Document)
 end
 
 local RadioGroup = {}

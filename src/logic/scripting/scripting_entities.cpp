@@ -1,14 +1,18 @@
 #include "scripting.hpp"
 
+#include "debug/Logger.hpp"
 #include "lua/lua_engine.hpp"
 #include "objects/Entities.hpp"
 #include "objects/EntityDef.hpp"
 #include "objects/Entity.hpp"
 #include "objects/Player.hpp"
 #include "util/stringutil.hpp"
+#include "content/Content.hpp"
+#include "content/ContentPack.hpp"
 
 using namespace scripting;
 
+static debug::Logger logger("scripting-entities");
 static inline const std::string STDCOMP = "stdcomp";
 
 [[nodiscard]] static scriptenv create_component_environment(
@@ -52,6 +56,25 @@ dv::value scripting::get_component_value(
     return nullptr;
 }
 
+static void init_component_events(
+    lua::State* L, const scriptenv& env, UserComponent& component
+) {
+    lua::pushenv(L, *env);
+    auto& funcsset = component.funcsset;
+    funcsset.on_grounded = lua::hasfield(L, "on_grounded");
+    funcsset.on_fall = lua::hasfield(L, "on_fall");
+    funcsset.on_despawn = lua::hasfield(L, "on_despawn");
+    funcsset.on_sensor_enter = lua::hasfield(L, "on_sensor_enter");
+    funcsset.on_sensor_exit = lua::hasfield(L, "on_sensor_exit");
+    funcsset.on_save = lua::hasfield(L, "on_save");
+    funcsset.on_aim_on = lua::hasfield(L, "on_aim_on");
+    funcsset.on_aim_off = lua::hasfield(L, "on_aim_off");
+    funcsset.on_attacked = lua::hasfield(L, "on_attacked");
+    funcsset.on_used = lua::hasfield(L, "on_used");
+    funcsset.on_player_set = lua::hasfield(L, "on_player_set");
+    lua::pop(L);
+}
+
 static void create_component(
     lua::State* L,
     int entityIdx,
@@ -59,11 +82,20 @@ static void create_component(
     const dv::value& args,
     const dv::value& saved
 ) {
+    auto parentEnv = get_root_environment();
+    auto prefix = ContentPack::getPrefix(component.name);
+    const auto& content = *scripting::content;
+    if (auto runtime = content.getPackRuntime(std::string(prefix))) {
+        parentEnv = runtime->getEnvironment();
+    } else {
+        logger.warning() << "pack environment is not available for "
+                         << component.name;
+    }
     lua::pushvalue(L, entityIdx);
     auto compenv = create_component_environment(
-        get_root_environment(), -1, component.name
+        std::move(parentEnv), -1, component.name
     );
-    lua::get_from(L, lua::CHUNKS_TABLE, component.name, true);
+    lua::get_from_registry(L, lua::CHUNKS_TABLE, component.name, true);
     lua::pushenv(L, *compenv);
 
     if (args != nullptr) {
@@ -95,19 +127,8 @@ static void create_component(
     lua::setfenv(L);
     lua::call_nothrow(L, 0, 0);
 
-    lua::pushenv(L, *compenv);
-    auto& funcsset = component.funcsset;
-    funcsset.on_grounded = lua::hasfield(L, "on_grounded");
-    funcsset.on_fall = lua::hasfield(L, "on_fall");
-    funcsset.on_despawn = lua::hasfield(L, "on_despawn");
-    funcsset.on_sensor_enter = lua::hasfield(L, "on_sensor_enter");
-    funcsset.on_sensor_exit = lua::hasfield(L, "on_sensor_exit");
-    funcsset.on_save = lua::hasfield(L, "on_save");
-    funcsset.on_aim_on = lua::hasfield(L, "on_aim_on");
-    funcsset.on_aim_off = lua::hasfield(L, "on_aim_off");
-    funcsset.on_attacked = lua::hasfield(L, "on_attacked");
-    funcsset.on_used = lua::hasfield(L, "on_used");
-    lua::pop(L, 2);
+    init_component_events(L, compenv, component);
+    lua::pop(L);
 
     component.env = compenv;
 }
@@ -128,6 +149,15 @@ void scripting::on_entity_spawn(
     }
     for (auto& component : components) {
         create_component(L, -1, *component, args, saved);
+    }
+
+    for (auto& [packid, pack] : content->getPacks()) {
+        if (pack->worldfuncsset.onentityspawn) {
+            lua::emit_event(L, packid + ":.entityspawn", [&](lua::State* L) {
+                lua::pushinteger(L, eid);
+                return 1;
+            });
+        }
     }
 }
 
@@ -170,9 +200,21 @@ void scripting::on_entity_despawn(const Entity& entity) {
     process_entity_callback(
         entity, "on_despawn", &EntityFuncsSet::on_despawn, nullptr
     );
+
     auto L = lua::get_main_state();
+    entityid_t uid = entity.getUID();
+
+    for (auto& [packid, pack] : content->getPacks()) {
+        if (pack->worldfuncsset.onentitydespawn) {
+            lua::emit_event(L, packid + ":.entitydespawn", [&](lua::State* L) {
+                lua::pushinteger(L, uid);
+                return 1;
+            });
+        }
+    }
+
     lua::get_from(L, "stdcomp", "remove_Entity", true);
-    lua::pushinteger(L, entity.getUID());
+    lua::pushinteger(L, uid);
     lua::call(L, 1, 0);
 }
 
@@ -194,6 +236,15 @@ void scripting::on_entity_fall(const Entity& entity) {
 void scripting::on_entity_save(const Entity& entity) {
     process_entity_callback(
         entity, "on_save", &EntityFuncsSet::on_save, nullptr
+    );
+}
+
+void scripting::on_entity_player_set(const Entity& entity, int64_t pid) {
+    process_entity_callback(
+        entity,
+        "on_player_set",
+        &EntityFuncsSet::on_player_set,
+        [pid](auto L) { return lua::pushinteger(L, pid); }
     );
 }
 

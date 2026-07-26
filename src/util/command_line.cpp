@@ -97,11 +97,32 @@ static bool perform_keyword(
     throw std::runtime_error("unknown argument " + keyword);
 }
 
+static void parse_project_args(util::ArgsReader& reader, CoreParameters& params) {
+    while (reader.hasNext()) {
+        std::string key = reader.next();
+        if (!reader.isKeywordArg()) {
+            std::cerr << "--<keyword> argument expected" << std::endl;
+            return;
+        }
+        key = key.substr(2);
+        if (!reader.hasNext() || reader.isNextKeywordArg()) {
+            params.projectArgs[std::move(key)] = "";
+            continue;
+        }
+        std::string value = reader.next();
+        params.projectArgs[std::move(key)] = std::move(value);
+    }
+}
+
 bool parse_cmdline(int argc, char** argv, CoreParameters& params) {
     util::ArgsReader reader(argc, argv);
     reader.skip();
     while (reader.hasNext()) {
         std::string token = reader.next();
+        if (token == "--") {
+            parse_project_args(reader, params);
+            return true;
+        }
         if (reader.isKeywordArg()) {
             if (!perform_keyword(reader, token, params)) {
                 return false;

@@ -15,7 +15,9 @@ static void sigterm_handler(int signum) {
 
 int main(int argc, char** argv) {
 #ifdef VC_BUILD_NAME
-    logger.info() << "build: " << VC_BUILD_NAME;
+    if constexpr (VC_BUILD_NAME[0]) {
+        logger.info() << "build: " << VC_BUILD_NAME;
+    }
 #endif
 
     CoreParameters coreParameters;

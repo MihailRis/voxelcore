@@ -93,7 +93,7 @@ public:
             throw error("identifier expected");
         }
         int start = pos;
-        while (hasNext() && is_identifier_part(source[pos])) {
+        while (hasNext() && is_minimal_identifier_part(source[pos])) {
             pos++;
         }
         return std::wstring(source.substr(start, pos - start));

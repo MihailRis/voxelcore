@@ -130,11 +130,15 @@ void BlocksController::updateBlock(int x, int y, int z) {
 }
 
 void BlocksController::update(float delta, uint padding) {
-    if (randTickClock.update(delta)) {
-        randomTick(randTickClock.getPart(), randTickClock.getParts(), padding);
+    if (int parts = randTickClock.update(delta)) {
+        for (int i = 0; i < parts; i++) {
+            randomTick(randTickClock.convertPart(i), randTickClock.getParts(), padding);
+        }
     }
-    if (blocksTickClock.update(delta)) {
-        onBlocksTick(blocksTickClock.getTickId(), blocksTickClock.getParts());
+    if (int parts = blocksTickClock.update(delta)) {
+        for (int i = 0; i < parts; i++) {
+            onBlocksTick(blocksTickClock.convertPart(i), blocksTickClock.getParts());
+        }
     }
     if (worldTickClock.update(delta)) {
         scripting::on_world_tick(worldTickClock.getTickRate());

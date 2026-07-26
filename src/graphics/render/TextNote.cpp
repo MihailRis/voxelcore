@@ -10,6 +10,14 @@ void TextNote::setText(std::wstring_view text) {
     this->text = text;
 }
 
+void TextNote::setEntity(entityid_t eid) {
+    this->entity = eid;
+}
+
+entityid_t TextNote::getEntity() const {
+    return entity;
+}
+
 const std::wstring& TextNote::getText() const {
     return text;
 }

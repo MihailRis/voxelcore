@@ -889,8 +889,8 @@ static std::shared_ptr<UINode> read_iframe(
     return iframe;
 }
 
-UiXmlReader::UiXmlReader(gui::GUI& gui, scriptenv&& env)
-    : gui(gui), env(std::move(env)) {
+UiXmlReader::UiXmlReader(gui::GUI& gui, const scriptenv& env)
+    : gui(gui), env(env) {
     contextStack.emplace("");
     add("image", read_image);
     add("canvas", read_canvas);
@@ -922,8 +922,7 @@ void UiXmlReader::addIgnore(const std::string& tag) {
     ignored.insert(tag);
 }
 
-std::shared_ptr<UINode> UiXmlReader::readUINode(const xml::xmlelement& element
-) {
+std::shared_ptr<UINode> UiXmlReader::readUINode(const xml::xmlelement& element) {
     if (element.has("if")) {
         const auto& cond = element.attr("if").getText();
         if (cond.empty() || cond == "false" || cond == "nil") return nullptr;

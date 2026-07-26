@@ -350,6 +350,7 @@ static int l_start_debug_instance(lua::State* L) {
         }
     }
     auto projectPath = lua::isstring(L, 2) ? lua::require_lstring(L, 2) : "";
+    auto outputPath = lua::isstring(L, 3) ? lua::require_lstring(L, 3) : "";
     const auto& paths = engine->getPaths();
 
     std::vector<std::string> args {
@@ -362,7 +363,10 @@ static int l_start_debug_instance(lua::State* L) {
         args.emplace_back(io::resolve(std::string(projectPath)).string());
     }
 
-    platform::new_engine_instance(std::move(args));
+    platform::new_engine_instance(
+        std::move(args),
+        outputPath.empty() ? "" : io::resolve(std::string(outputPath))
+    );
     return lua::pushinteger(L, port);
 }
 

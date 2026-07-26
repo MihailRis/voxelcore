@@ -95,6 +95,20 @@ static int l_set_rotation(lua::State* L) {
     return 0;
 }
 
+static int l_get_entity(lua::State* L) {
+    if (auto note = renderer->texts->get(lua::tointeger(L, 1))) {
+        return lua::pushinteger(L, note->getEntity());
+    }
+    return 0;
+}
+
+static int l_set_entity(lua::State* L) {
+    if (auto note = renderer->texts->get(lua::tointeger(L, 1))) {
+        note->setEntity(lua::touinteger(L, 2));
+    }
+    return 0;
+}
+
 const luaL_Reg text3dlib[] = {
     {"show", wrap_hud<l_show>},
     {"hide", wrap_hud<l_hide>},
@@ -108,5 +122,7 @@ const luaL_Reg text3dlib[] = {
     {"set_axis_y", wrap_hud<l_set_axis_y>},
     {"set_rotation", wrap_hud<l_set_rotation>},
     {"update_settings", wrap_hud<l_update_settings>},
+    {"get_entity", wrap_hud<l_get_entity>},
+    {"set_entity", wrap_hud<l_set_entity>},
     {nullptr, nullptr}
 };

@@ -147,17 +147,23 @@ gui.load_document(
     args: table -- параметры для события on_open
 ) -> string
 
--- Загружает шаблон в лояут
+-- Обрабатывает xml шаблон макета из файла
 gui.template(
     -- имя шаблона в /layouts/templates без пути и расширения 
     name: string,
     -- таблица переменных (может быть использована в разметке)
     -- * Пр: <label>%{text}</label>
     -- * text в данном случае, это значение из params по ключу text
-    params: table,
-    -- таблица, доступная в событиях как глобальная переменная DATA
-    [опционально] data: table
+    params: table
 ) -> string
+
+-- Обрабатывает xml шаблон макета из строки
+gui.process_template(
+    -- шаблон в виде строки
+    source: string,
+    -- таблица переменных, как в gui.template
+    params: table
+)
 ```
 
 ## Корневой документ

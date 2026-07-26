@@ -7,6 +7,9 @@
 #include "graphics/ui/elements/InventoryView.hpp"
 #include "graphics/ui/gui_xml.hpp"
 #include "logic/scripting/scripting.hpp"
+#include "debug/Logger.hpp"
+
+static debug::Logger logger("ui-document");
 
 UiDocument::UiDocument(
     std::string id, 
@@ -15,6 +18,19 @@ UiDocument::UiDocument(
     scriptenv env
 ) : id(std::move(id)), script(script), root(root), env(std::move(env)) {
     rebuildIndices();
+}
+
+UiDocument::~UiDocument() {
+    try {
+        scripting::on_ui_destroy(*this);
+    } catch (const std::exception& err) {
+        logger.error() << "an error occurred on calling on_destroy event for document '"
+          << id << "': " << err.what();
+    } catch (...) {
+        logger.error() << "unknown exception caught on calling on_destroy "
+                          "event for document '"
+                       << id << "'";
+    }
 }
 
 void UiDocument::rebuildIndices() {
@@ -61,16 +77,19 @@ std::unique_ptr<UiDocument> UiDocument::read(
     const scriptenv& penv,
     const std::string& name,
     const io::path& file,
-    const std::string& fileName
+    const std::string& fileName,
+    scriptenv&& env
 ) {
     const std::string text = io::read_string(file);
     auto xmldoc = xml::parse(file.string(), text);
 
-    auto env = penv == nullptr 
-        ? scripting::create_doc_environment(scripting::get_root_environment(), name)
-        : scripting::create_doc_environment(penv, name);
+    if (env == nullptr) {
+        env = penv == nullptr 
+            ? scripting::create_doc_environment(scripting::get_root_environment(), name)
+            : scripting::create_doc_environment(penv, name);
+    }
 
-    gui::UiXmlReader reader(gui, scriptenv(env));
+    gui::UiXmlReader reader(gui, env);
     auto view = reader.readXML(file.string(), *xmldoc->getRoot());
     view->setId("root");
     UiDocScript script {};
@@ -81,10 +100,4 @@ std::unique_ptr<UiDocument> UiDocument::read(
         );
     }
     return std::make_unique<UiDocument>(name, script, view, env);
-}
-
-std::shared_ptr<gui::UINode> UiDocument::readElement(
-    gui::GUI& gui, const io::path& file, const std::string& fileName
-) {
-    return read(gui, nullptr, file.name(), file, fileName)->getRoot();
 }

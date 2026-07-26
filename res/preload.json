@@ -50,7 +50,10 @@
         "gui/hud",
         "gui/entity",
         "gui/half_block",
-        "misc/blank"
+        {
+            "name": "",
+            "path": "textures/misc/blank"
+        }
     ],
     "fonts": [
         {

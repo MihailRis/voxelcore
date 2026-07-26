@@ -3,6 +3,7 @@
 #include <random>
 #include <string>
 #include <algorithm>
+#include <functional>
 
 namespace util {
     template <

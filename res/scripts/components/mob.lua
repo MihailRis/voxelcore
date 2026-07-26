@@ -20,7 +20,7 @@ end
 def_prop("jump_force", 0.0)
 def_prop("air_damping", 10.0)
 def_prop("ground_damping", 10.0)
-def_prop("movement_speed", 3.0)
+def_prop("movement_speed", 27.0)
 def_prop("run_speed_mul", 1.5)
 def_prop("crouch_speed_mul", 0.35)
 def_prop("flight_speed_mul", 2.0)
@@ -62,9 +62,8 @@ local function move_horizontal(speed, dir, vel)
         vec2.normalize(dir, dir)
 
         local delta = time.delta()
-        local damping = body:get_linear_damping()
-        vel[1] = vel[1] + dir[1] * speed * delta * damping
-        vel[3] = vel[3] + dir[2] * speed * delta * damping
+        vel[1] = vel[1] + dir[1] * speed * delta
+        vel[3] = vel[3] + dir[2] * speed * delta
     end
     body:set_vel(vel)
 end
@@ -143,14 +142,16 @@ end
 
 function is_flight() return flight end
 
-function set_flight(flag) flight = flag end
+function set_flight(flag)
+    flight = flag
+    body:set_gravity_scale(flight and 0.0 or props.gravity_scale)
+end
 
 local prev_angle = (vec2.angle({dir[3], dir[1]})) % 360
 
 function on_physics_update(delta)
     local grounded = body:is_grounded()
     body:set_vdamping(flight)
-    body:set_gravity_scale(flight and 0.0 or props.gravity_scale)
     body:set_linear_damping(
         (flight or not grounded) and props.air_damping or props.ground_damping
     )

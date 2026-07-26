@@ -1,4 +1,5 @@
 #include "coders/json.hpp"
+#include "coders/commons.hpp"
 #include "api_lua.hpp"
 
 static int l_json_stringify(lua::State* L) {
@@ -12,8 +13,12 @@ static int l_json_stringify(lua::State* L) {
 
 static int l_json_parse(lua::State* L) {
     auto string = lua::require_string(L, 1);
-    auto element = json::parse("[string]", string);
-    return lua::pushvalue(L, element);
+    try {
+        auto element = json::parse("[string]", string);
+        return lua::pushvalue(L, element);
+    } catch (const parsing_error& err) {
+        throw err.toRuntimeError();
+    }
 }
 
 const luaL_Reg jsonlib[] = {

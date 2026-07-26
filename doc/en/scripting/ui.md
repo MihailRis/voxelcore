@@ -1,7 +1,7 @@
 # UI properties and methods
 
 UI elements in scripts are accessed through a Document instance
-(*document* variable) by id specified in xml.
+(global *document* variable) by id specified in xml.
 
 Example: print the pos property of an element with id: "worlds-panel" to the console:
 ```lua

@@ -38,6 +38,7 @@ SettingsHandler::SettingsHandler(EngineSettings& settings) {
 
     builder.addSection("audio");
     builder.add("enabled", &settings.audio.enabled, false);
+    builder.add("recording-enabled", &settings.audio.recordingEnabled);
     builder.add("volume-master", &settings.audio.volumeMaster);
     builder.add("volume-regular", &settings.audio.volumeRegular);
     builder.add("volume-ui", &settings.audio.volumeUI);
@@ -101,6 +102,7 @@ SettingsHandler::SettingsHandler(EngineSettings& settings) {
     builder.addSection("system");
     builder.add("max-bg-asset-loaders", &settings.system.maxBgAssetLoaders);
     builder.add("preserve-assets-during-frame", &settings.system.preserveAssetsDuringFrame);
+    builder.add("direct-scripting-data-access", &settings.system.directScriptingDataAccess);
 }
 
 dv::value SettingsHandler::getValue(const std::string& name) const {

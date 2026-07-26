@@ -9,7 +9,7 @@ tostring_overrides["display.framerate"] = function(x)
     end
 end
 
-function create_setting(id, name, step, postfix, tooltip, changeonrelease)
+function create_trackbar_setting(id, name, step, postfix, tooltip, changeonrelease)
     local info = app.get_setting_info(id)
     postfix = postfix or ""
     tooltip = tooltip or ""
@@ -25,10 +25,10 @@ function create_setting(id, name, step, postfix, tooltip, changeonrelease)
         tooltip=tooltip,
         changeonrelease=changeonrelease
     }))
-    update_setting(app.get_setting(id), id, name, postfix)
+    update_trackbar_label(app.get_setting(id), id, name, postfix)
 end
 
-function update_setting(x, id, name, postfix)
+function update_trackbar_label(x, id, name, postfix)
     local str
     local func = tostring_overrides[id]
     if func then
@@ -55,8 +55,8 @@ end
 
 
 function on_open()
-    create_setting("camera.fov", "FOV", 1, "°")
-    create_setting("display.framerate", "Framerate", 1, "", "", true)
+    create_trackbar_setting("camera.fov", "FOV", 1, "°")
+    create_trackbar_setting("display.framerate", "Framerate", 1, "", "", true)
 
     document.root:add(string.format(
         "<select context='settings' onselect='function(opt) app.set_setting(\"display.window-mode\", tonumber(opt)) end' selected='%s'>"..
@@ -70,5 +70,5 @@ function on_open()
     create_checkbox("camera.inertia", "Camera Inertia")
     create_checkbox("camera.fov-effects", "Camera FOV Effects")
     create_checkbox("display.limit-fps-iconified", "Limit Background FPS")
-    create_setting("graphics.gamma", "Gamma", 0.05, "", "graphics.gamma.tooltip")
+    create_trackbar_setting("graphics.gamma", "Gamma", 0.05, "", "graphics.gamma.tooltip")
 end

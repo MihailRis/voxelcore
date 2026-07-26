@@ -14,19 +14,33 @@
 namespace lua {
     inline std::string LAMBDAS_TABLE = "$L";  // lambdas storage
     inline std::string CHUNKS_TABLE = "$C";   // precompiled lua chunks
+    inline std::string PACK_ENVS_TABLE = "$P";
+    inline std::string ENVS_TABLE = "$E";
     extern std::unordered_map<std::type_index, std::string> usertypeNames;
     int userdata_destructor(lua::State* L);
 
     std::string env_name(int env);
     void dump_stack(lua::State*);
 
-    inline bool getglobal(lua::State* L, const std::string& name) {
-        lua_getglobal(L, name.c_str());
-        if (isnil(L, -1)) {
+    inline bool isnoneornil(lua::State* L, int idx) {
+        return lua_isnoneornil(L, idx);
+    }
+
+    inline bool getfield(lua::State* L, const std::string& name, int idx = -1) {
+        lua_getfield(L, idx, name.c_str());
+        if (isnoneornil(L, -1)) {
             pop(L);
             return false;
         }
         return true;
+    }
+
+    inline bool getglobal(lua::State* L, const std::string& name) {
+        return getfield(L, name, LUA_GLOBALSINDEX);
+    }
+
+    inline bool getregistry(lua::State* L, const std::string& name) {
+        return getfield(L, name, LUA_REGISTRYINDEX);
     }
 
     inline int requireglobal(lua::State* L, const std::string& name) {
@@ -35,6 +49,24 @@ namespace lua {
         } else {
             throw std::runtime_error("global name " + name + " not found");
         }
+    }
+
+    inline int requireregistry(lua::State* L, const std::string& name) {
+        if (getregistry(L, name)) {
+            return 1;
+        } else {
+            throw std::runtime_error("registry entry " + name + " not found");
+        }
+    }
+
+    inline bool getregistry(lua::State* L, const std::string& name, const std::string& key) {
+        requireregistry(L,  name);
+        if (getfield(L, key)) {
+            lua_remove(L, -2);
+            return true;
+        }
+        pop(L);
+        return false;
     }
 
     inline bool hasglobal(lua::State* L, const std::string& name) {
@@ -203,9 +235,6 @@ namespace lua {
     inline int pushglobals(lua::State* L) {
         return pushvalue(L, LUA_GLOBALSINDEX);
     }
-    inline bool isnoneornil(lua::State* L, int idx) {
-        return lua_isnoneornil(L, idx);
-    }
     inline bool isboolean(lua::State* L, int idx) {
         return lua_isboolean(L, idx);
     }
@@ -266,6 +295,9 @@ namespace lua {
     }
     inline void setglobal(lua::State* L, const std::string& name) {
         lua_setglobal(L, name.c_str());
+    }
+    inline void setregistry(lua::State* L, const std::string& key) {
+        lua_setfield(L, LUA_REGISTRYINDEX, key.c_str());
     }
     template <class T>
     inline T* touserdata(lua::State* L, int idx) {
@@ -402,7 +434,7 @@ namespace lua {
         pop(L);
 
         pop(L);
-        return glm::quat(x, y, z, w);
+        return glm::quat(w, x, y, z);
     }
 
     inline glm::vec3 tovec3_stack(lua::State* L, int idx) {
@@ -460,15 +492,6 @@ namespace lua {
     int pushvalue(lua::State*, const dv::value& value);
 
     [[nodiscard]] dv::value tovalue(lua::State*, int idx);
-
-    inline bool getfield(lua::State* L, const std::string& name, int idx = -1) {
-        lua_getfield(L, idx, name.c_str());
-        if (isnoneornil(L, -1)) {
-            pop(L);
-            return false;
-        }
-        return true;
-    }
 
     inline int requirefield(
         lua::State* L, const std::string& name, int idx = -1
@@ -532,16 +555,9 @@ namespace lua {
         return lua_setfenv(L, idx);
     }
 
-    inline void loadbuffer(
+    void loadbuffer(
         lua::State* L, int env, const std::string& src, const std::string& file
-    ) {
-        if (luaL_loadbuffer(L, src.c_str(), src.length(), file.c_str())) {
-            throw luaerror(tostring(L, -1));
-        }
-        if (env && getglobal(L, env_name(env))) {
-            lua_setfenv(L, -2);
-        }
-    }
+    );
 
     inline void store_in(
         lua::State* L, const std::string& tableName, const std::string& name
@@ -551,7 +567,46 @@ namespace lua {
             setfield(L, name);
             pop(L, 2);
         } else {
-            throw std::runtime_error("table " + tableName + " not found");
+            throw std::runtime_error("global table " + tableName + " not found");
+        }
+    }
+
+    inline void store_in_registry(
+        lua::State* L, const std::string& tableName, const std::string& name
+    ) {
+        if (getregistry(L, tableName)) {
+            pushvalue(L, -2);
+            setfield(L, name);
+            pop(L, 2);
+        } else {
+            throw std::runtime_error("table " + tableName + " not found in registry");
+        }
+    }
+
+    inline int get_from(
+        lua::State* L,
+        const std::string& tableName,
+        const std::string& name,
+        bool required,
+        int idx,
+        std::string_view context
+    ) {
+        if (getfield(L, tableName, idx)) {
+            if (getfield(L, name)) {
+                return 1;
+            } else if (required) {
+                pop(L);
+                throw std::runtime_error(
+                    std::string(context) + " table " + tableName +
+                    " has no member " + name
+                );
+            }
+            pop(L);
+            return 0;
+        } else {
+            throw std::runtime_error(
+                std::string(context) + " table " + tableName + " not found"
+            );
         }
     }
 
@@ -561,20 +616,20 @@ namespace lua {
         const std::string& name,
         bool required = false
     ) {
-        if (getglobal(L, tableName)) {
-            if (getfield(L, name)) {
-                return 1;
-            } else if (required) {
-                pop(L);
-                throw std::runtime_error(
-                    "table " + tableName + " has no member " + name
-                );
-            }
-            pop(L);
-            return 0;
-        } else {
-            throw std::runtime_error("table " + tableName + " not found");
-        }
+        return get_from(
+            L, tableName, name, required, LUA_GLOBALSINDEX, "global"
+        );
+    }
+
+    inline int get_from_registry(
+        lua::State* L,
+        const std::string& tableName,
+        const std::string& name,
+        bool required = false
+    ) {
+        return get_from(
+            L, tableName, name, required, LUA_REGISTRYINDEX, "registry"
+        );
     }
 
     int call(lua::State*, int argc, int nresults = -1);
@@ -607,10 +662,7 @@ namespace lua {
     scripting::common_func create_lambda_nothrow(lua::State*);
 
     inline int pushenv(lua::State* L, int env) {
-        if (getglobal(L, env_name(env))) {
-            return 1;
-        }
-        return 0;
+        return getregistry(L, ENVS_TABLE, env_name(env));
     }
     int create_environment(lua::State*, int parent);
     int restore_pack_environment(lua::State*, const std::string& packid);
@@ -739,14 +791,14 @@ namespace lua {
     inline void read_bytes_from_table(
         lua::State* L, int tableIndex, std::vector<ubyte>& bytes
     ) {
-        if (!lua::istable(L, tableIndex)) {
+        if (!istable(L, tableIndex)) {
             throw std::runtime_error("table expected");
         } else {
-            size_t size = lua::objlen(L, tableIndex);
+            size_t size = objlen(L, tableIndex);
             for (size_t i = 0; i < size; i++) {
-                lua::rawgeti(L, i + 1, tableIndex);
-                const int byte = lua::tointeger(L, -1);
-                lua::pop(L);
+                rawgeti(L, i + 1, tableIndex);
+                const int byte = tointeger(L, -1);
+                pop(L);
                 if (byte < 0 || byte > 255) {
                     throw std::runtime_error(
                         "invalid byte '" + std::to_string(byte) + "'"
@@ -758,24 +810,16 @@ namespace lua {
     }
 
     inline int create_bytearray(lua::State* L, const void* bytes, size_t size) {
-        lua::requireglobal(L, "Bytearray_construct");
-        lua::pushlstring(
+        requireglobal(L, "Bytearray_construct");
+        pushlstring(
             L, std::string_view(reinterpret_cast<const char*>(bytes), size)
         );
-        return lua::call(L, 1, 1);
+        return call(L, 1, 1);
     }
 
     inline int create_bytearray(lua::State* L, const std::vector<ubyte>& bytes) {
         return create_bytearray(L, bytes.data(), bytes.size());
     }
 
-    inline std::string_view bytearray_as_string(lua::State* L, int idx) {
-        lua::pushvalue(L, idx);
-        lua::requireglobal(L, "Bytearray_as_string");
-        lua::pushvalue(L, -2);
-        lua::call(L, 1, 1);
-        auto view = lua::tolstring(L, -1);
-        lua::pop(L, 2);
-        return view;
-    }
+    std::string_view bytearray_as_string(lua::State* L, int idx);
 }

@@ -2,21 +2,20 @@
 
 #include "typedefs.hpp"
 
-class Content;
 class ContentIndices;
 class Chunk;
 class Chunks;
 class LightSolver;
 
 class Lighting {
-    const Content& content;
+    const ContentIndices& indices;
     Chunks& chunks;
     std::unique_ptr<LightSolver> solverR;
     std::unique_ptr<LightSolver> solverG;
     std::unique_ptr<LightSolver> solverB;
     std::unique_ptr<LightSolver> solverS;
 public:
-    Lighting(const Content& content, Chunks& chunks);
+    Lighting(const ContentIndices& indices, Chunks& chunks);
     ~Lighting();
 
     void clear();

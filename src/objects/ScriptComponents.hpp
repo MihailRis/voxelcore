@@ -17,6 +17,7 @@ struct EntityFuncsSet {
     bool on_aim_off;
     bool on_attacked;
     bool on_used;
+    bool on_player_set;
 };
 
 struct UserComponent {

@@ -148,3 +148,29 @@ function error(message, level)
     end
     __error(message, level)
 end
+
+local LoggerClass = {
+    __index = {
+        info = function (self, text)
+            debug.log(string.format("[%s] %s", self.name, text))
+        end,
+        warning = function (self, text)
+            debug.warning(string.format("[%s] %s", self.name, text))
+        end,
+        error = function (self, text)
+            debug.error(string.format("[%s] %s", self.name, text))
+        end
+    }
+}
+
+local _getinfo = debug.getinfo
+
+function debug.Logger(name)
+    if not name then
+        local source = _getinfo(2, "S").source
+        name = file.remove_ext(source)
+    else
+        name = string.format("%s:%s", file.prefix(_getinfo(2, "S").source), name)
+    end
+    return setmetatable({name=name}, LoggerClass)
+end

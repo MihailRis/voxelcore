@@ -38,6 +38,17 @@ entity:set_enabled(name: str, enable: bool)
 entity:get_player() -> int or nil
 ```
 
+## Custom Components
+
+A component is defined as a script in `{pack}/scripts/components/{name}.lua`.
+The component will be available for use in the entity definition as `{pack}:{name}`.
+Example: `core:scripts/components/pathfinding.lua` -> `core:pathfinding`.
+
+For **each** entity containing a component, a **separate instance** is created with **its own namespace** within the pack namespace.
+Global variables declared in it act as public fields of the component (same for global functions).
+
+Entity components are specified via the ["components" list](../entity-properties.md#components)
+
 ## Built-in components
 
 ### Transform
@@ -180,6 +191,10 @@ rig:get_color() -> vec3
 rig:set_color(color: vec3)
 ```
 
+> [!WARNING]
+> When an entity moves outside the loaded area, it is removed, triggering the event.
+> When it re-enters the loaded area, the entity is spawned again.
+
 ## Component events
 
 ```lua
@@ -260,3 +275,9 @@ function on_used(playerid: int)
 ```
 
 Called when an entity is used (RMB by entity). The player ID is passed as an argument.
+
+```lua
+function on_player_set(playerid: int)
+```
+
+Called when an entity is attached to a player.

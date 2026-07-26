@@ -41,8 +41,8 @@ gfx.posteffects.set_array(
     slot: int,
     -- parameter (array) name
     name: str
-    -- data string (use Bytearray_as_string function)
-    data: str
+    -- data
+    data: Bytearray
 )
 
 -- Example of filling an array `#param vec3 u_arrayName[64]`:

@@ -12,8 +12,10 @@ class Batch3D;
 class Frustum;
 class TextNote;
 struct EngineSettings;
+class Level;
 
 class TextsRenderer {
+    const Level& level;
     Batch3D& batch;
     const Assets& assets;
     const Frustum& frustum;
@@ -31,7 +33,12 @@ class TextsRenderer {
         bool projected
     );
 public:
-    TextsRenderer(Batch3D& batch, const Assets& assets, const Frustum& frustum);
+    TextsRenderer(
+        const Level& level,
+        Batch3D& batch,
+        const Assets& assets,
+        const Frustum& frustum
+    );
 
     void render(
         const DrawContext& context,

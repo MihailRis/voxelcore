@@ -62,11 +62,20 @@ static int l_utc_offset(lua::State* L) {
     return lua::pushnumber(L, offset);
 }
 
+static auto start_time = std::chrono::steady_clock::now();
+
+static int l_precise_time(lua::State* L) {
+    auto time = std::chrono::steady_clock::now();
+    std::chrono::duration<double> delta = time - start_time;
+    return lua::pushnumber(L, delta.count());
+}
+
 const luaL_Reg timelib[] = {
     {"uptime", lua::wrap<l_uptime>},
     {"delta", lua::wrap<l_delta>},
     {"utc_time", lua::wrap<l_utc_time>},
     {"utc_offset", lua::wrap<l_utc_offset>},
     {"local_time", lua::wrap<l_local_time>},
+    {"precise_time", lua::wrap<l_precise_time>},
     {nullptr, nullptr}
 };

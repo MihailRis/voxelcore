@@ -37,15 +37,9 @@ rigging::Skeleton* Entity::getSkeleton() const {
     return registry.try_get<rigging::Skeleton>(entity);
 }
 
-void Entity::setRig(const rigging::SkeletonConfig* rigConfig) {
+void Entity::setRig(std::shared_ptr<const rigging::SkeletonConfig> rigConfig) {
     auto& skeleton = registry.get<rigging::Skeleton>(entity);
-    skeleton.config = rigConfig;
-    skeleton.pose.matrices.resize(
-        rigConfig->getBones().size(), glm::mat4(1.0f)
-    );
-    skeleton.calculated.matrices.resize(
-        rigConfig->getBones().size(), glm::mat4(1.0f)
-    );
+    skeleton.setConfig(std::move(rigConfig));
 }
 
 dv::value Entity::serialize() const {
@@ -119,6 +113,11 @@ int64_t Entity::getPlayer() const {
 }
 
 void Entity::setPlayer(int64_t id) {
-    registry.get<EntityId>(entity).player = id;
+    auto& eid = registry.get<EntityId>(entity);
+    if (eid.player == id) {
+        return;
+    }
+    eid.player = id;
+    scripting::on_entity_player_set(*this, id);
 }
 

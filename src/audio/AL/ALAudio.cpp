@@ -711,7 +711,7 @@ std::unique_ptr<ALAudio> ALAudio::create(const AudioSettings& settings) {
         return nullptr;
     }
     bool effects = true;
-    ALint attribs[4] {};
+    [[maybe_unused]] ALint attribs[4] {};
     if (alcIsExtensionPresent(device, "ALC_EXT_EFX") == AL_TRUE) {
         logger.info() << "AL effects extension present";
         attribs[0] = ALC_MAX_AUXILIARY_SENDS;

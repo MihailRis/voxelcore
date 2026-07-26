@@ -170,7 +170,19 @@ inventory.get_all_data(
     invid: int,
     -- индекс слота
     slot: int,
-) -> table
+) -> table | nil
+
+-- Устанавливает значения локальных cвойств предмета.
+inventory.set_all_data(
+    -- id инвентаря
+    invid: int,
+    -- индекс слота
+    slot: int,
+    -- таблица cвойство:значение
+    fields: table,
+    -- удалить остальные значения свойств
+    [опционально] clear: boolean = false
+)
 ```
 
 ```lua

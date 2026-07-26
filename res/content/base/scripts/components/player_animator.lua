@@ -1,5 +1,3 @@
-local tsf = entity.transform
-local body = entity.rigidbody
 local rig = entity.skeleton
 local mob = entity:require_component("core:mob")
 

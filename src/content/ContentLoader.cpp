@@ -178,7 +178,16 @@ void ContentUnitLoader<DefT>::loadUnit(
 ) {
     auto folder = pack.folder;
     auto configFile = folder / (defsDir + "/" + name + ".json");
-    if (io::exists(configFile)) loadUnit(def, full, configFile);
+    if (io::exists(configFile)) {
+        try {
+            loadUnit(def, full, configFile);
+        } catch (const std::runtime_error& err) {
+            throw std::runtime_error(
+                "file " + util::quote(configFile.string()) + ": " +
+                std::string(err.what())
+            );
+        }
+    }
 }
 
 void ContentLoader::loadBlockMaterial(
@@ -334,6 +343,8 @@ void ContentLoader::load() {
 
     fixPackIndices();
 
+    loadContentScript(*runtime);
+
     auto folder = pack->folder;
 
     builder.defaults = paths.readCombinedObject(
@@ -462,6 +473,20 @@ void ContentLoader::reloadScript(const Content& content, ItemDef& item) {
     load_script(content, item);
 }
 
+void ContentLoader::loadContentScript(ContentPackRuntime& runtime) {
+    const auto& pack = runtime.getInfo();
+    const auto& folder = pack.folder;
+    io::path scriptFile = folder / "scripts/content.lua";
+    if (io::is_regular_file(scriptFile)) {
+        scripting::load_content_script(
+            runtime.getEnvironment(),
+            pack.id,
+            scriptFile,
+            pack.id + ":scripts/content.lua"
+        );
+    }
+}
+
 void ContentLoader::loadWorldScript(ContentPackRuntime& runtime) {
     const auto& pack = runtime.getInfo();
     const auto& folder = pack.folder;
@@ -478,6 +503,7 @@ void ContentLoader::loadWorldScript(ContentPackRuntime& runtime) {
 }
 
 void ContentLoader::loadScripts(Content& content) {
+    scripting::on_scripts_loading();
     load_scripts(content, content.blocks);
     load_scripts(content, content.items);
 
@@ -486,7 +512,6 @@ void ContentLoader::loadScripts(Content& content) {
         const auto& pack = runtime->getInfo();
         const auto& folder = pack.folder;
         
-        // Load main world script
         loadWorldScript(*runtime);
 
         // Load entity components
@@ -501,6 +526,8 @@ void ContentLoader::loadScripts(Content& content) {
             );
         });
     }
+
+    scripting::on_content_loaded();
 }
 
 void ContentLoader::loadResources(ResourceType type, const dv::value& list) {

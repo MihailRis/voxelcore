@@ -53,6 +53,9 @@ static void load_variant(
         }
     } else if (root.has("texture-faces")) {
         const auto& texarr = root["texture-faces"];
+        if (texarr.length() < 6) {
+            throw std::runtime_error("texture-faces requires 6 elements");
+        }
         for (uint i = 0; i < 6; i++) {
             variant.textureFaces[i] = texarr[i].asString();
         }

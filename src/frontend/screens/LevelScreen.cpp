@@ -173,7 +173,7 @@ void LevelScreen::saveWorldPreview() {
         int previewSize = settings.ui.worldPreviewSize.get();
 
         // camera special copy for world preview
-        Camera& camera = *player.fpCamera;
+        Camera camera = *player.fpCamera;
         camera.setFov(glm::radians(70.0f));
 
         DrawContext pctx(nullptr, engine.getWindow(), batch.get());
@@ -261,6 +261,7 @@ void LevelScreen::update(float delta) {
     const Player& player = playerController->getPlayer();
     const Camera& camera = *player.currentCamera;
     decorator->update(paused ? 0.0f : delta, camera, weather);
+    renderer->update(camera, delta * !hud->isPause());
 }
 
 void LevelScreen::draw(float delta) {
@@ -271,7 +272,6 @@ void LevelScreen::draw(float delta) {
     if (!hud->isPause()) {
         scripting::on_entities_render(engine.getTime().getDelta());
     }
-    renderer->update(camera, delta * !hud->isPause());
     renderer->renderFrame(ctx, camera, hudVisible, *postProcessing);
     if (!hud->isPause()) {
         scripting::on_frontend_render();

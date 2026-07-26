@@ -2,6 +2,7 @@
 
 #include <string>
 #include <filesystem>
+#include <unordered_map>
 
 struct CoreParameters {
     bool headless = false;
@@ -13,4 +14,5 @@ struct CoreParameters {
     std::filesystem::path projectFolder;
     std::string debugServerString;
     int tps = 20;
+    std::unordered_map<std::string, std::string> projectArgs;
 };

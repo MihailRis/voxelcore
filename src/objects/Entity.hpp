@@ -60,7 +60,7 @@ public:
 
     rigging::Skeleton* getSkeleton() const;
 
-    void setRig(const rigging::SkeletonConfig* rigConfig);
+    void setRig(std::shared_ptr<const rigging::SkeletonConfig> rigConfig);
 
     entityid_t getUID() const;
 

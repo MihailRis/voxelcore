@@ -41,8 +41,8 @@ gfx.posteffects.set_array(
     slot: int,
     -- имя параметра (массива)
     name: string
-    -- строка данных (используйте функцию Bytearray_as_string)
-    data: string
+    -- данные
+    data: Bytearray
 )
 
 -- Пример заполнения массива `#param vec3 u_имяМассива[64]`:

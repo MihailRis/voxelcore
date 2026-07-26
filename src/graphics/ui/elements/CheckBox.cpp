@@ -57,6 +57,10 @@ FullCheckBox::FullCheckBox(
 
     add(checkbox);
 
+    auto& checkboxActions = actions;
     label->setMargin(glm::vec4(5.f, 5.f, 0.f, 0.f));
+    label->listenAction(UIAction::CLICK, [&checkboxActions](auto& gui) {
+        checkboxActions.notify(UIAction::CLICK, gui);
+    });
     add(label);
 }

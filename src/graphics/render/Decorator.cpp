@@ -22,6 +22,7 @@
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"
 #include "voxels/Chunks.hpp"
+#include "voxels/blocks_agent.hpp"
 #include "window/Camera.hpp"
 #include "world/Level.hpp"
 #include "WorldRenderer.hpp"
@@ -66,9 +67,7 @@ Decorator::Decorator(
             continue;
         }
         playerTexts[id] = renderer.texts->add(std::make_unique<TextNote>(
-            util::str2wstr_utf8(player->getName()),
-            playerNamePreset,
-            player->getPosition()
+            player->getName(), playerNamePreset, player->getPosition()
         ));
     }
 }
@@ -100,7 +99,7 @@ void Decorator::updateAcoustics(const Camera& camera) {
 
     auto& chunks = *player.chunks;
     const auto& start = camera.position;
-    float rayLength = 40.0f;
+    float length = 40.0f;
 
     auto& blocks = level.content.getIndices()->blocks;
 
@@ -109,7 +108,7 @@ void Decorator::updateAcoustics(const Camera& camera) {
     float averageDistance = 0.0f;
     float averageAbsorption = 0.0f;
     float speedOfSound = 300.0f;
-    float minDistance = rayLength;
+    float minDistance = length;
     for (int i = 0; i < rays; i++) {
         float u1 = random.randFloat();
         float u2 = random.randFloat();
@@ -123,12 +122,13 @@ void Decorator::updateAcoustics(const Camera& camera) {
         glm::vec3 end;
         glm::ivec3 norm;
         glm::ivec3 iend;
-        auto vox = chunks.rayCast(start, dir, rayLength, end, norm, iend);
+        blocks_agent::RaycastSettings raycast {};
+        auto vox = chunks.rayCast(start, dir, length, end, norm, iend, raycast);
         if (vox == nullptr) {
             continue;
         }
         auto distance = glm::distance(start, end);
-        if (distance >= rayLength * 0.98f) {
+        if (distance >= length * 0.98f) {
             continue;
         }
         if (distance < minDistance) {
@@ -151,7 +151,7 @@ void Decorator::updateAcoustics(const Camera& camera) {
         averageAbsorption /= hit;
     }
 
-    float decayTime = 20.0f * (averageDistance / rayLength);
+    float decayTime = 20.0f * (averageDistance / length);
     float escapeRatio = static_cast<float>(rays - hit) / static_cast<float>(rays);
 
     acoustics.reverbGain = glm::pow(hit / static_cast<float>(rays), 3.0f);
@@ -273,8 +273,7 @@ void Decorator::updateBlockEmitters(const Camera& camera) {
                 remove = true;
             }
         } else {
-            iter = blockEmitters.erase(iter);
-            continue;
+            remove = true;
         }
         if (util::distance2(iter->first, glm::ivec3(camera.position)) >
             UPDATE_AREA_DIAMETER * UPDATE_AREA_DIAMETER) {
@@ -296,9 +295,7 @@ void Decorator::updateTextNotes() {
             continue;
         }
         playerTexts[id] = renderer.texts->add(std::make_unique<TextNote>(
-            util::str2wstr_utf8(player->getName()),
-            playerNamePreset,
-            player->getPosition()
+            player->getName(), playerNamePreset, player->getPosition()
         ));
     }
 
@@ -315,6 +312,9 @@ void Decorator::updateTextNotes() {
                 position = entity->getInterpolatedPosition();
             }
             note->setPosition(position + glm::vec3(0, 1, 0));
+            if (note->getText() != player->getName()) {
+                note->setText(player->getName());
+            }
             ++textsIter;
         }
     }

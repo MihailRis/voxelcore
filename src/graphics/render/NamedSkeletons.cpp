@@ -7,9 +7,9 @@ using namespace rigging;
 NamedSkeletons::NamedSkeletons() = default;
 
 std::shared_ptr<rigging::Skeleton> NamedSkeletons::createSkeleton(
-    const std::string& name, const SkeletonConfig* config
+    const std::string& name, std::shared_ptr<const SkeletonConfig> config
 ) {
-    auto skeleton = std::make_shared<Skeleton>(config);
+    auto skeleton = std::make_shared<Skeleton>(std::move(config));
     skeletons[name] = skeleton;
     return skeleton;
 }

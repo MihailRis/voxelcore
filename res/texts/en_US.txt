@@ -18,6 +18,7 @@ devtools.output=Output
 
 # Tooltips
 audio.acoustic-effects.tooltip=Acoustic effects may not be supported by your system
+audio.recording-enabled.tooltip=Enables audio recording features
 graphics.gamma.tooltip=Lighting brightness curve
 graphics.backlight.tooltip=Backlight to prevent total darkness
 graphics.dense-render.tooltip=Enables transparency in blocks like leaves

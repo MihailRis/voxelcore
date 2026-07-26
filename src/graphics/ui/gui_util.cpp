@@ -12,6 +12,9 @@
 #include "gui_xml.hpp"
 #include "logic/scripting/scripting.hpp"
 #include "util/stringutil.hpp"
+#include "debug/Logger.hpp"
+
+debug::Logger logger("gui-util");
 
 using namespace gui;
 
@@ -23,6 +26,20 @@ std::shared_ptr<gui::UINode> guiutil::create(
     }
     UiXmlReader reader(gui, std::move(env));
     return reader.readXML("[string]", source);
+}
+
+static bool notify_callback(const runnable& callback, std::string_view name) {
+    if (callback == nullptr) {
+        return false;
+    }
+    try {
+        callback();
+        return true;
+    } catch (std::exception& err) {
+        logger.error()
+            << "exception thrown in " << name << ": " << err.what();
+    }
+    return false;
 }
 
 void guiutil::alert(
@@ -47,9 +64,7 @@ void guiutil::alert(
     auto& menu = *menuPtr;
     runnable on_hidden_final = [on_hidden, &menu]() {
         menu.removePage("<alert>");
-        if (on_hidden) {
-            on_hidden();
-        } else if (!menu.back()) {
+        if (!notify_callback(on_hidden, "on_hidden") && !menu.back()) {
             menu.reset();
         }
     };
@@ -119,18 +134,16 @@ void guiutil::confirm(
 
     runnable on_confirm_final = [on_confirm, menu]() {
         menu->removePage("<confirm>");
-        if (on_confirm) {
-            on_confirm();
-        } else if (!menu->back()) {
+
+        if (!notify_callback(on_confirm, "on_confirm") && !menu->back()) {
             menu->reset();
         }
     };
 
     runnable on_deny_final = [on_deny, menu]() {
         menu->removePage("<confirm>");
-        if (on_deny) {
-            on_deny();
-        } else if (!menu->back()) {
+
+        if (!notify_callback(on_deny, "on_deny") && !menu->back()) {
             menu->reset();
         }
     };
@@ -189,9 +202,16 @@ void guiutil::confirm_with_memo(
     auto subpanel = std::make_shared<Panel>(gui, glm::vec2(600, 53));
     subpanel->setColor(glm::vec4(0));
 
+    runnable on_confirm_final = [on_confirm, menu]() {
+        menu->removePage("<confirm>");
+
+        if (!notify_callback(on_confirm, "on_confirm") && !menu->back()) {
+            menu->reset();
+        }
+    };
+
     subpanel->add(std::make_shared<Button>(gui, yestext, glm::vec4(8.f), [=](GUI&) {
-        if (on_confirm) on_confirm();
-        menu->back();
+        on_confirm_final();
     }));
 
     subpanel->add(std::make_shared<Button>(gui, notext, glm::vec4(8.f), [=](GUI&) {

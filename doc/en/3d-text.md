@@ -80,6 +80,14 @@ gfx.text3d.set_rotation(id: int, rotation: mat4)
 Sets the text rotation (Sets the rotated vectors X,Y).
 
 ```lua
+gfx.text3d.get_entity(id: int) -> int
+gfx.text3d.set_entity(id: int, entity: int)
+```
+
+Getter and setter for the entity to which the 3D text position is bound.
+The position set via `gfx.text3d.set_pos` is then relative to the entity's position.
+
+```lua
 gfx.text3d.update_settings(id: int, preset: table)
 ```
 

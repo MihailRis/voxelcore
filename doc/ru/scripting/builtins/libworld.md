@@ -69,4 +69,44 @@ world.save_chunk_data(
     -- сжатые данные чанка
     data: Bytearray
 )
+
+-- Бросает луч из точки start в направлении dir.
+world.raycast(
+    params: table {
+        [==[ обязательные параметры ]==]
+        -- стартовая точка
+        start: vec3,
+        -- вектор направления луча
+        dir: vec3,
+        -- максимальное расстояние
+        distance: number,
+
+        [==[ дополнительные параметры (сущности) ]==]
+        -- учитывать сущности
+        entities: bool = true,
+        -- uid игнорируемой сущности
+        ignore_uid: number = 0 (ENTITY_NONE),
+        -- id типов сущностей используемых для фильтрации
+        filter_entities: table<string|number> = nil,
+        -- исключающий режим фильтрации:
+        --   при значении (true) filter_entities определяет список игнорируемых
+        entities_exclusion: bool = false,
+        
+        [==[ дополнительные параметры (блоки) ]==]
+        -- id типов блоков используемых для фильтрации
+        filter_blocks: table<string|number> = nil,
+        -- исключающий режим фильтрации:
+        --   при значении (true) filter_blocks определяет список игнорируемых
+        blocks_exclusion: bool = true,
+        -- учитывать блоки с selectable=false
+        nonselect_blocks: bool = false;
+    }
+) -> {
+    block: int или nil, -- id блока
+    entity: int или nil, -- uid сущности
+    endpoint: vec3, -- точка касания луча
+    iendpoint: vec3, -- позиция блока, которого касается луч
+    length: number, -- длина луча
+    normal: vec3, -- вектор нормали поверхности, которой касается луч
+} или nil если луч не коснулся блока или сущности
 ```

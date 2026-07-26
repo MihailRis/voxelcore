@@ -142,6 +142,7 @@ namespace scripting {
     void on_entity_grounded(const Entity& entity, float force);
     void on_entity_fall(const Entity& entity);
     void on_entity_save(const Entity& entity);
+    void on_entity_player_set(const Entity& entity, int64_t pid);
     void on_entities_update(int tps, int parts, int part);
     void on_entities_physics_update(float delta);
     void on_entities_render(float delta);
@@ -152,13 +153,22 @@ namespace scripting {
     void on_attacked(const Entity& entity, Player* player, entityid_t attacker);
     void on_entity_used(const Entity& entity, Player* player);
 
-    /// @brief Called on UI view show
-    void on_ui_open(UiDocument* layout, std::vector<dv::value> args);
+    /// @brief Called on UI document show
+    void on_ui_open(const UiDocument& layout, std::vector<dv::value> args);
 
-    void on_ui_progress(UiDocument* layout, int workDone, int totalWork);
+    void on_ui_progress(const UiDocument& layout, int workDone, int totalWork);
 
-    /// @brief Called on UI view close
-    void on_ui_close(UiDocument* layout, Inventory* inventory);
+    /// @brief Called on UI document close
+    void on_ui_close(const UiDocument& layout, Inventory* inventory);
+
+    /// @brief Called on UI document destroy
+    void on_ui_destroy(const UiDocument& layout);
+
+    /// @brief Called on Content loading
+    void on_scripts_loading();
+
+    /// @brief Called on Content loading finish
+    void on_content_loaded();
 
     /// @brief Load script associated with a Block
     /// @param env environment
@@ -219,6 +229,13 @@ namespace scripting {
         const io::path& file,
         const std::string& fileName,
         WorldFuncsSet& funcsset
+    );
+
+    void load_content_script(
+        const scriptenv& env,
+        const std::string& packid,
+        const io::path& file,
+        const std::string& fileName
     );
 
     /// @brief Load script associated with an UiDocument

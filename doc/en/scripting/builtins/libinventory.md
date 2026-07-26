@@ -162,7 +162,19 @@ inventory.get_all_data(
     invid: int,
     -- slot index
     slot: int,
-) -> table
+) -> table | nil
+
+-- Sets the values ​​of all local item properties.
+inventory.set_all_data(
+    -- inventory id
+    invid: int,
+    -- slot index
+    slot: int,
+    -- property:value table
+    fields: table,
+    -- clear other property values
+    [optional] clear: boolean = false
+)
 ```
 
 ```lua

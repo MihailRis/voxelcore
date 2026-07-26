@@ -49,6 +49,7 @@ local Socket = {__index={
         end
         return self:recv(length, usetable)
     end,
+    as_stream=network.__as_stream,
     close=function(self) return network.__close(self.id) end,
     available=function(self) return network.__available(self.id) or 0 end,
     is_alive=function(self) return network.__is_alive(self.id) end,

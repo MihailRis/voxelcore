@@ -39,6 +39,7 @@ public:
     );
     ~Font();
 
+    bool isMonospace() const;
     int getLineHeight() const;
     int getYOffset() const;
     
@@ -94,6 +95,7 @@ private:
     int lineHeight;
     int yoffset;
     int glyphInterval;
+    bool monospace = true;
     std::vector<std::unique_ptr<Texture>> pages;
     std::vector<Glyph> glyphs;
     std::optional<std::weak_ptr<vector_fonts::FontFile>> fontFile;

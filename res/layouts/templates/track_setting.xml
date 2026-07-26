@@ -3,5 +3,5 @@
     <trackbar 
         value='%{value}' min='%{min}' max='%{max}' step='%{step}' tooltip='%{tooltip}'
         consumer='function(x) app.set_setting("%{id}", x) end' change-on-release='%{changeonrelease}'
-        sub-consumer='function(x) update_setting(x, "%{id}", "%{name}", "%{postfix}") end'/>
+        sub-consumer='function(x) update_trackbar_label(x, "%{id}", "%{name}", "%{postfix}") end'/>
 </panel>

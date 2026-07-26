@@ -26,6 +26,13 @@ namespace util {
             return last[0] == '-';
         }
 
+        bool isNextKeywordArg() const {
+            if (pos >= argc) {
+                throw std::runtime_error("unexpected end");
+            }
+            return argv[pos][0] == '-';
+        }
+
         std::string next() {
             if (pos >= argc) {
                 throw std::runtime_error("unexpected end");

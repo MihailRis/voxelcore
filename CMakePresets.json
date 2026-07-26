@@ -16,6 +16,22 @@
             }
         },
         {
+            "name": "default-ninja-mingw-windows",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "generator": "Ninja Multi-Config",
+            "binaryDir": "${sourceDir}/build-mingw",
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+                "VCPKG_HOST_TRIPLET": "x64-mingw-static",
+                "VCPKG_TARGET_TRIPLET": "x64-mingw-static",
+                "VOXELENGINE_BUILD_TESTS": "ON"
+            }
+        },
+        {
             "name": "default-ninja-gnu-linux",
             "condition": {
                 "type": "equals",
@@ -58,6 +74,11 @@
         {
             "name": "default-vs-msvc-windows",
             "configurePreset": "default-vs-msvc-windows",
+            "configuration": "Debug"
+        },
+        {
+            "name": "default-ninja-mingw-windows",
+            "configurePreset": "default-ninja-mingw-windows",
             "configuration": "Debug"
         },
         {

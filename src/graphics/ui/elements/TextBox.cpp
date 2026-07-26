@@ -353,7 +353,9 @@ void TextBox::draw(const DrawContext& pctx, const Assets& assets) {
 
 void TextBox::drawBackground(const DrawContext& pctx, const Assets& assets) {
     auto font = assets.getShared<Font>(label->getFontName());
-    rawTextCache.prepare(font, font->getMetrics(), label->getSize().x);
+    if (font != nullptr) {
+        rawTextCache.prepare(font, font->getMetrics(), label->getSize().x);
+    }
 
     glm::vec2 pos = calcPos();
 
@@ -646,7 +648,11 @@ void TextBox::reposition() {
 void TextBox::refresh() {
     Container::refresh();
     label->setSize(
-        size - glm::vec2(padding.z + padding.x, padding.w + padding.y)
+        size - glm::vec2(
+                   padding.z + padding.x +
+                       LINE_NUMBERS_PANE_WIDTH * showLineNumbers - textOffset,
+                   padding.w + padding.y
+               )
     );
     label->setPos(glm::vec2(
         padding.x + LINE_NUMBERS_PANE_WIDTH * showLineNumbers + textInitX -
@@ -667,7 +673,9 @@ size_t TextBox::normalizeIndex(int index) {
 /// @param y screen Y position
 /// @return non-normalized character index
 int TextBox::calcIndexAt(int x, int y) const {
-    if (!rawTextCache.metrics.font.has_value()) return 0;
+    if (!rawTextCache.metrics.font.has_value()) {
+        return 0;
+    }
     const auto& labelText = label->getText();
     glm::vec2 lcoord = label->calcPos();
     uint line = label->getLineByYOffset(y - lcoord.y);
@@ -729,6 +737,7 @@ void TextBox::doubleClick(int x, int y) {
 }
 
 void TextBox::click(int x, int y) {
+    Container::click(x, y);
     int index = normalizeIndex(calcIndexAt(x, y));
     selectionStart = index;
     selectionEnd = index;
@@ -751,15 +760,16 @@ void TextBox::resetMaxLocalCaret() {
         caret - label->getTextLineOffset(label->getLineByTextIndex(caret));
 }
 
-void TextBox::stepLeft(bool shiftPressed, bool breakSelection) {
+void TextBox::stepCaret(bool shiftPressed, bool breakSelection, bool right) {
     uint previousCaret = this->caret;
-    size_t caret = breakSelection ? selectionStart : this->caret;
-    if (caret > 0) {
-        if (caret > input.length()) {
-            setCaret(input.length() - 1);
-        } else {
-            setCaret(caret - 1);
-        }
+    size_t caret =
+        breakSelection ? (right ? selectionEnd : selectionStart) : this->caret;
+    if (right ? (caret < input.length()) : (caret > 0)) {
+        setCaret(
+            right ? (caret + 1)
+                  : ((caret > input.length()) ? (input.length() - 1)
+                                              : (caret - 1))
+        );
         if (shiftPressed) {
             if (selectionStart == selectionEnd) {
                 selectionOrigin = previousCaret;
@@ -770,28 +780,9 @@ void TextBox::stepLeft(bool shiftPressed, bool breakSelection) {
         }
     } else {
         setCaret(caret);
-        resetSelection();
-    }
-    resetMaxLocalCaret();
-}
-
-void TextBox::stepRight(bool shiftPressed, bool breakSelection) {
-    uint previousCaret = this->caret;
-    size_t caret = breakSelection ? selectionEnd : this->caret;
-    if (caret < input.length()) {
-        setCaret(caret + 1);
-        caretLastMove = gui.getWindow().time();
-        if (shiftPressed) {
-            if (selectionStart == selectionEnd) {
-                selectionOrigin = previousCaret;
-            }
-            extendSelection(this->caret);
-        } else {
+        if (!shiftPressed) {
             resetSelection();
         }
-    } else {
-        setCaret(caret);
-        resetSelection();
     }
     resetMaxLocalCaret();
 }
@@ -979,9 +970,9 @@ void TextBox::performEditingKeyboardEvents(Keycode key) {
     } else if (key == Keycode::TAB) {
         onTab(shiftPressed);
     } else if (key == Keycode::LEFT) {
-        stepLeft(shiftPressed, breakSelection);
+        stepCaret(shiftPressed, breakSelection, false);
     } else if (key == Keycode::RIGHT) {
-        stepRight(shiftPressed, breakSelection);
+        stepCaret(shiftPressed, breakSelection, true);
     } else if (key == Keycode::UP && onUpPressed) {
         onUpPressed();
     } else if (key == Keycode::DOWN && onDownPressed) {
@@ -1214,7 +1205,7 @@ void TextBox::setCaret(size_t position) {
     if (font == nullptr) {
         return;
     }
-    int width = label->getSize().x;
+    int width = size.x - padding.x - padding.z - LINE_NUMBERS_PANE_WIDTH * showLineNumbers;
 
     rawTextCache.prepare(font, rawTextCache.metrics, width);
     rawTextCache.update(input, multiline, label->isTextWrapping());
@@ -1235,12 +1226,12 @@ void TextBox::setCaret(size_t position) {
     }
     int lcaret = caret - rawTextCache.getTextLineOffset(line);
     int realoffset = rawTextCache.metrics.calcWidth(labelText, 0, lcaret) -
-                     static_cast<int>(textOffset) + 2;
+                     static_cast<int>(textOffset);
 
     if (realoffset - width > 0) {
         setTextOffset(textOffset + realoffset - width);
     } else if (realoffset < 0) {
-        setTextOffset(std::max(textOffset + realoffset, static_cast<size_t>(0)));
+        setTextOffset(std::max<int>(textOffset + realoffset - static_cast<int>(padding.x + padding.w), 0));
     }
 }
 

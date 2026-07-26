@@ -12,10 +12,29 @@ FFI.cdef[[
     } bytearray_t;
 ]]
 
-local malloc = FFI.C.malloc
 local free = FFI.C.free
+
 local FFIBytearray
 local bytearray_type
+
+local allocated_bytes = 0
+local GC_THRESHOLD = 50 * 1024 * 1024
+
+local function malloc(size)
+    local raw = FFI.C.malloc(size)
+    if raw == nil then
+        return nil
+    end
+
+    allocated_bytes = allocated_bytes + size
+
+    if allocated_bytes >= GC_THRESHOLD then
+        collectgarbage("step", 200)
+        allocated_bytes = 0
+    end
+
+    return raw
+end
 
 local function grow_buffer(self, elems)
     local new_capacity = math.ceil(self.capacity / 0.75 + elems)
@@ -215,6 +234,13 @@ FFIBytearray = {
 }
 table.merge(FFIBytearray, bytearray_methods)
 
+local function FFIBytearray_as_ptr(bytes)
+    if type(bytes) == "cdata" then
+        return tostring(bytes.bytes):sub(27), bytes.size
+    end
+    return "0"
+end
+
 local function FFIBytearray_as_string(bytes)
     local t = type(bytes)
     if t == "cdata" then
@@ -283,6 +309,7 @@ local FFIU32view = create_FFIview_class("FFIU32view", "uint32_t", 4)
 return {
     FFIBytearray = setmetatable(FFIBytearray, FFIBytearray),
     FFIBytearray_as_string = FFIBytearray_as_string,
+    FFIBytearray_as_ptr = FFIBytearray_as_ptr,
     FFIU16view = FFIU16view,
     FFII16view = FFII16view,
     FFIU32view = FFIU32view,

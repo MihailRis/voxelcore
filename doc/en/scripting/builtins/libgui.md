@@ -149,16 +149,22 @@ gui.load_document(
     args: table
 ) -> str
 
--- Loads a template into the layout
+-- Loads and processes layout template from file
 gui.template(
     -- template name in /layouts/templates without path and extension
     name: str,
     -- variable table (can be used in markup)
     -- * Ex: <label>%{text}</label>
     -- * text in this case is the value from params with the text key
-    params: table,
-    -- table, available in events as the global variable DATA
-    [optional] data: table
+    params: table
+) -> str
+
+-- Processes layout template from string
+gui.process_template(
+    -- template source code
+    source: str,
+    -- variable table (same as gui.template)
+    params: table
 ) -> str
 ```
 

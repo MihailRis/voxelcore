@@ -54,7 +54,10 @@ function audio.input.request_open(callback)
     _gui_confirm(gui.str(GRANT_PERMISSION_MSG):gsub("%%{0}", caller), function()
         audio_input_tokens_store[token] = caller
         callback(token)
-        menu:reset()
+        if not menu:back() then
+            menu:reset()
+            gui.set_active_frame("")
+        end
     end)
 end
 

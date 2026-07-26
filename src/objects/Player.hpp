@@ -45,7 +45,7 @@ struct CursorSelection {
 class Player : public Serializable {
     Level& level;
     int64_t id;
-    std::string name;
+    std::wstring name;
     float speed;
     
     int chosenSlot;
@@ -79,7 +79,7 @@ public:
     Player(
         Level& level,
         int64_t id,
-        const std::string& name,
+        const std::wstring& name,
         glm::vec3 position,
         float speed,
         std::shared_ptr<Inventory> inv,
@@ -124,8 +124,8 @@ public:
 
     entityid_t getSelectedEntity() const;
 
-    void setName(const std::string& name);
-    const std::string& getName() const;
+    void setName(const std::wstring& name);
+    const std::wstring& getName() const;
 
     const std::shared_ptr<Inventory>& getInventory() const;
 
@@ -135,7 +135,7 @@ public:
 
     bool isCurrentCameraBuiltin() const;
 
-    Hitbox* getHitbox();
+    Hitbox* getHitbox() const;
 
     void setSpawnPoint(glm::vec3 point);
     glm::vec3 getSpawnPoint() const;

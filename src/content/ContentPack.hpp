@@ -85,7 +85,6 @@ struct ContentPack {
     static inline const io::path GENERATORS_FOLDER = "generators";
     static const std::vector<std::string> RESERVED_NAMES;
 
-    static bool is_pack(const io::path& folder);
     static ContentPack read(const io::path& folder);
 
     static void scanFolder(
@@ -114,6 +113,14 @@ struct ContentPack {
             default: return "";
         }
     }
+
+    static std::string_view getPrefix(std::string_view path) {
+        size_t pos = path.find(':');
+        if (pos == std::string::npos) {
+            return "";
+        }
+        return path.substr(0, pos);
+    }
 };
 
 struct WorldFuncsSet {
@@ -127,6 +134,8 @@ struct WorldFuncsSet {
     bool onchunkremove;
     bool oninventoryopen;
     bool oninventoryclosed;
+    bool onentityspawn;
+    bool onentitydespawn;
 };
 
 class ContentPackRuntime {

@@ -180,7 +180,6 @@ bool PhysicsSolver::calcCollisionNegY(
     if (vel.y >= 0.0f) {
         return false;
     }
-    hitbox.groundVelocity = {};
     for (int ix = 0; ix <= glm::ceil((half.x - E) * 2); ix++) {
         glm::vec3 coord;
         coord.x = (pos.x - half.x + E) + ix;
@@ -202,6 +201,7 @@ bool PhysicsSolver::calcCollisionNegY(
                     vel.y = -hitbox.elasticity * vel.y;
                     pos.y = newy;
                 }
+                hitbox.groundVelocity = {};
                 return true;
             }
         }
@@ -244,7 +244,7 @@ void PhysicsSolver::calcCollisions(
             float x = (pos.x - half.x + E) + ix;
             for (int iz = 0; iz <= glm::ceil((half.z - E) * 2); iz++) {
                 float z = (pos.z - half.z + E) + iz;
-                float y = (pos.y + half.y + E) + 0.5f;
+                float y = (pos.y + half.y + E) - E;
                 if (auto aabb = chunks.isObstacleAt(x, y, z, boxAABB)) {
                     float newy = std::floor(y) - half.y + aabb->min().y - E;
                     if (pos.y >= newy) {
@@ -279,7 +279,7 @@ void PhysicsSolver::calcCollisions(
     // step on
     if (stepHeight > 0.0 && vel.y <= 0.0f) {
         AABB boxAABB = AABB(pos - half, pos + half);
-        boxAABB.scale(glm::vec3(1.0f - E * 2, 1.0f - E * 2, 1.0f - E * 2));
+        boxAABB.scale(glm::vec3(1.0f - E * 4.0f, 1.0f - E * 2, 1.0f - E * 4.0f));
         for (int ix = 0; ix <= glm::ceil((half.x - E) * 2); ix++) {
             float x = (pos.x - half.x) + ix;
             for (int iz = 0; iz <= glm::ceil((half.z - E) * 2); iz++) {
@@ -398,6 +398,10 @@ void PhysicsSolver::step(
     for (auto hitbox : hitboxes) {
         float linearDamping = hitbox->linearDamping;
 
+        if (hitbox->grounded) {
+            linearDamping = 10.0f; // TODO: add friction to material
+        }
+
         glm::vec3& vel = hitbox->velocity;
         auto diff = hitbox->groundVelocity - vel;
         vel.x += diff.x * delta * linearDamping;
@@ -407,7 +411,7 @@ void PhysicsSolver::step(
             vel.y /= 1.0f + delta * linearDamping * hitbox->verticalDamping;
         }
         if (!hitbox->grounded) {
-            hitbox->groundVelocity = {};
+            hitbox->groundVelocity *= 1.0f - delta;
         }
         
         updateSensors(*hitbox);

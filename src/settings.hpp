@@ -10,6 +10,7 @@
 struct AudioSettings {
     /// @brief try to initialize AL backend
     FlagSetting enabled {true};
+    FlagSetting recordingEnabled {false};
     
     NumberSetting volumeMaster {1.0f, 0.0f, 1.0f, setting_format::percent};
     NumberSetting volumeRegular {1.0f, 0.0f, 1.0f, setting_format::percent};
@@ -126,6 +127,8 @@ struct SystemSettings {
     IntegerSetting maxBgAssetLoaders {3, -4, 16};
     /// @brief Preserve assets during current frame from being destroyed
     FlagSetting preserveAssetsDuringFrame {true};
+    /// @brief Allow luajit cdata objects direct data access optimizations
+    FlagSetting directScriptingDataAccess {true};
 };
 
 struct EngineSettings {

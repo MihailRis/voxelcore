@@ -543,13 +543,16 @@ static int l_destruct(lua::State* L) {
 }
 
 static int l_raycast(lua::State* L) {
-    auto& level = require_level();
+    const auto& level = require_level();
 
     auto start = lua::tovec<3>(L, 1);
     auto dir = lua::tovec<3>(L, 2);
     auto maxDistance = lua::tonumber(L, 3);
-    bool includeNonSelectable = false;
+
+    blocks_agent::RaycastSettings raycast {};
     std::set<blockid_t> filteredBlocks {};
+    raycast.filter = &filteredBlocks;
+
     const int luaStackSize = lua::gettop(L);
     if (luaStackSize >= 5) {
         if (lua::istable(L, 5)) {
@@ -568,21 +571,14 @@ static int l_raycast(lua::State* L) {
         }
     }
     if (luaStackSize >= 6) {
-        includeNonSelectable = lua::toboolean(L, 6);
+        raycast.includeNonSelectable = lua::toboolean(L, 6);
     }
     glm::vec3 end;
     glm::ivec3 normal;
     glm::ivec3 iend;
+
     if (auto voxel = blocks_agent::raycast(
-            *level.chunks,
-            start,
-            dir,
-            maxDistance,
-            end,
-            normal,
-            iend,
-            filteredBlocks,
-            includeNonSelectable
+            *level.chunks, start, dir, maxDistance, end, normal, iend, raycast
         )) {
         if (luaStackSize >= 4 && !lua::isnil(L, 4)) {
             lua::pushvalue(L, 4);

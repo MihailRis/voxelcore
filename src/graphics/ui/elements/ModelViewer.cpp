@@ -83,12 +83,12 @@ static util::TextureRegion determine_texture_region(
     const Assets& assets, const std::string& texture
 ) {
     static std::array<std::string, 6> faces {
-        "blocks:dbg_north",
-        "blocks:dbg_south",
-        "blocks:dbg_top",
-        "blocks:dbg_bottom",
-        "blocks:dbg_west",
         "blocks:dbg_east",
+        "blocks:dbg_west",
+        "blocks:dbg_bottom",
+        "blocks:dbg_top",
+        "blocks:dbg_south",
+        "blocks:dbg_north",
     };
 
     if (texture.length() < 2 || texture.at(0) != '$') {

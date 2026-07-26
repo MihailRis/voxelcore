@@ -155,7 +155,7 @@ void Entities::loadEntity(const dv::value& map, Entity entity) {
     std::string skeletonName = skeleton->config->getName();
     map.at("skeleton-name").get(skeletonName);
     if (skeletonName != skeleton->config->getName()) {
-        skeleton->config = assets->get<rigging::SkeletonConfig>(skeletonName);
+        skeleton->config = assets->getShared<rigging::SkeletonConfig>(skeletonName);
     }
     if (auto foundSkeleton = map.at(COMP_SKELETON)) {
         skeleton->deserialize(*foundSkeleton);
@@ -166,8 +166,7 @@ std::optional<Entities::RaycastResult> Entities::rayCast(
     glm::vec3 start,
     glm::vec3 dir,
     float maxDistance,
-    entityid_t ignore,
-    bool solidOnly
+    const RaycastSettings& settings
 ) {
     Ray ray(start, dir);
     auto view = registry->view<EntityId, Transform, Rigidbody>();
@@ -176,10 +175,18 @@ std::optional<Entities::RaycastResult> Entities::rayCast(
     glm::ivec3 foundNormal;
 
     for (auto [entity, eid, transform, body] : view.each()) {
-        if (eid.uid == ignore || !body.enabled || (solidOnly && !eid.def.solid)) {
+        if (eid.uid == settings.ignoredUid || !body.enabled ||
+            (settings.solidEntitiesOnly && !eid.def.solid)) {
             continue;
         }
-        auto& hitbox = body.hitbox;
+        if (settings.entitiesFilter) {
+            bool matches = settings.entitiesFilter->find(eid.def.rt.id) !=
+                           settings.entitiesFilter->end();
+            if (matches == settings.entityFilterExcludeMode) {
+                continue;
+            }
+        }
+        const auto& hitbox = body.hitbox;
         glm::ivec3 normal;
         double distance;
         if (ray.intersectAABB(
@@ -288,22 +295,24 @@ void Entities::preparePhysics(float delta) {
     auto& hitboxes = physics.getHitboxesWriteable();
     auto& solidHitboxes = physics.getSolidHitboxesWriteable();
 
-    if (sensorsTickClock.update(delta)) {
-        auto part = sensorsTickClock.getPart();
-        auto parts = sensorsTickClock.getParts();
+    if (int parts = sensorsTickClock.update(delta)) {
+        for (int i = 0; i < parts; i++) {
+            auto part = sensorsTickClock.convertPart(i);
+            auto allParts = sensorsTickClock.getParts();
 
-        auto& sensors = physics.getSensorsWriteable();
-        sensors.clear();
+            auto& sensors = physics.getSensorsWriteable();
+            sensors.clear();
 
-        auto view = registry->view<EntityId, Transform, Rigidbody>();
-        for (auto [entity, eid, transform, rigidbody] : view.each()) {
-            if (!rigidbody.enabled) {
-                continue;
+            auto view = registry->view<EntityId, Transform, Rigidbody>();
+            for (auto [entity, eid, transform, rigidbody] : view.each()) {
+                if (!rigidbody.enabled) {
+                    continue;
+                }
+                if ((eid.uid + part) % allParts != 0) {
+                    continue;
+                }
+                updateSensors(rigidbody, transform, sensors);
             }
-            if ((eid.uid + part) % parts != 0) {
-                continue;
-            }
-            updateSensors(rigidbody, transform, sensors);
         }
     }
 
@@ -364,12 +373,14 @@ void Entities::updatePhysics(float delta) {
 }
 
 void Entities::update(float delta) {
-    if (updateTickClock.update(delta)) {
-        scripting::on_entities_update(
-            updateTickClock.getTickRate(),
-            updateTickClock.getParts(),
-            updateTickClock.getPart()
-        );
+    if (int parts = updateTickClock.update(delta)) {
+        for (int i = 0; i < parts; i++) {
+            scripting::on_entities_update(
+                updateTickClock.getTickRate(),
+                updateTickClock.getParts(),
+                updateTickClock.convertPart(i)
+            );
+        }
     }
     updatePhysics(delta);
     scripting::on_entities_physics_update(delta);
@@ -470,7 +481,7 @@ void Entities::render(
             continue;
         }
 
-        const auto* rigConfig = skeleton.config;
+        const auto& rigConfig = skeleton.config;
         if (rigConfig) {
             rigConfig->render(
                 assets, batch, skeleton, transform.rot, pos, size
@@ -482,7 +493,9 @@ void Entities::render(
 bool Entities::hasBlockingInside(AABB aabb) {
     auto view = registry->view<EntityId, Rigidbody>();
     for (auto [entity, eid, body] : view.each()) {
-        if (eid.def.blocking && aabb.intersects(body.hitbox.getAABB(), -0.05f)) {
+        AABB bodyAABB(body.hitbox.getAABB());
+        bodyAABB.scale({1, 0.95f, 1});
+        if (eid.def.blocking && aabb.intersects(bodyAABB)) {
             return true;
         }
     }

@@ -52,6 +52,60 @@ yaml.parse(code: str) -> table
 
 Parses a YAML string into a table.
 
+## XML Library
+
+The library contains functions for serializing and deserializing XML:
+
+Further, XML as a data type denotes a Lua table with the following structure:
+- Element tag is accessible by the key `#`
+- XML ​​attributes are accessible as key = value pairs
+- Inner elements are accessible by index
+
+The table is used both as a dictionary and an array.
+
+Example:
+
+```xml
+<panel size='400' color='0' interval='1' context='menu'>
+    <button onclick='menu.page="worlds"'>@Worlds</button>
+</panel>
+```
+
+Equivalent Lua table:
+
+```lua
+{
+    ['#'] = "panel",
+    size = "400",
+    color = "0",
+    interval = "1",
+    context = "menu",
+    {
+        ['#'] = "button",
+        onclick = 'menu.page="worlds"',
+        {
+            "@Worlds"
+        }
+    }
+}
+```
+
+Consequently, the button element is accessible as `panel_element[1]`.
+
+```lua
+-- Serializes a tree in XML format
+-- multiline - use multiline formatting
+xml.tostring(data: XML, multiline: bool = true) -> str
+
+-- Parses XML
+xml.parse(code: str) -> XML
+
+-- Parses the VCD (VoxelCore Declaration) format used by the VCM format.
+-- root_tag - a root element with the specified tag will be implicitly created,
+-- containing all root elements
+xml.parse_vcd(code: str, root_tag: str = "root") -> XML
+```
+
 ## *bjson* library
 
 The library contains functions for working with the binary data exchange format [vcbjson](../../specs/binary_json_spec.md).

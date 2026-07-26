@@ -48,17 +48,18 @@ void LabelCache::update(std::wstring_view text, bool multiline, bool wrap) {
     }
     
     if (multiline) {
-        size_t len = 0;
-        for (size_t i = 0; i < text.length(); i++, len++) {
+        size_t lineStart = 0;
+        for (size_t i = 0; i < text.length(); i++) {
             if (text[i] == L'\n') {
-                lines.push_back(LineScheme {i+1, false});
-                len = 0;
-            } else if (i > 0 && i+1 < text.length() && wrap && text[i+1] != L'\n') {
-                size_t width = metrics.calcWidth(text, i-len-1, i-(i-len)+2);
+                lines.push_back(LineScheme {i + 1, false});
+                lineStart = i + 1;
+            } else if (i + 1 < text.length() && wrap && text[i + 1] != L'\n') {
+                size_t width =
+                    metrics.calcWidth(text, lineStart, i - lineStart + 2);
                 if (width >= wrapWidth) {
                     // starting a fake line
-                    lines.push_back(LineScheme {i+1, true});
-                    len = 0;
+                    lines.push_back(LineScheme {i + 1, true});
+                    lineStart = i + 1;
                 }
             }
         }
@@ -206,6 +207,9 @@ uint Label::getLinesNumber() const {
 void Label::draw(const DrawContext& pctx, const Assets& assets) {
     auto batch = pctx.getBatch2D();
     auto font = assets.getShared<Font>(fontName);
+    if (font == nullptr) {
+        return;
+    }
     cache.prepare(
         font,
         font->getMetrics(),

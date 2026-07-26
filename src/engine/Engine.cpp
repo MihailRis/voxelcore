@@ -13,6 +13,7 @@
 #include "content/ContentControl.hpp"
 #include "core_defs.hpp"
 #include "debug/Logger.hpp"
+#include "devtools/AppScriptsControl.hpp"
 #include "devtools/DebuggingServer.hpp"
 #include "devtools/Editor.hpp"
 #include "devtools/Project.hpp"
@@ -189,12 +190,10 @@ void Engine::initialize(CoreParameters coreParameters) {
 
     keepAlive(settings.audio.inputDevice.observe([](auto name) {
         audio::set_input_device(name == "auto" ? "" : name);
-    }, true));
+    }));
 
-    project->loadProjectStartScript();
-    if (!params.headless) {
-        project->loadProjectClientScript();
-    }
+    appScripts = std::make_unique<AppScriptsControl>(params, *project);
+
     if (params.stdinCommands) {
         cmd::start_stdin_cmd_reader(*this);
     }
@@ -263,9 +262,7 @@ void Engine::detachDebugger() {
 }
 
 void Engine::applicationTick() {
-    if (project->setupCoroutine && project->setupCoroutine->isActive()) {
-        project->setupCoroutine->update();
-    }
+    appScripts->tick();
 }
 
 void Engine::updateFrontend() {
@@ -353,6 +350,7 @@ void Engine::close() {
     network.reset();
     clearKeepedObjects();
     project.reset();
+    appScripts.reset();
     scripting::close();
     logger.info() << "scripting finished";
     if (!params.headless) {
@@ -387,8 +385,8 @@ void Engine::loadProject() {
 }
 
 void Engine::setScreen(std::shared_ptr<Screen> screen) {
-    if (project->clientScript && this->screen) {
-        project->clientScript->onScreenChange(this->screen->getName(), false);
+    if (this->screen) {
+        appScripts->onScreenChange(this->screen->getName(), false);
     }
     // reset audio channels (stop all sources)
     audio::reset_channel(audio::get_channel_index("regular"));
@@ -397,8 +395,8 @@ void Engine::setScreen(std::shared_ptr<Screen> screen) {
     if (this->screen) {
         this->screen->onOpen();
     }
-    if (project->clientScript && this->screen) {
-        project->clientScript->onScreenChange(this->screen->getName(), true);
+    if (this->screen) {
+        appScripts->onScreenChange(this->screen->getName(), true);
         window->setShouldRefresh();
     }
 }

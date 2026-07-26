@@ -47,10 +47,6 @@ io::path ContentPack::getContentFile() const {
     return folder / CONTENT_FILENAME;
 }
 
-bool ContentPack::is_pack(const io::path& folder) {
-    return io::is_regular_file(folder / PACKAGE_FILENAME);
-}
-
 std::optional<ContentPackStats> ContentPack::loadStats() const {
     auto contentFile = getContentFile();
     if (!io::exists(contentFile)) {
@@ -85,6 +81,9 @@ static void checkContentPackId(const std::string& id, const io::path& folder) {
             );
         }
     }
+    if (id == "none") {
+        throw contentpack_error(id, folder, "content-pack id is not specified");
+    }
     if (std::find(
             ContentPack::RESERVED_NAMES.begin(),
             ContentPack::RESERVED_NAMES.end(),
@@ -94,10 +93,71 @@ static void checkContentPackId(const std::string& id, const io::path& folder) {
     }
 }
 
+static DependencyPack parse_dependency(std::string depName) {
+    auto level = DependencyLevel::REQUIRED;
+    switch (depName.at(0)) {
+        case '!':
+            depName = depName.substr(1);
+            break;
+        case '?':
+            depName = depName.substr(1);
+            level = DependencyLevel::OPTIONAL;
+            break;
+        case '~':
+            depName = depName.substr(1);
+            level = DependencyLevel::WEAK;
+            break;
+    }
+
+    std::string depVer = "*";
+    std::string depVerOperator = "=";
+
+    size_t versionPos = depName.rfind("@");
+    if (versionPos != std::string::npos) {
+        depVer = depName.substr(versionPos + 1);
+        depName = depName.substr(0, versionPos);
+
+        if (depVer.size() >= 2) {
+            std::string op = depVer.substr(0, 2);
+            std::uint8_t op_size = 0;
+
+            // Two symbol operators
+            if (op == ">=" || op == "<=") {
+                op_size = 2;
+                depVerOperator = op;
+            }
+
+            // One symbol operators
+            else {
+                op = depVer.substr(0, 1);
+
+                if (op == ">" || op == "<") {
+                    op_size = 1;
+                    depVerOperator = op;
+                }
+            }
+
+            depVer = depVer.substr(op_size);
+        } else {
+            if (depVer == ">" || depVer == "<"){
+                depVer = "*";
+            }
+        }
+    }
+    
+    VersionOperator versionOperator;
+    if (VersionOperatorMeta.getItem(depVerOperator, versionOperator)) {
+        return DependencyPack{level, depName, depVer, versionOperator};
+    } else {
+        throw std::runtime_error("invalid version operator");
+    }
+}
+
 ContentPack ContentPack::read(const io::path& folder) {
     auto root = io::read_json(folder / PACKAGE_FILENAME);
     ContentPack pack;
     root.at("id").get(pack.id);
+    checkContentPackId(pack.id, folder);
     root.at("title").get(pack.title);
     root.at("version").get(pack.version);
     if (root.has("creators")) {
@@ -115,81 +175,26 @@ ContentPack ContentPack::read(const io::path& folder) {
     root.at("source").get(pack.source);
     pack.folder = folder;
 
+    auto dependenciesList = root.at("dependencies");
+    if (!dependenciesList) {
+        return pack;
+    }
+
     if (auto found = root.at("dependencies")) {
         const auto& dependencies = *found;
         for (const auto& elem : dependencies) {
             std::string depName = elem.asString();
-            auto level = DependencyLevel::REQUIRED;
-            switch (depName.at(0)) {
-                case '!':
-                    depName = depName.substr(1);
-                    break;
-                case '?':
-                    depName = depName.substr(1);
-                    level = DependencyLevel::OPTIONAL;
-                    break;
-                case '~':
-                    depName = depName.substr(1);
-                    level = DependencyLevel::WEAK;
-                    break;
-            }
-
-            std::string depVer = "*";
-            std::string depVerOperator = "=";
-
-            size_t versionPos = depName.rfind("@");
-            if (versionPos != std::string::npos) {
-                depVer = depName.substr(versionPos + 1);
-                depName = depName.substr(0, versionPos);
-
-                if (depVer.size() >= 2) {
-                    std::string op = depVer.substr(0, 2);
-                    std::uint8_t op_size = 0;
-
-                    // Two symbol operators
-                    if (op == ">=" || op == "<=") {
-                        op_size = 2;
-                        depVerOperator = op;
-                    }
-
-                    // One symbol operators
-                    else {
-                        op = depVer.substr(0, 1);
-
-                        if (op == ">" || op == "<") {
-                            op_size = 1;
-                            depVerOperator = op;
-                        }
-                    }
-
-                    depVer = depVer.substr(op_size);
-                } else {
-                    if (depVer == ">" || depVer == "<"){
-                        depVer = "*";
-                    }
-                }
-            }
-            
-            VersionOperator versionOperator;
-            if (VersionOperatorMeta.getItem(depVerOperator, versionOperator)) {
-                pack.dependencies.push_back(
-                    {level, depName, depVer, versionOperator}
-                );
-            } else {
+            try {
+                pack.dependencies.push_back(parse_dependency(std::move(depName)));
+            } catch (const std::runtime_error& err) {
                 throw contentpack_error(
-                    pack.id, folder, "invalid version operator"
+                    pack.id,
+                    folder,
+                    "dependency parsing error: " + std::string(err.what())
                 );
             }
         }
     }
-
-    if (pack.id == "none") {
-        throw contentpack_error(
-            pack.id, folder, "content-pack id is not specified"
-        );
-    }
-    checkContentPackId(pack.id, folder);
-
     return pack;
 }
 
@@ -200,15 +205,21 @@ void ContentPack::scanFolder(
         return;
     }
     for (const auto& packFolder : io::directory_iterator(folder)) {
-        if (!io::is_directory(packFolder)) continue;
-        if (!is_pack(packFolder)) continue;
+        if (!io::is_directory(packFolder)) {
+            continue;
+        }
+        auto packageFile = packFolder / PACKAGE_FILENAME;
+        if (!io::is_regular_file(packageFile)) {
+            continue;
+        }
         try {
             packs.push_back(read(packFolder));
         } catch (const contentpack_error& err) {
-            std::cerr << "package.json error at " << err.getFolder().string();
-            std::cerr << ": " << err.what() << std::endl;
+            logger.warning() << "package.json error at "
+                             << err.getFolder().string() << ": " << err.what();
         } catch (const std::runtime_error& err) {
-            std::cerr << err.what() << std::endl;
+            logger.error() << "reading " << packageFile.string()
+                           << " error: " << err.what();
         }
     }
 }

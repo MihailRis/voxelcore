@@ -55,7 +55,7 @@ void LightSolver::remove(int x, int y, int z) {
 }
 
 void LightSolver::solve(Chunk* prevailingChunk) {
-    const int coords[] = {
+    static const int coords[] = {
             0, 0, 1,
             0, 0,-1,
             0, 1, 0,

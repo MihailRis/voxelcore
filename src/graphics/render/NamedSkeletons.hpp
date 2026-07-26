@@ -14,7 +14,8 @@ public:
     NamedSkeletons();
 
     std::shared_ptr<rigging::Skeleton> createSkeleton(
-        const std::string& name, const rigging::SkeletonConfig* config
+        const std::string& name,
+        std::shared_ptr<const rigging::SkeletonConfig> config
     );
 
     rigging::Skeleton* getSkeleton(const std::string& name);

@@ -7,15 +7,15 @@ namespace util {
 
         float tickTimer = 0.0f;
         int tickId = 0;
-        int tickPartsUndone = 0;
+        int currentTickPart = 0;
     public:
         Clock(int tickRate, int tickParts);
 
-        bool update(float delta);
+        int update(float delta);
 
         int getParts() const;
-        int getPart() const;
         int getTickRate() const;
         int getTickId() const;
+        int convertPart(int index) const;
     };
 }

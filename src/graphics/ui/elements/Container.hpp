@@ -9,6 +9,7 @@
 namespace gui {
     class Container : public UINode, public ::util::ObjectsKeeper {
         int prevScrollY = -1;
+        bool scrollbarTriggered = false;
     protected:
         std::vector<std::shared_ptr<UINode>> nodes;
         std::vector<IntervalEvent> intervalEvents;
@@ -18,13 +19,14 @@ namespace gui {
         int actualLength = 0;
         bool scrollable = true;
 
-        bool isScrolling() {
-            return prevScrollY != -1;
+        bool isScrolling() const {
+            return scrollbarTriggered;
         }
     public:
         Container(GUI& gui, glm::vec2 size);
         virtual ~Container();
 
+        virtual void click(int, int) override;
         virtual void act(float delta) override;
         virtual void drawBackground(const DrawContext& pctx, const Assets& assets);
         virtual void draw(const DrawContext& pctx, const Assets& assets) override;

@@ -39,6 +39,7 @@ pack.remove-confirm=Удалить весь поставляемый паком/
 
 # Подсказки
 audio.acoustic-effects.tooltip=Акустические эффекты могут не поддерживаться системой
+audio.recording-enabled.tooltip=Включает функции записи звука
 graphics.gamma.tooltip=Кривая яркости освещения
 graphics.backlight.tooltip=Подсветка, предотвращающая полную темноту
 graphics.dense-render.tooltip=Включает прозрачность блоков, таких как листья
@@ -114,6 +115,7 @@ settings.Microphone=Микрофон
 settings.microphone.None=Нет
 settings.Clouds quality=Качество облаков
 settings.Acoustic effects=Акустические эффекты
+settings.Microphone access=Доступ к микрофону
 
 # Управление
 chunks.reload=Перезагрузить Чанки

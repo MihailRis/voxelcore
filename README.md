@@ -153,6 +153,26 @@ cmake --build --preset default-vs-msvc-windows
 > Make sure your `CMakeUserPresets.json` (if used) contains the correct `VCPKG_ROOT` path.
 
 ---
+### Building with CLion (MinGW / Ninja)
+
+> [!NOTE]
+> Requirements: **vcpkg**, **Git**, and **CLion** (bundled with CMake, Ninja and MinGW toolchain).
+
+> [!WARNING]
+> Avoid installing tools in paths with spaces (e.g. `Program Files`).
+> This may break MinGW builds (especially `windres`).
+
+Install **vcpkg** manually as described in the Visual Studio section.
+
+
+#### Configure CLion
+Open the project in CLion and configure CMake profile:
+```text
+Settings → Build, Execution, Deployment → CMake
+```
+Reload CMake project and build the engine.
+
+---
 
 ## Build using Docker
 

@@ -101,3 +101,9 @@ TEST(stringutil, escape_cases) {
     }
     EXPECT_EQ(utf8str, restored);
 }
+
+TEST(stringutil, cases) {
+    EXPECT_EQ(util::upper_case(L"тест"), std::wstring(L"ТЕСТ"));
+    EXPECT_EQ(util::lower_case(L"ТЕСТ"), std::wstring(L"тест"));
+    EXPECT_EQ(util::pascal_case(L"тестовая строка"), std::wstring(L"Тестовая Строка"));
+}

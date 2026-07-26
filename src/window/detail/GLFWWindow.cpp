@@ -33,6 +33,7 @@ static void init_gl_extensions_list() {
     }
 }
 
+[[maybe_unused]]
 static bool is_gl_extension_supported(const char *extension) {
     if (!extension || !*extension) {
         return false;
@@ -40,6 +41,7 @@ static bool is_gl_extension_supported(const char *extension) {
     return supported_gl_extensions.find(extension) != supported_gl_extensions.end();
 }
 
+#ifndef __APPLE__
 static const char* gl_error_name(int error) {
     switch (error) {
         case GL_DEBUG_TYPE_ERROR: return "ERROR";
@@ -80,6 +82,7 @@ static void GLAPIENTRY gl_message_callback(
     logger.warning() << "GL:" << gl_error_name(type) << ":"
               << gl_severity_name(severity) << ": " << message;
 }
+#endif
 
 static bool initialize_gl(int width, int height) {
     glewExperimental = GL_TRUE;
@@ -165,17 +168,127 @@ inline constexpr short MOUSE_KEYS_OFFSET = 1024;
 
 static GLFWcursor* standard_cursors[static_cast<int>(CursorShape::LAST) + 1] = {};
 
-class GLFWInput : public Input {
+class BaseInput : public Input {
 public:
+    std::vector<uint> codepoints;
     int scroll = 0;
+
+    void onKeyCallback(int key, bool pressed) {
+        bool prevPressed = keys[key];
+        keys[key] = pressed;
+        frames[key] = currentFrame;
+        if (pressed && !prevPressed) {
+            const auto& callbacks = keyCallbacks.find(static_cast<Keycode>(key));
+            if (callbacks != keyCallbacks.end()) {
+                callbacks->second.notify();
+            }
+        }
+        if (pressed && key < MOUSE_KEYS_OFFSET) {
+            pressedKeys.push_back(static_cast<Keycode>(key));
+        }
+    }
+
+    void onMouseCallback(int button, bool pressed) {
+        int key = button + MOUSE_KEYS_OFFSET;
+        onKeyCallback(key, pressed);
+    }
+
+    bool isCursorLocked() const override {
+        return cursorLocked;
+    }
+
+    void setCursorPosition(double xpos, double ypos) {
+        if (cursorDrag) {
+            delta.x += xpos - cursor.x;
+            delta.y += ypos - cursor.y;
+        } else {
+            cursorDrag = true;
+        }
+        cursor.x = xpos;
+        cursor.y = ypos;
+    }
+
+    Bindings& getBindings() override {
+        return bindings;
+    }
+
+    const Bindings& getBindings() const override {
+        return bindings;
+    }
+
+    ObserverHandler addKeyCallback(Keycode key, KeyCallback callback) override {
+        return keyCallbacks[key].add(std::move(callback));
+    }
+
+    const std::vector<Keycode>& getPressedKeys() const override {
+        return pressedKeys;
+    }
+
+    const std::vector<uint>& getCodepoints() const override {
+        return codepoints;
+    }
+
+    CursorState getCursor() const override {
+        return {isCursorLocked(), cursor, delta};
+    }
+
+    int getScroll() override {
+        return scroll;
+    }
+
+    bool pressed(Keycode key) const override {
+        int keycode = static_cast<int>(key);
+        if (keycode < 0 || keycode >= KEYS_BUFFER_SIZE) {
+            return false;
+        }
+        return keys[keycode];
+    }
+    bool jpressed(Keycode keycode) const override {
+        return pressed(keycode) &&
+               frames[static_cast<int>(keycode)] == currentFrame;
+    }
+
+    bool clicked(Mousecode code) const override {
+        return pressed(
+            static_cast<Keycode>(MOUSE_KEYS_OFFSET + static_cast<int>(code))
+        );
+    }
+    bool jclicked(Mousecode code) const override {
+        return clicked(code) &&
+               frames[static_cast<int>(code) + MOUSE_KEYS_OFFSET] ==
+                   currentFrame;
+    }
+
+    void simulateKey(Keycode key, bool pressed) override {
+        onKeyCallback(static_cast<int>(key), pressed);
+    }
+
+    void simulateClick(int button, bool pressed) override {
+        onMouseCallback(static_cast<int>(button), pressed);
+    }
+
+    void simulateCursorPos(double xpos, double ypos) override {
+        setCursorPosition(xpos, ypos);
+    }
+    
+    void simulateCodepoint(uint codepoint) override {
+        codepoints.push_back(codepoint);
+    }
+protected:
     uint currentFrame = 0;
     uint frames[KEYS_BUFFER_SIZE] {};
-    std::vector<uint> codepoints;
     std::vector<Keycode> pressedKeys;
     Bindings bindings;
     bool keys[KEYS_BUFFER_SIZE] {};
     std::unordered_map<Keycode, util::HandlersList<>> keyCallbacks;
+    bool cursorLocked = false;
+    bool cursorDrag = false;
+    glm::vec2 delta {};
+    glm::vec2 cursor {};
+};
 
+class GLFWInput : public BaseInput {
+public:
     GLFWInput(GLFWwindow* window)
         : window(window) {
     }
@@ -225,26 +338,6 @@ public:
         }
     }
 
-    void onKeyCallback(int key, bool pressed) {
-        bool prevPressed = keys[key];
-        keys[key] = pressed;
-        frames[key] = currentFrame;
-        if (pressed && !prevPressed) {
-            const auto& callbacks = keyCallbacks.find(static_cast<Keycode>(key));
-            if (callbacks != keyCallbacks.end()) {
-                callbacks->second.notify();
-            }
-        }
-        if (pressed && key < MOUSE_KEYS_OFFSET) {
-            pressedKeys.push_back(static_cast<Keycode>(key));
-        }
-    }
-
-    void onMouseCallback(int button, bool pressed) {
-        int key = button + MOUSE_KEYS_OFFSET;
-        onKeyCallback(key, pressed);
-    }
-
     const char* getClipboardText() const override {
         return glfwGetClipboardString(window);
     }
@@ -253,87 +346,18 @@ public:
         glfwSetClipboardString(window, text);
     }
 
-    int getScroll() override {
-        return scroll;
-    }
-
-    bool pressed(Keycode key) const override {
-        int keycode = static_cast<int>(key);
-        if (keycode < 0 || keycode >= KEYS_BUFFER_SIZE) {
-            return false;
-        }
-        return keys[keycode];
-    }
-    bool jpressed(Keycode keycode) const override {
-        return pressed(keycode) &&
-               frames[static_cast<int>(keycode)] == currentFrame;
-    }
-
-    bool clicked(Mousecode code) const override {
-        return pressed(
-            static_cast<Keycode>(MOUSE_KEYS_OFFSET + static_cast<int>(code))
-        );
-    }
-    bool jclicked(Mousecode code) const override {
-        return clicked(code) &&
-               frames[static_cast<int>(code) + MOUSE_KEYS_OFFSET] ==
-                   currentFrame;
-    }
-
-    CursorState getCursor() const override {
-        return {isCursorLocked(), cursor, delta};
-    }
-
-    bool isCursorLocked() const override {
-        return cursorLocked;
-    }
-
     void toggleCursor() override {
         cursorDrag = false;
         if (cursorLocked) {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
         } else {
             glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetCursor(window, nullptr);
         }
         cursorLocked = !cursorLocked;
     }
-
-    void setCursorPosition(double xpos, double ypos) {
-        if (cursorDrag) {
-            delta.x += xpos - cursor.x;
-            delta.y += ypos - cursor.y;
-        } else {
-            cursorDrag = true;
-        }
-        cursor.x = xpos;
-        cursor.y = ypos;
-    }
-
-    Bindings& getBindings() override {
-        return bindings;
-    }
-
-    const Bindings& getBindings() const override {
-        return bindings;
-    }
-
-    ObserverHandler addKeyCallback(Keycode key, KeyCallback callback) override {
-        return keyCallbacks[key].add(std::move(callback));
-    }
-
-    const std::vector<Keycode>& getPressedKeys() const override {
-        return pressedKeys;
-    }
-
-    const std::vector<uint>& getCodepoints() const override {
-        return codepoints;
-    }
 private:
     GLFWwindow* window;
-    bool cursorLocked = false;
-    bool cursorDrag = false;
-    glm::vec2 delta {};
-    glm::vec2 cursor {};
 };
 static_assert(!std::is_abstract<GLFWInput>());
 

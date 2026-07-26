@@ -119,6 +119,12 @@ namespace xml {
         const std::string& indentStr = "    "
     );
 
+    std::string stringify(
+        const Node& element,
+        bool nice = true,
+        const std::string& indentStr = "    "
+    );
+
     /// @brief Read XML Document from string
     /// @param filename file name will be shown in error messages
     /// @param source xml source code string

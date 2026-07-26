@@ -1,37 +1,3 @@
-local function configure_SSAO()
-    -- Temporary using slot to configure built-in SSAO effect
-    local slot = gfx.posteffects.index("core:ssao")
-    gfx.posteffects.set_effect(slot, "ssao")
-
-    -- Generating random SSAO samples
-    local buffer = Bytearray(0)
-    for i = 0, 63 do
-        local x = math.random() * 2.0 - 1.0
-        local y = math.random() * 2.0 - 1.0
-        local z = math.random() * 2.0
-        local len = math.sqrt(x * x + y * y + z * z)
-        if len > 0 then
-            x = x / len
-            y = y / len
-            z = z / len
-        end
-        Bytearray.append(buffer, byteutil.pack("fff", x, y, z))
-    end
-    gfx.posteffects.set_array(slot, "u_ssaoSamples", Bytearray_as_string(buffer))
-
-    local function update_ssao_quality(value)
-        value = math.min(value, 3)
-        gfx.posteffects.set_params(slot, {
-            u_kernelSize = value * 16,
-            u_radius = 0.4 / value,
-            u_bias = 0.006 / value / value,
-        })
-    end
-    events.on("core:setting.graphics.ssao.set", update_ssao_quality)
-
-    update_ssao_quality(__vc_app.get_setting("graphics.ssao"))
-end
-
 local function update_hand()
     local skeleton = gfx.skeletons
     local pid = hud.get_player()
@@ -122,8 +88,6 @@ function on_hud_open()
             player.set_vel(pid, 0, 1, 0)
         end
     end)
-
-    configure_SSAO()
 
     hud.default_hand_controller = update_hand
 end

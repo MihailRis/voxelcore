@@ -416,7 +416,7 @@ Structure:
 
 Where:
 - structure_name - a string containing the name of the structure, registered in structures.toml.
-- structure_position - a vec3 (an array of three numbers) relative to the position of the chunk.
+- structure_position - a vec3 (an array of three numbers).
 - rotation - a number from 0 to 3 indicating the rotation of the structure along the Y axis.
 - priority - a number determining the order in which structures are placed. Structures with lower priority are overlapped by structures with higher priority.
 

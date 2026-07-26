@@ -17,6 +17,7 @@ struct UiDocScript {
     bool onopen : 1;
     bool onprogress : 1;
     bool onclose : 1;
+    bool ondestroy : 1;
 };
 
 using UINodesMap = std::unordered_map<std::string, std::weak_ptr<gui::UINode>>;
@@ -35,6 +36,8 @@ public:
         scriptenv env
     );
 
+    ~UiDocument();
+
     void rebuildIndices();
     void pushIndices(const std::shared_ptr<gui::UINode>& node);
 
@@ -50,9 +53,7 @@ public:
         const scriptenv& parent_env,
         const std::string& name,
         const io::path& file,
-        const std::string& fileName
-    );
-    static std::shared_ptr<gui::UINode> readElement(
-        gui::GUI&, const io::path& file, const std::string& fileName
+        const std::string& fileName,
+        scriptenv&& env = nullptr
     );
 };
