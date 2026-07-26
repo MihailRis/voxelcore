@@ -26,6 +26,11 @@ static rigging::Skeleton* get_skeleton(lua::State* L) {
         return nullptr;
     }
     if (lua::isstring(L, 1)) {
+        // named skeletons live in the world renderer, which does not
+        // exist outside of a level or in builds without a renderer
+        if (scripting::renderer == nullptr) {
+            return nullptr;
+        }
         return scripting::renderer->skeletons->getSkeleton(lua::tostring(L, 1));
     }
     if (auto entity = get_entity(L, 1)) {
