@@ -1,3 +1,14 @@
+-- The FFI may be missing entirely (interpreter without LuaJIT) or present
+-- but unable to resolve C symbols (statically linked host without dynamic
+-- symbol lookup); probe it before committing to the FFI implementation.
+local ffi_usable = ffi ~= nil and pcall(function()
+    ffi.cdef("void* malloc(size_t); void free(void*);")
+    ffi.C.free(ffi.C.malloc(8))
+end)
+if not ffi_usable then
+    return require "core:internal/bytearray_fallback"
+end
+
 local MIN_CAPACITY = 8
 local _type = type
 local FFI = ffi

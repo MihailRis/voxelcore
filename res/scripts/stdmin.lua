@@ -23,14 +23,22 @@ function crc32(bytes, chksum)
 
     local length = #bytes
     if type(bytes) == "table" then
-        local buffer_len = _ffi.new('int[1]', length)
-        local buffer = _ffi.new(
-            string.format("char[%s]", length)
-        )
-        for i=1, length do
-            buffer[i - 1] = bytes[i]
+        if _ffi then
+            local buffer_len = _ffi.new('int[1]', length)
+            local buffer = _ffi.new(
+                string.format("char[%s]", length)
+            )
+            for i=1, length do
+                buffer[i - 1] = bytes[i]
+            end
+            bytes = _ffi.string(buffer, buffer_len[0])
+        else
+            local chars = {}
+            for i=1, length do
+                chars[i] = string.char(bytes[i] % 256)
+            end
+            bytes = table.concat(chars)
         end
-        bytes = _ffi.string(buffer, buffer_len[0])
     end
     return _crc32(bytes, chksum)
 end

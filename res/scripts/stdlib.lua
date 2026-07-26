@@ -324,18 +324,24 @@ __vc_scripts_registry = require "core:internal/scripts_registry"
 file.open = require "core:internal/stream_providers/file"
 file.open_named_pipe = require "core:internal/stream_providers/named_pipe"
 
-if ffi.os == "Windows" then
-    ffi.cdef[[
-    unsigned long GetCurrentProcessId();
-    ]]
+local pid_ok = ffi ~= nil and pcall(function()
+    if ffi.os == "Windows" then
+        ffi.cdef[[
+        unsigned long GetCurrentProcessId();
+        ]]
 
-    os.pid = ffi.C.GetCurrentProcessId()
-else
-    ffi.cdef[[
-    int getpid(void);
-    ]]
+        os.pid = ffi.C.GetCurrentProcessId()
+    else
+        ffi.cdef[[
+        int getpid(void);
+        ]]
 
-    os.pid = ffi.C.getpid()
+        os.pid = ffi.C.getpid()
+    end
+end)
+if not pid_ok then
+    -- no usable FFI on this platform
+    os.pid = 0
 end
 
 require("core:io_stream").wrap_bytearray = require "core:internal/stream_providers/bytearray"
