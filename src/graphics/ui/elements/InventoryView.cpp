@@ -491,6 +491,12 @@ void SlotView::clicked(Mousecode button) {
     auto exchangeSlot =
         std::dynamic_pointer_cast<SlotView>(gui.get(EXCHANGE_SLOT_NAME));
     if (exchangeSlot == nullptr) {
+        // no exchange slot in this UI context; a slot items can't be
+        // taken from acts as a button, so a click still notifies
+        // updateFunc (used e.g. for tap-to-select hotbars)
+        if (!layout.taking && layout.updateFunc) {
+            layout.updateFunc(layout.index, *bound);
+        }
         return;
     }
     ItemStack& grabbed = exchangeSlot->getStack();

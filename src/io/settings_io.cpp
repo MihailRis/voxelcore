@@ -89,6 +89,7 @@ SettingsHandler::SettingsHandler(EngineSettings& settings) {
     builder.addSection("ui");
     builder.add("language", &settings.ui.language);
     builder.add("world-preview-size", &settings.ui.worldPreviewSize);
+    builder.add("hotbar-interactive", &settings.ui.hotbarInteractive);
 
     builder.addSection("pathfinding");
     builder.add("steps-per-async-agent", &settings.pathfinding.stepsPerAsyncAgent);

@@ -129,6 +129,10 @@ class Hud : public util::ObjectsKeeper {
 
     void processInput(bool visible);
     void updateElementsPosition(const glm::uvec2& viewport);
+
+    /// @brief Check if the viewport is too narrow to fit the inventory
+    /// and the content access panel side by side (small screens/windows)
+    bool isCompactMode(const glm::uvec2& viewport) const;
     void updateHotbarControl();
     void cleanup();
 

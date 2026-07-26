@@ -135,14 +135,23 @@ std::shared_ptr<InventoryView> Hud::createHotbar() {
     auto inventory = player.getInventory();
     auto& content = frontend.getLevel().content;
 
+    bool interactive = engine.getSettings().ui.hotbarInteractive.get();
     SlotLayout slotLayout(-1, glm::vec2(), false, false, nullptr, nullptr, nullptr);
+    if (interactive) {
+        // clicking/tapping a hotbar slot makes it the chosen one
+        auto* playerPtr = &player;
+        slotLayout.updateFunc = [playerPtr](uint index, ItemStack&) {
+            playerPtr->setChosenSlot(static_cast<int>(index));
+        };
+        slotLayout.taking = false;
+    }
     InventoryBuilder builder(gui);
     builder.addGrid(10, 10, glm::vec2(), glm::vec4(4), true, slotLayout);
     auto view = builder.build();
     view->setId("hud.hotbar");
     view->setOrigin(glm::vec2(view->getSize().x/2, 0));
     view->bind(inventory, &content);
-    view->setInteractive(false);
+    view->setInteractive(interactive);
     return view;
 }
 
@@ -352,11 +361,19 @@ void Hud::update(bool visible) {
     }
 
     const auto& windowSize = engine.getWindow().getSize();
+    bool compact = isCompactMode(windowSize);
     glm::vec2 caSize = contentAccessPanel->getSize();
     contentAccessPanel->setVisible(inventoryView != nullptr && showContentPanel);
+    if (compact && inventoryView) {
+        // no space for the inventory and the content access panel side
+        // by side: show one at a time, toggled by showContentPanel
+        inventoryView->setVisible(visible && !showContentPanel);
+    }
     contentAccessPanel->setSize(glm::vec2(caSize.x, windowSize.y));
     contentAccess->setMinSize(glm::vec2(1, windowSize.y));
-    hotbarView->setVisible(visible && !(secondUI && !inventoryView));
+    hotbarView->setVisible(
+        visible && !(secondUI && !inventoryView) &&
+        !(compact && inventoryOpen));
     darkOverlay->setVisible(isMenuOpen);
     menu.setVisible(isMenuOpen);
 
@@ -637,23 +654,46 @@ void Hud::draw(const DrawContext& ctx){
 #endif
 }
 
+bool Hud::isCompactMode(const glm::uvec2& viewport) const {
+    if (inventoryView == nullptr || !showContentPanel) {
+        return false;
+    }
+    float caWidth = contentAccess ? contentAccess->getSize().x : 0.0f;
+    return inventoryView->getSize().x + caWidth + 10 > viewport.x;
+}
+
 void Hud::updateElementsPosition(const glm::uvec2& viewport) {
     if (inventoryOpen) {
+        bool compact = isCompactMode(viewport);
         float caWidth = inventoryView && showContentPanel
                             ? contentAccess->getSize().x
                             : 0.0f;
-        contentAccessPanel->setPos(glm::vec2(viewport.x - caWidth, 0));
+        if (compact) {
+            // panels are shown one at a time (see Hud::update): center
+            // the content access panel instead of docking it right
+            contentAccessPanel->setPos(
+                glm::vec2((viewport.x - caWidth) / 2, 0));
+        } else {
+            contentAccessPanel->setPos(glm::vec2(viewport.x - caWidth, 0));
+        }
 
         glm::vec2 invSize = inventoryView ? inventoryView->getSize() : glm::vec2();
         if (secondUI == nullptr) {
             if (inventoryView) {
-                inventoryView->setPos(glm::vec2(
-                    glm::min(
+                if (compact) {
+                    inventoryView->setPos(glm::vec2(
                         viewport.x / 2 - invSize.x / 2,
-                        viewport.x - caWidth - 10 - invSize.x
-                    ),
-                    viewport.y / 2 - invSize.y / 2
-                ));
+                        viewport.y / 2 - invSize.y / 2
+                    ));
+                } else {
+                    inventoryView->setPos(glm::vec2(
+                        glm::min(
+                            viewport.x / 2 - invSize.x / 2,
+                            viewport.x - caWidth - 10 - invSize.x
+                        ),
+                        viewport.y / 2 - invSize.y / 2
+                    ));
+                }
             }
         } else {
             glm::vec2 secondUISize = secondUI->getSize();

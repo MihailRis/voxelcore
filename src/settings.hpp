@@ -117,6 +117,9 @@ struct DebugSettings {
 struct UiSettings {
     StringSetting language {"auto"};
     IntegerSetting worldPreviewSize {64, 1, 512};
+    /// @brief Select hotbar slots by clicking/tapping them
+    /// (intended for touch screens)
+    FlagSetting hotbarInteractive {false};
 };
 
 struct NetworkSettings {
