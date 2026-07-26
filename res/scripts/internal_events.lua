@@ -10,53 +10,49 @@ block.__perform_ticks = function(delta)
         entry.timer = entry.timer + delta
         local steps = math.floor(entry.timer / entry.delta * #entry / 3)
         steps = math.min(steps, #entry / 3)
-        if steps == 0 then
-            goto continue
+        if steps ~= 0 then
+            entry.timer = 0.0
+            entry.pointer = entry.pointer % #entry
+            local event = entry.event
+            local tps = entry.tps
+            for i=1, steps do
+                local x = entry[entry.pointer + 1]
+                local y = entry[entry.pointer + 2]
+                local z = entry[entry.pointer + 3]
+                entry.pointer = (entry.pointer + 3) % #entry
+                events.emit(event, x, y, z, tps)
+            end
         end
-        entry.timer = 0.0
-        entry.pointer = entry.pointer % #entry
-        local event = entry.event
-        local tps = entry.tps
-        for i=1, steps do
-            local x = entry[entry.pointer + 1]
-            local y = entry[entry.pointer + 2]
-            local z = entry[entry.pointer + 3]
-            entry.pointer = (entry.pointer + 3) % #entry
-            events.emit(event, x, y, z, tps)
-        end
-        ::continue::
     end
     for id, queue in pairs(present_queues) do
         queue.timer = queue.timer + delta
         local steps = math.floor(queue.timer / queue.delta * #queue / 3)
         steps = math.min(steps, #queue / 3)
-        if steps == 0 then
-            goto continue
-        end
-        queue.timer = 0.0
-        local event = queue.event
-        local update_list = updating_blocks[id]
-        for i=1, steps do
-            local index = #queue - 2
-            if index <= 0 then
-                break
-            end
-            local x = queue[index]
-            local y = queue[index + 1]
-            local z = queue[index + 2]
+        if steps ~= 0 then
+            queue.timer = 0.0
+            local event = queue.event
+            local update_list = updating_blocks[id]
+            for i=1, steps do
+                local index = #queue - 2
+                if index <= 0 then
+                    break
+                end
+                local x = queue[index]
+                local y = queue[index + 1]
+                local z = queue[index + 2]
 
-            for j=1,3 do
-                table.remove(queue, index)
-            end
-            events.emit(event, x, y, z)
+                for j=1,3 do
+                    table.remove(queue, index)
+                end
+                events.emit(event, x, y, z)
 
-            if queue.updating then
-                table.insert(update_list, x)
-                table.insert(update_list, y)
-                table.insert(update_list, z)
+                if queue.updating then
+                    table.insert(update_list, x)
+                    table.insert(update_list, y)
+                    table.insert(update_list, z)
+                end
             end
         end
-        ::continue::
     end
 end
 
@@ -120,28 +116,20 @@ block.__process_register_events = function()
             table.insert(present_queue, x)
             table.insert(present_queue, y)
             table.insert(present_queue, z)
-            goto continue
-        end
-        if not is_updating then
-            goto continue
-        end
-        if is_register then
-            table.insert(list, x)
-            table.insert(list, y)
-            table.insert(list, z)
-        else
-            if not list then
-                goto continue
-            end
-            for j=1, #list, 3 do
-                if list[j] == x and list[j + 1] == y and list[j + 2] == z then
-                    for k=1,3 do
-                        table.remove(list, j)
+        elseif is_updating then
+            if is_register then
+                table.insert(list, x)
+                table.insert(list, y)
+                table.insert(list, z)
+            elseif list then
+                for j=1, #list, 3 do
+                    if list[j] == x and list[j + 1] == y and list[j + 2] == z then
+                        for k=1,3 do
+                            table.remove(list, j)
+                        end
                     end
-                    j = j - 3
                 end
             end
         end
-        ::continue::
     end
 end

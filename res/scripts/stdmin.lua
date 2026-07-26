@@ -265,16 +265,14 @@ function __scripts_cleanup(non_reset_packs)
     end
     for k, v in pairs(__cached_scripts) do
         local packname, _ = parse_path(k)
-        if table.has(non_reset_packs, packname) then
-            goto continue
+        if not table.has(non_reset_packs, packname) then
+            if packname ~= "core" then
+                debug.log("unloaded "..k)
+                __cached_scripts[k] = nil
+                package.loaded[k] = nil
+            end
+            __pack_envs[packname] = nil
         end
-        if packname ~= "core" then
-            debug.log("unloaded "..k)
-            __cached_scripts[k] = nil
-            package.loaded[k] = nil
-        end
-        __pack_envs[packname] = nil
-        ::continue::
     end
 end
 

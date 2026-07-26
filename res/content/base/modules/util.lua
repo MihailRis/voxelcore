@@ -24,12 +24,10 @@ local function calc_loot(loot_table)
             if loot.min and loot.max then
                 count = math.random(loot.min, loot.max)
             end
-            if count == 0 then
-                goto continue
+            if count ~= 0 then
+                table.insert(results, {item=item.index(loot.item), count=count})
             end
-            table.insert(results, {item=item.index(loot.item), count=count})
         end
-        ::continue::
     end
     return results
 end
