@@ -1,13 +1,11 @@
 #include "assetload_funcs.hpp"
 
-#include <array>
-#include <filesystem>
-#include <iostream>
-#include <stdexcept>
-
+#include "animation/rigging.hpp"
+#include "Assets.hpp"
+#include "AssetsLoader.hpp"
 #include "audio/audio.hpp"
-#include "coders/GLSLExtension.hpp"
 #include "coders/commons.hpp"
+#include "coders/GLSLExtension.hpp"
 #include "coders/imageio.hpp"
 #include "coders/json.hpp"
 #include "coders/obj.hpp"
@@ -17,19 +15,21 @@
 #include "constants.hpp"
 #include "debug/Logger.hpp"
 #include "engine/EnginePaths.hpp"
-#include "io/io.hpp"
 #include "frontend/UiDocument.hpp"
+#include "graphics/commons/Model.hpp"
 #include "graphics/core/Atlas.hpp"
 #include "graphics/core/Font.hpp"
 #include "graphics/core/ImageData.hpp"
 #include "graphics/core/Shader.hpp"
 #include "graphics/core/Texture.hpp"
 #include "graphics/core/TextureAnimation.hpp"
-#include "graphics/commons/Model.hpp"
-#include "objects/rigging.hpp"
+#include "io/io.hpp"
 #include "util/stringutil.hpp"
-#include "Assets.hpp"
-#include "AssetsLoader.hpp"
+
+#include <array>
+#include <filesystem>
+#include <iostream>
+#include <stdexcept>
 
 static debug::Logger logger("assetload-funcs");
 

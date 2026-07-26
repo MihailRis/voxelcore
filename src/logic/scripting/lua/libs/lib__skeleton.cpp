@@ -1,6 +1,6 @@
-#include "objects/rigging.hpp"
 #include "libentity.hpp"
 
+#include "animation/rigging.hpp"
 #include "engine/Engine.hpp"
 #include "graphics/render/WorldRenderer.hpp"
 #include "graphics/render/NamedSkeletons.hpp"

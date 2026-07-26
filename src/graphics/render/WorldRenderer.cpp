@@ -1,5 +1,6 @@
 #include "WorldRenderer.hpp"
 
+#include "animation/rigging.hpp"
 #include "assets/Assets.hpp"
 #include "assets/assets_util.hpp"
 #include "content/Content.hpp"
@@ -15,7 +16,6 @@
 #include "maths/voxmaths.hpp"
 #include "objects/Entities.hpp"
 #include "objects/Player.hpp"
-#include "objects/rigging.hpp"
 #include "settings.hpp"
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"

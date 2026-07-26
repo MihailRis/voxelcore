@@ -1,6 +1,7 @@
 #define VC_ENABLE_REFLECTION
 #include "Entities.hpp"
 
+#include "animation/rigging.hpp"
 #include "assets/Assets.hpp"
 #include "content/Content.hpp"
 #include "data/dv_util.hpp"
@@ -17,7 +18,6 @@
 #include "maths/rays.hpp"
 #include "maths/util.hpp"
 #include "physics/PhysicsSolver.hpp"
-#include "rigging.hpp"
 #include "world/Level.hpp"
 
 #include <entt/entity/registry.hpp>

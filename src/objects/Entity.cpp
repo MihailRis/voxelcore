@@ -1,12 +1,12 @@
 #include "Entity.hpp"
 
-#include "Transform.hpp"
-#include "Rigidbody.hpp"
-#include "ScriptComponents.hpp"
+#include "animation/rigging.hpp"
 #include "Entities.hpp"
 #include "EntityDef.hpp"
-#include "rigging.hpp"
 #include "logic/scripting/scripting.hpp"
+#include "Rigidbody.hpp"
+#include "ScriptComponents.hpp"
+#include "Transform.hpp"
 
 #include <entt/entt.hpp>
 
