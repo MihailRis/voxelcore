@@ -63,9 +63,9 @@ EnginePaths::EnginePaths(CoreParameters& params)
         );
     }
     logger.info() << "executable path: " << platform::get_executable_path().string();
-    logger.info() << "resources folder: " << fs::canonical(resourcesFolder).u8string();
-    logger.info() << "user files folder: " << fs::canonical(userFilesFolder).u8string();
-    logger.info() << "project folder: " << fs::canonical(projectFolder).u8string();
+    logger.info() << "resources folder: " << fs::weakly_canonical(resourcesFolder).u8string();
+    logger.info() << "user files folder: " << fs::weakly_canonical(userFilesFolder).u8string();
+    logger.info() << "project folder: " << fs::weakly_canonical(projectFolder).u8string();
     
     if (!io::is_directory(CONTENT_FOLDER)) {
         io::create_directories(CONTENT_FOLDER);
