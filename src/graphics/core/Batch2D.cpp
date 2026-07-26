@@ -1,7 +1,9 @@
 #include "Batch2D.hpp"
 #include "Mesh.hpp"
 #include "Texture.hpp"
+#ifndef VC_NO_GL
 #include "gl_util.hpp"
+#endif
 #include "maths/UVRegion.hpp"
 
 #include <cmath>
@@ -373,10 +375,16 @@ void Batch2D::flush() {
     if (index == 0)
         return;
     mesh->reload(buffer.get(), index);
+#ifdef VC_NO_GL
+    mesh->draw(static_cast<unsigned int>(primitive));
+#else
     mesh->draw(gl::to_glenum(primitive));
+#endif
     index = 0;
 }
 
 void Batch2D::lineWidth(float width) {
+#ifndef VC_NO_GL
     glLineWidth(width);
+#endif
 }

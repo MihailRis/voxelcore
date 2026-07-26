@@ -616,6 +616,7 @@ void Hud::draw(const DrawContext& ctx){
     auto batch = ctx.getBatch2D();
     batch->begin();
 
+#ifndef VC_NO_GL
     auto& uishader = assets.require<Shader>("ui");
     uishader.use();
     uishader.uniformMatrix("u_projview", uicamera->getProjView());
@@ -633,6 +634,7 @@ void Hud::draw(const DrawContext& ctx){
             chsizex, chsizey, 0, 0, 1, 1, 1, 1, 1, 1
         );
     }
+#endif
 }
 
 void Hud::updateElementsPosition(const glm::uvec2& viewport) {

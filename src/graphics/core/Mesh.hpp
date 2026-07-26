@@ -63,4 +63,6 @@ public:
     void draw() const;
 };
 
+#ifndef VC_NO_GL
 #include "graphics/core/Mesh.inl"
+#endif

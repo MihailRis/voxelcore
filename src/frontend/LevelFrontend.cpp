@@ -28,6 +28,7 @@ LevelFrontend::LevelFrontend(
       contentCache(std::make_unique<ContentGfxCache>(
           level.content, assets, settings.graphics
       )) {
+#ifndef VC_NO_GL
     assets.store(
         BlocksPreview::build(
             engine.getWindow(),
@@ -37,6 +38,7 @@ LevelFrontend::LevelFrontend(
         ),
         "block-previews"
     );
+#endif
 
     auto& currentPlayer = playerController.getPlayer();
     auto& assets = this->assets;

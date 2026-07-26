@@ -293,14 +293,21 @@ void GUI::draw(const DrawContext& pctx, Assets& assets) {
     uicamera->setFov(viewport.y);
     uicamera->setAspectRatio(viewport.x / static_cast<float>(viewport.y));
 
+#ifndef VC_NO_GL
     auto uishader = assets.get<Shader>("ui");
     uishader->use();
     uishader->uniformMatrix("u_projview", uicamera->getProjView());
+#endif
 
     batch2D->begin();
     for (auto& [outputTexture, frame] : frames) {
+#ifdef VC_NO_GL
+        // no offscreen framebuffers: draw frame contents directly
+        frame->Container::draw(ctx, assets);
+#else
         frame->updateOutput(assets);
         frame->draw(ctx, assets);
+#endif
     }
 
     if (hover) {

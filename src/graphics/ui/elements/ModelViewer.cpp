@@ -14,7 +14,9 @@
 #include "../GUI.hpp"
 
 // TODO: remove
+#ifndef VC_NO_GL
 #include <GL/glew.h>
+#endif
 
 using namespace gui;
 
@@ -118,7 +120,9 @@ void ModelViewer::draw(const DrawContext& pctx, const Assets& assets) {
     
     fbo->resize(size.x, size.y);
     {
+#ifndef VC_NO_GL
         glDisable(GL_SCISSOR_TEST);
+#endif
         auto ctx = pctx.sub();
         ctx.setFramebuffer(fbo.get());
         ctx.setViewport({size.x, size.y});
@@ -142,7 +146,9 @@ void ModelViewer::draw(const DrawContext& pctx, const Assets& assets) {
             }
         }
         batch->flush();
+#ifndef VC_NO_GL
         glEnable(GL_SCISSOR_TEST);
+#endif
     }
 
     auto pos = calcPos();
