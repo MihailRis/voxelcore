@@ -506,6 +506,7 @@ void ContentLoader::loadScripts(Content& content) {
     scripting::on_scripts_loading();
     load_scripts(content, content.blocks);
     load_scripts(content, content.items);
+    auto& tmpContent = content;
 
     for (const auto& [packid, runtime] : content.getPacks()) {
         auto env = runtime->getEnvironment();
@@ -516,7 +517,7 @@ void ContentLoader::loadScripts(Content& content) {
 
         // Load entity components
         io::path componentsDir = folder / "scripts/components";
-        foreach_file(componentsDir, [&pack, env](const io::path& file) {
+        foreach_file(componentsDir, [&pack, env, &tmpContent](const io::path& file) {
             auto name = pack.id + ":" + file.stem();
             scripting::load_entity_component(
                 env,
@@ -524,7 +525,19 @@ void ContentLoader::loadScripts(Content& content) {
                 file,
                 pack.id + ":scripts/components/" + file.name()
             );
+            tmpContent.components.insert(name);
         });
+    }
+
+    for (const auto& [eid, def] : content.entities.getDefs()) {
+        for (const auto& instance : def->components) {
+            if (content.components.find(instance.component) == content.components.end()) {
+                throw std::runtime_error(
+                    "component " + instance.component +
+                    " is not available (required by entity " + eid + ")"
+                );
+            }
+        }
     }
 
     scripting::on_content_loaded();

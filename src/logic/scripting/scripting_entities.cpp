@@ -153,7 +153,12 @@ void scripting::on_entity_spawn(
         lua::call(L, 1);
     }
     for (auto& component : components) {
-        create_component(L, -1, *component, args, saved);
+        try {
+            create_component(L, -1, *component, args, saved);
+        } catch (const std::runtime_error& err) {
+            logger.error() << "could not to initialize user component "
+                           << component->name << ": " << err.what();
+        }
     }
 
     for (auto& [packid, pack] : content->getPacks()) {
@@ -171,6 +176,9 @@ static void process_entity_callback(
     const std::string& name,
     std::function<int(lua::State*)> args
 ) {
+    if (env == nullptr) {
+        return;
+    }
     auto L = lua::get_main_state();
     lua::pushenv(L, *env);
     if (lua::hasfield(L, "__disabled")) {

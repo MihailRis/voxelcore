@@ -92,6 +92,8 @@ world.raycast(
         -- exclusion filtering mode:
         --   if true, filter_entities defines the list of ignored entity types
         entities_exclusion: bool = false,
+        -- include entities with selectable=false
+        nonselect_entities: bool = false;
 
         [==[ additional parameters (blocks) ]==]
         -- id of the block types used for filtering

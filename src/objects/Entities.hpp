@@ -85,6 +85,7 @@ public:
         bool solidEntitiesOnly = false;
         bool entityFilterExcludeMode = false;
         const std::set<entitydefid_t>* entitiesFilter = nullptr;
+        bool includeNonSelectable = false;
     };
 
     struct RaycastResult {
