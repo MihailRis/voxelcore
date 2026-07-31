@@ -193,6 +193,26 @@ Example of list description:
 - `selected` - initially selected value. Default: "".
 - `onselect` - function to which the user-selected value is passed
 
+## Progress bar - *progressbar*
+
+Non-interactive element for displaying progress. Draws a background and a filled part.
+
+- `min` - minimal value. Type: number. Default: 0
+- `max` - maximal value. Type: number. Default: 100
+- `value` - initial value. Type: number. Default: 0
+- `bar-color` - color of the filled part. Type: RGBA color. Default: blue `#3399FFCC`
+- `bg-color` - background color (empty part). Type: RGBA color. Default: semi-transparent black `#00000066`
+- `orientation` - fill direction: `horizontal` / `vertical`
+- `supplier` - Lua function - value supplier, called every frame
+- `smooth` - smooth value change on updates. Type: boolean. Default: false
+- `text-format` - format of the text centered in the bar (sprintf, two arguments: `%1$` - raw value, `%2$` - percent 0-100)
+  ```xml
+  <progressbar value='35' min='10' max='50' text-format='%.0f%%'/>          <!-- "62%"      -->
+  <progressbar value='35' min='10' max='50' text-format='%.0f (%.0f%%)'/>    <!-- "35 (62%)" -->
+  <progressbar value='35' min='10' max='50' text-format='%2$.0f%%'/>         <!-- "62%"      -->
+  ```
+- `text-color` - text color. Type: RGBA color. Default: white `#FFFFFFFF`
+
 ## *bindbox*
 
 An element for displaying and editing key or mouse button bindings.
