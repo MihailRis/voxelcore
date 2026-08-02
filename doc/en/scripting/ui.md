@@ -235,17 +235,20 @@ Properties:
 
 Properties:
 
-| Name       | Type   | Read | Write | Description                                                   |
-|------------|--------|------|-------|---------------------------------------------------------------|
-| value      | float  | yes  | yes   | current value                                                 |
-| min        | float  | yes  | yes   | minimum value                                                 |
-| max        | float  | yes  | yes   | maximum value                                                 |
-| progress   | float  | yes  | no    | progress 0..1                                                 |
-| barColor   | rgba   | yes  | yes   | color of the filled part                                      |
-| bgColor    | rgba   | yes  | yes   | background color (empty part)                                 |
-| textColor  | rgba   | yes  | yes   | text color                                                    |
-| textFormat | string | yes  | yes   | text format (sprintf: `%1$` — raw value, `%2$` — percent 0–100) |
-| smooth     | bool   | yes  | yes   | smooth value change                                           |
+| Name         | Type   | Read | Write | Description                                                   |
+|--------------|--------|------|-------|---------------------------------------------------------------|
+| value        | float  | yes  | yes   | current value                                                 |
+| min          | float  | yes  | yes   | minimum value                                                 |
+| max          | float  | yes  | yes   | maximum value                                                 |
+| progress     | float  | yes  | no    | progress 0..1                                                 |
+| displayValue | float  | yes  | no    | displayed (animated) value                                    |
+| color        | rgba   | yes  | yes   | color of the filled part                                      |
+| bgColor      | rgba   | yes  | yes   | background color (empty part)                                 |
+| textColor    | rgba   | yes  | yes   | text color                                                    |
+| text         | string | yes  | yes   | text centered in the bar                                      |
+| smooth       | bool   | yes  | yes   | smooth value change                                           |
+| smoothSpeed  | number | yes  | yes   | smooth transition speed in units per second                   |
+| orientation  | string | yes  | yes   | fill direction: "horizontal" / "vertical"                     |
 
 ## Inventory
 

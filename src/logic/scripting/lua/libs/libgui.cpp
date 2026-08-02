@@ -279,9 +279,9 @@ static int p_get_progress(UINode* node, lua::State* L) {
     return 0;
 }
 
-static int p_get_bar_color(UINode* node, lua::State* L) {
+static int p_get_display_value(UINode* node, lua::State* L) {
     if (auto bar = dynamic_cast<ProgressBar*>(node)) {
-        return lua::pushcolor(L, bar->getBarColor());
+        return lua::pushnumber(L, bar->getDisplayValue());
     }
     return 0;
 }
@@ -293,16 +293,16 @@ static int p_get_bg_color(UINode* node, lua::State* L) {
     return 0;
 }
 
-static int p_get_text_format(UINode* node, lua::State* L) {
+static int p_is_smooth(UINode* node, lua::State* L) {
     if (auto bar = dynamic_cast<ProgressBar*>(node)) {
-        return lua::pushstring(L, bar->getTextFormat());
+        return lua::pushboolean(L, bar->isSmooth());
     }
     return 0;
 }
 
-static int p_is_smooth(UINode* node, lua::State* L) {
+static int p_get_smooth_speed(UINode* node, lua::State* L) {
     if (auto bar = dynamic_cast<ProgressBar*>(node)) {
-        return lua::pushboolean(L, bar->isSmooth());
+        return lua::pushnumber(L, bar->getSmoothSpeed());
     }
     return 0;
 }
@@ -355,6 +355,27 @@ static int p_get_text_color(UINode* node, lua::State* L) {
     return 0;
 }
 
+static int p_get_orientation(UINode* node, lua::State* L) {
+    if (auto bar = dynamic_cast<ProgressBar*>(node)) {
+        if (bar->getOrientation() == Orientation::VERTICAL) {
+            return lua::pushstring(L, "vertical");
+        }
+        return lua::pushstring(L, "horizontal");
+    }
+    return 0;
+}
+
+static void p_set_orientation(UINode* node, lua::State* L, int idx) {
+    if (auto bar = dynamic_cast<ProgressBar*>(node)) {
+        std::string_view name = lua::require_string(L, idx);
+        if (name == "vertical") {
+            bar->setOrientation(Orientation::VERTICAL);
+        } else if (name == "horizontal") {
+            bar->setOrientation(Orientation::HORIZONTAL);
+        }
+    }
+}
+
 static int p_is_valid(UINode* node, lua::State* L) {
     if (auto box = dynamic_cast<TextBox*>(node)) {
         return lua::pushboolean(L, box->validate());
@@ -390,6 +411,8 @@ static int p_get_text(UINode* node, lua::State* L) {
         return lua::pushwstring(L, label->getText());
     } else if (auto box = dynamic_cast<TextBox*>(node)) {
         return lua::pushwstring(L, box->getText());
+    } else if (auto bar = dynamic_cast<ProgressBar*>(node)) {
+        return lua::pushwstring(L, bar->getText());
     }
     return 0;
 }
@@ -721,18 +744,19 @@ static int l_gui_getattr(lua::State* L) {
             {"fallback", p_get_fallback},
             {"value", p_get_value},
             {"progress", p_get_progress},
+            {"displayValue", p_get_display_value},
             {"min", p_get_min},
             {"max", p_get_max},
             {"step", p_get_step},
             {"scroll", p_get_scroll},
             {"trackWidth", p_get_track_width},
             {"trackColor", p_get_track_color},
-            {"barColor", p_get_bar_color},
             {"bgColor", p_get_bg_color},
+
             {"textColor", p_get_text_color},
-            {"textFormat", p_get_text_format},
             {"smooth", p_is_smooth},
-            {"textColor", p_get_text_color},
+            {"smoothSpeed", p_get_smooth_speed},
+            {"orientation", p_get_orientation},
             {"checked", p_is_checked},
             {"page", p_get_page},
             {"back", p_get_back},
@@ -807,6 +831,8 @@ static void p_set_text(UINode* node, lua::State* L, int idx) {
         button->setText(lua::require_wstring(L, idx));
     } else if (auto box = dynamic_cast<TextBox*>(node)) {
         box->setText(lua::require_wstring(L, idx));
+    } else if (auto bar = dynamic_cast<ProgressBar*>(node)) {
+        bar->setText(lua::require_wstring(L, idx));
     }
 }
 static void p_set_caret(UINode* node, lua::State* L, int idx) {
@@ -931,27 +957,20 @@ static void p_set_max(UINode* node, lua::State* L, int idx) {
     }
 }
 
-static void p_set_bar_color(UINode* node, lua::State* L, int idx) {
-    if (auto bar = dynamic_cast<ProgressBar*>(node)) {
-        bar->setBarColor(lua::tocolor(L, idx));
-    }
-}
-
 static void p_set_bg_color(UINode* node, lua::State* L, int idx) {
     if (auto bar = dynamic_cast<ProgressBar*>(node)) {
         bar->setBgColor(lua::tocolor(L, idx));
     }
 }
 
-static void p_set_text_format(UINode* node, lua::State* L, int idx) {
-    if (auto bar = dynamic_cast<ProgressBar*>(node)) {
-        bar->setTextFormat(lua::require_string(L, idx));
-    }
-}
-
 static void p_set_smooth(UINode* node, lua::State* L, int idx) {
     if (auto bar = dynamic_cast<ProgressBar*>(node)) {
         bar->setSmooth(lua::toboolean(L, idx));
+    }
+}
+static void p_set_smooth_speed(UINode* node, lua::State* L, int idx) {
+    if (auto bar = dynamic_cast<ProgressBar*>(node)) {
+        bar->setSmoothSpeed(lua::tonumber(L, idx));
     }
 }
 static void p_set_step(UINode* node, lua::State* L, int idx) {
@@ -1071,11 +1090,11 @@ static int l_gui_setattr(lua::State* L) {
             {"scroll", p_set_scroll},
             {"trackWidth", p_set_track_width},
             {"trackColor", p_set_track_color},
-            {"barColor", p_set_bar_color},
             {"bgColor", p_set_bg_color},
             {"textColor", p_set_text_color},
-            {"textFormat", p_set_text_format},
             {"smooth", p_set_smooth},
+            {"smoothSpeed", p_set_smooth_speed},
+            {"orientation", p_set_orientation},
             {"checked", p_set_checked},
             {"page", p_set_page},
             {"inventory", p_set_inventory},

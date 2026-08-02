@@ -721,33 +721,25 @@ static std::shared_ptr<UINode> read_progress_bar(
     const UiXmlReader& reader,
     const xml::xmlelement& element
 ) {
-    const auto& env = reader.getEnvironment();
-    const auto& file = reader.getFilename();
     double minv = element.attr("min", "0.0").asFloat();
     double maxv = element.attr("max", "100.0").asFloat();
     double def = element.attr("value", "0.0").asFloat();
-    int thickness = element.attr("bar-thickness", "-1").asInt();
-    auto bar = std::make_shared<ProgressBar>(
-        reader.getGUI(), minv, maxv, def, thickness
-    );
+    auto bar = std::make_shared<ProgressBar>(reader.getGUI(), minv, maxv, def);
     read_uinode(reader, element, *bar);
-    if (element.has("supplier")) {
-        bar->setSupplier(scripting::create_number_supplier(env, element.attr("supplier").getText(), file));
-    }
-    if (element.has("bar-color")) {
-        bar->setBarColor(element.attr("bar-color").asColor());
+    if (element.has("font")) {
+        bar->setFontName(element.attr("font").getText());
     }
     if (element.has("bg-color")) {
         bar->setBgColor(element.attr("bg-color").asColor());
-    }
-    if (element.has("text-format")) {
-        bar->setTextFormat(element.attr("text-format").getText());
     }
     if (element.has("text-color")) {
         bar->setTextColor(element.attr("text-color").asColor());
     }
     if (element.has("smooth")) {
         bar->setSmooth(element.attr("smooth").asBool());
+    }
+    if (element.has("smooth-speed")) {
+        bar->setSmoothSpeed(element.attr("smooth-speed").asFloat());
     }
     if (element.has("orientation")) {
         auto& oname = element.attr("orientation").getText();

@@ -200,18 +200,13 @@ Non-interactive element for displaying progress. Draws a background and a filled
 - `min` - minimal value. Type: number. Default: 0
 - `max` - maximal value. Type: number. Default: 100
 - `value` - initial value. Type: number. Default: 0
-- `bar-color` - color of the filled part. Type: RGBA color. Default: blue `#3399FFCC`
+- `color` - color of the filled part. Type: RGBA color. Default: blue `#3399FFCC`
 - `bg-color` - background color (empty part). Type: RGBA color. Default: semi-transparent black `#00000066`
 - `orientation` - fill direction: `horizontal` / `vertical`
-- `supplier` - Lua function - value supplier, called every frame
 - `smooth` - smooth value change on updates. Type: boolean. Default: false
-- `text-format` - format of the text centered in the bar (sprintf, two arguments: `%1$` - raw value, `%2$` - percent 0-100)
-  ```xml
-  <progressbar value='35' min='10' max='50' text-format='%.0f%%'/>          <!-- "62%"      -->
-  <progressbar value='35' min='10' max='50' text-format='%.0f (%.0f%%)'/>    <!-- "35 (62%)" -->
-  <progressbar value='35' min='10' max='50' text-format='%2$.0f%%'/>         <!-- "62%"      -->
-  ```
+- `smooth-speed` - smooth transition speed in units per second. Type: number. Default: 120
 - `text-color` - text color. Type: RGBA color. Default: white `#FFFFFFFF`
+- `font` - font name. Type: string. Default: "normal"
 
 ## *bindbox*
 
