@@ -19,7 +19,16 @@
 #else
 #include <sys/poll.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
 #endif
+#ifdef __linux__
+    #include <sys/prctl.h>
+    #include <sys/wait.h>
+#endif
+
+using namespace std::literals;
 
 namespace platform::internal {
     std::filesystem::path get_executable_path();
@@ -215,8 +224,102 @@ std::filesystem::path platform::get_executable_path() {
 #endif
 }
 
-void platform::new_engine_instance(
-    const std::vector<std::string>& args, std::filesystem::path outputFile
+class SystemProcess final : public Process {
+public:
+#ifdef __linux__
+    SystemProcess(pid_t pid) : pid(pid) {
+    }
+
+    ~SystemProcess() {
+        terminate();
+    }
+#elif defined(_WIN32)
+    SystemProcess(const PROCESS_INFORMATION& pi)
+        : processHandle(pi.hProcess), pid(pi.dwProcessId) {
+        if (pi.hThread != nullptr) {
+            CloseHandle(pi.hThread);
+        }
+    }
+
+    ~SystemProcess() {
+        terminate();
+    }
+#endif
+    SystemProcess(const SystemProcess&) = delete;
+    SystemProcess(SystemProcess&&) noexcept = default;
+    SystemProcess& operator=(const SystemProcess&) = delete;
+
+    SystemProcess& operator=(SystemProcess&& other) noexcept {
+        if (this != &other) {
+#ifdef __linux__
+            pid = other.pid;
+#elif defined(_WIN32)
+            if (processHandle != nullptr) {
+                CloseHandle(processHandle);
+            }
+            processHandle = other.processHandle;
+            pid = other.pid;
+            other.processHandle = nullptr;
+            other.pid = 0;
+#endif
+        }
+        return *this;
+    }
+
+    bool isActive() const override {
+#ifdef __linux__
+        if (kill(pid, 0) == 0) {
+            return true;
+        }
+        return errno != ESRCH;
+#elif defined(_WIN32)
+        if (processHandle == nullptr) {
+            return false;
+        }
+        DWORD exitCode;
+        if (GetExitCodeProcess(processHandle, &exitCode)) {
+            return exitCode == STILL_ACTIVE;
+        }
+        return false;
+#endif
+    }
+
+    void update() override {}
+
+    void waitForEnd() override {
+#ifdef __linux__
+        waitpid(pid, nullptr, 0);
+#elif defined(_WIN32)
+        if (processHandle != nullptr) {
+            WaitForSingleObject(processHandle, INFINITE);
+        }
+#endif
+    };
+
+    void terminate() final override {
+#ifdef __linux__
+        logger.info() << "terminating " << pid;
+        kill(pid, SIGTERM);
+#elif defined(_WIN32)
+        if (processHandle != nullptr) {
+            TerminateProcess(processHandle, 1);
+            WaitForSingleObject(processHandle, INFINITE);
+        }
+#endif
+    }
+private:
+#ifdef __linux__
+    pid_t pid;
+#elif defined(_WIN32)
+    HANDLE processHandle = nullptr;
+    DWORD pid = 0;
+#endif
+};
+
+std::unique_ptr<Process> platform::new_engine_instance(
+    const std::vector<std::string>& args,
+    std::filesystem::path outputFile,
+    bool subProcess
 ) {
     auto executable = get_executable_path();
 
@@ -255,7 +358,7 @@ void platform::new_engine_instance(
     if (!outputFile.empty()) {
         si.dwFlags |= STARTF_USESTDHANDLES;
         si.hStdOutput = CreateFileW(
-            toWString(outputFile.u8string()).data(),
+            toWString(outputFile.empty() ? outputFile.u8string() : "NUL"s).data(),
             GENERIC_WRITE,
             FILE_SHARE_WRITE | FILE_SHARE_READ,
             nullptr,
@@ -285,6 +388,38 @@ void platform::new_engine_instance(
         &si,
         &pi
     );
+    if (subProcess) {
+        HANDLE job = CreateJobObjectW(nullptr, nullptr);
+
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION info{};
+        info.BasicLimitInformation.LimitFlags =
+            JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+
+        try {
+            if (!SetInformationJobObject(
+                job,
+                JobObjectExtendedLimitInformation,
+                &info,
+                sizeof(info))) {
+                throw std::runtime_error(
+                    "SetInformationJobObject failed with code: " +
+                    std::to_string(GetLastError())
+                );
+            }
+            if (!AssignProcessToJobObject(job, pi.hProcess)) {
+                throw std::runtime_error(
+                    "SetInformationJobObject failed with code: " +
+                    std::to_string(GetLastError())
+                );
+            }
+            return std::make_unique<SystemProcess>(pi);
+        } catch (const std::exception& err) {
+            CloseHandle(job);
+            CloseHandle(pi.hProcess);
+            CloseHandle(pi.hThread);
+            return nullptr;
+        }
+    }
     if (success) {
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
@@ -295,6 +430,49 @@ void platform::new_engine_instance(
         );
     }
 #else
+
+// TODO: implement
+#ifndef __APPLE__
+    if (subProcess) {
+        pid_t pid = fork();
+
+        if (outputFile.empty()) {
+            outputFile = "/dev/null";
+        }
+        int fd = open(
+            outputFile.string().c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644
+        ); 
+
+        if (pid == 0) {
+            prctl(PR_SET_PDEATHSIG, SIGTERM);
+
+            if (getppid() == 1) {
+                _exit(1);
+            }
+
+            dup2(fd, STDOUT_FILENO);
+            dup2(fd, STDERR_FILENO);
+            close(fd);
+
+            std::vector<const char*> argv(args.size() + 2);
+            argv[0] = const_cast<char*>(executable.c_str());
+            for (int i = 0; i < args.size(); i++) {
+                argv[i + 1] = args[i].c_str();
+            }
+            argv[args.size() + 1] = nullptr;
+
+            prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0); 
+            execvp(executable.c_str(), const_cast<char**>(argv.data()));
+
+            _exit(127);
+        } else {
+            close(fd);
+            usleep(1000); // waiting for execvp call
+            return std::make_unique<SystemProcess>(pid);
+        }
+    }
+#endif
+
     std::stringstream ss;
     ss << executable;
     for (int i = 0; i < args.size(); i++) {
@@ -315,6 +493,7 @@ void platform::new_engine_instance(
         );
     }
 #endif
+    return nullptr;
 }
 
 bool platform::stdin_has_data() {

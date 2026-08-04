@@ -39,6 +39,9 @@ std::unique_ptr<Content> ContentBuilder::build() {
         } else {
             def.defaults.rt.solid = isSolid(def.defaults) || def.explictlySolid;
         }
+        if (def.material.empty()) {
+            defaults.at("block-material").get(def.material);
+        }
 
         const float EPSILON = 0.01f;
         def.rt.solid =

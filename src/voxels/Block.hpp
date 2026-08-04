@@ -37,8 +37,6 @@ inline constexpr size_t MAX_USER_BLOCK_FIELDS_SIZE = 240;
 
 inline constexpr int BLOCK_MAX_VARIANTS = 16;
 
-inline std::string DEFAULT_MATERIAL = "base:stone";
-
 struct BlockFuncsSet {
     bool init : 1;
     bool update : 1;
@@ -206,7 +204,7 @@ public:
     dv::value properties = nullptr;
 
     /// @brief id of used BlockMaterial, may specify non-existing material
-    std::string material = DEFAULT_MATERIAL;
+    std::string material;
 
     /// @brief Light emission R, G, B, S (sky lights: sun, moon, radioactive
     /// clouds)

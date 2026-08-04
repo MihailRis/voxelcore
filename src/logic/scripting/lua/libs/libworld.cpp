@@ -125,7 +125,7 @@ static int l_is_night(lua::State* L) {
 }
 
 static int l_get_generator(lua::State* L) {
-    return lua::pushstring(L, require_world_info().generator);
+    return lua::pushstring(L, require_level().environment.generator);
 }
 
 static int l_get_chunk_data(lua::State* L) {

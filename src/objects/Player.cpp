@@ -128,7 +128,7 @@ void Player::teleport(glm::vec3 position) {
 void Player::attemptToChooseSpawnpoint() {
     // looks bad to be here tbh
     const auto& generatorDef =
-        level.content.generators.require(level.getWorld()->getGenerator());
+        level.content.generators.require(level.environment.generator);
 
     int minHeight = generatorDef.playerMinSpawnHeight;
     int maxHeight = generatorDef.playerMaxSpawnHeight;

@@ -33,6 +33,8 @@ namespace io {
             }
         }
 
+        path(std::string_view str) : path(std::string(str)) {}
+
         path(const char* str) : path(std::string(str)) {}
 
         bool operator==(const std::string& other) const {

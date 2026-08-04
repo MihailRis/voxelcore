@@ -16,6 +16,7 @@
     - [block](scripting/builtins/libblock.md)
     - [byteutil](scripting/builtins/libbyteutil.md)
     - [cameras](scripting/builtins/libcameras.md)
+    - [ctypes](scripting/builtins/libctypes.md)
     - [entities](scripting/builtins/libentities.md)
     - [file](scripting/builtins/libfile.md)
     - [gfx.blockwraps](scripting/builtins/libgfx-blockwraps.md)

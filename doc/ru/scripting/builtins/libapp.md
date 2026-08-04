@@ -143,3 +143,23 @@ app.set_content_sources(sources: table<string>)
 -- Сбрасывает список источников контента.
 app.reset_content_sources()
 ```
+
+## Под-экземпляры
+
+```lua
+-- Создаёт headless-экземпляр движка с текущим проектом и указанным сценарием.
+-- Возвращает id экземпляра. Число живых под-экземпляров, на данный момент, ограничено одним.
+app.start_background_instance(
+    -- файл сценария
+    app_script: string,
+    -- файл лога
+    output_file: string | nil
+) -> int
+
+-- Проверяет, жив ли под-экземпляр движка.
+app.is_instance_alive(handle: int) -> boolean
+
+-- Останавливает под-экземпляр движка.
+-- Возвращает true если экземпляр был жив в момент вызова.
+app.terminate_instance(handle: int) -> boolean
+```

@@ -14,7 +14,7 @@ struct Project;
 
 class AppScriptsControl {
 public:
-    AppScriptsControl(const CoreParameters& params, const Project& project);
+    AppScriptsControl(const CoreParameters& params);
 
     void tick();
     void loadProjectClientScript();
@@ -24,7 +24,6 @@ public:
 
     bool isFinished() const;
 private:
-    const Project& project;
     std::unique_ptr<scripting::IClientProjectScript> clientScript;
     std::unique_ptr<Process> scriptCoroutine;
 };

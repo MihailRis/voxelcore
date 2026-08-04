@@ -8,11 +8,7 @@
 
 static debug::Logger logger("app-scripts");
 
-AppScriptsControl::AppScriptsControl(
-    const CoreParameters& params, const Project& project
-)
-    : project(project) {
-
+AppScriptsControl::AppScriptsControl(const CoreParameters& params) {
     io::path scriptFile =
         params.scriptFile.empty()
             ? "project:start.lua"

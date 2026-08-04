@@ -34,4 +34,7 @@ void HandsRenderer::render(const Camera& camera) {
         glm::vec3(),
         glm::vec3(1.0f)
     );
+
+    modelBatch.render();
+    modelBatch.setLightsOffset(glm::vec3());
 }

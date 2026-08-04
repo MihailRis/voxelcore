@@ -20,7 +20,13 @@
 #include "window/Window.hpp"
 #include "world/Level.hpp"
 
+#include <array>
+
 using namespace scripting;
+
+namespace {
+    static std::array<std::unique_ptr<Process>, MAX_SUBPROCESSES> processes;
+}
 
 /// @brief Check if content is loaded
 static int l_is_content_loaded(lua::State* L) {
@@ -337,6 +343,10 @@ static int l_start_debug_instance(lua::State* L) {
     if (!engine->getProject().permissions.has(Permissions::DEBUGGING)) {
         throw std::runtime_error("project has no debugging permission");
     }
+    const auto& params = engine->getCoreParameters();
+    if (params.subProcessDepth >= MAX_SUBPROCESS_DEPTH) {
+        throw std::runtime_error("max subprocess depth exceeded");
+    }
 
     int port = lua::tointeger(L, 1);
     if (port == 0) {
@@ -357,6 +367,8 @@ static int l_start_debug_instance(lua::State* L) {
         "--res", paths.getResourcesFolder().u8string(),
         "--dir", paths.getUserFilesFolder().u8string(),
         "--dbg-server",  "tcp:" + std::to_string(port),
+        "--sub-depth", std::to_string(engine->getCoreParameters()
+            .subProcessDepth + 1),
     };
     if (!projectPath.empty()) {
         args.emplace_back("--project");
@@ -365,9 +377,74 @@ static int l_start_debug_instance(lua::State* L) {
 
     platform::new_engine_instance(
         std::move(args),
-        outputPath.empty() ? "" : io::resolve(std::string(outputPath))
+        outputPath.empty() ? "" : io::resolve(std::string(outputPath)),
+        false
     );
     return lua::pushinteger(L, port);
+}
+
+static int l_start_background_instance(lua::State* L) {
+    if (!engine->getProject().permissions.has(Permissions::SUB_INSTANCES)) {
+        throw std::runtime_error("project has no sub-instances permission");
+    }
+    const auto& params = engine->getCoreParameters();
+    if (params.subProcessDepth >= MAX_SUBPROCESS_DEPTH) {
+        throw std::runtime_error("max subprocess depth exceeded");
+    }
+
+    auto scriptPath = lua::require_lstring(L, 1);
+    io::path outputPath = lua::isstring(L, 2) ? lua::require_lstring(L, 2) : "";
+    const auto& paths = engine->getPaths();
+
+    std::vector<std::string> args {
+        "--headless",
+        "--res", paths.getResourcesFolder().u8string(),
+        "--dir", paths.getUserFilesFolder().u8string(),
+        "--script", io::resolve(scriptPath).u8string(),
+        "--sub-depth", std::to_string(engine->getCoreParameters()
+            .subProcessDepth + 1),
+        "--log", io::resolve(outputPath).u8string(),
+    };
+    args.emplace_back("--project");
+    args.emplace_back(io::resolve(engine->getProject().path).u8string());
+
+    int handle = -1;
+    for (int i = 0; i < ::processes.size(); i++) {
+        if (!::processes[i] || !::processes[i]->isActive()) {
+            handle = i;
+            break;
+        }
+    }
+    if (handle == -1) {
+        throw std::runtime_error("sub-processes limit exceeded");
+    }
+    ::processes[handle] =
+        platform::new_engine_instance(std::move(args), "", true);
+
+    return lua::pushinteger(L, handle);
+}
+
+static int l_is_instance_alive(lua::State* L) {
+    int handle = lua::tointeger(L, 1);
+    if (handle < 0 || handle >= ::processes.size()) {
+        throw std::runtime_error("invalid process handle");
+    }
+    auto& process = ::processes[handle];
+    return lua::pushboolean(L, process && process->isActive());
+}
+
+static int l_terminate_instance(lua::State* L) {
+    int handle = lua::tointeger(L, 1);
+    if (handle < 0 || handle >= ::processes.size()) {
+        throw std::runtime_error("invalid process handle");
+    }
+    auto& process = ::processes[handle];
+    if (process == nullptr) {
+        return lua::pushboolean(L, false);
+    }
+    bool active = process->isActive();
+    process.reset();
+    return lua::pushboolean(L, active);
 }
 
 const luaL_Reg applib[] = {
@@ -402,5 +479,8 @@ const luaL_Reg applib[] = {
     {"get_version", lua::wrap<l_get_version>},
     {"create_memory_device", lua::wrap<l_create_memory_device>},
     {"start_debug_instance", lua::wrap<l_start_debug_instance>},
+    {"start_background_instance", lua::wrap<l_start_background_instance>},
+    {"is_instance_alive", lua::wrap<l_is_instance_alive>},
+    {"terminate_instance", lua::wrap<l_terminate_instance>},
     {nullptr, nullptr}
 };

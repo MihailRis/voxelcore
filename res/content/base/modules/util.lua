@@ -12,14 +12,14 @@ function util.drop(ppos, itemid, count, data, pickup_delay)
     }})
 end
 
-local function calc_loot(loot_table)
+function util.calc_loot(loot_table)
     local results = {}
     for _, loot in ipairs(loot_table) do
         local chance = loot.chance or 1
         local count = loot.count or 1
-        
+
         local roll = math.random()
-        
+
         if roll < chance then
             if loot.min and loot.max then
                 count = math.random(loot.min, loot.max)
@@ -37,7 +37,7 @@ end
 function util.block_loot(blockid)
     local lootscheme = block.properties[blockid]["base:loot"]
     if lootscheme then
-        return calc_loot(lootscheme)
+        return util.calc_loot(lootscheme)
     end
     return {{item=block.get_picking_item(blockid), count=1}}
 end

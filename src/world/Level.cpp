@@ -31,6 +31,7 @@ Level::Level(
       entities(std::make_unique<Entities>(*this)),
       players(std::make_unique<Players>(*this)),
       pathfinding(std::make_unique<voxels::Pathfinding>(*this)) {
+        
     const auto& worldInfo = world->getInfo();
     auto& cameraIndices = content.getIndices(ResourceType::CAMERA);
     for (size_t i = 0; i < cameraIndices.size(); i++) {

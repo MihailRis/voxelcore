@@ -43,7 +43,7 @@ void Mainloop::run() {
     auto& appScripts = engine.getAppScripts();
     
     logger.info() << "main loop started";
-    while (!window.isShouldClose()) {
+    while (!window.isShouldClose() && !engine.isQuitSignal()) {
         time.update(window.time());
         engine.applicationTick();
         engine.updateFrontend();

@@ -140,7 +140,20 @@ local __vc_named_coroutines = {}
 local __vc_next_coroutine = 1
 
 function __vc_start_coroutine(chunk)
-    local co = coroutine.create(chunk)
+    local co = coroutine.create(function()
+        local _, err = xpcall(chunk, function(msg)
+            local traceback = debug.get_traceback(0)
+            local s = string.format("%s:", msg)
+            for i=1,#traceback - 2 do
+                local frame = traceback[i]
+                s = s .. "\n\t"..tb_frame_tostring(frame)
+            end
+            return s
+        end)
+        if err then
+            error(err)
+        end
+    end)
     local id = __vc_next_coroutine
     __vc_next_coroutine = __vc_next_coroutine + 1
     __vc_coroutines[id] = co

@@ -149,7 +149,7 @@ void LevelController::saveWorld() {
     world->wfile->createDirectories();
     scripting::on_world_save();
     level->onSave();
-    level->getWorld()->write(level.get());
+    level->getWorld()->write(*level);
 }
 
 void LevelController::onWorldQuit() {
