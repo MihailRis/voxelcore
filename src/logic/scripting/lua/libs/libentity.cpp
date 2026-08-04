@@ -314,6 +314,10 @@ static int l_world_raycast(lua::State* L) {
         entityRaycast.entityFilterExcludeMode = lua::toboolean(L, -1);
         lua::pop(L);
     }
+    if (lua::getfield(L, "nonselect_entities", 1)) {
+        entityRaycast.includeNonSelectable = lua::toboolean(L, -1);
+        lua::pop(L);
+    }
     if (lua::getfield(L, "filter_blocks", 1)) {
         load_blocks_filter(L, -1, filteredBlocks);
         blocksRaycast.filter = &filteredBlocks;

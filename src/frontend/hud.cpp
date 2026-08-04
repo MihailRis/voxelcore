@@ -563,7 +563,7 @@ void Hud::add(const HudElement& element, const dv::value& argsArray) {
             args.emplace_back(static_cast<integer_t>(blockPos[i]));
         }
         scripting::on_ui_open(
-            element.getDocument(), 
+            *element.getDocument(), 
             std::move(args)
         );
     }
@@ -578,7 +578,7 @@ void Hud::onRemove(const HudElement& element) {
         if (invview) {
             inventory = invview->getInventory().get();
         }
-        scripting::on_ui_close(document, inventory);
+        scripting::on_ui_close(*document, inventory);
         if (invview) {
             invview->unbind();
         }

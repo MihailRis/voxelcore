@@ -42,6 +42,9 @@ struct EntityDef {
     /// @brief Solid entity material material
     std::string material;
 
+    /// @brief Can the entity be interacted with cursor (on_attack, on_use)
+    bool selectable = true;
+
     /// @brief Does entity prevent blocks setup
     bool blocking = true;
 

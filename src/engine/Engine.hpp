@@ -12,6 +12,7 @@
 class Assets;
 class AssetsLoader;
 class AssetsManagement;
+class AppScriptsControl;
 class ContentControl;
 class EngineController;
 class EnginePaths;
@@ -55,6 +56,7 @@ class Engine : public util::ObjectsKeeper {
     std::unique_ptr<Project> project;
     std::unique_ptr<SettingsHandler> settingsHandler;
     std::unique_ptr<AssetsManagement> assets;
+    std::unique_ptr<AppScriptsControl> appScripts;
     std::shared_ptr<Screen> screen;
     std::unique_ptr<ContentControl> content;
     std::unique_ptr<EngineController> controller;
@@ -182,6 +184,10 @@ public:
 
     devtools::DebuggingServer* getDebuggingServer() {
         return debuggingServer.get();
+    }
+
+    AppScriptsControl& getAppScripts() {
+        return *appScripts;
     }
 
     void detachDebugger();

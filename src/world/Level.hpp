@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "typedefs.hpp"
+#include "Environment.hpp"
 
 class Content;
 class World;
@@ -36,6 +37,7 @@ public:
     std::unique_ptr<Players> players;
     std::unique_ptr<voxels::Pathfinding> pathfinding;
     std::vector<std::shared_ptr<Camera>> cameras;  // move somewhere?
+    Environment environment {};
 
     Level(
         std::unique_ptr<World> world,

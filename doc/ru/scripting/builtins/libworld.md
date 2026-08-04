@@ -91,6 +91,8 @@ world.raycast(
         -- исключающий режим фильтрации:
         --   при значении (true) filter_entities определяет список игнорируемых
         entities_exclusion: bool = false,
+        -- учитывать сущности с selectable=false
+        nonselect_entities: bool = false;
         
         [==[ дополнительные параметры (блоки) ]==]
         -- id типов блоков используемых для фильтрации

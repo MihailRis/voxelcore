@@ -26,12 +26,21 @@ Font::Font(
       pages(std::move(pages)),
       glyphs(std::move(glyphs)),
       fontFile(std::move(fontFile)) {
+    if (this->fontFile.has_value()) {
+        if (auto fontPtr = this->fontFile->lock()) {
+            monospace = fontPtr->isMonospace();
+        }
+    }
 }
 
 Font::~Font() = default;
 
 int Font::getYOffset() const {
     return yoffset;
+}
+
+bool Font::isMonospace() const {
+    return monospace;
 }
 
 int Font::getLineHeight() const {
@@ -53,7 +62,7 @@ bool Font::isPrintableChar(uint codepoint) const {
 
 int FontMetrics::calcWidth(std::wstring_view text, size_t offset, size_t length) const {
     auto font = this->font.has_value() ? this->font->lock() : nullptr;
-    if (font == nullptr) {
+    if (font == nullptr || font->isMonospace()) {
         return std::min(text.length() - offset, length) * _glyphInterval;
     }
     int totalWidth = 0;
@@ -153,6 +162,8 @@ static inline void draw_text(
     const FontStylesScheme* styles,
     size_t styleMapOffset
 ) {
+    bool is3d = std::is_same<Batch, Batch3D>();
+
     static FontStylesScheme defStyles {{{}}, {0}};
 
     if (styles == nullptr) {
@@ -185,13 +196,26 @@ static inline void draw_text(
             float advance = baseAdvance;
             if (auto glyph = font.getGlyph(c)) {
                 yOffset = glyph->yOffset;
-                advance = glyph->xAdvance;
+                advance = glyph->xAdvance /
+                          static_cast<float>(font.getLineHeight()) * 2.0f *
+                          baseAdvance;
             }
             uint charpage = c >> 8;
             if (charpage == page){
                 batch.texture(font.getPage(charpage));
                 draw_glyph(
-                    batch, pos, glm::vec2(x, y - yOffset / static_cast<float>(font.getLineHeight())), c, right, up, interval, style
+                    batch,
+                    pos,
+                    glm::vec2(
+                        x,
+                        y - yOffset * (is3d ? -1 : 1) /
+                                static_cast<float>(font.getLineHeight())
+                    ),
+                    c,
+                    right,
+                    up,
+                    interval,
+                    style
                 );
             }
             else if (charpage > page && charpage < next){

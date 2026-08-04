@@ -7,8 +7,8 @@
 
 uint Texture::MAX_RESOLUTION = 1024; // Window.initialize overrides it
 
-Texture::Texture(uint id, uint width, uint height) 
-    : id(id), width(width), height(height) {
+Texture::Texture(uint id, uint width, uint height, ImageFormat imageFormat)
+    : id(id), width(width), height(height), format(gl::to_glenum(imageFormat)) {
 }
 
 Texture::Texture(const ubyte* data, uint width, uint height, ImageFormat imageFormat) 
@@ -17,7 +17,7 @@ Texture::Texture(const ubyte* data, uint width, uint height, ImageFormat imageFo
     glBindTexture(GL_TEXTURE_2D, id);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    GLenum format = gl::to_glenum(imageFormat);
+    format = gl::to_glenum(imageFormat);
     glTexImage2D(
         GL_TEXTURE_2D, 0, format, width, height, 0,
         format, GL_UNSIGNED_BYTE, static_cast<const GLvoid*>(data)
@@ -41,23 +41,27 @@ void Texture::unbind() const {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void Texture::resize(uint width, uint height) {
+    reload(nullptr, width, height);
+}
+
 void Texture::reload(const ImageData& image) {
-    width = image.getWidth();
-    height = image.getHeight();
     reload(image.getData(), width, height);
 }
 
 void Texture::reload(const ubyte* data, uint width, uint height) {
+    this->width = width;
+    this->height = height;
     glBindTexture(GL_TEXTURE_2D, id);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0,
-        GL_RGBA, GL_UNSIGNED_BYTE, static_cast<const GLvoid*>(data));
+    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0,
+        format, GL_UNSIGNED_BYTE, static_cast<const GLvoid*>(data));
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void Texture::reloadPartial(const ImageData& image, uint x, uint y, uint w, uint h) {
     glBindTexture(GL_TEXTURE_2D, id);
-    glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, GL_RGBA, GL_UNSIGNED_BYTE, image.getData());
+    glTexSubImage2D(GL_TEXTURE_2D, 0, x, y, w, h, format, GL_UNSIGNED_BYTE, image.getData());
     glGenerateMipmap(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, 0);
 }

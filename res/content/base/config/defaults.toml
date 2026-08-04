@@ -1,3 +1,4 @@
 generator = "base:demo"
 player-entity = "base:player"
 hand-skeleton = "base:hand"
+block-material = "base:stone"

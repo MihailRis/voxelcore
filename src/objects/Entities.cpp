@@ -176,7 +176,8 @@ std::optional<Entities::RaycastResult> Entities::rayCast(
 
     for (auto [entity, eid, transform, body] : view.each()) {
         if (eid.uid == settings.ignoredUid || !body.enabled ||
-            (settings.solidEntitiesOnly && !eid.def.solid)) {
+            (settings.solidEntitiesOnly && !eid.def.solid) ||
+            (!eid.def.selectable && !settings.includeNonSelectable)) {
             continue;
         }
         if (settings.entitiesFilter) {

@@ -23,7 +23,8 @@ public:
 
 struct WorldInfo : public Serializable {
     std::string name;
-    std::string generator;
+    std::string environment;
+    std::string explicitGenerator;
     uint64_t seed;
     int64_t nextInventoryId = 1;
     int64_t nextPlayerId = 0;
@@ -76,7 +77,7 @@ public:
     void updateTimers(float delta);
 
     /// @brief Write all unsaved level data to the world directory
-    void write(Level* level);
+    void write(Level& level);
 
     /// @brief Check world indices and generate ContentReport if convert required
     /// @param directory world directory
@@ -98,7 +99,8 @@ public:
     /// @return Level instance containing World instance
     static std::unique_ptr<Level> create(
         const std::string& name,
-        const std::string& generator,
+        const std::string& environment,
+        const std::string& generatorOverride,
         const io::path& directory,
         uint64_t seed,
         EngineSettings& settings,
@@ -123,7 +125,7 @@ public:
 
     void setName(const std::string& name);
     void setSeed(uint64_t seed);
-    void setGenerator(const std::string& generator);
+    void setEnvironment(const std::string& environment);
 
     /// @brief Check if world has content-pack installed
     /// @param id content-pack id
@@ -137,7 +139,7 @@ public:
     uint64_t getSeed() const;
 
     /// @brief Get world generator id
-    std::string getGenerator() const;
+    std::string getEnvironment() const;
 
     bool isNameless() const {
         return info.name.empty();

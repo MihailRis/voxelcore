@@ -125,10 +125,13 @@ static int l_is_night(lua::State* L) {
 }
 
 static int l_get_generator(lua::State* L) {
-    return lua::pushstring(L, require_world_info().generator);
+    return lua::pushstring(L, require_level().environment.generator);
 }
 
 static int l_get_chunk_data(lua::State* L) {
+    if (level == nullptr) {
+        throw std::runtime_error("world is not open");
+    }
     int x = static_cast<int>(lua::tointeger(L, 1));
     int z = static_cast<int>(lua::tointeger(L, 2));
     const auto& chunk = level->chunks->getChunk(x, z);
@@ -175,7 +178,7 @@ static void integrate_chunk_client(Chunk& chunk) {
 
 static int l_set_chunk_data(lua::State* L) {
     if (level == nullptr) {
-        throw std::runtime_error("no open world");
+        throw std::runtime_error("world is not open");
     }
 
     int x = static_cast<int>(lua::tointeger(L, 1));
@@ -201,7 +204,7 @@ static int l_set_chunk_data(lua::State* L) {
 
 static int l_save_chunk_data(lua::State* L) {
     if (level == nullptr) {
-        throw std::runtime_error("no open world");
+        throw std::runtime_error("world is not open");
     }
 
     int x = static_cast<int>(lua::tointeger(L, 1));

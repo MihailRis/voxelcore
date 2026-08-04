@@ -28,6 +28,7 @@ struct NotePreset : public Serializable {
     float renderDistance = 32.0f;
     float xrayOpacity = 0.0f;
     float perspective = 1.0f;
+    std::string font {};
 
     dv::value serialize() const override;
     void deserialize(const dv::value& src) override;

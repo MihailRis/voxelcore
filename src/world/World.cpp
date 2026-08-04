@@ -65,12 +65,12 @@ void World::writeResources(const Content& content) {
     io::write_json(wfile->getResourcesFile(), root);
 }
 
-void World::write(Level* level) {
-    level->chunks->saveAll();
-    info.nextEntityId = level->entities->peekNextID();
+void World::write(Level& level) {
+    level.chunks->saveAll();
+    info.nextEntityId = level.entities->peekNextID();
     wfile->write(this, &content);
 
-    auto playerFile = level->players->serialize();
+    auto playerFile = level.players->serialize();
     io::write_json(wfile->getPlayerFile(), playerFile);
 
     writeResources(content);
@@ -78,7 +78,8 @@ void World::write(Level* level) {
 
 std::unique_ptr<Level> World::create(
     const std::string& name,
-    const std::string& generator,
+    const std::string& environment,
+    const std::string& generatorOverride,
     const io::path& directory,
     uint64_t seed,
     EngineSettings& settings,
@@ -87,7 +88,8 @@ std::unique_ptr<Level> World::create(
 ) {
     WorldInfo info {};
     info.name = name;
-    info.generator = generator;
+    info.environment = environment;
+    info.explicitGenerator = generatorOverride;
     info.seed = seed;
     auto world = std::make_unique<World>(
         info,
@@ -101,7 +103,7 @@ std::unique_ptr<Level> World::create(
         logger.info() << "created world '" << name << "' ("
                       << directory.string() << ")";
     }
-    logger.info() << "world seed: " << seed << " generator: " << generator;
+    logger.info() << "world seed: " << seed << " environment: " << environment;
     return std::make_unique<Level>(std::move(world), content, settings);
 }
 
@@ -122,16 +124,19 @@ std::unique_ptr<Level> World::load(
                   << worldFilesPtr->getFolder().string() << ")";
     logger.info() << "world version: " << info->major << "." << info->minor
                   << " seed: " << info->seed
-                  << " generator: " << info->generator;
+                  << " environment: " << info->environment;
 
-    auto world = std::make_unique<World>(
+    auto worldPtr = std::make_unique<World>(
         info.value(), std::move(worldFilesPtr), content, packs
     );
+    auto world = worldPtr.get();
     auto& wfile = world->wfile;
     wfile->readResourcesData(content);
 
-    auto level = std::make_unique<Level>(std::move(world), content, settings);
-
+    auto level = std::make_unique<Level>(std::move(worldPtr), content, settings);
+    if (world->getEnvironment().empty()) {
+        level->environment.generator = world->getInfo().explicitGenerator;
+    }
     io::path file = wfile->getPlayerFile();
     if (!io::is_regular_file(file)) {
         logger.warning() << "player.json does not exists";
@@ -163,8 +168,8 @@ void World::setName(const std::string& name) {
     this->info.name = name;
 }
 
-void World::setGenerator(const std::string& generator) {
-    this->info.generator = generator;
+void World::setEnvironment(const std::string& environment) {
+    this->info.environment = environment;
 }
 
 bool World::hasPack(const std::string& id) const {
@@ -186,8 +191,8 @@ uint64_t World::getSeed() const {
     return info.seed;
 }
 
-std::string World::getGenerator() const {
-    return info.generator;
+std::string World::getEnvironment() const {
+    return info.environment;
 }
 
 const std::vector<ContentPack>& World::getPacks() const {
@@ -196,7 +201,8 @@ const std::vector<ContentPack>& World::getPacks() const {
 
 void WorldInfo::deserialize(const dv::value& root) {
     name = root["name"].asString();
-    generator = root["generator"].asString(generator);
+    root.at("environment").get(environment);
+    root.at("generator").get(explicitGenerator);
     seed = root["seed"].asInteger(seed);
 
     if (root.has("version")) {
@@ -226,7 +232,11 @@ dv::value WorldInfo::serialize() const {
     versionobj["minor"] = ENGINE_VERSION_MINOR;
 
     root["name"] = name;
-    root["generator"] = generator;
+    if (environment.empty()) {
+        root["generator"] = explicitGenerator;
+    } else {
+        root["environment"] = environment;
+    }
     root["seed"] = seed;
 
     auto& timeobj = root.object("time");

@@ -179,7 +179,7 @@ void EngineController::onMissingContent(
     if (engine.isHeadless()) {
         throw std::runtime_error(
             "missing content: " +
-            json::stringify(create_missing_content_report(report), true, "  ")
+            util::quote(json::stringify(create_missing_content_report(report), true, "  "))
         );
     } else {
         engine.setScreen(std::make_shared<MenuScreen>(engine));
@@ -268,7 +268,7 @@ inline uint64_t str2seed(const std::string& seedstr) {
 void EngineController::createWorld(
     const std::string& name,
     const std::string& seedstr,
-    const std::string& generatorID
+    const std::string& environment
 ) {
     uint64_t seed = str2seed(seedstr);
 
@@ -279,17 +279,31 @@ void EngineController::createWorld(
         paths.setCurrentWorldFolder(folder);
         engine.getContentControl().loadContent();
     });
+    const auto& generators = engine.getContentControl().get()->generators;
+
+    // generator-based environments must die in 1.0
+    bool genBasedEnv = false;
+    if (auto genDef = generators.find(environment)) {
+        genBasedEnv = true;
+    }
 
     auto& contentControl = engine.getContentControl();
     auto level = World::create(
         name,
-        generatorID,
+        genBasedEnv ? "" : environment,
+        genBasedEnv ? environment : "",
         folder,
         seed,
         engine.getSettings(),
         *contentControl.get(),
         contentControl.getContentPacks()
     );
+
+    // generator-based environment initialization
+    if (genBasedEnv) {
+        level->environment.generator = environment;
+    }
+
     if (!engine.isHeadless()) {
         level->players->create(localPlayer);
     }

@@ -92,6 +92,11 @@ socket:recv_async(
     [опционально] usetable: boolean=false
 ) -> nil|table|Bytearray
 
+-- Оборачивает сокет в io_stream (см. ../io_stream.md)
+socket:as_stream(
+    [опционально] binary_mode: boolean=true
+) -> io_stream
+
 -- Закрывает соединение
 socket:close()
 

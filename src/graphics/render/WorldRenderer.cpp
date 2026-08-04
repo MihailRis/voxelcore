@@ -1,12 +1,39 @@
 #include "WorldRenderer.hpp"
 
+#include "BlockWrapsRenderer.hpp"
+#include "ChunksRenderer.hpp"
+#include "CloudsRenderer.hpp"
+#include "DebugLinesRenderer.hpp"
+#include "Emitter.hpp"
+#include "HandsRenderer.hpp"
+#include "ModelBatch.hpp"
+#include "NamedSkeletons.hpp"
+#include "ParticlesRenderer.hpp"
+#include "PrecipitationRenderer.hpp"
+#include "Skybox.hpp"
+#include "TextNote.hpp"
+#include "TextsRenderer.hpp"
 #include "assets/Assets.hpp"
 #include "assets/assets_util.hpp"
+#include "coders/GLSLExtension.hpp"
 #include "content/Content.hpp"
 #include "engine/Engine.hpp"
-#include "coders/GLSLExtension.hpp"
-#include "frontend/LevelFrontend.hpp"
 #include "frontend/ContentGfxCache.hpp"
+#include "frontend/LevelFrontend.hpp"
+#include "graphics/commons/Model.hpp"
+#include "graphics/core/Atlas.hpp"
+#include "graphics/core/Batch3D.hpp"
+#include "graphics/core/DrawContext.hpp"
+#include "graphics/core/Font.hpp"
+#include "graphics/core/Framebuffer.hpp"
+#include "graphics/core/GBuffer.hpp"
+#include "graphics/core/LineBatch.hpp"
+#include "graphics/core/Mesh.hpp"
+#include "graphics/core/PostProcessing.hpp"
+#include "graphics/core/Shader.hpp"
+#include "graphics/core/Shadows.hpp"
+#include "graphics/core/Cubemap.hpp"
+#include "graphics/core/Texture.hpp"
 #include "items/Inventory.hpp"
 #include "items/ItemDef.hpp"
 #include "items/ItemStack.hpp"
@@ -25,40 +52,12 @@
 #include "world/Level.hpp"
 #include "world/LevelEvents.hpp"
 #include "world/World.hpp"
-#include "graphics/commons/Model.hpp"
-#include "graphics/core/Atlas.hpp"
-#include "graphics/core/Batch3D.hpp"
-#include "graphics/core/DrawContext.hpp"
-#include "graphics/core/LineBatch.hpp"
-#include "graphics/core/Mesh.hpp"
-#include "graphics/core/PostProcessing.hpp"
-#include "graphics/core/Framebuffer.hpp"
-#include "graphics/core/Shader.hpp"
-#include "graphics/core/Texture.hpp"
-#include "graphics/core/Font.hpp"
-#include "graphics/core/Shadows.hpp"
-#include "graphics/core/GBuffer.hpp"
-#include "BlockWrapsRenderer.hpp"
-#include "ParticlesRenderer.hpp"
-#include "PrecipitationRenderer.hpp"
-#include "HandsRenderer.hpp"
-#include "NamedSkeletons.hpp"
-#include "TextsRenderer.hpp"
-#include "ChunksRenderer.hpp"
-#include "DebugLinesRenderer.hpp"
-#include "ModelBatch.hpp"
-#include "Skybox.hpp"
-#include "Emitter.hpp"
-#include "TextNote.hpp"
-#include "CloudsRenderer.hpp"
 
 #include <assert.h>
 #include <algorithm>
 #include <glm/ext.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <memory>
-
-using namespace advanced_pipeline;
 
 inline constexpr size_t BATCH3D_CAPACITY = 4096;
 inline constexpr size_t MODEL_BATCH_CAPACITY = 20'000;
@@ -105,8 +104,7 @@ WorldRenderer::WorldRenderer(
         [this](LevelEventType, Chunk* chunk) { chunksRenderer->unload(chunk); }
     );
     skybox = std::make_unique<Skybox>(
-        settings.graphics.skyboxResolution.get(),
-        assets.require<Shader>("skybox_gen")
+        settings.graphics.skyboxResolution.get(), assets
     );
 
     const auto& content = level.content;
@@ -160,7 +158,7 @@ void WorldRenderer::setupWorldShader(
     shader.uniform1i("u_debugNormals", false);
     shader.uniform1f("u_dayTime", level.getWorld()->getInfo().daytime);
     shader.uniform2f("u_lightDir", skybox->getLightDir());
-    shader.uniform1i("u_skybox", TARGET_SKYBOX);
+    shader.uniform1i("u_skybox", advanced_pipeline::TARGET_SKYBOX);
 
     auto indices = level.content.getIndices();
     // Light emission when an emissive item is chosen
@@ -179,6 +177,11 @@ void WorldRenderer::setupWorldShader(
     }
 }
 
+float WorldRenderer::calcFogFactor() const {
+    const auto& settings = engine.getSettings();
+    return 15.0f / static_cast<float>(settings.chunks.loadDistance.get() - 2);
+}
+
 void WorldRenderer::renderOpaque(
     const DrawContext& ctx,
     const Camera& camera,
@@ -187,14 +190,12 @@ void WorldRenderer::renderOpaque(
 ) {
     texts->render(ctx, camera, settings, hudVisible, false);
 
-    bool culling = engine.getSettings().graphics.frustumCulling.get();
-    float fogFactor =
-        15.0f / static_cast<float>(settings.chunks.loadDistance.get() - 2);
+    float fogFactor = calcFogFactor();
 
     auto& entityShader = assets.require<Shader>("entity");
     setupWorldShader(entityShader, camera, settings, fogFactor);
-    skybox->bind();
 
+    bool culling = engine.getSettings().graphics.frustumCulling.get();
     if (culling) {
         frustumCulling->update(camera.getProjView());
     }
@@ -213,25 +214,26 @@ void WorldRenderer::renderOpaque(
 
     auto& shader = assets.require<Shader>("main");
     auto& cloudsShader = assets.require<Shader>("clouds");
-    auto& linesShader = assets.require<Shader>("lines");
 
     setupWorldShader(shader, camera, settings, fogFactor);
 
     chunksRenderer->drawChunks(camera, shader);
     blockWraps->draw(ctx);
 
-    int cloudsQuality = settings.graphics.cloudsQuality.get();
-    if (cloudsQuality > 0) {
-        setupWorldShader(cloudsShader, camera, settings, fogFactor);
-        cloudsRenderer->draw(
-            cloudsShader, weather, timer, fogFactor, camera, cloudsQuality
-        );
+    if (level.environment.sky.clouds) {
+        int cloudsQuality = settings.graphics.cloudsQuality.get();
+        if (cloudsQuality > 0) {
+            setupWorldShader(cloudsShader, camera, settings, fogFactor);
+            cloudsRenderer->draw(
+                cloudsShader, weather, timer, fogFactor, camera, cloudsQuality
+            );
+        }
     }
 
     if (hudVisible) {
+        auto& linesShader = assets.require<Shader>("lines");
         renderLines(camera, linesShader, ctx);
     }
-    skybox->unbind();
 }
 
 void WorldRenderer::renderBlockSelection() {
@@ -287,21 +289,19 @@ void WorldRenderer::refreshSettings(Shader** shaders) {
 
     int shadowsQuality = graphics.shadowsQuality.get() * gbufferPipeline;
     shadowMapping->setQuality(shadowsQuality);
-    
+
     CompileTimeShaderSettings currentSettings {
         gbufferPipeline,
         shadowsQuality != 0,
-        graphics.ssao.get() && gbufferPipeline
-    };
-    if (
-        prevCTShaderSettings.advancedRender != currentSettings.advancedRender ||
+        graphics.ssao.get() && gbufferPipeline};
+    if (prevCTShaderSettings.advancedRender != currentSettings.advancedRender ||
         prevCTShaderSettings.shadows != currentSettings.shadows ||
-        prevCTShaderSettings.ssao != currentSettings.ssao
-    ) {
+        prevCTShaderSettings.ssao != currentSettings.ssao) {
         std::vector<std::string> defines;
         if (currentSettings.shadows) defines.emplace_back("ENABLE_SHADOWS");
         if (currentSettings.ssao) defines.emplace_back("ENABLE_SSAO");
-        if (currentSettings.advancedRender) defines.emplace_back("ADVANCED_RENDER");
+        if (currentSettings.advancedRender)
+            defines.emplace_back("ADVANCED_RENDER");
 
         for (size_t i = 0; shaders[i]; i++) {
             shaders[i]->recompile(defines);
@@ -333,7 +333,8 @@ void WorldRenderer::renderFrame(
     auto& entityShader = assets.require<Shader>("entity");
     auto& cloudsShader = assets.require<Shader>("clouds");
     auto& translucentShader = assets.require<Shader>("translucent");
-    auto& deferredShader = assets.require<PostEffect>("deferred_lighting").getShader();
+    auto& deferredShader =
+        assets.require<PostEffect>("deferred_lighting").getShader();
 
     const auto& settings = engine.getSettings();
 
@@ -343,19 +344,19 @@ void WorldRenderer::renderFrame(
         &cloudsShader,
         &translucentShader,
         &deferredShader,
-        nullptr
-    };
+        nullptr};
 
     refreshSettings(affectedShaders);
 
     const auto& worldInfo = world->getInfo();
-    
+
     float clouds = weather.clouds();
     clouds = glm::max(worldInfo.fog, clouds);
     float mie = 1.0f + glm::max(worldInfo.fog, clouds * 0.5f) * 2.0f;
 
     float random = rand() / static_cast<float>(RAND_MAX);
     skybox->refresh(
+        level.environment,
         pctx,
         worldInfo.daytime,
         mie,
@@ -374,20 +375,19 @@ void WorldRenderer::renderFrame(
     {
         DrawContext wctx = pctx.sub();
         postProcessing.use(wctx, gbufferPipeline);
-
         display::clearDepth();
 
         /* Main opaque pass (GBuffer pass) */ {
             DrawContext ctx = wctx.sub();
             ctx.setDepthTest(true);
             ctx.setCullFace(true);
+            ctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
+            ctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
             renderOpaque(ctx, camera, settings, hudVisible);
         }
         texts->render(pctx, camera, settings, hudVisible, true);
     }
-    skybox->bind();
-    float fogFactor =
-        15.0f / static_cast<float>(settings.chunks.loadDistance.get() - 2);
+    float fogFactor = calcFogFactor();
     if (gbufferPipeline) {
         deferredShader.use();
         setupWorldShader(deferredShader, camera, settings, fogFactor);
@@ -396,6 +396,7 @@ void WorldRenderer::renderFrame(
     {
         DrawContext ctx = pctx.sub();
         ctx.setDepthTest(true);
+        ctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
 
         if (gbufferPipeline) {
             postProcessing.bindDepthBuffer();
@@ -404,7 +405,9 @@ void WorldRenderer::renderFrame(
         }
 
         // Background sky plane
-        skybox->draw(ctx, camera, assets, worldInfo.daytime, clouds);
+        skybox->draw(
+            level.environment, ctx, camera, worldInfo.daytime, clouds
+        );
 
         auto& linesShader = assets.require<Shader>("lines");
         linesShader.use();
@@ -416,10 +419,12 @@ void WorldRenderer::renderFrame(
         linesShader.uniformMatrix("u_projview", projView);
         lineBatch->flush();
 
-        skybox->bind();
+        DrawContext wctx = ctx.sub();
+        wctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
+        wctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
         // Translucent blocks
         {
-            auto sctx = ctx.sub();
+            auto sctx = wctx.sub();
             sctx.setCullFace(true);
             translucentShader.use();
             setupWorldShader(translucentShader, camera, settings, fogFactor);
@@ -430,44 +435,41 @@ void WorldRenderer::renderFrame(
         entityShader.use();
         setupWorldShader(entityShader, camera, settings, fogFactor);
 
-        std::array<const WeatherPreset*, 2> weatherInstances {&weather.a, &weather.b};
+        std::array<const WeatherPreset*, 2> weatherInstances {
+            &weather.a, &weather.b};
         for (const auto& weather : weatherInstances) {
             float maxIntensity = weather->fall.maxIntensity;
             float zero = weather->fall.minOpacity;
             float one = weather->fall.maxOpacity;
             float t = (weather->intensity * (one - zero)) * maxIntensity + zero;
             entityShader.uniform1i("u_alphaClip", weather->fall.opaque);
-            entityShader.uniform1f("u_opacity", weather->fall.opaque ? t * t : t);
+            entityShader.uniform1f(
+                "u_opacity", weather->fall.opaque ? t * t : t
+            );
             if (weather->intensity > 1.e-3f && !weather->fall.texture.empty()) {
                 precipitation->render(camera, *weather);
             }
         }
-        skybox->unbind();
-
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     postProcessing.render(pctx, assets, timer, camera);
-    
+
     if (player.currentCamera == player.fpCamera) {
         DrawContext ctx = pctx.sub();
         ctx.setDepthTest(true);
         ctx.setCullFace(true);
+        ctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
+        ctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
+        display::clearDepth();
 
         // prepare modified HUD camera
         Camera hudcam = camera;
         hudcam.far = 10.0f;
         hudcam.setFov(0.9f);
         hudcam.position = {};
-        
-        hands->render(camera);
 
-        display::clearDepth();
         setupWorldShader(entityShader, hudcam, engine.getSettings(), 0.0f);
-
-        skybox->bind();
-        modelBatch->render();
-        modelBatch->setLightsOffset(glm::vec3());
-        skybox->unbind();
+        hands->render(camera);
     }
     renderBlockOverlay(pctx);
 
@@ -487,13 +489,12 @@ void WorldRenderer::renderBlockOverlay(const DrawContext& wctx) {
     if (def.overlayTexture.empty()) {
         return;
     }
-    auto textureRegion = util::get_texture_region(
-        assets, def.overlayTexture, "blocks:notfound"
-    );
+    auto textureRegion =
+        util::get_texture_region(assets, def.overlayTexture, "blocks:notfound");
     DrawContext ctx = wctx.sub();
     ctx.setDepthTest(false);
     ctx.setCullFace(false);
-    
+
     auto& shader = assets.require<Shader>("ui3d");
     shader.use();
     batch3d->begin();

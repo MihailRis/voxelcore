@@ -3,6 +3,7 @@ function on_open(params)
         mode = params.mode
     end
     refresh()
+    document.search_textbox.focused = true
 end
 
 -- add - packs to be added to the world (after apply)
@@ -178,40 +179,40 @@ function place_pack(panel, packinfo, callback, position_func)
     end
 end
 
-local Version = {};
+local Version = {}
 
 function Version.matches_pattern(version)
-    for _, letter in string.gmatch(version, "%.+") do
-        if type(letter) ~= "number" or letter ~= "." then
-            return false;
-        end
+    local t = string.split(version, ".")
+    if #t ~= 2 and #t ~= 3 then return false end
 
-        local t = string.split(version, ".");
-
-        return #t == 2 or #t == 3;
+    for i = 1, #t do
+        local matched = string.match(t[i], "^%d+$")
+        if not matched then return false end
     end
+
+    return true
 end
 
 function Version.__equal(ver1, ver2)
-    return ver1[1] == ver2[1] and ver1[2] == ver2[2] and ver1[3] == ver2[3];
+    return ver1[1] == ver2[1] and ver1[2] == ver2[2] and ver1[3] == ver2[3]
 end
 
 function Version.__greater(ver1, ver2)
-    if ver1[1] ~= ver2[1] then return ver1[1] > ver2[1] end;
-    if ver1[2] ~= ver2[2] then return ver1[2] > ver2[2] end;
-    return ver1[3] > ver2[3];
+    if ver1[1] ~= ver2[1] then return ver1[1] > ver2[1] end
+    if ver1[2] ~= ver2[2] then return ver1[2] > ver2[2] end
+    return ver1[3] > ver2[3]
 end
 
 function Version.__less(ver1, ver2)
-    return Version.__greater(ver2, ver1);
+    return Version.__greater(ver2, ver1)
 end
 
 function Version.__greater_or_equal(ver1, ver2)
-    return not Version.__less(ver1, ver2);
+    return not Version.__less(ver2, ver1)
 end
 
 function Version.__less_or_equal(ver1, ver2)
-    return not Version.__greater(ver1, ver2);
+    return not Version.__greater(ver1, ver2)
 end
 
 Version.operators = {
@@ -223,40 +224,39 @@ Version.operators = {
 }
 
 function Version.compare(op, ver1, ver2)
-    ver1 = string.split(ver1, ".");
-    ver2 = string.split(ver2, ".");
+    ver1 = string.split(ver1, ".")
+    ver2 = string.split(ver2, ".")
 
     local comparison_func = Version.operators[op];
 
     if comparison_func then
-        return comparison_func(ver1, ver2);
+        return comparison_func(ver1, ver2)
     else
-        return false;
+        return false
     end
 end
 
 function Version.parse(version)
-    local op = string.sub(version, 1, 2);
+    local op = string.sub(version, 1, 2)
     if op == ">=" or op == "<=" then
-        return op, string.sub(version, #op + 1);
+        return op, string.sub(version, #op + 1)
     end
 
     op = string.sub(version, 1, 1);
     if op == ">" or op == "<" then
-        return op, string.sub(version, #op + 1);
+        return op, string.sub(version, #op + 1)
     end
 
-    return "=", version;
+    return "=", version
 end
 
-local function compare_version(dependent_version, actual_version)
+local function compare_version(op, dependent_version, actual_version)
     if Version.matches_pattern(dependent_version) and Version.matches_pattern(actual_version) then
-        local op, dep_ver = Version.parse_version(dependent_version);
-        Version.compare(op, dep_ver, actual_version);
+        return Version.compare(op, dep_ver, actual_version)
     elseif dependent_version == "*" or dependent_version == actual_version then
-        return true;
+        return true
     else
-        return false;
+        return false
     end
 end
 
@@ -276,15 +276,15 @@ function check_dependencies(packinfo)
             )
         end
 
-        local dep_pack = pack.get_info(depid);
-        
-        if not compare_version(depver, dep_pack.version) then
-            local op, ver = Version.parse(depver)
+        local dep_pack = pack.get_info(depid)
+        local op, ver = Version.parse(depver)
+
+        if not compare_version(op, ver, dep_pack.version) then
             return string.format(
                 "%s: %s != %s (%s)",
                 gui.str("error.dependency-version-not-met"),
                 dep_pack.version, ver, depid
-            );
+            )
         end
 
         if table.has(packs_installed, packinfo.id) then

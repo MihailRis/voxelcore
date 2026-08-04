@@ -28,7 +28,8 @@ block.get(x: int, y: int, z: int) -> int
 block.get_states(x: int, y: int, z: int) -> int
 
 -- Set block with given integer ID and state (default - 0) at given position.
-block.set(x: int, y: int, z: int, id: int, states: int)
+-- If noupdate=true is passed, the `on_update` event will not be called for adjacent blocks.
+block.set(x: int, y: int, z: int, id: int, states: int, noupdate: boolean=false)
 
 -- Places a block with a given integer id and state (default - 0) at given position.
 -- on behalf of the player, calling the on_placed event.

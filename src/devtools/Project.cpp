@@ -2,6 +2,7 @@
 
 #include "data/dv_util.hpp"
 #include "debug/Logger.hpp"
+#include "engine/CoreParameters.hpp"
 #include "io/io.hpp"
 #include "io/path.hpp"
 #include "logic/scripting/scripting.hpp"
@@ -37,26 +38,6 @@ void Project::deserialize(const dv::value& src) {
     logger.info() << "permissions: ";
     for (const auto& perm : permissions.permissions) {
         logger.info() << " - " << perm;
-    }
-}
-
-void Project::loadProjectClientScript() {
-    io::path scriptFile = "project:project_client.lua";
-    if (io::exists(scriptFile)) {
-        logger.info() << "starting project client script";
-        clientScript = scripting::load_client_project_script(scriptFile);
-    } else {
-        logger.warning() << "project client script does not exists";
-    }
-}
-
-void Project::loadProjectStartScript() {
-    io::path scriptFile = "project:start.lua";
-    if (io::exists(scriptFile)) {
-        logger.info() << "starting project start script";
-        setupCoroutine = scripting::start_app_script(scriptFile);
-    } else {
-        logger.warning() << "project start script does not exists";
     }
 }
 

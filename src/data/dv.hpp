@@ -9,6 +9,10 @@
 #include <stdexcept>
 #include <unordered_map>
 
+#ifdef VC_ENABLE_REFLECTION
+#include "util/EnumMetadata.hpp"
+#endif
+
 namespace util {
     template<class T> class Buffer;
 }
@@ -70,6 +74,14 @@ namespace dv {
             return ptr != nullptr;
         }
 
+        inline value* operator->() noexcept {
+            return ptr;
+        }
+
+        inline const value* operator->() const noexcept {
+            return ptr;
+        }
+
         inline value& operator*() noexcept {
             return *ptr;
         }
@@ -77,6 +89,11 @@ namespace dv {
         inline const value& operator*() const noexcept {
             return *ptr;
         }
+
+#ifdef VC_ENABLE_REFLECTION
+        template <typename T>
+        bool get(T& dst, const util::EnumMetadata<T>& mt) const;
+#endif
 
         bool get(std::string& dst) const;
         bool get(bool& dst) const;
@@ -552,6 +569,17 @@ namespace dv {
         }
         return false;
     }
+
+#ifdef VC_ENABLE_REFLECTION
+    template <typename T>
+    inline bool optionalvalue::get(T& dst, const util::EnumMetadata<T>& mt) const {
+        if (ptr) {
+            return mt.getItem(ptr->asString(), dst);
+        }
+        return false;
+    }
+#endif
+
     inline bool optionalvalue::get(std::string& dst) const {
         if (ptr) {
             dst = ptr->asString();

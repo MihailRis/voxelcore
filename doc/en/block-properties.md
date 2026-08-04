@@ -1,6 +1,6 @@
 # Block properties
 
-## Visual
+## Visual & Audio
 
 ### *texture*
 
@@ -69,6 +69,18 @@ Rotation profile (set of available block rotations and behaviour of placing bloc
 - "pipe" - wood logs, pipes, pillars
 - "pane" - panels, doors, signs
 - "stairs" - "pane" + flipped variants
+
+### *particles*
+
+Particles are specified as a JSON object. Property names can be found [in the particles section](particles.md).
+
+When camera is near to the block, the engine will create an emitter that will run
+until the block is destroyed or the camera moves away a certain distance.
+
+### Material - *material*
+
+Defines the name of the block's material in the format `pack:material_name`, which affects the selection of block interaction sounds.
+Material definitions are located in /block_materials.
 
 ## Variants
 

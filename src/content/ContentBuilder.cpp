@@ -26,17 +26,21 @@ std::unique_ptr<Content> ContentBuilder::build() {
             def.rt.tags.insert(tags.add(tag));
         }
 
+        auto isSolid = [](const Variant& variant) {
+            return variant.model.type == BlockModelType::BLOCK ||
+                   variant.culling == CullingMode::OPTIONAL;
+        };
+
         if (def.variants) {
             for (auto& variant : def.variants->variants) {
-                variant.rt.solid =
-                    variant.model.type == BlockModelType::BLOCK ||
-                    def.explictlySolid;
+                variant.rt.solid = isSolid(variant) || def.explictlySolid;
             }
             def.defaults = def.variants->variants.at(0);
         } else {
-            def.defaults.rt.solid =
-                def.defaults.model.type == BlockModelType::BLOCK ||
-                def.explictlySolid;
+            def.defaults.rt.solid = isSolid(def.defaults) || def.explictlySolid;
+        }
+        if (def.material.empty()) {
+            defaults.at("block-material").get(def.material);
         }
 
         const float EPSILON = 0.01f;

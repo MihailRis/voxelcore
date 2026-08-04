@@ -38,7 +38,7 @@ Models are loaded automatically; adding them to preload.json is not required.
 
 ## Models
 
-Models should be located in the models folder. Currently only OBJ format is supported.
+Models must be located in the models folder. Currently, the following formats are supported: obj, vec3, and [vcm](vcm.md).
 
 >[!IMPORTANT]
 > When loading an obj model, the \*.mtl file is ignored.

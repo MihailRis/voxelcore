@@ -4,14 +4,15 @@
 
 The appearance of 3D text, is configured via a table, like [particles](particles.md). All fields are optional.
 
-| Field           | Description                  | Default          |
-| --------------- | ---------------------------- | ---------------- |
-| display         | Display format               | static_billboard |
-| color           | Text color                   | {1, 1, 1, 1}     |
-| scale           | Text scale                   | 1                |
-| render_distance | Text rendering distance      | 32               |
-| xray_opacity    | Visibility through obstacles | 0                |
-| perspective     | Perspective coefficient      | 1                |
+| Field           | Description                              | Default          |
+| --------------- | ---------------------------------------- | ---------------- |
+| display         | Display format                           | static_billboard |
+| color           | Text color                               | {1, 1, 1, 1}     |
+| scale           | Text scale                               | 1                |
+| render_distance | Text rendering distance                  | 32               |
+| xray_opacity    | Visibility through obstacles             | 0                |
+| perspective     | Perspective coefficient                  | 1                |
+| font            | Font. If absent, the default one is used | ""               |
 
 Available display formats:
 

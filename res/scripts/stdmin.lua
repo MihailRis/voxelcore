@@ -10,8 +10,9 @@ vc = {
     is_client = function()
         return not _vc_headless
     end,
+    get_version = __vc_app.get_version,
     get_setting = __vc_app.get_setting,
-    get_setting_str = __vc_app.get_setting_str,
+    str_setting = __vc_app.str_setting,
     get_setting_info = __vc_app.get_setting_info,
 }
 

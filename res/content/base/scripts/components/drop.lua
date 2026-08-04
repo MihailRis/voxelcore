@@ -10,7 +10,7 @@ dropitem = ARGS
 if dropitem.item then
     dropitem.id = item.index(dropitem.item)
 end
-if dropitem then 
+if dropitem then
     timer = dropitem.pickup_delay or timer
 end
 if SAVED_DATA.item then
@@ -26,6 +26,7 @@ function on_save()
 end
 
 if vc.is_client() then
+    local SCALE = 0.3
     local scale = {1, 1, 1}
     local rotation = mat4.rotate({
         math.random(), math.random(), math.random()
@@ -35,7 +36,7 @@ if vc.is_client() then
         local matrix = mat4.idt()
         rig:set_model(0, item.model_name(dropitem.id))
         local bodysize = math.min(scale[1], scale[2], scale[3])
-        body:set_size({scale[1], bodysize, scale[3]})
+        body:set_size(vec3.mul({scale[1], bodysize, scale[3]}, SCALE))
         mat4.mul(matrix, rotation, matrix)
         mat4.scale(matrix, scale, matrix)
         rig:set_matrix(0, matrix)
