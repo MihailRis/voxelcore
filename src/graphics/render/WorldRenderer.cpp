@@ -471,8 +471,11 @@ void WorldRenderer::renderFrame(
         setupWorldShader(entityShader, hudcam, engine.getSettings(), 0.0f);
         hands->render(camera);
     }
-    renderBlockOverlay(pctx);
-
+    {
+        auto bctx = pctx.sub();
+        bctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
+        renderBlockOverlay(pctx);
+    }
     glActiveTexture(GL_TEXTURE0);
 }
 

@@ -311,11 +311,18 @@ local bytearray = require "core:internal/bytearray"
 Bytearray = bytearray.FFIBytearray
 Bytearray_as_string = bytearray.FFIBytearray_as_string
 Bytearray_as_ptr = bytearray.FFIBytearray_as_ptr
+I8view = bytearray.FFII8view
 U16view = bytearray.FFIU16view
 I16view = bytearray.FFII16view
 U32view = bytearray.FFIU32view
 I32view = bytearray.FFII32view
+U64view = bytearray.FFIU64view
+I64view = bytearray.FFII64view
+FLTview = bytearray.FFIFLTview
+DBLview = bytearray.FFIDBLview
 Bytearray_construct = function(...) return Bytearray(...) end
+
+ctypes = require "core:internal/ctypes"
 
 bit.compile = require "core:bitwise/compiler"
 bit.execute = require "core:bitwise/executor"
