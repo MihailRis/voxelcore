@@ -49,3 +49,6 @@ appimage-build/
 # libs
 /libs/
 /vcpkg_installed/
+
+# vcstudio
+.vcstudio
