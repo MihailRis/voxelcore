@@ -9,7 +9,7 @@ namespace gui {
     class Frame final : public Container {
     public:
         Frame(GUI& gui, std::string id, std::string outputTexture);
-        virtual ~Frame();
+        ~Frame();
 
         void draw(const DrawContext& pctx, const Assets& assets) override;
 

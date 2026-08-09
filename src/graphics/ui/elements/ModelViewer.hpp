@@ -1,15 +1,16 @@
 #pragma once
 
-#include <memory>
-#include <string>
 #include "Container.hpp"
 #include "window/Camera.hpp"
+
+#include <memory>
+#include <string>
 
 class Batch3D;
 class Framebuffer;
 
 namespace gui {
-    class ModelViewer : public Container {
+    class ModelViewer final : public Container {
     private:
         std::string modelName;
         Camera camera;

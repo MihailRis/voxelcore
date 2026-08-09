@@ -188,8 +188,8 @@ void GUI::actMouse(Frame& frame, float delta, const CursorState& cursor) {
                 doubleClicked = true;
             } else {
                 pressed->click(cursorPos.x, cursorPos.y);
+                doubleClickTimer = 0.0f;
             }
-            doubleClickTimer = 0.0f;
             if (focus && focus != pressed) {
                 focus->defocus();
             }

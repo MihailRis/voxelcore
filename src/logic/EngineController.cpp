@@ -283,7 +283,7 @@ void EngineController::createWorld(
 
     // generator-based environments must die in 1.0
     bool genBasedEnv = false;
-    if (auto genDef = generators.find(environment)) {
+    if (generators.find(environment)) {
         genBasedEnv = true;
     }
 

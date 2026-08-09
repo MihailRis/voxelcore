@@ -99,7 +99,7 @@ int TrackBar::getTrackWidth() const {
     return trackWidth;
 }
 
-glm::vec4 TrackBar::getTrackColor() const {
+const glm::vec4& TrackBar::getTrackColor() const {
     return trackColor;
 }
 

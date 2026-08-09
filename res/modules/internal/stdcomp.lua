@@ -132,7 +132,7 @@ return {
                 goto continue
             end
             for _, component in ipairs(entity.ordered_components) do
-                local callback = component.on_update
+                local callback = rawget(component, "on_update")
                 if not component.__disabled and callback then
                     local _, err = pcall(callback, tps)
                     if err then
@@ -146,7 +146,7 @@ return {
     physics_update = function(delta)
         for uid, entity in pairs(entities) do
             for _, component in ipairs(entity.ordered_components) do
-                local callback = component.on_physics_update
+                local callback = rawget(component, "on_physics_update")
                 if not component.__disabled and callback then
                     local result, err = pcall(callback, delta)
                     if err then
@@ -159,7 +159,7 @@ return {
     render = function(delta)
         for _,entity in pairs(entities) do
             for _, component in ipairs(entity.ordered_components) do
-                local callback = component.on_render
+                local callback = rawget(component, "on_render")
                 if not component.__disabled and callback then
                     local _, err = pcall(callback, delta)
                     if err then

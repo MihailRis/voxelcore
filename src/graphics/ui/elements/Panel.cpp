@@ -41,10 +41,14 @@ glm::vec2 Panel::getContentSize() const {
 void Panel::cropToContent() {
     if (maxLength > 0.0f) {
         setSize(glm::vec2(
-            getSize().x, glm::max(minLength, glm::min(maxLength, actualLength))
+            glm::max(minLength, glm::min(maxLength, actualLengthX)),
+            glm::max(minLength, glm::min(maxLength, actualLengthY))
         ));
     } else {
-        setSize(glm::vec2(getSize().x, glm::max(minLength, actualLength)));
+        setSize(glm::vec2(
+            glm::max(minLength, actualLengthX),
+            glm::max(minLength, actualLengthY)
+        ));
     }
 }
 
@@ -93,21 +97,30 @@ void Panel::refresh() {
             y += nodeSize.y + margin.w + interval;
             maxw = fmax(maxw, ex + nodeSize.x + margin.z + padding.z);
         }
-        actualLength = y + padding.w;
+        actualLengthX = size.x;
+        actualLengthY = y + padding.w;
     } else {
         float maxh = size.y;
         for (auto& node : nodes) {
-            glm::vec2 nodesize = node->getSize();
             const glm::vec4 margin = node->getMargin();
             x += margin.x;
-            node->setPos(glm::vec2(x, y + margin.y));
-            x += nodesize.x + margin.z + interval;
 
-            node->refresh();
-            maxh = fmax(
-                maxh, y + margin.y + node->getSize().y + margin.w + padding.w
+            float ey = y + margin.y;
+            node->setPos(glm::vec2(x, ey));
+
+            int height = glm::floor(
+                size.y - padding.y - padding.w - margin.y - margin.w
             );
+            if (node->isResizing()) {
+                node->setMaxSize({node->getMaxSize().x, height});
+                node->setSize(glm::vec2(node->getSize().x, height));
+            }
+            node->refresh();
+            glm::vec2 nodesize = node->getSize();
+            x += nodesize.x + margin.z + interval;
+            maxh = fmax(maxh, ey + nodesize.y + margin.w + padding.w);
         }
-        actualLength = size.y;
+        actualLengthY = size.y;
+        actualLengthX = x + padding.z;
     }
 }
