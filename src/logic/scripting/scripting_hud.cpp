@@ -110,22 +110,6 @@ void scripting::on_inventory_interact(int invid, int slot, int action, int mode)
     }
 }
 
-void scripting::on_inventory_clicked_outside(int exchange_invid, int exchange_slot, int mode) {
-    auto L = lua::get_main_state();
-    for (auto& pack : content_control->getAllContentPacks()) {
-        lua::emit_event(
-            L,
-            pack.id + ":.inventoryclickedoutside",
-            [&](lua::State* L) {
-                lua::pushinteger(L, exchange_invid);
-                lua::pushinteger(L, exchange_slot);
-                lua::pushinteger(L, mode);
-                return 3;
-            }
-        );
-    }
-}
-
 void scripting::load_hud_script(
     const scriptenv& senv,
     const std::string& packid,
@@ -143,7 +127,6 @@ void scripting::load_hud_script(
     register_event(env, "on_hud_render", packid + ":.hudrender");
     register_event(env, "on_hud_close", packid + ":.hudclose");
     register_event(env, "on_inventory_interact", packid + ":.inventoryinteract");
-    register_event(env, "on_inventory_clicked_outside", packid + ":.inventoryclickedoutside");
 }
 
 gui::PageLoaderFunc scripting::create_page_loader() {
