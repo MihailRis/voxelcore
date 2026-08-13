@@ -1,7 +1,5 @@
 #include "InventoryView.hpp"
 
-#include <iostream>
-
 #include <glm/glm.hpp>
 #include <utility>
 
