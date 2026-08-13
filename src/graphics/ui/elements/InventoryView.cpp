@@ -376,11 +376,10 @@ void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
         if (layout.itemSource) {
             if (grabbed.isEmpty()) {
                 action = InteractionAction::TAKE;
-                if (input.pressed(Keycode::LEFT_CONTROL)) {
-                    stack.maximizeCount(*content->getIndices());
-                    std::cout << "maximized grabbed item" << std::endl;
-                }
                 grabbed.set(stack);
+                if (input.pressed(Keycode::LEFT_CONTROL)) {
+                    grabbed.maximizeCount(*content->getIndices());
+                }
             } else {
                 action = InteractionAction::PUT;
                 grabbed.clear();
