@@ -18,7 +18,6 @@
 #include "graphics/ui/GUI.hpp"
 #include "items/Inventory.hpp"
 #include "items/ItemDef.hpp"
-#include "items/ItemStack.hpp"
 #include "logic/scripting/scripting.hpp"
 #include "maths/voxmaths.hpp"
 #include "objects/Player.hpp"
@@ -613,33 +612,6 @@ void InventoryView::setSelected(int index) {
 
 void InventoryView::setPos(const glm::vec2& pos) {
     Container::setPos(pos - origin);
-}
-
-void InventoryView::clickedOutside(Mousecode button) {
-    // root is the id of the main inventory
-    if (getId() != "root") {
-        return;
-    }
-    int mode;
-    if (button == Mousecode::BUTTON_1) {
-        mode = 0;
-    } else if (button == Mousecode::BUTTON_2) {
-        mode = 1;
-    } else if (button == Mousecode::BUTTON_3) {
-        mode = 2;
-    } else {
-        return;
-    };
-    auto exchangeSlot = std::dynamic_pointer_cast<SlotView>(
-        gui.get(SlotView::EXCHANGE_SLOT_NAME));
-    if (exchangeSlot == nullptr) {
-        return;
-    }
-    ItemStack& grabbed = exchangeSlot->getStack();
-    if (grabbed.isEmpty()) {
-        return;
-    }
-    scripting::on_inventory_clicked_outside(exchangeSlot->getInventoryId(), 0, mode);
 }
 
 void InventoryView::setOrigin(const glm::vec2& origin) {

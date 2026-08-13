@@ -143,8 +143,6 @@ namespace gui {
 
         void setSelected(int index);
 
-        void clickedOutside(Mousecode button) override;
-
         void bind(
             const std::shared_ptr<Inventory>& inventory,
             const Content* content

@@ -2,6 +2,7 @@
 
 #include "delegates.hpp"
 
+#include <set>
 #include <queue>
 #include <memory>
 #include <vector>
@@ -92,7 +93,6 @@ namespace gui {
         bool debug = false;
 
         void actMouse(Frame& frame, float delta, const CursorState& cursor);
-        void performClickOutside(Frame& frame, float delta, glm::vec2 cursorPos);
         void actFocused();
         void updateTooltip(float delta);
         void resetTooltip();

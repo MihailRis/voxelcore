@@ -178,8 +178,6 @@ void GUI::actMouse(Frame& frame, float delta, const CursorState& cursor) {
         }
         it = mouseOver.erase(it);
     }
-  
-    bool focusHappened = false;
 
     if (input.jclicked(Mousecode::BUTTON_1)) {
         if (pressed == nullptr && this->hover) {
@@ -197,10 +195,10 @@ void GUI::actMouse(Frame& frame, float delta, const CursorState& cursor) {
             if (focus != pressed) {
                 focus = pressed;
                 focus->onFocus();
-                focusHappened = true;
+                return;
             }
         }
-        if (this->hover == nullptr && focus && !focusHappened) {
+        if (this->hover == nullptr && focus) {
             focus->defocus();
             focus = nullptr;
         }
@@ -209,41 +207,10 @@ void GUI::actMouse(Frame& frame, float delta, const CursorState& cursor) {
         pressed = nullptr;
     }
 
-    if (hover && !focusHappened) {
+    if (hover) {
         for (Mousecode code : MOUSECODES_ALL) {
             if (input.jclicked(code)) {
                 hover->clicked(code);
-            }
-        }
-    }
-    performClickOutside(frame, delta, cursorPos);
-}
-
-void GUI::performClickOutside(Frame& frame, float delta, glm::vec2 cursorPos) {
-    auto nodes = frame.getNodes();
-    std::vector<std::shared_ptr<UINode>> activeNodes;
-
-    for (const auto& node : nodes) {
-        if (node && node->isVisible() && node->isInteractive()) {
-            activeNodes.push_back(node);
-        }
-    }
-    
-    for (Mousecode code : {Mousecode::BUTTON_1, Mousecode::BUTTON_2, Mousecode::BUTTON_3}) {
-        if (input.jclicked(code)) {
-            bool isOverAnyNode = false;
-            for (const auto& node : activeNodes) {
-                if (node && node->isInside(cursorPos)) {
-                    isOverAnyNode = true;
-                    break;
-                }
-            }
-            if (!isOverAnyNode) {
-                for (const auto& node : activeNodes) {
-                    if (node) {
-                        node->clickedOutside(code);
-                    }
-                }
             }
         }
     }
