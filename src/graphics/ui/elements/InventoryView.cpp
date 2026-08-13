@@ -1,5 +1,7 @@
 #include "InventoryView.hpp"
 
+#include <iostream>
+
 #include <glm/glm.hpp>
 #include <utility>
 
@@ -368,6 +370,7 @@ void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
         return;
     }
 
+    std::cout << "perform left click" << std::endl;
     if (!layout.itemSource && stack.accepts(grabbed) && layout.placing) {
         action = InteractionAction::PUT;
         stack.move(grabbed, *content->getIndices());
@@ -375,6 +378,10 @@ void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
         if (layout.itemSource) {
             if (grabbed.isEmpty()) {
                 action = InteractionAction::TAKE;
+                if (input.pressed(Keycode::LEFT_SHIFT)) {
+                    stack.maximizeCount(*content->getIndices());
+                    std::cout << "maximized grabbed item" << std::endl;
+                }
                 grabbed.set(stack);
             } else {
                 action = InteractionAction::PUT;
