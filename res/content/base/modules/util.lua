@@ -9,7 +9,7 @@ function util.drop_from_slot(invid, slot, mode)
         return
     end
     local pid = hud.get_player()
-    if mode == 2 and !player.is_infinite_items(pid) then
+    if mode == 2 and not player.is_infinite_items(pid) then
         return
     end
     local itemid, itemcount = inventory.get(invid, slot)
