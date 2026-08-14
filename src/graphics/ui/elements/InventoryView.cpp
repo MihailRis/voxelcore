@@ -366,10 +366,10 @@ void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
         );
         return;
     }
-
+    auto indices = *content->getIndices();
     if (!layout.itemSource && stack.accepts(grabbed) && layout.placing) {
         action = InteractionAction::PUT;
-        stack.move(grabbed, *content->getIndices());
+        stack.move(grabbed, indices);
     } else {
         if (layout.itemSource) {
             if (grabbed.isEmpty()) {
@@ -379,8 +379,17 @@ void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
                     grabbed.maximizeCount(*content->getIndices());
                 }
             } else {
-                action = InteractionAction::PUT;
-                grabbed.clear();
+                // TODO: refactor to reduce nesting
+                if (grabbed.accepts(stack)) {
+                    auto& def = indices.items.require(stack.getItemId());
+                    if (grabbed.getCount() < def.stackSize) {
+                        action = InteractionAction::TAKE;
+                        grabbed.setCount(grabbed.getCount() + 1);
+                    }
+                } else {
+                    action = InteractionAction::PUT;
+                    grabbed.clear();
+                }
             }
         } else if (grabbed.isEmpty()) {
             if (layout.taking) {
