@@ -501,16 +501,10 @@ void SlotView::performRightClick(ItemStack& stack, ItemStack& grabbed) {
 }
 
 void SlotView::performMiddleClick(ItemStack& stack, ItemStack& grabbed) {
-    auto indices = *content->getIndices();
-    if (!grabbed.isEmpty()) {
-        if (stack.isEmpty()) {
-            stack.set(grabbed);
-            stack.maximizeCount(indices);
-        }
-        return;
-    }
-    grabbed.set(stack);
-    grabbed.maximizeCount(indices);
+    scripting::on_slot_middle_click(
+        inventoryId,
+        layout.index
+    );
 }
 
 void SlotView::clicked(Mousecode button) {

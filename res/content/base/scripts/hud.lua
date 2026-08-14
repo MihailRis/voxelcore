@@ -5,6 +5,27 @@ function on_hud_open()
         local invid = hud.get_exchange_inventory()
         base_util.drop_from_slot(invid, 0, mode)
     end)
+
+    events.on("core:slot_middle_click", function(invid, slot)
+        if not player.is_infinite_items(hud.get_player()) then
+            return
+        end
+        local itemid = inventory.get(invid, slot)
+        local exc_invid = hud.get_exchange_inventory()
+        local exc_itemid = inventory.get(exc_invid, 0)
+        if itemid == 0 then
+            if exc_itemid ~= 0 then
+              local stack_size = item.stack_size(exc_itemid)
+              inventory.set(invid, slot, exc_itemid, stack_size)
+            end
+        else
+            if exc_itemid == 0 then
+              local stack_size = item.stack_size(itemid)
+              inventory.set(exc_invid, 0, itemid, stack_size)
+            end
+        end
+    end)
+
     input.add_callback("player.drop", function()
         if hud.is_paused() or hud.is_inventory_open() then
             return

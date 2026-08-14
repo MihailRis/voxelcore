@@ -110,6 +110,19 @@ void scripting::on_inventory_interact(int invid, int slot, int action, int mode)
     }
 }
 
+void scripting::on_slot_middle_click(int invid, int slot) {
+    auto L = lua::get_main_state();
+    lua::emit_event(
+        L,
+        "core:slot_middle_click",
+        [&](lua::State* L) {
+            lua::pushinteger(L, invid);
+            lua::pushinteger(L, slot);
+            return 2;
+        }
+    );
+}
+
 void scripting::load_hud_script(
     const scriptenv& senv,
     const std::string& packid,
