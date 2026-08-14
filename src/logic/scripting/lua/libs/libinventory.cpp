@@ -1,5 +1,3 @@
-#include <iostream>
-
 #include "content/Content.hpp"
 #include "items/Inventories.hpp"
 #include "items/ItemStack.hpp"
