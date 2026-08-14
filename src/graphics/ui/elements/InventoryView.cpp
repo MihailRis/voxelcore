@@ -500,6 +500,19 @@ void SlotView::performRightClick(ItemStack& stack, ItemStack& grabbed) {
     );
 }
 
+void SlotView::performMiddleClick(ItemStack& stack, ItemStack& grabbed) {
+    auto indices = *content->getIndices();
+    if (!grabbed.isEmpty()) {
+        if (stack.isEmpty()) {
+            stack.set(grabbed);
+            stack.maximizeCount(indices);
+        }
+        return;
+    }
+    grabbed.set(stack);
+    grabbed.maximizeCount(indices);
+}
+
 void SlotView::clicked(Mousecode button) {
     if (bound == nullptr) return;
     auto exchangeSlot =
@@ -514,6 +527,8 @@ void SlotView::clicked(Mousecode button) {
         performLeftClick(stack, grabbed);
     } else if (button == Mousecode::BUTTON_2) {
         performRightClick(stack, grabbed);
+    } else if (button == Mousecode::BUTTON_3) {
+        performMiddleClick(stack, grabbed);
     }
 
     if (layout.updateFunc) {
