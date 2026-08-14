@@ -1,6 +1,7 @@
 #include "InventoryView.hpp"
 
 #include <glm/glm.hpp>
+#include <iostream>
 #include <utility>
 
 #include "assets/Assets.hpp"
@@ -501,10 +502,14 @@ void SlotView::performRightClick(ItemStack& stack, ItemStack& grabbed) {
 }
 
 void SlotView::performMiddleClick(ItemStack& stack, ItemStack& grabbed) {
-    scripting::on_slot_middle_click(
-        inventoryId,
-        layout.index
-    );
+    if (layout.itemSource) {
+        scripting::on_access_panel_slot_middle_click(stack.getItemId());
+    } else {
+        scripting::on_slot_middle_click(
+            inventoryId,
+            layout.index
+        );
+    }
 }
 
 void SlotView::clicked(Mousecode button) {

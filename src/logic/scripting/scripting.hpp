@@ -111,6 +111,7 @@ namespace scripting {
     void on_inventory_interact(int invid, int slot, int action, int mode);
 
     void on_slot_middle_click(int invid, int slot);
+    void on_access_panel_slot_middle_click(const itemid_t itemid);
 
     void on_player_tick(Player* player, int tps);
 
