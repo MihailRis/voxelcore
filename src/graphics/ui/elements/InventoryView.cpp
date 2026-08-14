@@ -366,6 +366,7 @@ void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
         );
         return;
     }
+<<<<<<< HEAD
     auto& indices = *content->getIndices();
     if (!layout.itemSource && stack.accepts(grabbed) && layout.placing) {
         auto& def = indices.items.require(stack.getItemId());
@@ -376,6 +377,12 @@ void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
             action = InteractionAction::TAKE;
             std::swap(grabbed, stack);
         }
+=======
+    auto indices = *content->getIndices();
+    if (!layout.itemSource && stack.accepts(grabbed) && layout.placing) {
+        action = InteractionAction::PUT;
+        stack.move(grabbed, indices);
+>>>>>>> main
     } else {
         actIfCannotPut(stack, grabbed, action);
     }
@@ -392,13 +399,21 @@ void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
 
 void SlotView::actIfCannotPut(ItemStack& stack, ItemStack& grabbed, InteractionAction& action) {
     const auto& input = gui.getInput();
+<<<<<<< HEAD
     auto& indices = *content->getIndices();
+=======
+    auto indices = *content->getIndices();
+>>>>>>> main
     if (layout.itemSource) {
         if (grabbed.isEmpty()) {
             action = InteractionAction::TAKE;
             grabbed.set(stack);
             if (input.pressed(Keycode::LEFT_CONTROL)) {
+<<<<<<< HEAD
                 grabbed.maximizeCount(indices);
+=======
+                grabbed.maximizeCount(*content->getIndices());
+>>>>>>> main
             }
         } else {
             if (grabbed.accepts(stack)) {
