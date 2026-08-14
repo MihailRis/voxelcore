@@ -41,5 +41,5 @@ public:
 
     void setLocalPlayer(int64_t player);
 
-    void reopenWorld(World* world);
+    void reopenWorld(World& world);
 };

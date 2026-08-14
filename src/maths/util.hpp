@@ -109,12 +109,16 @@ namespace util {
 
     /// @return integer square of vector length
     /// @note glm::length2 does not support integer vectors
-    inline int length2(const glm::ivec3& a) {
+    inline long long int length2(const glm::ivec2& a) {
+        return a.x * a.x + a.y * a.y;
+    }
+    
+    inline long long int length2(const glm::ivec3& a) {
         return a.x * a.x + a.y * a.y + a.z * a.z;
     }
 
     /// @return integer square of vector length
-    inline int length2(int x, int y, int z) {
+    inline long long int length2(int x, int y, int z) {
         return x * x + y * y + z * z;
     }
 

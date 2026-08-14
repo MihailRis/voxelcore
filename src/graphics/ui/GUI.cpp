@@ -14,7 +14,6 @@
 #include "frontend/UiDocument.hpp"
 #include "frontend/locale.hpp"
 #include "graphics/core/Batch2D.hpp"
-#include "graphics/core/LineBatch.hpp"
 #include "graphics/core/Shader.hpp"
 #include "graphics/core/Font.hpp"
 #include "graphics/core/DrawContext.hpp"
@@ -260,7 +259,7 @@ void GUI::act(float delta, const glm::uvec2& vp) {
             hover = nullptr;
         }
     }
-    if (focus) {
+    if (focus && focusedOnStart == focus.get()) {
         actFocused();
     }
     if (focus && !focus->isFocused()) {
@@ -274,6 +273,7 @@ void GUI::postAct() {
         postRunnables.pop();
         callback();
     }
+    focusedOnStart = focus.get();
 }
 
 void GUI::draw(const DrawContext& pctx, Assets& assets) {

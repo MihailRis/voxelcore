@@ -90,9 +90,13 @@ struct BlockRotProfile {
     /// @brief Stairs, stairs and stairs
     static const BlockRotProfile STAIRS;
 
+    /// @brief Ladders, wall signs, paintings
+    static const BlockRotProfile LADDER;
+
     static inline std::string PIPE_NAME = "pipe";
     static inline std::string PANE_NAME = "pane";
     static inline std::string STAIRS_NAME = "stairs";
+    static inline std::string LADDER_NAME = "ladder";
 };
 
 enum class BlockModelType {

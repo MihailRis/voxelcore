@@ -107,7 +107,7 @@ std::shared_ptr<Chunk> GlobalChunks::create(int x, int z, bool lighting) {
         chunks_pool.create(x, z, lighting ? lightmaps_pool.create() : nullptr);
     chunksMap[keyfrom(x, z)] = chunk;
 
-    World& world = *level.getWorld();
+    World& world = level.getWorld();
     auto& regions = world.wfile.get()->getRegions();
 
     if (regions.getVoxels(chunk->x, chunk->z, voxelDataBuffer.get())) {
@@ -197,7 +197,7 @@ void GlobalChunks::save(Chunk* chunk) {
     if (!entities.empty()) {
         chunk->flags.entities = true;
     }
-    level.getWorld()->wfile->getRegions().put(
+    level.getWorld().wfile->getRegions().put(
         chunk,
         chunk->flags.entities ? json::to_binary(root, true)
                                 : std::vector<ubyte>()

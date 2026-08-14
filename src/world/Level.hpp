@@ -46,9 +46,9 @@ public:
     );
     ~Level();
 
-    World* getWorld();
+    World& getWorld();
 
-    const World* getWorld() const;
+    const World& getWorld() const;
 
     void onSave();
 

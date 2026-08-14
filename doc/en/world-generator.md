@@ -212,10 +212,27 @@ local map = Heightmap(width, height)
 Operations apply to all height values.
 
 ```lua
+-- Convert to absolute values
 map:abs()
-```
 
-Casts height values ​​to absolute.
+-- Round down
+map:floor()
+
+-- Round up
+map:ceil()
+
+-- Round to the nearest integer
+map:round()
+
+-- Sine of height values ​​(in radians)
+map:sin()
+
+-- Cosine of height values ​​(in radians)
+map:cos()
+
+-- Tangent of height values ​​(in radians)
+map:tan()
+```
 
 ### Binary Operations
 

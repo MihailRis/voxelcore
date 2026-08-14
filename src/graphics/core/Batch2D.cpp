@@ -372,7 +372,7 @@ void Batch2D::sprite(
 void Batch2D::flush() {
     if (index == 0)
         return;
-    mesh->reload(buffer.get(), index);
+    mesh->reload(buffer.get(), index, true);
     mesh->draw(gl::to_glenum(primitive));
     index = 0;
 }

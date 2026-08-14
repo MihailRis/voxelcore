@@ -109,6 +109,17 @@ const BlockRotProfile BlockRotProfile::STAIRS {
     8
 };
 
+const BlockRotProfile BlockRotProfile::LADDER {
+    "ladder",
+    {
+        {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}},    // North
+        {{0, 0, -1}, {0, 1, 0}, {1, 0, 0}},   // East
+        {{-1, 0, 0}, {0, 1, 0}, {0, 0, -1}},  // South
+        {{0, 0, 1}, {0, 1, 0}, {-1, 0, 0}},   // West
+    },
+    4
+};
+
 Block::Block(const std::string& name)
     : name(name), caption(util::id_to_caption(name)) {
     for (int i = 0; i < defaults.textureFaces.size(); i++) {

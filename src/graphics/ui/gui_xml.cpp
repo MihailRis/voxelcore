@@ -181,6 +181,7 @@ static void read_uinode(
 
     register_action(node, reader, element, "onclick", UIAction::CLICK);
     register_action(node, reader, element, "onrightclick", UIAction::RIGHT_CLICK);
+    register_action(node, reader, element, "onmiddleclick", UIAction::MIDDLE_CLICK);
     register_action(node, reader, element, "onfocus", UIAction::FOCUS);
     register_action(node, reader, element, "ondefocus", UIAction::DEFOCUS);
     register_action(node, reader, element, "ondoubleclick", UIAction::DOUBLE_CLICK);
@@ -458,8 +459,7 @@ static std::shared_ptr<UINode> read_select(
         }
         auto value = elem->attr("value").getText();
         auto text = parse_inner_text(*elem, reader.getContext());
-        options.push_back(SelectBox::Option {std::move(value), std::move(text)}
-        );
+        options.push_back(SelectBox::Option {std::move(value), std::move(text)});
     }
 
     if (element.has("selected")) {
@@ -481,10 +481,19 @@ static std::shared_ptr<UINode> read_select(
         selected.text = innerText;
     }
 
+    SelectBox::Mode mode = SelectBox::Mode::SELECT;
+    if (element.has("mode")) {
+        auto modeName = element.attr("mode").getText();
+        if (modeName == "button") {
+            mode = SelectBox::Mode::BUTTON;
+        }
+    }
+
     auto selectBox = std::make_shared<SelectBox>(
         gui,
         std::move(options),
         std::move(selected),
+        mode,
         contentWidth,
         std::move(padding)
     );

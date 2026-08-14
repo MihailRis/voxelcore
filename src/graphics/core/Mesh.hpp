@@ -47,12 +47,15 @@ public:
     void reload(
         const VertexStructure* vertexBuffer,
         size_t vertexCount,
-        const std::vector<IndexBufferData>& indices
+        const std::vector<IndexBufferData>& indices,
+        bool streaming
     );
 
-    void reload(const VertexStructure* vertexBuffer, size_t vertexCount) {
+    void reload(
+        const VertexStructure* vertexBuffer, size_t vertexCount, bool streaming
+    ) {
         static const std::vector<IndexBufferData> indices {};
-        reload(vertexBuffer, vertexCount, indices);
+        reload(vertexBuffer, vertexCount, indices, streaming);
     }
 
     /// @brief Draw mesh with specified primitives type
@@ -61,6 +64,8 @@ public:
 
     /// @brief Draw mesh as triangles
     void draw() const;
+private:
+    
 };
 
 #include "graphics/core/Mesh.inl"

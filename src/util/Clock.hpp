@@ -8,6 +8,7 @@ namespace util {
         float tickTimer = 0.0f;
         int tickId = 0;
         int currentTickPart = 0;
+        int lastPartsStart = 0;
     public:
         Clock(int tickRate, int tickParts);
 

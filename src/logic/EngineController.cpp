@@ -314,8 +314,8 @@ void EngineController::setLocalPlayer(int64_t player) {
     localPlayer = player;
 }
 
-void EngineController::reopenWorld(World* world) {
-    std::string name = world->wfile->getFolder().name();
+void EngineController::reopenWorld(World& world) {
+    std::string name = world.wfile->getFolder().name();
     engine.onWorldClosed();
     openWorld(name, true);
 }
@@ -384,16 +384,16 @@ void EngineController::reconfigPacks(
             }
         } else {
             auto level = controller->getLevel();
-            auto world = level->getWorld();
+            auto& world = level->getWorld();
             controller->processBeforeQuit();
             controller->saveWorld();
 
-            auto names = PacksManager::getNames(world->getPacks());
+            auto names = PacksManager::getNames(world.getPacks());
             auto& manager = contentControl.scan();
             reconfig_packs_inside(manager, names, packsToAdd, packsToRemove);
 
             const auto& settings = engine.getSettings();
-            auto& wfile = *world->wfile;
+            auto& wfile = *world.wfile;
             if (!settings.debug.generatorTestMode.get()) {
                 wfile.removeIndices(packsToRemove);
             }

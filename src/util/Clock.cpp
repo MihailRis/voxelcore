@@ -1,6 +1,5 @@
 #include "Clock.hpp"
 
-#include <cmath>
 #include <algorithm>
 
 using namespace util;
@@ -20,10 +19,8 @@ int Clock::update(float delta) {
         tickTimer -= parts * delay / tickParts;
         tickTimer = std::min<float>(tickTimer, delay);
     }
-    currentTickPart += parts;
-    if (currentTickPart >= tickParts) {
-        currentTickPart %= tickParts;
-    }
+    lastPartsStart = currentTickPart;
+    currentTickPart = (currentTickPart + parts) % tickParts;
     return parts;
 }
 
@@ -40,5 +37,5 @@ int Clock::getTickId() const {
 }
 
 int Clock::convertPart(int index) const {
-    return (tickParts - currentTickPart) % tickParts + index;
+    return (lastPartsStart + index) % tickParts;
 }

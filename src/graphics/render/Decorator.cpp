@@ -25,6 +25,7 @@
 #include "voxels/blocks_agent.hpp"
 #include "window/Camera.hpp"
 #include "world/Level.hpp"
+#include "world/Weather.hpp"
 #include "WorldRenderer.hpp"
 
 namespace fs = std::filesystem;

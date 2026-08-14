@@ -2,7 +2,7 @@
 
 #include <string>
 #include <memory>
-#include <iostream>
+#include <iosfwd>
 #include <filesystem>
 
 #include "../path.hpp"

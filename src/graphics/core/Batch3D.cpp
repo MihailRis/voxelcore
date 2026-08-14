@@ -292,13 +292,13 @@ void Batch3D::point(const glm::vec3& coord, const glm::vec4& tint) {
 }
 
 void Batch3D::flush() {
-    mesh->reload(buffer.get(), index);
+    mesh->reload(buffer.get(), index, true);
     mesh->draw();
     index = 0;
 }
 
 void Batch3D::flushPoints() {
-    mesh->reload(buffer.get(), index);
+    mesh->reload(buffer.get(), index, true);
     mesh->draw(GL_POINTS);
     index = 0;
 }
