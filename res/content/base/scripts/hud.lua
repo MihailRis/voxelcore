@@ -18,21 +18,15 @@ function on_hud_open()
         local exc_invid = hud.get_exchange_inventory()
         local exc_itemid = inventory.get(exc_invid, 0)
         local itemid = inventory.get(invid, slot)
-        if itemid == 0 then
-            if exc_itemid ~= 0 then
-              local stack_size = item.stack_size(exc_itemid)
-              inventory.set(invid, slot, exc_itemid, stack_size)
-            end
-        else
-            if exc_itemid == 0 then
-              local stack_size = item.stack_size(itemid)
-              inventory.set(exc_invid, 0, itemid, stack_size)
-            else
-                if exc_itemid == itemid then
-                    local stack_size = item.stack_size(exc_itemid)
-                    inventory.set(invid, slot, exc_itemid, stack_size)
-                end
-            end
+        if itemid == 0 and exc_itemid ~= 0 then
+            local stack_size = item.stack_size(exc_itemid)
+            inventory.set(invid, slot, exc_itemid, stack_size)
+        elseif exc_itemid == 0 then
+            local stack_size = item.stack_size(itemid)
+            inventory.set(exc_invid, 0, itemid, stack_size)
+        elseif exc_itemid == itemid then
+            local stack_size = item.stack_size(exc_itemid)
+            inventory.set(invid, slot, exc_itemid, stack_size)
         end
     end)
 
@@ -44,7 +38,7 @@ function on_hud_open()
         local invid, slot = player.get_inventory(pid)
         local mode = 1
         if input.is_pressed("key:left-ctrl") or input.is_pressed("key:right-ctrl") then
-          mode = 0
+            mode = 0
         end
         base_util.drop_from_slot(invid, slot, mode)
     end)
