@@ -1,5 +1,7 @@
 #pragma once
 
+#include "world/Weather.hpp"
+
 #include <memory>
 
 class Assets;
@@ -15,6 +17,7 @@ class LevelFrontend {
     LevelController& controller;
     Assets& assets;
     std::unique_ptr<ContentGfxCache> contentCache;
+    Weather weather {};
 public:
     LevelFrontend(
         Engine& engine,
@@ -28,4 +31,5 @@ public:
     const ContentGfxCache& getContentGfxCache() const;
     ContentGfxCache& getContentGfxCache();
     LevelController& getController() const;
+    Weather& getWeather();
 };

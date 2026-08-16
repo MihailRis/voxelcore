@@ -40,6 +40,15 @@ static std::unordered_map<std::string, int> keycodes {
     {"right", GLFW_KEY_RIGHT},
     {"down", GLFW_KEY_DOWN},
     {"up", GLFW_KEY_UP},
+    {"num-lock", GLFW_KEY_NUM_LOCK},
+    {"print-screen", GLFW_KEY_PRINT_SCREEN},
+    {"num-add", GLFW_KEY_KP_ADD},
+    {"num-multiply", GLFW_KEY_KP_MULTIPLY},
+    {"num-divide", GLFW_KEY_KP_DIVIDE},
+    {"num-subtract", GLFW_KEY_KP_SUBTRACT},
+    {"num-enter", GLFW_KEY_KP_ENTER},
+    {"num-equal", GLFW_KEY_KP_EQUAL},
+    {"num-decimal", GLFW_KEY_KP_DECIMAL},
 };
 
 static std::unordered_map<std::string, int> mousecodes {
@@ -95,6 +104,9 @@ void input_util::initialize() {
     for (char i = 'a'; i <= 'z'; i++) {
         keycodes[std::string({i})] = GLFW_KEY_A - 'a' + i;
     }
+    for (int i = 0; i <= 9; i++) {
+        keycodes["num-" + std::to_string(i)] = GLFW_KEY_KP_0 + i;
+    }
     for (const auto& entry : keycodes) {
         keynames[entry.second] = entry.first;
     }
@@ -119,8 +131,34 @@ Mousecode input_util::mousecode_from(const std::string& name) {
     return static_cast<Mousecode>(found->second);
 }
 
+static const char* numpad_key_names[] {
+    "Num 0",
+    "Num 1",
+    "Num 2",
+    "Num 3",
+    "Num 4",
+    "Num 5",
+    "Num 6",
+    "Num 7",
+    "Num 8",
+    "Num 9",
+    "Num .",
+    "Num /",
+    "Num *",
+    "Num -",
+    "Num +",
+    "Num Enter",
+    "Num =",
+};
+
 std::string input_util::to_string(Keycode code) {
     int icode_repr = static_cast<int>(code);
+    if (icode_repr == -1) {
+        return "Unknown";
+    }
+    if (icode_repr >= GLFW_KEY_KP_0 && icode_repr <= GLFW_KEY_KP_EQUAL) {
+        return numpad_key_names[icode_repr - GLFW_KEY_KP_0];
+    }
     const char* name =
         glfwGetKeyName(icode_repr, glfwGetKeyScancode(icode_repr));
     if (name == nullptr) {

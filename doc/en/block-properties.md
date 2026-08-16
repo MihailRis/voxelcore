@@ -69,6 +69,7 @@ Rotation profile (set of available block rotations and behaviour of placing bloc
 - "pipe" - wood logs, pipes, pillars
 - "pane" - panels, doors, signs
 - "stairs" - "pane" + flipped variants
+- "ladder" - like a "pipe", but on horizontal surfaces it is installed like "pane"
 
 ### *particles*
 

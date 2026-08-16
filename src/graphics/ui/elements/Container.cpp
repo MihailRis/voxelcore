@@ -1,9 +1,9 @@
 #include "Container.hpp"
 
-#include "graphics/core/DrawContext.hpp"
-#include "graphics/core/Batch2D.hpp"
-#include "window/Window.hpp"
 #include "../GUI.hpp"
+#include "graphics/core/Batch2D.hpp"
+#include "graphics/core/DrawContext.hpp"
+#include "window/Window.hpp"
 
 #include <algorithm>
 #include <utility>
@@ -11,7 +11,7 @@
 using namespace gui;
 
 Container::Container(GUI& gui, glm::vec2 size) : UINode(gui, size) {
-    actualLength = size.y;
+    actualLengthY = size.y;
     setColor(glm::vec4());
 }
 
@@ -26,15 +26,15 @@ std::shared_ptr<UINode> Container::getAt(const glm::vec2& pos) {
     if (!isInside(pos)) {
         return nullptr;
     }
-    int diff = (actualLength-size.y);
-    if (scrollable && diff > 0 && pos.x > calcPos().x + getSize().x - scrollBarWidth) {
+    int diff = (actualLengthY - size.y);
+    if (scrollable && diff > 0 &&
+        pos.x > calcPos().x + getSize().x - scrollBarWidth) {
         return UINode::getAt(pos);
     }
 
-    for (int i = nodes.size()-1; i >= 0; i--) {
+    for (int i = nodes.size() - 1; i >= 0; i--) {
         auto& node = nodes[i];
-        if (!node->isVisible())
-            continue;
+        if (!node->isVisible()) continue;
         auto hover = node->getAt(pos);
         if (hover != nullptr) {
             return hover;
@@ -45,7 +45,7 @@ std::shared_ptr<UINode> Container::getAt(const glm::vec2& pos) {
 
 void Container::click(int x, int y) {
     UINode::click(x, y);
-    
+
     if (scrollable) {
         auto pos = calcPos();
         x -= pos.x;
@@ -65,11 +65,12 @@ void Container::mouseMove(int x, int y) {
     auto pos = calcPos();
     x -= pos.x;
     y -= pos.y;
-    int diff = (actualLength-size.y);
+    int diff = (actualLengthY - size.y);
     if (diff > 0) {
-        scroll -= (y - prevScrollY) / static_cast<float>(size.y) * actualLength;
-        scroll = -glm::min(
-            glm::max(static_cast<float>(-scroll), 0.0f), actualLength - size.y
+        scrollY -=
+            (y - prevScrollY) / static_cast<float>(size.y) * actualLengthY;
+        scrollY = -glm::min(
+            glm::max(static_cast<float>(-scrollY), 0.0f), actualLengthY - size.y
         );
     }
     prevScrollY = y;
@@ -101,23 +102,28 @@ void Container::act(float delta) {
             }
         }
     }
-    intervalEvents.erase(std::remove_if(
-        intervalEvents.begin(), intervalEvents.end(),
-        [](const IntervalEvent& event) {
-            return event.repeat == 0;
-        }
-    ), intervalEvents.end());
+    intervalEvents.erase(
+        std::remove_if(
+            intervalEvents.begin(),
+            intervalEvents.end(),
+            [](const IntervalEvent& event) { return event.repeat == 0; }
+        ),
+        intervalEvents.end()
+    );
 }
 
 void Container::scrolled(int value) {
-    int diff = (actualLength-getSize().y);
+    auto size = getSize();
+    bool isVertical = actualLengthY > size.y;
+    int diff = (isVertical ? actualLengthY - size.y : actualLengthX - size.x);
+    int& scroll = (isVertical ? scrollY : scrollX);
+
     if (scroll < 0 && diff <= 0) {
         scroll = 0;
     }
     if (diff > 0 && scrollable) {
         scroll += value * scrollStep;
-        if (scroll > 0)
-            scroll = 0;
+        if (scroll > 0) scroll = 0;
         if (-scroll > diff) {
             scroll = -diff;
         }
@@ -140,21 +146,25 @@ void Container::draw(const DrawContext& pctx, const Assets& assets) {
     if (!nodes.empty()) {
         batch->flush();
         DrawContext ctx = pctx.sub();
-        ctx.setScissors(glm::vec4(pos.x, pos.y, glm::ceil(size.x), glm::ceil(size.y)));
+        ctx.setScissors(
+            glm::vec4(pos.x, pos.y, glm::ceil(size.x), glm::ceil(size.y))
+        );
         for (const auto& node : nodes) {
-            if (node->isVisible())
-                node->draw(pctx, assets);
+            if (node->isVisible()) node->draw(pctx, assets);
         }
 
-        int diff = (actualLength-size.y);
+        int diff = (actualLengthY - size.y);
         if (scrollable && diff > 0) {
-            int h = glm::max(size.y / actualLength * size.y, scrollBarWidth / 2.0f);
+            int h = glm::max(
+                size.y / actualLengthY * size.y, scrollBarWidth / 2.0f
+            );
             batch->untexture();
             batch->setColor(glm::vec4(1, 1, 1, 0.3f));
             batch->rect(
                 pos.x + size.x - scrollBarWidth,
-                pos.y - scroll / static_cast<float>(diff) * (size.y - h),
-                scrollBarWidth, h
+                pos.y - scrollY / static_cast<float>(diff) * (size.y - h),
+                scrollBarWidth,
+                h
             );
         }
         batch->flush();
@@ -163,8 +173,7 @@ void Container::draw(const DrawContext& pctx, const Assets& assets) {
 
 void Container::drawBackground(const DrawContext& pctx, const Assets&) {
     glm::vec4 color = calcColor();
-    if (color.a <= 0.001f)
-        return;
+    if (color.a <= 0.001f) return;
     glm::vec2 pos = calcPos();
 
     auto batch = pctx.getBatch2D();
@@ -194,11 +203,16 @@ void Container::add(const std::shared_ptr<UINode>& node, glm::vec2 pos) {
 
 void Container::remove(UINode* selected) {
     selected->setParent(nullptr);
-    nodes.erase(std::remove_if(nodes.begin(), nodes.end(), 
-        [selected](const std::shared_ptr<UINode>& node) {
-            return node.get() == selected;
-        }
-    ), nodes.end());
+    nodes.erase(
+        std::remove_if(
+            nodes.begin(),
+            nodes.end(),
+            [selected](const std::shared_ptr<UINode>& node) {
+                return node.get() == selected;
+            }
+        ),
+        nodes.end()
+    );
     refresh();
 }
 
@@ -242,13 +256,17 @@ void Container::setScrollStep(int step) {
 }
 
 void Container::refresh() {
-    std::stable_sort(nodes.begin(), nodes.end(), [](const auto& a, const auto& b) {
-        return a->getZIndex() < b->getZIndex();
-    });
+    std::stable_sort(
+        nodes.begin(),
+        nodes.end(),
+        [](const auto& a, const auto& b) {
+            return a->getZIndex() < b->getZIndex();
+        }
+    );
 }
 
 void Container::setScroll(int scroll) {
-    this->scroll = scroll;
+    this->scrollY = scroll;
 }
 
 const std::vector<std::shared_ptr<UINode>>& Container::getNodes() const {

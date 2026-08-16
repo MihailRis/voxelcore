@@ -18,7 +18,7 @@ Installing last version that supports C++17.
 ```sh
 git clone --branch v3.16.0 https://github.com/skypjack/entt.git
 cd entt
-mkdir build && cd build
+mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release -DENTT_INSTALL=ON ..
 sudo make install
 ```

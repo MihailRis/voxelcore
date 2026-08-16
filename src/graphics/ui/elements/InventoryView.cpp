@@ -12,11 +12,8 @@
 #include "graphics/core/Batch2D.hpp"
 #include "graphics/core/DrawContext.hpp"
 #include "graphics/core/Font.hpp"
-#include "graphics/core/Shader.hpp"
-#include "graphics/core/Texture.hpp"
 #include "graphics/render/BlocksPreview.hpp"
 #include "graphics/ui/GUI.hpp"
-#include "items/Inventories.hpp"
 #include "items/Inventory.hpp"
 #include "items/ItemDef.hpp"
 #include "logic/scripting/scripting.hpp"
@@ -369,28 +366,12 @@ void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
         );
         return;
     }
-
+    auto indices = *content->getIndices();
     if (!layout.itemSource && stack.accepts(grabbed) && layout.placing) {
         action = InteractionAction::PUT;
-        stack.move(grabbed, *content->getIndices());
+        stack.move(grabbed, indices);
     } else {
-        if (layout.itemSource) {
-            if (grabbed.isEmpty()) {
-                action = InteractionAction::TAKE;
-                grabbed.set(stack);
-            } else {
-                action = InteractionAction::PUT;
-                grabbed.clear();
-            }
-        } else if (grabbed.isEmpty()) {
-            if (layout.taking) {
-                action = InteractionAction::TAKE;
-                std::swap(grabbed, stack);
-            }
-        } else if (layout.taking && layout.placing) {
-            action = InteractionAction::PUT;
-            std::swap(grabbed, stack);
-        }
+        actIfCannotPut(stack, grabbed, action);
     }
     
     if (action != InteractionAction::UNDEFINED) {
@@ -400,6 +381,39 @@ void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
             static_cast<int>(action),
             static_cast<int>(mode)
         );
+    }
+}
+
+void SlotView::actIfCannotPut(ItemStack& stack, ItemStack& grabbed, InteractionAction& action) {
+    const auto& input = gui.getInput();
+    auto indices = *content->getIndices();
+    if (layout.itemSource) {
+        if (grabbed.isEmpty()) {
+            action = InteractionAction::TAKE;
+            grabbed.set(stack);
+            if (input.pressed(Keycode::LEFT_CONTROL)) {
+                grabbed.maximizeCount(*content->getIndices());
+            }
+        } else {
+            if (grabbed.accepts(stack)) {
+                auto& def = indices.items.require(stack.getItemId());
+                if (grabbed.getCount() < def.stackSize) {
+                    action = InteractionAction::TAKE;
+                    grabbed.setCount(grabbed.getCount() + 1);
+                }
+            } else {
+                action = InteractionAction::PUT;
+                grabbed.clear();
+            }
+        }
+    } else if (grabbed.isEmpty()) {
+        if (layout.taking) {
+            action = InteractionAction::TAKE;
+            std::swap(grabbed, stack);
+        }
+    } else if (layout.taking && layout.placing) {
+        action = InteractionAction::PUT;
+        std::swap(grabbed, stack);
     }
 }
 

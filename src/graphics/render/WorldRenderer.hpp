@@ -4,12 +4,11 @@
 #include "typedefs.hpp"
 
 #include "presets/WeatherPreset.hpp"
-#include "world/Weather.hpp"
 #include "window/Camera.hpp"
+#include "util/ObjectsKeeper.hpp"
 
 #include <vector>
 #include <memory>
-#include <algorithm>
 #include <string>
 
 class Assets;
@@ -36,18 +35,38 @@ class Skybox;
 class TextsRenderer;
 class CloudsRenderer;
 struct EngineSettings;
+struct Weather;
 
-struct CompileTimeShaderSettings {
-    bool advancedRender = false;
-    bool shadows = false;
-    bool ssao = false;
-};
+class WorldRenderer final : public util::ObjectsKeeper {
+public:
+    static bool showChunkBorders;
+    static bool showEntitiesDebug;
 
-class WorldRenderer {
+    WorldRenderer(Engine& engine, LevelFrontend& frontend, Player& player);
+    ~WorldRenderer();
+
+    void update(const Camera& camera, float delta);
+
+    void renderFrame(
+        const DrawContext& context, 
+        Camera& camera, 
+        bool hudVisible,
+        PostProcessing& postProcessing
+    );
+
+    void resetCache();
+
+    void setDebug(bool flag);
+
+    void toggleLightsDebug();
+
+    Weather& getWeather();
+private:
     Engine& engine;
     const Level& level;
     Player& player;
     const Assets& assets;
+    Weather& weather;
     std::unique_ptr<Frustum> frustumCulling;
     std::unique_ptr<LineBatch> lineBatch;
     std::unique_ptr<Batch3D> batch3d;
@@ -59,14 +78,12 @@ class WorldRenderer {
     std::unique_ptr<DebugLinesRenderer> debugLines;
     std::unique_ptr<PrecipitationRenderer> precipitation;
     std::unique_ptr<CloudsRenderer> cloudsRenderer;
-    Weather weather {};
     
     float timer = 0.0f;
     bool debug = false;
     bool lightsDebug = false;
     bool gbufferPipeline = false;
-
-    CompileTimeShaderSettings prevCTShaderSettings {};
+    bool dirtySettings = true;
 
     /// @brief Render block selection lines
     void renderBlockSelection();
@@ -74,7 +91,7 @@ class WorldRenderer {
     /// @brief Render lines (selection and debug)
     /// @param camera active camera
     /// @param linesShader shader used
-    void renderLines(
+    void renderInWorldLines(
         const Camera& camera, Shader& linesShader, const DrawContext& pctx
     );
 
@@ -98,7 +115,34 @@ class WorldRenderer {
         bool hudVisible
     );
 
-    void refreshSettings(Shader** shaders);
+    void renderOpaquePass(
+        const DrawContext& context,
+        Camera& camera,
+        bool hudVisible,
+        PostProcessing& postProcessing
+    );
+
+    void renderWeatherEffects(Camera& camera);
+
+    void renderHandsPass(const DrawContext& pctx, Camera& camera);
+
+    void renderDebugLines(const DrawContext& context, Camera& camera);
+
+    void renderFrameClassic(
+        const DrawContext& context, 
+        Camera& camera, 
+        bool hudVisible,
+        PostProcessing& postProcessing
+    );
+
+    void renderFrameAdvanced(
+        const DrawContext& context, 
+        Camera& camera, 
+        bool hudVisible,
+        PostProcessing& postProcessing
+    );
+
+    void refreshSettings();
 
     float calcFogFactor() const;
 public:
@@ -106,27 +150,4 @@ public:
     std::unique_ptr<TextsRenderer> texts;
     std::unique_ptr<BlockWrapsRenderer> blockWraps;
     std::unique_ptr<NamedSkeletons> skeletons;
-
-    static bool showChunkBorders;
-    static bool showEntitiesDebug;
-
-    WorldRenderer(Engine& engine, LevelFrontend& frontend, Player& player);
-    ~WorldRenderer();
-
-    void update(const Camera& camera, float delta);
-
-    void renderFrame(
-        const DrawContext& context, 
-        Camera& camera, 
-        bool hudVisible,
-        PostProcessing& postProcessing
-    );
-
-    void clear();
-
-    void setDebug(bool flag);
-
-    void toggleLightsDebug();
-
-    Weather& getWeather();
 };

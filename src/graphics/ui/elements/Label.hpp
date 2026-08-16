@@ -30,7 +30,7 @@ namespace gui {
         uint getLineByTextIndex(size_t index) const;
     };
 
-    class Label : public UINode {
+    class Label final : public UINode {
         LabelCache cache;
 
         glm::vec2 calcSize();
@@ -69,64 +69,64 @@ namespace gui {
         Label(GUI& gui, const std::string& text, std::string fontName="normal");
         Label(GUI& gui, const std::wstring& text, std::string fontName="normal");
 
-        virtual ~Label();
+        ~Label();
 
-        virtual void setText(std::wstring text);
+        void setText(std::wstring text);
         const std::wstring& getText() const;
 
-        virtual void setFontName(std::string name);
-        virtual const std::string& getFontName() const;
+        void setFontName(std::string name);
+        const std::string& getFontName() const;
 
         /// @brief Set text vertical alignment (default value: center)
         /// @param align Align::top / Align::center / Align::bottom
-        virtual void setVerticalAlign(Align align);
-        virtual Align getVerticalAlign() const;
+        void setVerticalAlign(Align align);
+        Align getVerticalAlign() const;
 
         /// @brief Get line height multiplier used for multiline labels 
         /// (default value: 1.5)
-        virtual float getLineInterval() const;
+        float getLineInterval() const;
 
         /// @brief Set line height multiplier used for multiline labels
-        virtual void setLineInterval(float interval);
+        void setLineInterval(float interval);
 
         /// @brief Get Y position of the text relative to label position
         /// @return Y offset
-        virtual int getTextYOffset() const;
+        int getTextYOffset() const;
 
         /// @brief Get Y position of the line relative to label position
         /// @param line target line index
         /// @return Y offset
-        virtual int getLineYOffset(uint line) const;
+        int getLineYOffset(uint line) const;
 
         /// @brief Get position of line start in the text
         /// @param line target line index
         /// @return position in the text [0..length]
-        virtual size_t getTextLineOffset(size_t line) const;
+        size_t getTextLineOffset(size_t line) const;
 
         /// @brief Get line index by its Y offset relative to label position
         /// @param offset target Y offset
         /// @return line index [0..+]
-        virtual uint getLineByYOffset(int offset) const;
-        virtual uint getLineByTextIndex(size_t index) const;
-        virtual uint getLinesNumber() const;
-        virtual bool isFakeLine(size_t line) const;
+        uint getLineByYOffset(int offset) const;
+        uint getLineByTextIndex(size_t index) const;
+        uint getLinesNumber() const;
+        bool isFakeLine(size_t line) const;
 
-        virtual void draw(const DrawContext& pctx, const Assets& assets) override;
+        void draw(const DrawContext& pctx, const Assets& assets) override;
 
-        virtual void textSupplier(wstringsupplier supplier);
+        void textSupplier(wstringsupplier supplier);
 
-        virtual void setAutoResize(bool flag);
-        virtual bool isAutoResize() const;
+        void setAutoResize(bool flag);
+        bool isAutoResize() const;
 
-        virtual void setMultiline(bool multiline);
-        virtual bool isMultiline() const;
+        void setMultiline(bool multiline);
+        bool isMultiline() const;
 
-        virtual void setTextWrapping(bool flag);
-        virtual bool isTextWrapping() const;
+        void setTextWrapping(bool flag);
+        bool isTextWrapping() const;
 
-        virtual void setMarkup(std::string_view lang);
-        virtual const std::string& getMarkup() const;
+        void setMarkup(std::string_view lang);
+        const std::string& getMarkup() const;
 
-        virtual void setStyles(std::unique_ptr<FontStylesScheme> styles);
+        void setStyles(std::unique_ptr<FontStylesScheme> styles);
     };
 }

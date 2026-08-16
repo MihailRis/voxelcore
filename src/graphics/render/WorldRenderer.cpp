@@ -51,7 +51,9 @@
 #include "window/Window.hpp"
 #include "world/Level.hpp"
 #include "world/LevelEvents.hpp"
+#include "world/Weather.hpp"
 #include "world/World.hpp"
+#include "debug/Logger.hpp"
 
 #include <assert.h>
 #include <algorithm>
@@ -62,8 +64,19 @@
 inline constexpr size_t BATCH3D_CAPACITY = 4096;
 inline constexpr size_t MODEL_BATCH_CAPACITY = 20'000;
 
+static debug::Logger logger("world-renderer");
+
 bool WorldRenderer::showChunkBorders = false;
 bool WorldRenderer::showEntitiesDebug = false;
+
+template <typename T>
+static ObserverHandler observe_setting(
+    ObservableSetting<T>& setting, bool& dirtySettings
+) {
+    return setting.observe([&dirtySettings](auto const&) {
+        dirtySettings = true;
+    });
+}
 
 WorldRenderer::WorldRenderer(
     Engine& engine, LevelFrontend& frontend, Player& player
@@ -72,6 +85,7 @@ WorldRenderer::WorldRenderer(
       level(frontend.getLevel()),
       player(player),
       assets(*engine.getAssets()),
+      weather(frontend.getWeather()),
       frustumCulling(std::make_unique<Frustum>()),
       lineBatch(std::make_unique<LineBatch>()),
       batch3d(std::make_unique<Batch3D>(BATCH3D_CAPACITY)),
@@ -120,9 +134,40 @@ WorldRenderer::WorldRenderer(
     shadowMapping = std::make_unique<Shadows>(level);
     debugLines = std::make_unique<DebugLinesRenderer>(level);
     cloudsRenderer = std::make_unique<CloudsRenderer>();
+
+    keepAlive(observe_setting(settings.graphics.advancedRender, dirtySettings));
+    keepAlive(observe_setting(settings.graphics.shadowsQuality, dirtySettings));
+    keepAlive(observe_setting(settings.graphics.ssao, dirtySettings));
 }
 
 WorldRenderer::~WorldRenderer() = default;
+
+void WorldRenderer::refreshSettings() {
+    Shader* affectedShaders[] {
+        &assets.require<Shader>("main"),
+        &assets.require<Shader>("entity"),
+        &assets.require<Shader>("clouds"),
+        &assets.require<Shader>("translucent"),
+        &assets.require<PostEffect>("deferred_lighting").getShader(),
+        nullptr
+    };
+
+    const auto& graphics = engine.getSettings().graphics;
+    gbufferPipeline = graphics.advancedRender.get();
+
+    int shadowsQuality = graphics.shadowsQuality.get() * gbufferPipeline;
+    shadowMapping->setQuality(shadowsQuality);
+
+    std::vector<std::string> defines;
+    if (shadowsQuality != 0) defines.emplace_back("ENABLE_SHADOWS");
+    if (graphics.ssao.get()) defines.emplace_back("ENABLE_SSAO");
+    if (gbufferPipeline) defines.emplace_back("ADVANCED_RENDER");
+
+    logger.info() << "recompiling shaders due to settings change";
+    for (size_t i = 0; affectedShaders[i]; i++) {
+        affectedShaders[i]->recompile(defines);
+    }
+}
 
 static void setup_weather(Shader& shader, const Weather& weather) {
     shader.uniform1f("u_weatherFogOpacity", weather.fogOpacity());
@@ -156,7 +201,7 @@ void WorldRenderer::setupWorldShader(
     shader.uniform1f("u_fogCurve", settings.graphics.fogCurve.get());
     shader.uniform1i("u_debugLights", lightsDebug);
     shader.uniform1i("u_debugNormals", false);
-    shader.uniform1f("u_dayTime", level.getWorld()->getInfo().daytime);
+    shader.uniform1f("u_dayTime", level.getWorld().getInfo().daytime);
     shader.uniform2f("u_lightDir", skybox->getLightDir());
     shader.uniform1i("u_skybox", advanced_pipeline::TARGET_SKYBOX);
 
@@ -188,8 +233,6 @@ void WorldRenderer::renderOpaque(
     const EngineSettings& settings,
     bool hudVisible
 ) {
-    texts->render(ctx, camera, settings, hudVisible, false);
-
     float fogFactor = calcFogFactor();
 
     auto& entityShader = assets.require<Shader>("entity");
@@ -212,12 +255,12 @@ void WorldRenderer::renderOpaque(
     modelBatch->render();
     particles->render(camera);
 
-    auto& shader = assets.require<Shader>("main");
+    auto& mainShader = assets.require<Shader>("main");
     auto& cloudsShader = assets.require<Shader>("clouds");
 
-    setupWorldShader(shader, camera, settings, fogFactor);
+    setupWorldShader(mainShader, camera, settings, fogFactor);
 
-    chunksRenderer->drawChunks(camera, shader);
+    chunksRenderer->drawChunks(camera, mainShader);
     blockWraps->draw(ctx);
 
     if (level.environment.sky.clouds) {
@@ -232,7 +275,7 @@ void WorldRenderer::renderOpaque(
 
     if (hudVisible) {
         auto& linesShader = assets.require<Shader>("lines");
-        renderLines(camera, linesShader, ctx);
+        renderInWorldLines(camera, linesShader, ctx);
     }
 }
 
@@ -265,7 +308,7 @@ void WorldRenderer::renderBlockSelection() {
     lineBatch->flush();
 }
 
-void WorldRenderer::renderLines(
+void WorldRenderer::renderInWorldLines(
     const Camera& camera, Shader& linesShader, const DrawContext& pctx
 ) {
     linesShader.use();
@@ -283,38 +326,106 @@ void WorldRenderer::renderLines(
     }
 }
 
-void WorldRenderer::refreshSettings(Shader** shaders) {
-    const auto& graphics = engine.getSettings().graphics;
-    gbufferPipeline = graphics.advancedRender.get();
-
-    int shadowsQuality = graphics.shadowsQuality.get() * gbufferPipeline;
-    shadowMapping->setQuality(shadowsQuality);
-
-    CompileTimeShaderSettings currentSettings {
-        gbufferPipeline,
-        shadowsQuality != 0,
-        graphics.ssao.get() && gbufferPipeline};
-    if (prevCTShaderSettings.advancedRender != currentSettings.advancedRender ||
-        prevCTShaderSettings.shadows != currentSettings.shadows ||
-        prevCTShaderSettings.ssao != currentSettings.ssao) {
-        std::vector<std::string> defines;
-        if (currentSettings.shadows) defines.emplace_back("ENABLE_SHADOWS");
-        if (currentSettings.ssao) defines.emplace_back("ENABLE_SSAO");
-        if (currentSettings.advancedRender)
-            defines.emplace_back("ADVANCED_RENDER");
-
-        for (size_t i = 0; shaders[i]; i++) {
-            shaders[i]->recompile(defines);
-        }
-        prevCTShaderSettings = currentSettings;
-    }
-}
-
 void WorldRenderer::update(const Camera& camera, float delta) {
     timer += delta;
+    chunksRenderer->update();
     weather.update(delta);
     precipitation->update(delta);
     particles->update(camera, delta);
+}
+
+void WorldRenderer::renderFrameClassic(
+    const DrawContext& pctx,
+    Camera& camera,
+    bool hudVisible,
+    PostProcessing& postProcessing
+) {
+    const auto& settings = engine.getSettings();
+    const auto& worldInfo = level.getWorld().getInfo();
+
+    DrawContext ctx = pctx.sub();
+    ctx.setDepthTest(true);
+    ctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
+    ctx.setFramebuffer(postProcessing.getFramebuffer());
+
+    skybox->draw(
+        level.environment, ctx, camera, worldInfo.daytime, weather.clouds()
+    );
+    texts->render(ctx, camera, settings, hudVisible, false);
+
+    if (debug && hudVisible) {
+        renderDebugLines(ctx, camera);
+    }
+
+    DrawContext wctx = ctx.sub();
+    wctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
+    wctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
+    // Translucent blocks
+    {
+        const auto& settings = engine.getSettings();
+        auto& translucentShader = assets.require<Shader>("translucent");
+        auto sctx = wctx.sub();
+        sctx.setCullFace(true);
+        translucentShader.use();
+        setupWorldShader(translucentShader, camera, settings, calcFogFactor());
+        chunksRenderer->drawSortedMeshes(camera, translucentShader);
+    }
+
+    renderWeatherEffects(camera);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void WorldRenderer::renderFrameAdvanced(
+    const DrawContext& pctx,
+    Camera& camera,
+    bool hudVisible,
+    PostProcessing& postProcessing
+) {
+    const auto& settings = engine.getSettings();
+    const auto& worldInfo = level.getWorld().getInfo();
+    float fogFactor = calcFogFactor();
+
+    shadowMapping->refresh(camera, pctx, [this, &camera](Camera& shadowCamera) {
+        auto& shader = assets.require<Shader>("shadows");
+        setupWorldShader(shader, shadowCamera, engine.getSettings(), 0.0f);
+        chunksRenderer->drawShadowsPass(shadowCamera, shader, camera);
+    });
+
+    auto& deferredShader =
+        assets.require<PostEffect>("deferred_lighting").getShader();
+    deferredShader.use();
+    setupWorldShader(deferredShader, camera, settings, fogFactor);
+    postProcessing.renderDeferredShading(pctx, assets, timer, camera);
+
+    DrawContext ctx = pctx.sub();
+    ctx.setDepthTest(true);
+    ctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
+
+    postProcessing.bindDepthBuffer();
+    skybox->draw(
+        level.environment, ctx, camera, worldInfo.daytime, weather.clouds()
+    );
+    texts->render(ctx, camera, settings, hudVisible, false);
+    if (debug && hudVisible) {
+        renderDebugLines(ctx, camera);
+    }
+
+    DrawContext wctx = ctx.sub();
+    wctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
+    wctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
+    // Translucent blocks
+    {
+        const auto& settings = engine.getSettings();
+        auto& translucentShader = assets.require<Shader>("translucent");
+        auto sctx = wctx.sub();
+        sctx.setCullFace(true);
+        translucentShader.use();
+        setupWorldShader(translucentShader, camera, settings, fogFactor);
+        chunksRenderer->drawSortedMeshes(camera, translucentShader);
+    }
+
+    renderWeatherEffects(camera);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void WorldRenderer::renderFrame(
@@ -323,153 +434,36 @@ void WorldRenderer::renderFrame(
     bool hudVisible,
     PostProcessing& postProcessing
 ) {
-    auto projView = camera.getProjView();
-    auto world = level.getWorld();
-
     const auto& vp = pctx.getViewport();
     camera.setAspectRatio(vp.x / static_cast<float>(vp.y));
+    if (dirtySettings) {
+        refreshSettings();
+        dirtySettings = false;
+    }
 
-    auto& mainShader = assets.require<Shader>("main");
-    auto& entityShader = assets.require<Shader>("entity");
-    auto& cloudsShader = assets.require<Shader>("clouds");
-    auto& translucentShader = assets.require<Shader>("translucent");
-    auto& deferredShader =
-        assets.require<PostEffect>("deferred_lighting").getShader();
-
-    const auto& settings = engine.getSettings();
-
-    Shader* affectedShaders[] {
-        &mainShader,
-        &entityShader,
-        &cloudsShader,
-        &translucentShader,
-        &deferredShader,
-        nullptr};
-
-    refreshSettings(affectedShaders);
-
-    const auto& worldInfo = world->getInfo();
-
+    const auto& worldInfo = level.getWorld().getInfo();
     float clouds = weather.clouds();
-    clouds = glm::max(worldInfo.fog, clouds);
-    float mie = 1.0f + glm::max(worldInfo.fog, clouds * 0.5f) * 2.0f;
 
     float random = rand() / static_cast<float>(RAND_MAX);
     skybox->refresh(
         level.environment,
         pctx,
         worldInfo.daytime,
-        mie,
+        1.0f + clouds,
         weather.skyTint(),
         weather.highlight * random,
         4
     );
-
-    chunksRenderer->update();
-
-    shadowMapping->refresh(camera, pctx, [this, &camera](Camera& shadowCamera) {
-        auto& shader = assets.require<Shader>("shadows");
-        setupWorldShader(shader, shadowCamera, engine.getSettings(), 0.0f);
-        chunksRenderer->drawShadowsPass(shadowCamera, shader, camera);
-    });
-    {
-        DrawContext wctx = pctx.sub();
-        postProcessing.use(wctx, gbufferPipeline);
-        display::clearDepth();
-
-        /* Main opaque pass (GBuffer pass) */ {
-            DrawContext ctx = wctx.sub();
-            ctx.setDepthTest(true);
-            ctx.setCullFace(true);
-            ctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
-            ctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
-            renderOpaque(ctx, camera, settings, hudVisible);
-        }
-        texts->render(pctx, camera, settings, hudVisible, true);
-    }
-    float fogFactor = calcFogFactor();
+    renderOpaquePass(pctx, camera, hudVisible, postProcessing);
     if (gbufferPipeline) {
-        deferredShader.use();
-        setupWorldShader(deferredShader, camera, settings, fogFactor);
-        postProcessing.renderDeferredShading(pctx, assets, timer, camera);
-    }
-    {
-        DrawContext ctx = pctx.sub();
-        ctx.setDepthTest(true);
-        ctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
-
-        if (gbufferPipeline) {
-            postProcessing.bindDepthBuffer();
-        } else {
-            ctx.setFramebuffer(postProcessing.getFramebuffer());
-        }
-
-        // Background sky plane
-        skybox->draw(
-            level.environment, ctx, camera, worldInfo.daytime, clouds
-        );
-
-        auto& linesShader = assets.require<Shader>("lines");
-        linesShader.use();
-        if (debug && hudVisible) {
-            debugLines->render(
-                ctx, camera, *lineBatch, linesShader, showChunkBorders
-            );
-        }
-        linesShader.uniformMatrix("u_projview", projView);
-        lineBatch->flush();
-
-        DrawContext wctx = ctx.sub();
-        wctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
-        wctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
-        // Translucent blocks
-        {
-            auto sctx = wctx.sub();
-            sctx.setCullFace(true);
-            translucentShader.use();
-            setupWorldShader(translucentShader, camera, settings, fogFactor);
-            chunksRenderer->drawSortedMeshes(camera, translucentShader);
-        }
-
-        // Weather effects
-        entityShader.use();
-        setupWorldShader(entityShader, camera, settings, fogFactor);
-
-        std::array<const WeatherPreset*, 2> weatherInstances {
-            &weather.a, &weather.b};
-        for (const auto& weather : weatherInstances) {
-            float maxIntensity = weather->fall.maxIntensity;
-            float zero = weather->fall.minOpacity;
-            float one = weather->fall.maxOpacity;
-            float t = (weather->intensity * (one - zero)) * maxIntensity + zero;
-            entityShader.uniform1i("u_alphaClip", weather->fall.opaque);
-            entityShader.uniform1f(
-                "u_opacity", weather->fall.opaque ? t * t : t
-            );
-            if (weather->intensity > 1.e-3f && !weather->fall.texture.empty()) {
-                precipitation->render(camera, *weather);
-            }
-        }
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        renderFrameAdvanced(pctx, camera, hudVisible, postProcessing);
+    } else {
+        renderFrameClassic(pctx, camera, hudVisible, postProcessing);
     }
     postProcessing.render(pctx, assets, timer, camera);
 
     if (player.currentCamera == player.fpCamera) {
-        DrawContext ctx = pctx.sub();
-        ctx.setDepthTest(true);
-        ctx.setCullFace(true);
-        ctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
-        ctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
-        display::clearDepth();
-
-        // prepare modified HUD camera
-        Camera hudcam = camera;
-        hudcam.far = 10.0f;
-        hudcam.setFov(0.9f);
-        hudcam.position = {};
-
-        setupWorldShader(entityShader, hudcam, engine.getSettings(), 0.0f);
-        hands->render(camera);
+        renderHandsPass(pctx, camera);
     }
     {
         auto bctx = pctx.sub();
@@ -477,6 +471,85 @@ void WorldRenderer::renderFrame(
         renderBlockOverlay(pctx);
     }
     glActiveTexture(GL_TEXTURE0);
+}
+
+
+void WorldRenderer::renderOpaquePass(
+    const DrawContext& pctx,
+    Camera& camera, 
+    bool hudVisible,
+    PostProcessing& postProcessing
+) {
+    const auto& settings = engine.getSettings();
+
+    DrawContext wctx = pctx.sub();
+    postProcessing.use(wctx, gbufferPipeline);
+    display::clearDepth();
+
+    /* Main opaque pass (GBuffer pass) */ {
+        DrawContext ctx = wctx.sub();
+        ctx.setDepthTest(true);
+        ctx.setCullFace(true);
+        ctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
+        ctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
+        renderOpaque(ctx, camera, settings, hudVisible);
+
+        ctx.setDepthMask(false);
+        texts->render(wctx, camera, settings, hudVisible, true);
+    }
+}
+
+void WorldRenderer::renderWeatherEffects(Camera& camera) {
+    const auto& settings = engine.getSettings();
+    auto& entityShader = assets.require<Shader>("entity");
+    entityShader.use();
+    setupWorldShader(entityShader, camera, settings, calcFogFactor());
+
+    std::array<const WeatherPreset*, 2> weatherInstances {
+        &weather.a, &weather.b};
+    for (const auto& weather : weatherInstances) {
+        float maxIntensity = weather->fall.maxIntensity;
+        float zero = weather->fall.minOpacity;
+        float one = weather->fall.maxOpacity;
+        float t = (weather->intensity * (one - zero)) * maxIntensity + zero;
+        entityShader.uniform1i("u_alphaClip", weather->fall.opaque);
+        entityShader.uniform1f(
+            "u_opacity", weather->fall.opaque ? t * t : t
+        );
+        if (weather->intensity > 1.e-3f && !weather->fall.texture.empty()) {
+            precipitation->render(camera, *weather);
+        }
+    }
+}
+
+void WorldRenderer::renderDebugLines(const DrawContext& ctx, Camera& camera) {
+    auto& linesShader = assets.require<Shader>("lines");
+    linesShader.use();
+    debugLines->render(
+        ctx, camera, *lineBatch, linesShader, showChunkBorders
+    );
+    linesShader.uniformMatrix("u_projview", camera.getProjView());
+    lineBatch->flush();
+}
+
+void WorldRenderer::renderHandsPass(const DrawContext& pctx, Camera& camera) {
+    auto& entityShader = assets.require<Shader>("entity");
+
+    DrawContext ctx = pctx.sub();
+    ctx.setDepthTest(true);
+    ctx.setCullFace(true);
+    ctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
+    ctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
+    display::clearDepth();
+
+    // prepare modified HUD camera
+    Camera hudcam = camera;
+    hudcam.far = 10.0f;
+    hudcam.setFov(0.9f);
+    hudcam.position = {};
+
+    setupWorldShader(entityShader, hudcam, engine.getSettings(), 0.0f);
+    hands->render(camera);
 }
 
 void WorldRenderer::renderBlockOverlay(const DrawContext& wctx) {
@@ -524,7 +597,7 @@ void WorldRenderer::renderBlockOverlay(const DrawContext& wctx) {
     batch3d->flush();
 }
 
-void WorldRenderer::clear() {
+void WorldRenderer::resetCache() {
     chunksRenderer->clear();
 }
 

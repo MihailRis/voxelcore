@@ -39,9 +39,6 @@ struct WorldInfo : public Serializable {
     /// @brief total time passed in the world (not depending on daytimeSpeed)
     double totalTime = 0.0;
 
-    /// @brief will be replaced with weather in future
-    float fog = 0.0f;
-
     entityid_t nextEntityId = 0;
 
     int major = 0, minor = -1;
@@ -69,6 +66,8 @@ public:
         const Content& content,
         const std::vector<ContentPack>& packs
     );
+
+    World(const World&) = delete;
 
     ~World();
 

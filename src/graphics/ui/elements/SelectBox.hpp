@@ -11,15 +11,21 @@ namespace gui {
             std::string value;
             std::wstring text;
         };
+        enum class Mode {
+            SELECT,
+            BUTTON,
+        };
     private:
         std::vector<Option> options;
         Option selected {};
         StringCallbacksSet changeCallbacks;
+        Mode mode;
     public:
         SelectBox(
             GUI& gui,
             std::vector<Option>&& elements,
             Option selected,
+            Mode mode,
             int contentWidth,
             const glm::vec4& padding
         );
@@ -34,7 +40,12 @@ namespace gui {
 
         void setOptions(std::vector<Option>&& options);
 
+        Mode getMode() const;
+
+        void setMode(Mode mode);
+
         void drawBackground(const DrawContext& pctx, const Assets&) override;
+
 
         std::shared_ptr<Label> getLabel() const;
     };

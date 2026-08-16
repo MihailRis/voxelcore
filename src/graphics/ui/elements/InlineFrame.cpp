@@ -14,6 +14,7 @@ void InlineFrame::setSrc(const std::string& src) {
     this->src = src;
     if (document) {
         scripting::on_ui_close(*document, nullptr);
+        clear();
         document = nullptr;
         root = nullptr;
     }

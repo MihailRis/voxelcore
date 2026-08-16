@@ -58,6 +58,7 @@ namespace gui {
         FOCUS,
         DEFOCUS,
         RIGHT_CLICK,
+        MIDDLE_CLICK,
         MOUSE_OVER,
         MOUSE_OUT,
         MOUSE_ENTER,

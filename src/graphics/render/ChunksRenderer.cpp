@@ -11,9 +11,12 @@
 #include "world/Level.hpp"
 #include "window/Camera.hpp"
 #include "maths/FrustumCulling.hpp"
+#include "maths/util.hpp"
 #include "util/listutil.hpp"
 #include "util/ObjectsPool.hpp"
+#include "util/timeutil.hpp"
 #include "settings.hpp"
+#include "content/Content.hpp"
 
 static debug::Logger logger("chunks-render");
 
@@ -33,7 +36,7 @@ public:
               settings.graphics.denseRender.get()
                   ? settings.graphics.chunkMaxVerticesDense.get()
                   : settings.graphics.chunkMaxVertices.get(),
-              level.content,
+              level.content.getIndices()->blocks.getDefs(),
               cache,
               settings
           ) {
@@ -92,7 +95,7 @@ ChunksRenderer::ChunksRenderer(
     threadPool.setStopOnFail(false);
     renderer = std::make_unique<BlocksRenderer>(
         settings.graphics.chunkMaxVertices.get(), 
-        level.content, cache, settings
+        level.content.getIndices()->blocks.getDefs(), cache, settings
     );
     logger.info() << "created " << threadPool.getWorkersCount() << " workers";
     logger.info() << "memory consumption is "
@@ -122,30 +125,30 @@ std::shared_ptr<VoxelsRenderVolume> ChunksRenderer::prepareVoxelsVolume(
     return voxelsBuffer;
 }
 
-const ChunkMesh* ChunksRenderer::render(
-    const std::shared_ptr<Chunk>& chunk, bool important, bool lowPriority
+void ChunksRenderer::renderBlocking(const std::shared_ptr<Chunk>& chunk) {
+    glm::ivec2 key(chunk->x, chunk->z);
+    ChunkMesh mesh {};
+    auto voxelsBuffer = prepareVoxelsVolume(*chunk);
+    mesh = renderer->render(chunk.get(), *voxelsBuffer);
+    meshes[key] = std::move(mesh);
+    chunk->flags.modified = false;
+}
+
+void ChunksRenderer::render(
+    const std::shared_ptr<Chunk>& chunk, bool lowPriority
 ) {
     glm::ivec2 key(chunk->x, chunk->z);
-    if (important) {
-        ChunkMesh mesh {};
-        auto voxelsBuffer = prepareVoxelsVolume(*chunk);
-        mesh = renderer->render(chunk.get(), *voxelsBuffer);
-        meshes[key] = std::move(mesh);
-        chunk->flags.modified = false;
-        return &meshes[key];
-    }
     if (inwork.find(key) != inwork.end() ||
         ((inwork.size() >= threadPool.getWorkersCount() ||
           enqueuedInFrame >= MAX_CHUNKS_ENQUEUED_IN_FRAME) &&
          lowPriority)) {
-        return nullptr;
+        return;
     }
     chunk->flags.modified = false;
     enqueuedInFrame++;
     auto voxelsBuffer = prepareVoxelsVolume(*chunk);
     threadPool.enqueueJob({chunk, std::move(voxelsBuffer)});
     inwork[key] = true;
-    return nullptr;
 }
 
 void ChunksRenderer::unload(const Chunk* chunk) {
@@ -161,76 +164,69 @@ void ChunksRenderer::clear() {
     threadPool.clearQueue();
 }
 
-const ChunkMesh* ChunksRenderer::getOrRender(
-    const std::shared_ptr<Chunk>& chunk, bool important, bool lowPriority
-) {
-    auto found = meshes.find(glm::ivec2(chunk->x, chunk->z));
-    if (found == meshes.end()) {
-        return render(chunk, important, lowPriority);
-    }
-    if (chunk->flags.modified && chunk->flags.lighted) {
-        render(chunk, important, lowPriority);
-    }
-    return &found->second;
-}
-
 void ChunksRenderer::update() {
     threadPool.pullResults();
     enqueuedInFrame = 0;
-}
 
-const Mesh<ChunkVertex>* ChunksRenderer::retrieveChunk(
-    size_t index, const Camera& camera, bool culling
-) {
-    auto chunk = chunks.getChunks()[index];
-    if (chunk == nullptr) {
-        return nullptr;
-    }
-    if (!chunk->flags.lighted) {
-        const auto& found = meshes.find({chunk->x, chunk->z});
-        if (found == meshes.end()) {
-            return nullptr;
-        } else {
-            return found->second.mesh.get();
+    int width = chunks.getWidth();
+    int halfWidth = width / 2;
+    int halfHeight = chunks.getHeight() / 2;
+    int centerX = chunks.getOffsetX() + halfWidth;
+    int centerY = chunks.getOffsetY() + halfHeight;
+
+    meshBuildQueue.clear();
+    auto& chunksArray = chunks.getChunks();
+    for (int index = 0; index < chunks.getVolume(); index++) {
+        const auto& chunk = chunks.getChunks()[index];
+        if (chunk == nullptr || !chunk->flags.lighted) {
+            continue;
+        }
+        int x = chunk->x;
+        int z = chunk->z;
+        if (chunk->flags.modified || meshes.find({x, z}) == meshes.end()) {
+            meshBuildQueue.emplace_back(x - centerX, z - centerY);
         }
     }
-    float distance = glm::distance(
-        camera.position,
-        glm::vec3(
-            (chunk->x + 0.5f) * CHUNK_W,
-            camera.position.y,
-            (chunk->z + 0.5f) * CHUNK_D
-        )
+    std::sort(
+        meshBuildQueue.begin(),
+        meshBuildQueue.end(),
+        [](const glm::ivec2& a, const glm::ivec2& b) {
+            return util::length2(a) < util::length2(b);
+        }
     );
-    auto mesh = getOrRender(
-        chunk,
-        distance < CHUNK_W * 1.5f,
-        distance > CHUNK_W * settings.chunks.loadDistance.get() * 0.5
-    );
-    if (mesh == nullptr) {
-        return nullptr;
-    }
-    if (chunk->flags.dirtyHeights) {
-        chunk->updateHeights();
-    }
-    if (culling) {
-        const auto& meshAABB = mesh->meshAABB;
-        auto aabbMin = meshAABB.min();
-        auto aabbMax = meshAABB.max();
-        glm::vec3 min(
-            chunk->x * CHUNK_W + std::min(0.0f, aabbMin.x),
-            chunk->bottom,
-            chunk->z * CHUNK_D + std::min(0.0f, aabbMin.z)
-        );
-        glm::vec3 max(
-            chunk->x * CHUNK_W + aabbMax.x,
-            chunk->top,
-            chunk->z * CHUNK_D + aabbMax.z
-        );
 
-        if (!frustum.isBoxVisible(min, max)) return nullptr;
+    int loadDistance = settings.chunks.loadDistance.get();
+
+    const int topN = 10;
+    int top = std::min<int>(meshBuildQueue.size(), topN);
+    for (int i = 0; i < top; i++) {
+        glm::ivec2 offset = meshBuildQueue[i];
+        size_t index =
+            (offset.y + halfHeight) * width + offset.x + halfWidth;
+
+        auto& chunk = chunksArray[index];
+        assert(chunk != nullptr);
+
+        float distance = glm::distance(
+            glm::vec3 (centerX, 0.0f, centerY),
+            glm::vec3(
+                (chunk->x + 0.5f) * CHUNK_W,
+                0,
+                (chunk->z + 0.5f) * CHUNK_D
+            )
+        );
+        bool important = distance < CHUNK_W * 1.5f;
+        bool lowPriority = distance > CHUNK_W * loadDistance * 0.5;
+
+        if (chunk->flags.dirtyHeights) {
+            chunk->updateHeights();
+        }
+        if (important) {
+            renderBlocking(chunk);
+        } else {
+            render(chunk, lowPriority);
+        }
     }
-    return mesh->mesh.get();
 }
 
 void ChunksRenderer::drawShadowsPass(
@@ -317,16 +313,43 @@ void ChunksRenderer::drawChunks(
     // TODO: minimize draw calls number
     for (int i = indices.size()-1; i >= 0; i--) {
         auto& chunk = chunks.getChunks()[indices[i].index];
-        auto mesh = retrieveChunk(indices[i].index, camera, culling);
-        if (mesh == nullptr) {
+        if (chunk == nullptr) {
             continue;
         }
+        auto found = meshes.find(glm::ivec2(chunk->x, chunk->z));
+        if (found == meshes.end()) {
+            continue;
+        }
+        auto& mesh = found->second;
+        if (mesh.mesh == nullptr) {
+            continue;
+        }
+        if (culling) {
+            const auto& meshAABB = mesh.meshAABB;
+            auto aabbMin = meshAABB.min();
+            auto aabbMax = meshAABB.max();
+            glm::vec3 min(
+                chunk->x * CHUNK_W + std::min(0.0f, aabbMin.x),
+                chunk->bottom,
+                chunk->z * CHUNK_D + std::min(0.0f, aabbMin.z)
+            );
+            glm::vec3 max(
+                chunk->x * CHUNK_W + aabbMax.x,
+                chunk->top,
+                chunk->z * CHUNK_D + aabbMax.z
+            );
+
+            if (!frustum.isBoxVisible(min, max)) {
+                continue;
+            }
+        }
+
         glm::vec3 coord(
             chunk->x * CHUNK_W + 0.5f, 0.5f, chunk->z * CHUNK_D + 0.5f
         );
         glm::mat4 model = glm::translate(glm::mat4(1.0f), coord);
         shader.uniformMatrix("u_model", model);
-        mesh->draw(GL_TRIANGLES, glm::distance2(camera.position * glm::vec3(1, 0, 1), 
+        mesh.mesh->draw(GL_TRIANGLES, glm::distance2(camera.position * glm::vec3(1, 0, 1), 
             (coord + glm::vec3(CHUNK_W * 0.5f, 0.0f, CHUNK_D * 0.5f))) < denseDistance2);
         visibleChunks++;
     }

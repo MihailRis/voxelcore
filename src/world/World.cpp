@@ -147,7 +147,7 @@ std::unique_ptr<Level> World::load(
 
         if (!playerRoot["players"].empty()) {
             if (!playerRoot["players"][0].has("id")) {
-                level->getWorld()->getInfo().nextPlayerId++;
+                level->getWorld().getInfo().nextPlayerId++;
             }
         }
     }
@@ -216,9 +216,6 @@ void WorldInfo::deserialize(const dv::value& root) {
         daytimeSpeed = timeobj["day-time-speed"].asNumber();
         totalTime = timeobj["total-time"].asNumber();
     }
-    if (root.has("weather")) {
-        fog = root["weather"]["fog"].asNumber();
-    }
     nextInventoryId = root["next-inventory-id"].asInteger(2);
     nextEntityId = root["next-entity-id"].asInteger(1);
     root.at("next-player-id").get(nextPlayerId);
@@ -243,9 +240,6 @@ dv::value WorldInfo::serialize() const {
     timeobj["day-time"] = daytime;
     timeobj["day-time-speed"] = daytimeSpeed;
     timeobj["total-time"] = totalTime;
-
-    root["weather"] = dv::object();
-    root["weather"]["fog"] = fog;
 
     root["next-inventory-id"] = nextInventoryId;
     root["next-entity-id"] = nextEntityId;

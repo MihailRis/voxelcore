@@ -46,7 +46,7 @@ void MainBatch::flush() {
         texture = blank.get();
     }
     texture->bind();
-    mesh->reload(buffer.get(), index);
+    mesh->reload(buffer.get(), index, true);
     mesh->draw();
     index = 0;
 }

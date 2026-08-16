@@ -42,7 +42,7 @@ static int l_get_model(lua::State* L) {
         auto& rigConfig = *skeleton->config;
         auto index = index_range_check(*skeleton, lua::tointeger(L, 2));
         const auto& modelOverride = skeleton->modelOverrides[index];
-        if (!modelOverride.model) {
+        if (modelOverride.model) {
             return lua::pushstring(L, modelOverride.name);
         }
         return lua::pushstring(L, rigConfig.getBones()[index]->model.name);

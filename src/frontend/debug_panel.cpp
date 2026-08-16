@@ -254,7 +254,7 @@ std::shared_ptr<UINode> create_debug_panel(
         }
     }));
     panel->add(create_label(gui, [&]() {
-        return L"seed: " + std::to_wstring(level.getWorld()->getSeed());
+        return L"seed: " + std::to_wstring(level.getWorld().getSeed());
     }));
 
     for (int ax = 0; ax < 3; ax++) {
@@ -294,7 +294,7 @@ std::shared_ptr<UINode> create_debug_panel(
         sub->add(box, glm::vec2(20, 0));
         panel->add(sub);
     }
-    auto& worldInfo = level.getWorld()->getInfo();
+    auto& worldInfo = level.getWorld().getInfo();
     panel->add(create_label(gui, [&]() {
         int hour, minute, second;
         timeutil::from_value(worldInfo.daytime, hour, minute, second);
@@ -308,12 +308,6 @@ std::shared_ptr<UINode> create_debug_panel(
         auto bar = std::make_shared<TrackBar>(gui, 0.0f, 1.0f, 1.0f, 0.005f, 8);
         bar->setSupplier([&]() { return worldInfo.daytime; });
         bar->setConsumer([&](double val) { worldInfo.daytime = val; });
-        panel->add(bar);
-    }
-    if (allowDebugCheats) {
-        auto bar = std::make_shared<TrackBar>(gui, 0.0f, 1.0f, 0.0f, 0.005f, 8);
-        bar->setSupplier([&]() { return worldInfo.fog; });
-        bar->setConsumer([&](double val) { worldInfo.fog = val; });
         panel->add(bar);
     }
     {

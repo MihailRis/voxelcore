@@ -71,12 +71,12 @@ Level::Level(
 
 Level::~Level() = default;
 
-World* Level::getWorld() {
-    return world.get();
+World& Level::getWorld() {
+    return *world;
 }
 
-const World* Level::getWorld() const {
-    return world.get();
+const World& Level::getWorld() const {
+    return *world;
 }
 
 void Level::onSave() {

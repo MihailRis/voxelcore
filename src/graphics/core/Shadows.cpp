@@ -99,8 +99,8 @@ void Shadows::setup(Shader& shader, const Weather& weather) {
     if (!shadows) {
         return;
     }
-    const auto& worldInfo = level.getWorld()->getInfo();
-    float cloudsIntensity = glm::max(worldInfo.fog, weather.clouds());
+    const auto& worldInfo = level.getWorld().getInfo();
+    float cloudsIntensity = weather.clouds();
     float shadowsOpacity = 1.0f - cloudsIntensity;
     shadowsOpacity *= glm::sqrt(glm::abs(
         glm::mod((worldInfo.daytime + 0.5f) * 2.0f, 1.0f) * 2.0f - 1.0f
@@ -158,8 +158,8 @@ void Shadows::generateShadowsMap(
     float scale,
     const std::function<void(Camera&)>& renderShadowPass
 ) {
-    auto world = level.getWorld();
-    const auto& worldInfo = world->getInfo();
+    const auto& world = level.getWorld();
+    const auto& worldInfo = world.getInfo();
 
     int resolution = shadowMap.getResolution();
     float shadowMapScale = 0.32f / (1 << glm::max(0, quality)) * scale;

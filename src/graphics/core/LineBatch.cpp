@@ -57,7 +57,7 @@ void LineBatch::box(float x, float y, float z, float w, float h, float d,
 void LineBatch::flush(){
     if (index == 0)
         return;
-    mesh->reload(buffer.get(), index);
+    mesh->reload(buffer.get(), index, true);
     mesh->draw(GL_LINES);
     index = 0;
 }

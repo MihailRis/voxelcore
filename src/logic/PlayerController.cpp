@@ -340,6 +340,19 @@ static int determine_rotation(
                 if (camDir.z > 0.0f) return BLOCK_DIR_SOUTH | verticalBit;
                 if (camDir.z < 0.0f) return BLOCK_DIR_NORTH | verticalBit;
             }
+        } else if (name == "ladder") {
+            if (norm.x < 0.0f) return BLOCK_DIR_EAST;
+            if (norm.x > 0.0f) return BLOCK_DIR_WEST;
+            if (norm.z > 0.0f) return BLOCK_DIR_NORTH;
+            if (norm.z < 0.0f) return BLOCK_DIR_SOUTH;
+            if (abs(camDir.x) > abs(camDir.z)) {
+                if (camDir.x > 0.0f) return BLOCK_DIR_EAST;
+                if (camDir.x < 0.0f) return BLOCK_DIR_WEST;
+            }
+            if (abs(camDir.x) < abs(camDir.z)) {
+                if (camDir.z > 0.0f) return BLOCK_DIR_SOUTH;
+                if (camDir.z < 0.0f) return BLOCK_DIR_NORTH;
+            }
         }
     }
     return 0;

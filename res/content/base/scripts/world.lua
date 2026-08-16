@@ -16,6 +16,4 @@ function on_block_broken(id, x, y, z, playerid)
             spawn_spread=vec3.mul(size, 0.4)
         })
     end
-
-    rules.create("do-loot-non-player", true)
 end

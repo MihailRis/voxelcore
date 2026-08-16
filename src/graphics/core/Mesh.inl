@@ -46,9 +46,9 @@ Mesh<VertexStructure>::Mesh(
     glGenVertexArrays(1, &vao);
     glGenBuffers(1, &vbo);
 
-    reload(vertexBuffer, vertices, std::move(indices));
-
     glBindVertexArray(vao);
+    reload(vertexBuffer, vertices, std::move(indices), false);
+
     // attributes
     int offset = 0;
     for (int i = 0; attrs[i].count; i++) {
@@ -82,20 +82,22 @@ template <typename VertexStructure>
 void Mesh<VertexStructure>::reload(
     const VertexStructure* vertexBuffer,
     size_t vertexCount,
-    const std::vector<IndexBufferData>& indices
+    const std::vector<IndexBufferData>& indices,
+    bool streaming
 ) {
     this->vertexCount = vertexCount;
-    glBindVertexArray(vao);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     if (vertexBuffer != nullptr && vertexCount != 0) {
         glBufferData(
             GL_ARRAY_BUFFER,
             vertexCount * sizeof(VertexStructure),
             vertexBuffer,
-            GL_STREAM_DRAW
+            streaming ? GL_STREAM_DRAW : GL_STATIC_DRAW
         );
     } else {
-        glBufferData(GL_ARRAY_BUFFER, 0, {}, GL_STREAM_DRAW);
+        glBufferData(
+            GL_ARRAY_BUFFER, 0, {}, streaming ? GL_STREAM_DRAW : GL_STATIC_DRAW
+        );
     }
 
     for (int i = 0; i < ibos.size(); i++) {
@@ -116,7 +118,6 @@ void Mesh<VertexStructure>::reload(
             GL_STATIC_DRAW
         );
     }
-    glBindVertexArray(0);
 }
 
 template <typename VertexStructure>

@@ -10,15 +10,14 @@
 #include "frontend/ContentGfxCache.hpp"
 
 const glm::vec3 BlocksRenderer::SUN_VECTOR(0.528265, 0.833149, -0.163704);
-const float DIRECTIONAL_LIGHT_FACTOR = 0.3f;
+constexpr float DIRECTIONAL_LIGHT_FACTOR = 0.3f;
 
 BlocksRenderer::BlocksRenderer(
     size_t capacity,
-    const Content& content,
+    const Block* const* blockDefs,
     const ContentGfxCache& cache,
     const EngineSettings& settings
-) : content(content),
-    vertexBuffer(std::make_unique<ChunkVertex[]>(capacity)),
+) : vertexBuffer(std::make_unique<ChunkVertex[]>(capacity)),
     indexBuffer(std::make_unique<uint32_t[]>(capacity)),
     denseIndexBuffer(std::make_unique<uint32_t[]>(capacity)),
     vertexCount(0),
@@ -28,7 +27,7 @@ BlocksRenderer::BlocksRenderer(
     cache(cache),
     settings(settings)
 {
-    blockDefsCache = content.getIndices()->blocks.getDefs();
+    blockDefsCache = blockDefs;
 }
 
 BlocksRenderer::~BlocksRenderer() = default;
@@ -482,83 +481,78 @@ glm::vec4 BlocksRenderer::pickSoftLight(
 }
 
 void BlocksRenderer::render(
-    const voxel* voxels, const int beginEnds[256][2]
+    const voxel* voxels, int totalBegin, int totalEnd
 ) {
     bool denseRender = this->denseRender;
     bool densePass = this->densePass;
     bool enableAO = settings.graphics.softLighting.get();
-    for (const auto drawGroup : *content.drawGroups) {
-        int begin = beginEnds[drawGroup][0];
-        if (begin == 0) {
+
+    for (int i = totalBegin; i < totalEnd; i++) {
+        const voxel& vox = voxels[i];
+        blockid_t id = vox.id;
+        blockstate state = vox.state;
+        const auto& def = *blockDefsCache[id];
+        uint8_t variantId = def.getVariantIndex(state.userbits);
+        const auto& variant = def.getVariant(variantId);
+        if (id == 0 || state.segment) {
             continue;
         }
-        int end = beginEnds[drawGroup][1];
-        for (int i = begin-1; i <= end; i++) {
-            const voxel& vox = voxels[i];
-            blockid_t id = vox.id;
-            blockstate state = vox.state;
-            const auto& def = *blockDefsCache[id];
-            uint8_t variantId = def.getVariantIndex(state.userbits);
-            const auto& variant = def.getVariant(variantId);
-            if (id == 0 || variant.drawGroup != drawGroup || state.segment) {
-                continue;
+        if (denseRender != (variant.culling == CullingMode::OPTIONAL)) {
+            continue;
+        }
+        if (def.translucent) {
+            continue;
+        }
+        const UVRegion texfaces[6] {
+            cache.getRegion(id, variantId, 0, densePass),
+            cache.getRegion(id, variantId, 1, densePass),
+            cache.getRegion(id, variantId, 2, densePass),
+            cache.getRegion(id, variantId, 3, densePass),
+            cache.getRegion(id, variantId, 4, densePass),
+            cache.getRegion(id, variantId, 5, densePass)
+        };
+        int x = i % CHUNK_W;
+        int y = i / (CHUNK_D * CHUNK_W);
+        int z = (i / CHUNK_D) % CHUNK_W;
+
+        switch (def.getModel(state.userbits).type) {
+            case BlockModelType::BLOCK:
+                blockCube({x, y, z}, texfaces, def, vox.state, !def.shadeless,
+                            def.ambientOcclusion && enableAO);
+                break;
+            case BlockModelType::XSPRITE: {
+                if (!denseRender)
+                blockXSprite(x, y, z, glm::vec3(1.0f),
+                            texfaces[FACE_MX], texfaces[FACE_MZ], 1.0f);
+                break;
             }
-            if (denseRender != (variant.culling == CullingMode::OPTIONAL)) {
-                continue;
+            case BlockModelType::AABB: {
+                if (!denseRender)
+                blockAABB({x, y, z}, texfaces, &def, vox.state.rotation,
+                            !def.shadeless, def.ambientOcclusion && enableAO);
+                break;
             }
-            if (def.translucent) {
-                continue;
+            case BlockModelType::CUSTOM: {
+                blockCustomModel(
+                    {x, y, z},
+                    def,
+                    vox.state,
+                    !def.shadeless,
+                    def.ambientOcclusion && enableAO
+                );
+                break;
             }
-            const UVRegion texfaces[6] {
-                cache.getRegion(id, variantId, 0, densePass),
-                cache.getRegion(id, variantId, 1, densePass),
-                cache.getRegion(id, variantId, 2, densePass),
-                cache.getRegion(id, variantId, 3, densePass),
-                cache.getRegion(id, variantId, 4, densePass),
-                cache.getRegion(id, variantId, 5, densePass)
-            };
-            int x = i % CHUNK_W;
-            int y = i / (CHUNK_D * CHUNK_W);
-            int z = (i / CHUNK_D) % CHUNK_W;
-            switch (def.getModel(state.userbits).type) {
-                case BlockModelType::BLOCK:
-                    blockCube({x, y, z}, texfaces, def, vox.state, !def.shadeless,
-                              def.ambientOcclusion && enableAO);
-                    break;
-                case BlockModelType::XSPRITE: {
-                    if (!denseRender)
-                    blockXSprite(x, y, z, glm::vec3(1.0f),
-                                texfaces[FACE_MX], texfaces[FACE_MZ], 1.0f);
-                    break;
-                }
-                case BlockModelType::AABB: {
-                    if (!denseRender)
-                    blockAABB({x, y, z}, texfaces, &def, vox.state.rotation,
-                              !def.shadeless, def.ambientOcclusion && enableAO);
-                    break;
-                }
-                case BlockModelType::CUSTOM: {
-                    blockCustomModel(
-                        {x, y, z},
-                        def,
-                        vox.state,
-                        !def.shadeless,
-                        def.ambientOcclusion && enableAO
-                    );
-                    break;
-                }
-                default:
-                    break;
-            }
-            if (overflow) {
-                return;
-            }
+            default:
+                break;
+        }
+        if (overflow) {
+            return;
         }
     }
 }
 
 SortingMeshData BlocksRenderer::renderTranslucent(
-    const voxel* voxels, int beginEnds[256][2]
+    const voxel* voxels, int totalBegin, int totalEnd
 ) {
     SortingMeshData sortingMesh {{}};
 
@@ -568,106 +562,98 @@ SortingMeshData BlocksRenderer::renderTranslucent(
 
     bool densePass = this->densePass;
     bool enableAO = settings.graphics.softLighting.get();
-    for (const auto drawGroup : *content.drawGroups) {
-        int begin = beginEnds[drawGroup][0];
-        if (begin == 0) {
+    for (int i = totalBegin; i < totalEnd; i++) {
+        const voxel& vox = voxels[i];
+        blockid_t id = vox.id;
+        blockstate state = vox.state;
+        const auto& def = *blockDefsCache[id];
+        uint8_t variantId = def.getVariantIndex(state.userbits);
+        if (id == 0 || state.segment) {
             continue;
         }
-        int end = beginEnds[drawGroup][1];
-        for (int i = begin-1; i <= end; i++) {
-            const voxel& vox = voxels[i];
-            blockid_t id = vox.id;
-            blockstate state = vox.state;
-            const auto& def = *blockDefsCache[id];
-            uint8_t variantId = def.getVariantIndex(state.userbits);
-            const auto& variant = def.getVariant(variantId);
-            if (id == 0 || variant.drawGroup != drawGroup || state.segment) {
-                continue;
-            }
-            if (!def.translucent) {
-                continue;
-            }
-            const UVRegion texfaces[6] {
-                cache.getRegion(id, variantId, 0, densePass),
-                cache.getRegion(id, variantId, 1, densePass),
-                cache.getRegion(id, variantId, 2, densePass),
-                cache.getRegion(id, variantId, 3, densePass),
-                cache.getRegion(id, variantId, 4, densePass),
-                cache.getRegion(id, variantId, 5, densePass)
-            };
-            int x = i % CHUNK_W;
-            int y = i / (CHUNK_D * CHUNK_W);
-            int z = (i / CHUNK_D) % CHUNK_W;
-            switch (def.getModel(state.userbits).type) {
-                case BlockModelType::BLOCK:
-                    blockCube({x, y, z}, texfaces, def, vox.state, !def.shadeless,
-                              def.ambientOcclusion && enableAO);
-                    break;
-                case BlockModelType::XSPRITE: {
-                    blockXSprite(x, y, z, glm::vec3(1.0f),
-                                texfaces[FACE_MX], texfaces[FACE_MZ], 1.0f);
-                    break;
-                }
-                case BlockModelType::AABB: {
-                    blockAABB(
-                        {x, y, z},
-                        texfaces,
-                        &def,
-                        vox.state.rotation,
-                        !def.shadeless,
-                        def.ambientOcclusion && enableAO
-                    );
-                    break;
-                }
-                case BlockModelType::CUSTOM: {
-                    blockCustomModel(
-                        {x, y, z},
-                        def,
-                        vox.state,
-                        !def.shadeless,
-                        def.ambientOcclusion && enableAO
-                    );
-                    break;
-                }
-                default:
-                    break;
-            }
-            if (vertexCount == 0) {
-                continue;
-            }
-            SortingMeshEntry entry {
-                glm::vec3(
-                    x + chunk->x * CHUNK_W + 0.5f,
-                    y + 0.5f,
-                    z + chunk->z * CHUNK_D + 0.5f
-                ),
-                util::Buffer<ChunkVertex>(indexCount), 0};
-
-            totalSize += entry.vertexData.size();
-
-            for (int j = 0; j < indexCount; j++) {
-                std::memcpy(
-                    entry.vertexData.data() + j,
-                    vertexBuffer.get() + indexBuffer[j],
-                    sizeof(ChunkVertex)
-                );
-                ChunkVertex& vertex = entry.vertexData[j];
-
-                if (!aabbInit) {
-                    aabbInit = true;
-                    aabb.a = aabb.b = vertex.position;
-                } else {
-                    aabb.addPoint(vertex.position);
-                }
-
-                vertex.position.x += chunk->x * CHUNK_W + 0.5f;
-                vertex.position.y += 0.5f;
-                vertex.position.z += chunk->z * CHUNK_D + 0.5f;
-            }
-            sortingMesh.entries.push_back(std::move(entry));
-            vertexCount = 0;
-            vertexOffset = indexCount = 0;
+        if (!def.translucent) {
+            continue;
         }
+        const UVRegion texfaces[6] {
+            cache.getRegion(id, variantId, 0, densePass),
+            cache.getRegion(id, variantId, 1, densePass),
+            cache.getRegion(id, variantId, 2, densePass),
+            cache.getRegion(id, variantId, 3, densePass),
+            cache.getRegion(id, variantId, 4, densePass),
+            cache.getRegion(id, variantId, 5, densePass)
+        };
+        int x = i % CHUNK_W;
+        int y = i / (CHUNK_D * CHUNK_W);
+        int z = (i / CHUNK_D) % CHUNK_W;
+        switch (def.getModel(state.userbits).type) {
+            case BlockModelType::BLOCK:
+                blockCube({x, y, z}, texfaces, def, vox.state, !def.shadeless,
+                            def.ambientOcclusion && enableAO);
+                break;
+            case BlockModelType::XSPRITE: {
+                blockXSprite(x, y, z, glm::vec3(1.0f),
+                            texfaces[FACE_MX], texfaces[FACE_MZ], 1.0f);
+                break;
+            }
+            case BlockModelType::AABB: {
+                blockAABB(
+                    {x, y, z},
+                    texfaces,
+                    &def,
+                    vox.state.rotation,
+                    !def.shadeless,
+                    def.ambientOcclusion && enableAO
+                );
+                break;
+            }
+            case BlockModelType::CUSTOM: {
+                blockCustomModel(
+                    {x, y, z},
+                    def,
+                    vox.state,
+                    !def.shadeless,
+                    def.ambientOcclusion && enableAO
+                );
+                break;
+            }
+            default:
+                break;
+        }
+        if (vertexCount == 0) {
+            continue;
+        }
+        SortingMeshEntry entry {
+            glm::vec3(
+                x + chunk->x * CHUNK_W + 0.5f,
+                y + 0.5f,
+                z + chunk->z * CHUNK_D + 0.5f
+            ),
+            util::Buffer<ChunkVertex>(indexCount), 0};
+
+        totalSize += entry.vertexData.size();
+
+        for (int j = 0; j < indexCount; j++) {
+            std::memcpy(
+                entry.vertexData.data() + j,
+                vertexBuffer.get() + indexBuffer[j],
+                sizeof(ChunkVertex)
+            );
+            ChunkVertex& vertex = entry.vertexData[j];
+
+            if (!aabbInit) {
+                aabbInit = true;
+                aabb.a = aabb.b = vertex.position;
+            } else {
+                aabb.addPoint(vertex.position);
+            }
+
+            vertex.position.x += chunk->x * CHUNK_W + 0.5f;
+            vertex.position.y += 0.5f;
+            vertex.position.z += chunk->z * CHUNK_D + 0.5f;
+        }
+        sortingMesh.entries.push_back(std::move(entry));
+        vertexCount = 0;
+        vertexOffset = indexCount = 0;
     }
 
     // additional powerful optimization
@@ -709,19 +695,16 @@ void BlocksRenderer::build(
 
     int totalBegin = chunk->bottom * (CHUNK_W * CHUNK_D);
     int totalEnd = chunk->top * (CHUNK_W * CHUNK_D);
+
     bool hasTranslucent = false;
-    int beginEnds[256][2] {};
     for (int i = totalBegin; i < totalEnd; i++) {
         const voxel& vox = voxels[i];
         blockid_t id = vox.id;
         const auto& def = *blockDefsCache[id];
-        const auto& variant = def.getVariantByBits(vox.state.userbits);
-        hasTranslucent = def.translucent || hasTranslucent;
-
-        if (beginEnds[variant.drawGroup][0] == 0) {
-            beginEnds[variant.drawGroup][0] = i + 1;
+        if (def.translucent) {
+            hasTranslucent = true;
+            break;
         }
-        beginEnds[variant.drawGroup][1] = i;
     }
     cancelled = false;
 
@@ -733,7 +716,7 @@ void BlocksRenderer::build(
     densePass = false;
 
     if (hasTranslucent) {
-        sortingMesh = renderTranslucent(voxels, beginEnds);
+        sortingMesh = renderTranslucent(voxels, totalBegin, totalEnd);
     } else {
         sortingMesh = {};
     }
@@ -746,13 +729,13 @@ void BlocksRenderer::build(
 
     denseRender = false;
     densePass = false;
-    render(voxels, beginEnds);
+    render(voxels, totalBegin, totalEnd);
 
     size_t endIndex = indexCount;
     
     denseRender = true;
     densePass = settings.graphics.denseRender.get();
-    render(voxels, beginEnds);
+    render(voxels, totalBegin, totalEnd);
 
     denseIndexCount = indexCount;
     for (size_t i = 0; i < denseIndexCount; i++) {
@@ -761,7 +744,7 @@ void BlocksRenderer::build(
 
     indexCount = endIndex;
     densePass = false;
-    render(voxels, beginEnds);
+    render(voxels, totalBegin, totalEnd);
 }
 
 ChunkMeshData BlocksRenderer::createMesh() {

@@ -452,7 +452,7 @@ void TextBox::refreshLabel() {
         uint height = label->getLinesNumber() * rawTextCache.metrics.lineHeight *
                       label->getLineInterval();
         label->setSize(glm::vec2(label->getSize().x, height));
-        actualLength = height;
+        actualLengthY = height;
     } else {
         setScrollable(false);
     }
@@ -1133,10 +1133,10 @@ void TextBox::setOnControlCombination(key_handler handler) {
 }
 
 void TextBox::setFocusedColor(glm::vec4 color) {
-    this->focusedColor = color;
+    this->focusedColor = std::move(color);
 }
 
-glm::vec4 TextBox::getFocusedColor() const {
+const glm::vec4& TextBox::getFocusedColor() const {
     return focusedColor;
 }
 
@@ -1144,7 +1144,7 @@ void TextBox::setTextColor(glm::vec4 color) {
     this->textColor = color;
 }
 
-glm::vec4 TextBox::getTextColor() const {
+const glm::vec4& TextBox::getTextColor() const {
     return textColor;
 }
 
@@ -1248,7 +1248,7 @@ void TextBox::setPadding(glm::vec4 padding) {
     refresh();
 }
 
-glm::vec4 TextBox::getPadding() const {
+const glm::vec4& TextBox::getPadding() const {
     return padding;
 }
 

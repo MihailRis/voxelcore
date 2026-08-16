@@ -14,6 +14,7 @@
 #include "../GUI.hpp"
 
 // TODO: remove
+// TODO: remove
 #include <GL/glew.h>
 
 using namespace gui;
@@ -24,8 +25,7 @@ ModelViewer::ModelViewer(
     : Container(gui, size),
       modelName(modelName),
       camera(),
-      batch(std::make_unique<Batch3D>(1024)),
-      fbo(std::make_unique<Framebuffer>(size.x, size.y)) {
+      batch(std::make_unique<Batch3D>(1024)) {
     camera.perspective = true;
     camera.position = glm::vec3(2, 2, 2);
 }
@@ -115,7 +115,13 @@ void ModelViewer::draw(const DrawContext& pctx, const Assets& assets) {
         return;
     }
     auto& prevShader = Shader::getUsed();
-    
+
+    if (!fbo) {
+        if (size.x <= 0 || size.y <= 0) {
+            return;
+        }
+        fbo = std::make_unique<Framebuffer>(size.x, size.y);
+    }
     fbo->resize(size.x, size.y);
     {
         glDisable(GL_SCISSOR_TEST);
@@ -152,6 +158,13 @@ void ModelViewer::draw(const DrawContext& pctx, const Assets& assets) {
     batch2d.rect(pos.x, pos.y, size.x, size.y, 0.0f, 0.0f, 0.0f, UVRegion {}, false, true, glm::vec4{1.0f});
 
     Container::draw(pctx, assets);
+}
+
+void ModelViewer::setVisible(bool flag) {
+    if (!flag && fbo) {
+        fbo.reset();
+    }
+    Container::setVisible(flag);
 }
 
 void ModelViewer::setCenter(const glm::vec3& center) {
