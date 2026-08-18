@@ -55,12 +55,12 @@ model::Model VcmModel::squashed() const {
 }
 
 static const std::unordered_map<std::string, int> side_indices {
-    {"east", 0},
-    {"west", 1},
-    {"bottom", 2},
-    {"top", 3},
-    {"south", 4},
-    {"north", 5},
+    {"west", 0},   // -X
+    {"east", 1},   // +X
+    {"bottom", 2}, // -Y
+    {"top", 3},    // +Y
+    {"north", 4},  // -Z
+    {"south", 5},  // +Z
 };
 
 static bool to_boolean(const xml::Attribute& attr) {
@@ -267,12 +267,12 @@ static void perform_box(const xmlelement& root, ModelBuilder& builder) {
     }
 
     UVRegion regions[6] {};
-    regions[0].scale(to.x - from.x, to.y - from.y);
-    regions[1].scale(from.x - to.x, to.y - from.y);
+    regions[0].scale(to.z - from.z, to.y - from.y);
+    regions[1].scale(from.z - to.z, to.y - from.y);
     regions[2].scale(to.x - from.x, to.z - from.z);
     regions[3].scale(from.x - to.x, to.z - from.z);
-    regions[4].scale(to.z - from.z, to.y - from.y);
-    regions[5].scale(from.z - to.z, to.y - from.y);
+    regions[4].scale(to.x - from.x, to.y - from.y);
+    regions[5].scale(from.x - to.x, to.y - from.y);
 
     auto center = (from + to) * 0.5f;
     auto halfsize = (to - from) * 0.5f;
@@ -306,7 +306,11 @@ static void perform_box(const xmlelement& root, ModelBuilder& builder) {
                     texfaces[idx] = elem->attr("texture").getText();
                 }
                 if (elem->has("region")) {
-                    regions[idx].set(elem->attr("region").asVec4());
+                    auto region = elem->attr("region").asVec4();
+                    if (idx % 2 == 1) {
+                        std::swap(region[0], region[2]);
+                    }
+                    regions[idx].set(region);
                 }
                 if (elem->has("region-scale")) {
                     regions[idx].scale(elem->attr("region-scale").asVec2());

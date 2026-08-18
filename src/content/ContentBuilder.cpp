@@ -39,15 +39,17 @@ std::unique_ptr<Content> ContentBuilder::build() {
         } else {
             def.defaults.rt.solid = isSolid(def.defaults) || def.explictlySolid;
         }
-        if (def.material.empty()) {
-            defaults.at("block-material").get(def.material);
-        }
+        def.rt.solid = def.defaults.rt.solid;
 
         const float EPSILON = 0.01f;
-        def.rt.solid =
+        def.rt.solid = def.rt.solid &&
             def.obstacle &&
             (glm::i8vec3(def.hitboxes[0].size() + EPSILON) == def.size);
         def.rt.extended = def.size.x > 1 || def.size.y > 1 || def.size.z > 1;
+
+        if (def.material.empty()) {
+            defaults.at("block-material").get(def.material);
+        }
 
         if (def.rotatable) {
             for (uint i = 0; i < BlockRotProfile::MAX_COUNT; i++) {

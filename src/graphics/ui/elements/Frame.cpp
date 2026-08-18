@@ -48,10 +48,14 @@ void gui::Frame::draw(const DrawContext& pctx, const Assets& assets) {
 void gui::Frame::updateOutput(Assets& assets) {
     if (fbo && (fbo->getWidth() != size.x || fbo->getHeight() != size.y)) {
         fbo->resize(size.x, size.y);
-        assets.store(fbo->getSharedTexture(), outputTexture);
+        if (!outputTexture.empty()) {
+            assets.store(fbo->getSharedTexture(), outputTexture);
+        }
     } else if (fbo == nullptr) {
         fbo = std::make_unique<Framebuffer>(size.x, size.y, true);
-        assets.store(fbo->getSharedTexture(), outputTexture);
+        if (!outputTexture.empty()) {
+            assets.store(fbo->getSharedTexture(), outputTexture);
+        }
     }
 }
 
