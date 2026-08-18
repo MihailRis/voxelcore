@@ -48,6 +48,14 @@ void ItemStack::setCount(itemcount_t count) {
     }
 }
 
+void ItemStack::maximizeCount(const ContentIndices& indices) {
+    auto& def = indices.items.require(getItemId());
+    this->count = def.stackSize;
+    if (count == 0) {
+        clear();
+    }
+}
+
 void ItemStack::setField(std::string_view name, dv::value value) {
     if (fields == nullptr) {
         if (value == nullptr) {

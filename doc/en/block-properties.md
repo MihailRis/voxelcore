@@ -192,12 +192,12 @@ An array of 6 numbers describing an offset an size of a block hitbox.
 The numbers are specified in the range [0.0, 1.0] - i.e. within the block (in the case of an extended block, the hitbox can be larger than one, but must not go beyond the "size" property).
 
 Array *\[0.25, 0.0, 0.5,  0.75, 0.4, 0.3\]* describes hitbox width:
-- offset 0.25m east
+- offset 0.25m west
 - offset 0.0m up
-- offset 0.5m north
-- 0.75m width (from east to west)
+- offset 0.5m south
+- 0.75m width (from west to east)
 - 0.4m height
-- 0.3m length (from south to north)
+- 0.3m length (from north to south)
 
 For composite hitboxes, the *hitboxes* property is used - an array of hitboxes, for example:
 
