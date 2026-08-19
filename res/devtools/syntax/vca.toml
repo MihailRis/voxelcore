@@ -1,0 +1,6 @@
+language = "VCA"
+extensions = ["vca"]
+line-comment = "#"
+keywords = [
+    "bone", "by", "func", "curve", "fps", "duration", "frames"
+]
