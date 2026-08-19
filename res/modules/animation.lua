@@ -110,7 +110,7 @@ local env = {
 }
 table.extend(env, math)
 
-local function codegen_track(lines, memoised, keysets)
+local function codegen_track(raw_track, lines, memoised, keysets)
     local code = ""
     local translation = {false, false, false}
     local rotation = {false, false, false}
@@ -121,8 +121,8 @@ local function codegen_track(lines, memoised, keysets)
         elseif line.keys then
             keysets[i] = line.keys
             code = code .. string.format(
-                "\n  local l%d = value_at(keysets[%d], t * 3 %% 60, %s)",
-                i, i, line.interp)
+                "\n  local l%d = value_at(keysets[%d], t * %s, %s)",
+                i, i, raw_track.fps, line.interp)
         end
 
         if line.channel == CH_TRANSLATE then
@@ -241,27 +241,33 @@ function this.compile_track(raw_track, track_name)
     local keysets = {}
 
     for bone, lineset in pairs(raw_track.linesets) do
-        local lineset_code = codegen_track(lineset.lines, memoised, keysets)
+        local lineset_code = codegen_track(
+            raw_track, lineset.lines, memoised, keysets)
+
         code = code .. "\n do" .. lineset_code .. "\n end\n" ..
             " rig:set_matrix(rig:index(" .. string.escape(bone) .. "), dst)\n"
     end
 
     local memoised_code = ""
     for name, expression in pairs(memoised) do
-        memoised_code = memoised_code .. "\n local " .. name .. " = " .. expression
+        memoised_code = memoised_code .. "\n local " .. name .. " = "
+            .. expression
     end
 
     if #memoised_code > 0 then
         code = memoised_code .. "\n" .. code
     end
 
-    local src = "return function(rig, t, m)\n local dst = DST\n" .. code .. "\nend"
+    local src = "return function(rig, t, m)\n local dst = DST\n"
+        .. code .. "\nend"
 
     if TRACE_CODEGEN then
-        debug.log("["..string.escape(track_name or "nil").." codegen trace]:\n"..code)
+        debug.log("["..
+            string.escape(track_name or "nil").." codegen trace]:\n"..src)
     end
 
-    local generator, err = load(src, "<expr>", "bt", table.extend({keysets = keysets}, env))
+    local generator, err = load(
+        src, "<expr>", "bt", table.extend({keysets = keysets}, env))
     if not generator then
         error(err)
     end

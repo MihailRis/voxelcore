@@ -1,6 +1,4 @@
-local tsf = entity.transform
 local rig = entity.skeleton
-local body = entity.rigidbody
 
 local states = {}
 
@@ -37,7 +35,7 @@ function set_state(name, fade_time)
 end
 
 local function update(delta)
-    for key, state in pairs(states) do
+    for _, state in pairs(states) do
         state.timer = state.timer + delta
 
         local intensity = state.fade_in and 1.0 or 0.0
