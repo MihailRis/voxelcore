@@ -9,6 +9,8 @@ local INT_BEZIER = 3
 
 local TRACE_CODEGEN = false
 
+local DEFAULT_FPS = 60
+
 local function bezier(a, b, c, d, u)
     local s = 1 - u
     return s * s * s * a +
@@ -160,13 +162,52 @@ local curve_to_interp = {
     bezier = INT_BEZIER,
 }
 
+local function parse_configure(raw_track, node)
+    if node.fps then
+        raw_track.fps = node.fps
+    end
+    if node.frames then
+        raw_track.duration = node.frames / node.fps
+    elseif node.duration then
+        raw_track.duration = node.duration
+    end
+end
+
+local function parse_curve(line, node)
+    line.interp = curve_to_interp[node.curve]
+    line.keys = {}
+    for j, key_node in ipairs(node) do
+        local keyframe = {
+            frame = tonumber(key_node.frame),
+            value = tonumber(key_node.value),
+        }
+        if line.interp == INT_BEZIER then
+            keyframe.lx = tonumber(key_node.lx)
+            keyframe.ly = tonumber(key_node.ly)
+            keyframe.rx = tonumber(key_node.rx)
+            keyframe.ry = tonumber(key_node.ry)
+        end
+        table.insert(line.keys, keyframe)
+    end
+end
+
 local function parse_track(root)
-    local linesets = {}
+    local raw_track = {
+        duration = math.huge,
+        fps = DEFAULT_FPS,
+        linesets = {},
+    }
+    local linesets = raw_track.linesets
     for i, node in ipairs(root) do
         if type(node) == "string" then
             goto continue
         end
         local tag = node['#']
+        if tag == "configure" then
+            parse_configure(raw_track, node)
+            goto continue
+        end
+
         local bone = node.bone
 
         local lineset = linesets[bone]
@@ -182,21 +223,7 @@ local function parse_track(root)
         if node.func then
             line.expression = node.func
         elseif node.curve then
-            line.interp = curve_to_interp[node.curve]
-            line.keys = {}
-            for j, key_node in ipairs(node) do
-                local keyframe = {
-                    frame = tonumber(key_node.frame),
-                    value = tonumber(key_node.value),
-                }
-                if line.interp == INT_BEZIER then
-                    keyframe.lx = tonumber(key_node.lx)
-                    keyframe.ly = tonumber(key_node.ly)
-                    keyframe.rx = tonumber(key_node.rx)
-                    keyframe.ry = tonumber(key_node.ry)
-                end
-                table.insert(line.keys, keyframe)
-            end
+            parse_curve(line, node)
         else
             error("not implemented")
         end
@@ -204,16 +231,16 @@ local function parse_track(root)
         table.insert(lineset.lines, line)
         ::continue::
     end
-    return linesets
+    return raw_track
 end
 
 
-function this.compile_track(linesets, track_name)
+function this.compile_track(raw_track, track_name)
     local code = ""
     local memoised = {}
     local keysets = {}
 
-    for bone, lineset in pairs(linesets) do
+    for bone, lineset in pairs(raw_track.linesets) do
         local lineset_code = codegen_track(lineset.lines, memoised, keysets)
         code = code .. "\n do" .. lineset_code .. "\n end\n" ..
             " rig:set_matrix(rig:index(" .. string.escape(bone) .. "), dst)\n"
@@ -238,7 +265,10 @@ function this.compile_track(linesets, track_name)
     if not generator then
         error(err)
     end
-    return generator()
+    return {
+        duration = raw_track.duration,
+        func = generator(),
+    }
 end
 
 local cached_tracks = {}

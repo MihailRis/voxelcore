@@ -50,7 +50,7 @@ local function update(delta)
         end
 
         if state.track and intensity > 0.0 then
-            state.track(rig, state.timer, intensity * state.max_intencity)
+            state.track.func(rig, state.timer, intensity * state.max_intencity)
         end
     end
 end
