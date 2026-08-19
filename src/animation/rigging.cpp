@@ -41,12 +41,15 @@ void Bone::setModel(const std::string& name) {
 
 Skeleton::Skeleton(std::shared_ptr<const SkeletonConfig> config)
     : config(config),
-      pose(config->getBones().size()),
-      calculated(config->getBones().size()),
-      flags(config->getBones().size()),
+      pose(config ? config->getBones().size() : 0),
+      calculated(config ? config->getBones().size() : 0),
+      flags(config ? config->getBones().size() : 0),
       textures(),
-      modelOverrides(config->getBones().size()),
+      modelOverrides(config ? config->getBones().size() : 0),
       visible(true) {
+    if (config == nullptr) {
+        return;
+    }
     const auto& bones = config->getBones();
     for (size_t i = 0; i < bones.size(); i++) {
         flags[i].visible = true;
@@ -89,19 +92,15 @@ void Skeleton::deserialize(const dv::value& root) {
 void Skeleton::setConfig(std::shared_ptr<const SkeletonConfig> rigConfig) {
     config = std::move(rigConfig);
 
-    const auto& bones = config->getBones();
+    int bonesCount = config ? config->getBones().size() : 0;
+    
+    pose.matrices.resize(bonesCount, glm::mat4(1.0f));
+    calculated.matrices.resize(bonesCount, glm::mat4(1.0f));
 
-    pose.matrices.resize(
-        bones.size(), glm::mat4(1.0f)
-    );
-    calculated.matrices.resize(
-        bones.size(), glm::mat4(1.0f)
-    );
+    modelOverrides.resize(bonesCount);
+    flags.resize(bonesCount);
 
-    modelOverrides.resize(bones.size());
-    flags.resize(bones.size());
-
-    for (size_t i = 0; i < bones.size(); i++) {
+    for (size_t i = 0; i < bonesCount; i++) {
         flags[i].visible = true;
     }
 }

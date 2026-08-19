@@ -116,6 +116,10 @@ static int l_set_skeleton(lua::State* L) {
         return 0;
     }
     if (auto entity = get_entity(L, 1)) {
+        if (lua::isnil(L, 2)) {
+            entity->setRig(nullptr);
+            return 0;
+        }
         std::string skeletonName = lua::require_string(L, 2);
         auto rigConfig = assets->getShared<rigging::SkeletonConfig>(skeletonName);
         if (rigConfig == nullptr) {
