@@ -17,7 +17,7 @@ entity:def_name() -> str
 -- Returns the name of the entity skeleton
 entity:get_skeleton() -> str
 -- Replaces the entity skeleton
-entity:set_skeleton(name: str)
+entity:set_skeleton(name: str | nil)
 
 -- Returns the unique entity identifier
 entity:get_uid() -> int
