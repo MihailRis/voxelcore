@@ -18,7 +18,7 @@ struct AudioSettings {
     NumberSetting volumeAmbient {1.0f, 0.0f, 1.0f, setting_format::percent};
     NumberSetting volumeMusic {1.0f, 0.0f, 1.0f, setting_format::percent};
 
-    StringSetting inputDevice {"auto"};
+    StringSetting inputDevice {""};
 
     FlagSetting acousticEffects {true};
 };

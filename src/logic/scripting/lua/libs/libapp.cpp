@@ -92,6 +92,17 @@ static int l_reconfig_packs(lua::State* L) {
     return 0;
 }
 
+/// @brief Get current content packs configuration
+static int l_get_content(lua::State* L) {
+    const auto& configuration = content_control->getContentPacks();
+    lua::createtable(L, configuration.size(), 0);
+    for (int i = 0; i < configuration.size(); i++) {
+        lua::pushlstring(L, configuration[i].id);
+        lua::rawseti(L, i + 1);
+    }
+    return 1;
+}
+
 /// @brief Get content sources list
 static int l_get_content_sources(lua::State* L) {
     const auto& sources = engine->getContentControl().getContentSources();
@@ -453,6 +464,7 @@ const luaL_Reg applib[] = {
     {"load_content", lua::wrap<l_load_content>},
     {"reset_content", lua::wrap<l_reset_content>},
     {"reconfig_packs", lua::wrap<l_reconfig_packs>},
+    {"get_content", lua::wrap<l_get_content>},
     {"get_content_sources", lua::wrap<l_get_content_sources>},
     {"set_content_sources", lua::wrap<l_set_content_sources>},
     {"reset_content_sources", lua::wrap<l_reset_content_sources>},

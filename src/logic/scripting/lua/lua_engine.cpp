@@ -74,6 +74,11 @@ static void create_libs(State* L, StateType stateType) {
     getglobal(L, "__vc_app");
     setregistry(L, "app");
 
+    createtable(L, 0, 0);
+    pushvalue(L, -1);
+    setglobal(L, "__vc_internals");
+    setregistry(L, "internals");
+
     if (stateType == StateType::SCRIPT) {
         getregistry(L, "app");
         setglobal(L, "app");

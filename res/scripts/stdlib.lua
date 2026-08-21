@@ -392,6 +392,7 @@ end
 
 ffi = nil
 __vc_app = nil
+__vc_internals = nil
 __vc_lock_internal_modules()
 __vc_lock_internal_modules = nil
 __vc_update_coroutines = nil

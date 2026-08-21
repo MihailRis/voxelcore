@@ -110,7 +110,8 @@ public:
         AssetType tag,
         const std::string& filename,
         const std::string& alias,
-        std::shared_ptr<AssetCfg> settings = nullptr
+        std::shared_ptr<AssetCfg> settings = nullptr,
+        bool overwrite = false
     );
 
     bool hasNext() const;

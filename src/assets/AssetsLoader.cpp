@@ -47,9 +47,10 @@ void AssetsLoader::add(
     AssetType tag,
     const std::string& filename,
     const std::string& alias,
-    std::shared_ptr<AssetCfg> settings
+    std::shared_ptr<AssetCfg> settings,
+    bool overwrite
 ) {
-    if (enqueued.find({tag, alias}) != enqueued.end()){
+    if (!overwrite && enqueued.find({tag, alias}) != enqueued.end()){
         return;
     }
     entries.push(aloader_entry {tag, filename, alias, std::move(settings)});
@@ -154,11 +155,12 @@ void AssetsLoader::processPreload(
     std::string defFolder = assets_def_folder(tag);
     std::string path = defFolder + "/" + name;
     if (map == nullptr) {
-        add(tag, path, name);
+        add(tag, path, name, nullptr, true);
         return;
     }
     std::shared_ptr<AssetCfg> config = nullptr;
     map.at("path").get(path);
+    logger.debug() << "processing preload " << util::quote(name) << " path: " << util::quote(path);
     switch (tag) {
         case AssetType::SOUND: {
             bool keepPCM = false;
@@ -196,7 +198,7 @@ void AssetsLoader::processPreload(
         default:
             break;
     }
-    add(tag, path, name, std::move(config));
+    add(tag, path, name, std::move(config), true);
 }
 
 void AssetsLoader::processPreloadList(AssetType tag, const dv::value& list) {
