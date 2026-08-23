@@ -67,9 +67,10 @@ If true - the entity blocks the placement of a block that intersects with the en
 
 Default value: *true*.
 
-### *selectable*
+### *selectable* (raycast opacity)
 
 If set to `false` the cursor will ignore the entity, passing the ray.
+Applies to all uses of raycast without the include_non_selectable flag.
 
 ### *sensors*
 

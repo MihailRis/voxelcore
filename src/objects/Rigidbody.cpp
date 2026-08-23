@@ -24,6 +24,7 @@ dv::value Rigidbody::serialize(bool saveVelocity, bool saveBodySettings) const {
         }
         bodymap["mass"] = mass;
         bodymap["elasticity"] = elasticity;
+        bodymap["selectable"] = selectable;
     }
     return bodymap;
 }
@@ -37,6 +38,7 @@ void Rigidbody::deserialize(const dv::value& root) {
     root["damping"].asNumber(hitbox.linearDamping);
     root["mass"].asNumber(mass);
     root["elasticity"].asNumber(elasticity);
+    root["selectable"].asBoolean(selectable);
 }
 
 template <void (*callback)(const Entity&, size_t, entityid_t)>
@@ -55,6 +57,7 @@ void Rigidbody::initialize(
 ) {
     mass = def.mass;
     elasticity = def.elasticity;
+    selectable = def.selectable;
     sensors.resize(def.radialSensors.size() + def.boxSensors.size());
     for (auto& [i, box] : def.boxSensors) {
         SensorParams params {};

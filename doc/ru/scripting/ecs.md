@@ -134,6 +134,11 @@ body:set_elasticity(elasticity: number)
 
 -- Возвращает скорость поверхности, на которой находится тело, либо {0,0,0}
 body:get_ground_vel() -> vec3
+
+-- Проверяет свойство 'selectable' у сущности (непрозрачность для лучей)
+body:is_selectable() -> bool
+-- Устанавливает значение свойство 'selectable' у сущности
+body:set_selectable(flag: bool)
 ```
 
 ### Skeleton
