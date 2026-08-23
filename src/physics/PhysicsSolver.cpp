@@ -122,7 +122,7 @@ static void calc_collision(
 
             auto aabb = AABB(pos - half, pos + half);
             glm::vec3 scale(1.0f);
-            scale[nz] = 1.0f - E * 8.0f;
+            scale[nz] = 1.0f - E * 2.0f;
             aabb.scale(scale);
             aabb = aabb + offset;
             aabb.b.y -= stepHeight + E * 2;

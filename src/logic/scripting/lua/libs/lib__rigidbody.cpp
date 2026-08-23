@@ -199,6 +199,20 @@ static int l_get_ground_vel(lua::State* L) {
     return 0;
 }
 
+static int l_is_selectable(lua::State* L) {
+    if (auto entity = get_entity(L, 1)) {
+        return lua::pushboolean(L, entity->getRigidbody().hitbox.selectable);
+    }
+    return 0;
+}
+
+static int l_set_selectable(lua::State* L) {
+    if (auto entity = get_entity(L, 1)) {
+        entity->getRigidbody().selectable = lua::toboolean(L, 2);
+    }
+    return 0;
+}
+
 
 const luaL_Reg rigidbodylib[] = {
     {"is_enabled", lua::wrap<l_is_enabled>},
@@ -226,5 +240,7 @@ const luaL_Reg rigidbodylib[] = {
     {"get_elasticity", lua::wrap<l_get_elasticity>},
     {"set_elasticity", lua::wrap<l_set_elasticity>},
     {"get_ground_vel", lua::wrap<l_get_ground_vel>},
+    {"is_selectable", lua::wrap<l_is_selectable>},
+    {"set_selectable", lua::wrap<l_set_selectable>},
     {nullptr, nullptr}
 };

@@ -288,7 +288,23 @@ void scripting::on_content_load(Content* content) {
         lua::setfield(L, "properties");
         lua::pop(L);
     }
-    load_script("post_content.lua", true);
+
+    lua::getregistry(L, "app");
+    lua::setglobal(L, "__vc_app");
+    lua::getregistry(L, "internals");
+    lua::setglobal(L, "__vc_internals");
+    try {
+        load_script("post_content.lua", true);
+    } catch (const std::exception&) {
+        lua::pushnil(L);
+        lua::setglobal(L, "__vc_app");
+        throw;
+    }
+    lua::pushnil(L);
+    lua::setglobal(L, "__vc_app");
+    lua::pushnil(L);
+    lua::setglobal(L, "__vc_internals");
+
     load_script("stdcmd.lua", true);
 }
 

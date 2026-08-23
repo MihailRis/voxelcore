@@ -36,6 +36,11 @@ entity:set_enabled(name: str, enable: bool)
 -- At components initialization -1 is also returned,
 -- since the binding occurs after initialization.
 entity:get_player() -> int or nil
+
+-- Checks the 'selectable' property of an entity (raycast opacity)
+body:is_selectable() -> bool
+-- Sets the value of the 'selectable' property of an entity
+body:set_selectable(flag: bool)
 ```
 
 ## Custom Components

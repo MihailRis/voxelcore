@@ -154,6 +154,20 @@ package = {
 }
 local __cached_scripts = {}
 local __warnings_hidden = {}
+local __compilers = {}
+
+function __vc_internals.register_compiler(sourcepack, extensions, module)
+    local compiler = {
+        packid = sourcepack,
+        extensions = extensions,
+        module = module,
+    }
+    for i, ext in ipairs(extensions) do
+        if not __compilers[ext] then
+            __compilers[ext] = compiler
+        end
+    end
+end
 
 function on_deprecated_call(name, alternatives)
     if __warnings_hidden[name] then
@@ -200,6 +214,21 @@ end
 
 local __internal_locked = false
 
+local default_compiler = {
+    module = {
+        execute = function(code, path, env)
+            local script, err = load(code, path)
+            if script == nil then
+                error(err)
+            end
+            if env then
+                script = setfenv(script, env)
+            end
+            return script
+        end
+    }
+}
+
 -- Load script with caching
 --
 -- path - script path `contentpack:filename`. 
@@ -210,6 +239,9 @@ function __load_script(path, nocache, env)
     local packname, filename = parse_path(path)
     local is_internal = (packname == "res" or packname == "core")
        and filename:find("modules/internal") == 1
+
+    local ext = path:match("%.([^:/\\]+)$")
+    local compiler = __compilers[ext] or default_compiler
 
     nocache = nocache or is_internal
 
@@ -225,13 +257,7 @@ function __load_script(path, nocache, env)
         error("script '"..filename.."' not found in '"..packname.."'")
     end
 
-    local script, err = load(file.read(path), path)
-    if script == nil then
-        error(err)
-    end
-    if env then
-        script = setfenv(script, env)
-    end
+    local script = compiler.module.execute(file.read(path), path, env)
     local result = script()
     if not nocache then
         __cached_scripts[path] = script
@@ -245,6 +271,9 @@ function __vc_lock_internal_modules()
 end
 
 local __pack_envs = __vc__pack_envs
+function __vc_internals.get_pack_env(packid)
+    return __pack_envs[packid]
+end
 __vc__pack_envs = nil
 
 function require(path)
@@ -275,6 +304,13 @@ function __scripts_cleanup(non_reset_packs)
             package.loaded[k] = nil
         end
         __pack_envs[packname] = nil
+        ::continue::
+    end
+    for ext, compiler in pairs(__compilers) do
+        if table.has(non_reset_packs, compiler.packid) then
+            goto continue
+        end
+        __compilers[ext] = nil
         ::continue::
     end
 end

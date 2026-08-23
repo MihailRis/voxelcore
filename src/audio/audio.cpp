@@ -211,12 +211,15 @@ void audio::initialize(
             return;
         }
         if (enabled) {
-            logger.info() << "recording enabled; input device is "
-                          << settings.inputDevice.get();
+            const auto& targetDevice = settings.inputDevice.get();
+            logger.info() << "recording enabled; target input device is "
+                          << (targetDevice.empty() ? "not specified"
+                                                   : targetDevice);
             ::input_device = backend->openInputDevice(
                 settings.inputDevice.get(), 44100, 1, 16
             );
             if (::input_device != nullptr) {
+                logger.error() << "could not create input device";
                 ::input_device->startCapture();
             }
         } else {

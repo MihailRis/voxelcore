@@ -46,7 +46,7 @@ void Texture::resize(uint width, uint height) {
 }
 
 void Texture::reload(const ImageData& image) {
-    reload(image.getData(), width, height);
+    reload(image.getData(), image.getWidth(), image.getHeight());
 }
 
 void Texture::reload(const ubyte* data, uint width, uint height) {

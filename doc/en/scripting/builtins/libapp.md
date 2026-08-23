@@ -9,21 +9,22 @@ local filename = "script:"..app.script..".lua"
 
 Since the control script may not belong to any of the packs, it does not belongs to its own package and has its own global namespace in which all global functions and tables are available, as well as the `app` library.
 
-## Functions
+
+## Common functions
 
 ```lua
+-- Performs one tick of the main engine loop.
 app.tick()
-```
 
-Performs one tick of the main engine loop.
-
-```lua
+-- Waits for the specified time in seconds, performing the main engine loop.
 app.sleep(time: number)
-```
 
-Waits for the specified time in seconds, performing the main engine loop.
+-- Terminates the engine, printing the call stack
+-- to trace the function call location.
+app.quit()
 
-```lua
+-- Waits for the condition checked by the function to be true,
+-- performing the main engine loop.
 app.sleep_until(
     -- function that checks the condition for ending the wait
     predicate: function() -> bool,
@@ -36,51 +37,54 @@ app.sleep_until(
 )
 ```
 
-Waits for the condition checked by the function to be true, performing the main engine loop.
+## Content
 
 ```lua
-app.quit()
-```
+-- Checks if content is loaded.
+app.is_content_loaded() -> bool
 
-Terminates the engine, printing the call stack to trace the function call location.
+-- Returns the current content configuration
+-- (list of packs IDs in loading order)
+app.get_content() -> table<string>
 
-```lua
+-- Loads content based on the current configuration.
+-- Cannot be used if content is already loaded (see app.reset_content).
+app.load_content()
+
+-- Unloads all content, resetting it to a single core pack.
+app.reset_content(
+    -- Packs for which modules, events, and environment will not be reset
+    [optional] non_reset_packs: table
+)
+
+-- Updates the packs configuration, checking its correctness
+-- (dependencies and availability of packs).
+-- Automatically adds and reorders packs based on dependencies.
 app.reconfig_packs(
     -- packs to add
     add_packs: table,
     -- packs to remove
     remove_packs: table
 )
-```
 
-Updates the packs configuration, checking its correctness (dependencies and availability of packs).
-Automatically adds dependencies.
-
-To remove all packs from the configuration, you can use `pack.get_installed()`:
-
-```lua
+-- To remove all packs from the configuration,you can use `pack.get_installed()`:
 app.reconfig_packs({}, pack.get_installed())
-```
+-- In this case, `base` will also be removed from the configuration.
 
-In this case, `base` will also be removed from the configuration.
-
-```lua
+-- Updates the packs configuration, automatically removing unspecified ones,
+-- adding those missing in the previous configuration.
+-- Uses app.reconfig_packs.
 app.config_packs(
     -- expected set of packs (excluding dependencies)
     packs: table
 )
 ```
 
-Updates the packs configuration, automatically removing unspecified ones, adding those missing in the previous configuration.
-Uses app.reconfig_packs.
+## Worlds
+
 
 ```lua
-app.is_content_loaded() -> bool
-```
-
-Checks if content is loaded.
-
-```lua
+-- Creates a new world and opens it.
 app.new_world(
     -- world name, empty string will create a nameless world
     name: str,
@@ -91,62 +95,42 @@ app.new_world(
     -- local player id
     [optional] local_player: int=0
 )
-```
 
-Creates a new world and opens it.
+-- Deletes a world by name.
+app.delete_world(name: str)
 
-```lua
+-- Opens a world by name.
 app.open_world(name: str)
-```
 
-Opens a world by name.
-
-```lua
+-- Reopens the world.
 app.reopen_world()
-```
 
-Reopens the world.
-
-```lua
+-- Saves the world.
 app.save_world()
-```
 
-Saves the world.
-
-```lua
+-- Closes the world.
 app.close_world(
     -- save the world before closing
     [optional] save_world: bool=false
 )
 ```
 
-Closes the world.
+## Engine settings and information
 
 ```lua
-app.delete_world(name: str)
-```
-
-Deletes a world by name.
-
-```lua
+-- Returns the major and minor versions of the engine.
 app.get_version() -> int, int
-```
 
-Returns the major and minor versions of the engine.
-
-```lua
+-- Returns the value of a setting.
+-- Throws an exception if the setting does not exist.
 app.get_setting(name: str) -> value
-```
 
-Returns the value of a setting. Throws an exception if the setting does not exist.
-
-```lua
+-- Sets the value of a setting.
+-- Throws an exception if the setting does not exist.
 app.set_setting(name: str, value: value)
-```
 
-Sets the value of a setting. Throws an exception if the setting does not exist.
-
-```lua
+-- Returns a table with information about a setting.
+-- Throws an exception if the setting does not exist.
 app.get_setting_info(name: str) -> {
     -- default value
     def: value,
@@ -155,42 +139,29 @@ app.get_setting_info(name: str) -> {
     -- maximum value
     [only for numeric settings] max: number
 }
-```
 
-Returns a table with information about a setting. Throws an exception if the setting does not exist.
-
-```lua
+-- Brings the window to front and sets input focus.
 app.focus()
 ```
 
-Brings the window to front and sets input focus.
+## Paths and entry points
 
 ```lua
+-- Creates an in-memory filesystem.
 app.create_memory_device(
     -- entry-point name
     name: str
 )
-```
 
-Creates an in-memory filesystem.
-
-```lua
+-- Returns a list of content sources (paths), in descending priority order.
 app.get_content_sources() -> table<string>
-```
 
-Returns a list of content sources (paths), in descending priority order.
-
-```lua
+-- Sets a list of content sources (paths). Specified in descending priority order.
 app.set_content_sources(sources: table<string>)
-```
 
-Sets a list of content sources (paths). Specified in descending priority order.
-
-```lua
+-- Resets content sources.
 app.reset_content_sources()
 ```
-
-Resets content sources.
 
 ## Sub-instances
 
@@ -209,5 +180,5 @@ app.is_instance_alive(handle: int) -> boolean
 
 -- Stops the engine sub-instance.
 -- Returns true if the instance was alive at the time of the call.
-app.terminate(handle: int) -> boolean
+app.terminate_instance(handle: int) -> boolean
 ```

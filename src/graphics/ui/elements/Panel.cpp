@@ -78,9 +78,10 @@ void Panel::refresh() {
     glm::vec2 size = getSize();
     if (orientation == Orientation::VERTICAL) {
         float maxw = size.x;
-        for (auto& node : nodes) {
+        for (size_t i = 0; i < nodes.size(); i++) {
+            const auto& node = nodes[i];
             const glm::vec4 margin = node->getMargin();
-            y += margin.y;
+            y += margin.y + (i > 0 ? interval : 0);
 
             float ex = x + margin.x;
             node->setPos(glm::vec2(ex, y));
@@ -94,16 +95,17 @@ void Panel::refresh() {
             }
             node->refresh();
             glm::vec2 nodeSize = node->getSize();
-            y += nodeSize.y + margin.w + interval;
+            y += nodeSize.y + margin.w;
             maxw = fmax(maxw, ex + nodeSize.x + margin.z + padding.z);
         }
         actualLengthX = size.x;
         actualLengthY = y + padding.w;
     } else {
         float maxh = size.y;
-        for (auto& node : nodes) {
+        for (size_t i = 0; i < nodes.size(); i++) {
+            const auto& node = nodes[i];
             const glm::vec4 margin = node->getMargin();
-            x += margin.x;
+            x += margin.x + (i > 0 ? interval : 0);
 
             float ey = y + margin.y;
             node->setPos(glm::vec2(x, ey));
@@ -117,7 +119,7 @@ void Panel::refresh() {
             }
             node->refresh();
             glm::vec2 nodesize = node->getSize();
-            x += nodesize.x + margin.z + interval;
+            x += nodesize.x + margin.z;
             maxh = fmax(maxh, ey + nodesize.y + margin.w + padding.w);
         }
         actualLengthY = size.y;

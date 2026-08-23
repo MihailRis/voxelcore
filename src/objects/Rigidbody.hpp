@@ -15,6 +15,7 @@ struct Rigidbody {
     std::vector<Sensor> sensors;
     float mass;
     float elasticity;
+    bool selectable;
 
     dv::value serialize(bool saveVelocity, bool saveBodySettings) const;
     void deserialize(const dv::value& root);
