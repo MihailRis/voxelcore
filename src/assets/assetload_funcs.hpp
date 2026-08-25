@@ -14,56 +14,56 @@ struct AssetCfg;
 /// @brief see AssetsLoader.h: aloader_func
 namespace assetload {
     postfunc texture(
-        AssetsLoader*,
+        AssetsLoader&,
         const ResPaths& paths,
         const std::string& filename,
         const std::string& name,
         const std::shared_ptr<AssetCfg>& settings
     );
     postfunc shader(
-        AssetsLoader*,
+        AssetsLoader&,
         const ResPaths& paths,
         const std::string& filename,
         const std::string& name,
         const std::shared_ptr<AssetCfg>& settings
     );
     postfunc atlas(
-        AssetsLoader*,
+        AssetsLoader&,
         const ResPaths& paths,
         const std::string& directory,
         const std::string& name,
         const std::shared_ptr<AssetCfg>& settings
     );
     postfunc font(
-        AssetsLoader*,
+        AssetsLoader&,
         const ResPaths& paths,
         const std::string& filename,
         const std::string& name,
         const std::shared_ptr<AssetCfg>& settings
     );
     postfunc layout(
-        AssetsLoader*,
+        AssetsLoader&,
         const ResPaths& paths,
         const std::string& file,
         const std::string& name,
         const std::shared_ptr<AssetCfg>& settings
     );
     postfunc sound(
-        AssetsLoader*,
+        AssetsLoader&,
         const ResPaths& paths,
         const std::string& file,
         const std::string& name,
         const std::shared_ptr<AssetCfg>& settings
     );
     postfunc model(
-        AssetsLoader*,
+        AssetsLoader&,
         const ResPaths& paths,
         const std::string& file,
         const std::string& name,
         const std::shared_ptr<AssetCfg>& settings
     );
     postfunc posteffect(
-        AssetsLoader*,
+        AssetsLoader&,
         const ResPaths& paths,
         const std::string& file,
         const std::string& name,
@@ -71,7 +71,7 @@ namespace assetload {
     );
 
     postfunc skeleton(
-        AssetsLoader*,
+        AssetsLoader&,
         const ResPaths& paths,
         const std::string& file,
         const std::string& name,

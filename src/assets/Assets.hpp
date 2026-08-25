@@ -1,5 +1,9 @@
 #pragma once
 
+#include "util/stringutil.hpp"
+#include "util/ObjectsKeeper.hpp"
+#include "graphics/core/TextureAnimation.hpp"
+
 #include <functional>
 #include <memory>
 #include <optional>
@@ -10,10 +14,6 @@
 #include <typeinfo>
 #include <unordered_map>
 #include <vector>
-
-#include "util/stringutil.hpp"
-#include "util/ObjectsKeeper.hpp"
-#include "graphics/core/TextureAnimation.hpp"
 
 class Assets;
 
@@ -31,12 +31,12 @@ enum class AssetType {
 
 namespace assetload {
     /// @brief final work to do in the main thread
-    using postfunc = std::function<void(Assets*)>;
+    using postfunc = std::function<void(Assets&)>;
 
-    using setupfunc = std::function<void(const Assets*)>;
+    using setupfunc = std::function<void(const Assets&)>;
 
     template <class T>
-    void assets_setup(const Assets*);
+    void assets_setup(const Assets&);
 
     class error : public std::runtime_error {
         AssetType type;
@@ -145,7 +145,7 @@ public:
 
     void setup() {
         for (auto& setupFunc : setupFuncs) {
-            setupFunc(this);
+            setupFunc(*this);
         }
     }
 
@@ -155,8 +155,8 @@ public:
 };
 
 template <class T>
-void assetload::assets_setup(const Assets* assets) {
-    if (auto mapPtr = assets->getMap<T>()) {
+void assetload::assets_setup(const Assets& assets) {
+    if (auto mapPtr = assets.getMap<T>()) {
         for (const auto& entry : **mapPtr) {
             static_cast<T*>(entry.second.get())->setup();
         }

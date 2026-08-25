@@ -298,6 +298,8 @@ void scripting::on_content_load(Content* content) {
     } catch (const std::exception&) {
         lua::pushnil(L);
         lua::setglobal(L, "__vc_app");
+        lua::pushnil(L);
+        lua::setglobal(L, "__vc_internals");
         throw;
     }
     lua::pushnil(L);

@@ -72,7 +72,7 @@ struct ModelCfg : AssetCfg {
 
 using aloader_func = std::function<
     assetload::
-        postfunc(AssetsLoader*, const ResPaths&, const std::string&, const std::string&, std::shared_ptr<AssetCfg>)>;
+        postfunc(AssetsLoader&, const ResPaths&, const std::string&, const std::string&, std::shared_ptr<AssetCfg>)>;
 
 struct aloader_entry {
     AssetType tag;
@@ -99,6 +99,8 @@ class AssetsLoader {
     void processPreloadConfigs(const Content* content);
 public:
     AssetsLoader(Engine& engine, Assets& assets, const ResPaths& paths);
+    AssetsLoader(const AssetsLoader&) = delete;
+
     void addLoader(AssetType tag, aloader_func func);
 
     /// @brief Enqueue asset load

@@ -79,8 +79,8 @@ void AssetsLoader::loadNext() {
     try {
         aloader_func loader = getLoader(entry.tag);
         auto postfunc =
-            loader(this, paths, entry.filename, entry.alias, entry.config);
-        postfunc(&assets);
+            loader(*this, paths, entry.filename, entry.alias, entry.config);
+        postfunc(assets);
     } catch (const parsing_error& err) {
         error = err.errorLog();
     } catch (const std::runtime_error& err) {
@@ -361,17 +361,17 @@ const ResPaths& AssetsLoader::getPaths() const {
 }
 
 class LoaderWorker : public util::Worker<aloader_entry, assetload::postfunc> {
-    AssetsLoader* loader;
+    AssetsLoader& loader;
 public:
-    LoaderWorker(AssetsLoader* loader) : loader(loader) {
+    LoaderWorker(AssetsLoader& loader) : loader(loader) {
     }
 
     assetload::postfunc operator()(const aloader_entry& entry
     ) override {
-        aloader_func loadfunc = loader->getLoader(entry.tag);
+        aloader_func loadfunc = loader.getLoader(entry.tag);
         return loadfunc(
             loader,
-            loader->getPaths(),
+            loader.getPaths(),
             entry.filename,
             entry.alias,
             entry.config
@@ -383,8 +383,8 @@ std::shared_ptr<Task> AssetsLoader::startTask(runnable onDone, int maxWorkers) {
     auto pool =
         std::make_shared<util::ThreadPool<aloader_entry, assetload::postfunc>>(
             "assets-loader-pool",
-            [=]() { return std::make_unique<LoaderWorker>(this); },
-            [this](const assetload::postfunc& func) { func(&assets); },
+            [=]() { return std::make_unique<LoaderWorker>(*this); },
+            [this](const assetload::postfunc& func) { func(assets); },
             maxWorkers
         );
     pool->setOnComplete(std::move(onDone));
