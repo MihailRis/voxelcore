@@ -141,6 +141,12 @@ string.left_pad(str: string, size: int, char: string) -> string
 -- Добавляет char справа от строки, пока её размер не будет равен size. 
 -- По стандарту char равен символу пробела.
 string.right_pad(str: string, size: int, char: string) -> string
+
+-- Кодирует строку в формат URL, заменяя специальные символы на их шестнадцатеричные представления.
+string.url_encode(str: string) -> string
+
+-- Декодирует строку из формата URL, заменяя шестнадцатеричные представления на соответствующие символы.
+string.url_decode(str: string) -> string
 ```
 
 ## Расширения для math

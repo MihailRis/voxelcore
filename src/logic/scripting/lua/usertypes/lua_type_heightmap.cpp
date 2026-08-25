@@ -110,6 +110,7 @@ static int l_noise(lua::State* L) {
         if (gettop(L) > 6) {
             shiftMapY = touserdata<LuaHeightmap>(L, 7);
         }
+        bool normalizedNoise = heightmap->normalizedNoise;
         noise->noise_type = noise_type;
         for (uint y = 0; y < h; y++) {
             for (uint x = 0; x < w; x++) {
@@ -126,8 +127,14 @@ static int l_noise(lua::State* L) {
                         v += shiftMapY->getValues()[i];
                     }
 
-                    value += fnlGetNoise2D(noise, u, v) /
-                            static_cast<float>(1 << c) * multiplier;
+                    float noiseValue = fnlGetNoise2D(noise, u, v);
+                    if (normalizedNoise) {
+                        float t = 1.0f / (static_cast<float>(1 << c) * multiplier);
+                        value = value * (1.0f - t) + noiseValue * t;
+                    } else {
+                        float t = 1.0f / static_cast<float>(1 << c) * multiplier;
+                        value += noiseValue * t;
+                    }
                     heights[i] = value;
                 }
             }
@@ -317,6 +324,8 @@ static int l_meta_newindex(lua::State* L) {
         auto fieldname = tostring(L, 2);
         if (!std::strcmp(fieldname, "noiseSeed")) {
             map->setSeed(tointeger(L, 3));
+        } else if (!std::strcmp(fieldname, "normalNoise")) {
+            map->normalizedNoise = toboolean(L, 3);
         }
     }
     return 0;

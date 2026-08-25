@@ -18,49 +18,66 @@ namespace util {
     constexpr inline float EPSILON = 1e-6f;
 
     class PseudoRandom {
-        unsigned short seed;
+        uint32_t seed;
+
     public:
-        PseudoRandom(unsigned short seed) : seed(seed) {}
+        explicit PseudoRandom(uint32_t seed) : seed(seed) {}
 
-        PseudoRandom() {
-            seed = static_cast<unsigned short>(time(nullptr));
-        }
+        PseudoRandom()
+            : seed(static_cast<uint32_t>(time(nullptr))) {}
 
-        int rand() {
-            seed = (seed + 0x7ed5 + (seed << 6));
-            seed = (seed ^ 0xc23c ^ (seed >> 9));
-            seed = (seed + 0x1656 + (seed << 3));
-            seed = ((seed + 0xa264) ^ (seed << 4));
-            seed = (seed + 0xfd70 - (seed << 3));
-            seed = (seed ^ 0xba49 ^ (seed >> 8));
+        uint32_t rand() {
+            seed += 0x7ed55d16u;
+            seed ^= seed >> 16;
+            seed *= 0x21f0aaadu;
+            seed ^= seed >> 15;
+            seed *= 0x735a2d97u;
+            seed ^= seed >> 15;
 
-            return static_cast<int>(seed);
-        }
-
-        void rand(unsigned char* dst, size_t n) {
-            for (size_t i = 0; i < n; i++) {
-                dst[i] = rand();
-            }
-        }
-
-        int32_t rand32() {
-            return (rand() << 16) | rand();
+            return seed;
         }
 
         uint32_t randU32() {
-            return (rand() << 16) | rand();
-        }
-
-        int64_t rand64() {
-            uint64_t x = randU32();
-            uint64_t y = randU32();
-            return (x << 32ULL) | y;
+            return rand();
         }
 
         uint64_t randU64() {
             uint64_t x = randU32();
             uint64_t y = randU32();
-            return (x << 32ULL) | y;
+            return (x << 32) | y;
+        }
+
+        int32_t rand32() {
+            return static_cast<int32_t>(randU32());
+        }
+
+        int64_t rand64() {
+            uint64_t x = randU32();
+            uint64_t y = randU32();
+            return static_cast<int64_t>((x << 32) | y);
+        }
+
+        void setSeed(uint32_t value) {
+            seed = value;
+            if (seed == 0) {
+                seed = 0x6d2b79f5u;
+            }
+            rand();
+        }
+
+        void setSeed(int32_t number1, int32_t number2) {
+            uint32_t a = static_cast<uint32_t>(number1);
+            uint32_t b = static_cast<uint32_t>(number2);
+
+            uint32_t x = a * 23729u;
+            uint32_t y = b * 16786u;
+
+            seed = (x ^ y ^ (a * b));
+
+            if (seed == 0) {
+                seed = 0x6d2b79f5u;
+            }
+            rand();
         }
 
         float randFloat() {
@@ -69,21 +86,6 @@ namespace util {
 
         double randDouble() {
             return randU64() / static_cast<double>(UINT64_MAX);
-        }
-
-        void setSeed(int number1, int number2) {
-            seed = ((static_cast<unsigned short>(number1 * 23729) |
-                    static_cast<unsigned short>(number2 % 16786)) ^
-                    static_cast<unsigned short>(number2 * number1));
-            rand();
-        }
-
-        void setSeed(long number) {
-            number = shuffle_bits_step(number, 0x2222222222222222ull, 1);
-            number = shuffle_bits_step(number, 0x0c0c0c0c0c0c0c0cull, 2);
-            number = shuffle_bits_step(number, 0x00f000f000f000f0ull, 4);
-            seed = number;
-            rand();
         }
     };
 

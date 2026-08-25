@@ -295,14 +295,13 @@ void Entities::preparePhysics(float delta) {
     auto& physics = *level.physics;
     auto& hitboxes = physics.getHitboxesWriteable();
     auto& solidHitboxes = physics.getSolidHitboxesWriteable();
+    auto& sensors = physics.getSensorsWriteable();
+    sensors.clear();
 
     if (int parts = sensorsTickClock.update(delta)) {
         for (int i = 0; i < parts; i++) {
             auto part = sensorsTickClock.convertPart(i);
             auto allParts = sensorsTickClock.getParts();
-
-            auto& sensors = physics.getSensorsWriteable();
-            sensors.clear();
 
             auto view = registry->view<EntityId, Transform, Rigidbody>();
             for (auto [entity, eid, transform, rigidbody] : view.each()) {

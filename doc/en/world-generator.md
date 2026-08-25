@@ -284,6 +284,14 @@ A method that generates simplex noise, adding it to the existing values.
 
 The noise seed can be specified in the `map.noiseSeed` field.
 
+By default, noise octaves are mixed using addition:
+
+$noise_{out} = noise_{source} + noise_{applied} * 2^{-{octave}}$
+
+To obtain more normalized multi-octave noise, you can enable the `map.normalNoise = true` flag, which changes the scheme:
+
+$noise_{out} = noise_{source} * (1 - 2^{-{octave}}) + noise_{applied} * 2^{-{octave}}$
+
 ```lua
 map:noise(
 -- coordinate offset
@@ -312,6 +320,10 @@ Analog of heightmap:noise that generates cellular noise.
 The noise seed can be specified in the `map.noiseSeed` field.
 
 ![image](../images/cell-noise.gif)
+
+> [!NOTE] cell noise looks better with `map.normalNoise = true`
+
+![image](../images/normal-cell-noise.png)
 
 ### heightmap:resize(...)
 
