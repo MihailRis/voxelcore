@@ -844,6 +844,21 @@ void scripting::load_layout_script(
     lua::pop(L);
 }
 
+void scripting::load_vca_animation(
+    const io::path& file,
+    const std::string& identifier
+) {
+    auto L = lua::get_main_state();
+    if (lua::get_from_registry(L, "internals", "load_vca_animation", true)) {
+        lua::pushlstring(L, file.string());
+        lua::pushlstring(L, identifier);
+        if (lua::call(L, 2, 0)) {
+            lua::pop(L);
+        }
+        lua::pop(L);
+    }
+}
+
 void scripting::close() {
     lua::finalize();
     content = nullptr;

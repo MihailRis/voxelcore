@@ -2,9 +2,10 @@ local rig = entity.skeleton
 
 local states = {}
 
-function create_state(name, track, max_intencity)
+function create_state(name, track_id, max_intencity)
     states[name] = {
-        track = track,
+        track = nil,
+        track_id = track_id,
         timer = 0.0,
         fade_time = 0.0,
         fade_timer = 0.0,
@@ -47,6 +48,7 @@ local function update(delta)
             end
         end
 
+        state.track = state.track or animation.get_track(state.track_id)
         if state.track and intensity > 0.0 then
             state.track.func(rig, state.timer, intensity * state.max_intencity)
         end

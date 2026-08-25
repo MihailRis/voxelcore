@@ -26,17 +26,20 @@ namespace fs = std::filesystem;
 
 static debug::Logger logger("assets-loader");
 
-AssetsLoader::AssetsLoader(Engine& engine, Assets& assets, const ResPaths& paths)
+AssetsLoader::AssetsLoader(
+    Engine& engine, Assets& assets, const ResPaths& paths
+)
     : engine(engine), assets(assets), paths(paths) {
-    addLoader(AssetType::SHADER, assetload::shader);
-    addLoader(AssetType::TEXTURE, assetload::texture);
-    addLoader(AssetType::FONT, assetload::font);
+    addLoader(AssetType::ANIMATION, assetload::animation);
     addLoader(AssetType::ATLAS, assetload::atlas);
+    addLoader(AssetType::FONT, assetload::font);
     addLoader(AssetType::LAYOUT, assetload::layout);
-    addLoader(AssetType::SOUND, assetload::sound);
     addLoader(AssetType::MODEL, assetload::model);
     addLoader(AssetType::POST_EFFECT, assetload::posteffect);
+    addLoader(AssetType::SHADER, assetload::shader);
     addLoader(AssetType::SKELETON, assetload::skeleton);
+    addLoader(AssetType::SOUND, assetload::sound);
+    addLoader(AssetType::TEXTURE, assetload::texture);
 }
 
 void AssetsLoader::addLoader(AssetType tag, aloader_func func) {
@@ -127,24 +130,26 @@ void AssetsLoader::tryAddSound(const std::string& name) {
 
 static std::string assets_def_folder(AssetType tag) {
     switch (tag) {
-        case AssetType::FONT:
-            return FONTS_FOLDER;
-        case AssetType::SHADER:
-            return SHADERS_FOLDER;
-        case AssetType::TEXTURE:
-            return TEXTURES_FOLDER;
+        case AssetType::ANIMATION:
+            return ANIMATION_FOLDER;
         case AssetType::ATLAS:
             return TEXTURES_FOLDER;
+        case AssetType::FONT:
+            return FONTS_FOLDER;
         case AssetType::LAYOUT:
             return LAYOUTS_FOLDER;
-        case AssetType::SOUND:
-            return SOUNDS_FOLDER;
         case AssetType::MODEL:
             return MODELS_FOLDER;
         case AssetType::POST_EFFECT:
             return POST_EFFECTS_FOLDER;
+        case AssetType::SHADER:
+            return SHADERS_FOLDER;
         case AssetType::SKELETON:
             return SKELETONS_FOLDER;
+        case AssetType::SOUND:
+            return SOUNDS_FOLDER;
+        case AssetType::TEXTURE:
+            return TEXTURES_FOLDER;
     }
     return "<error>";
 }
@@ -221,14 +226,15 @@ void AssetsLoader::processPreloadList(AssetType tag, const dv::value& list) {
 
 void AssetsLoader::processPreloadConfig(const io::path& file) {
     auto root = io::read_json(file);
+    processPreloadList(AssetType::ANIMATION, root["animation"]);
     processPreloadList(AssetType::ATLAS, root["atlases"]);
     processPreloadList(AssetType::FONT, root["fonts"]);
-    processPreloadList(AssetType::SHADER, root["shaders"]);
-    processPreloadList(AssetType::TEXTURE, root["textures"]);
-    processPreloadList(AssetType::SOUND, root["sounds"]);
     processPreloadList(AssetType::MODEL, root["models"]);
     processPreloadList(AssetType::POST_EFFECT, root["post-effects"]);
+    processPreloadList(AssetType::SHADER, root["shaders"]);
     processPreloadList(AssetType::SKELETON, root["skeletons"]);
+    processPreloadList(AssetType::SOUND, root["sounds"]);
+    processPreloadList(AssetType::TEXTURE, root["textures"]);
     // layouts are loaded automatically
 }
 

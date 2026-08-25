@@ -18,6 +18,7 @@
 class Assets;
 
 enum class AssetType {
+    ANIMATION,
     TEXTURE,
     SHADER,
     FONT,

@@ -332,6 +332,8 @@ end
 world.raycast = entities.__world_raycast
 entities.__world_raycast = nil
 
+animation = require "core:animation"
+
 __vc_scripts_registry = require "core:internal/scripts_registry"
 
 file.open = require "core:internal/stream_providers/file"

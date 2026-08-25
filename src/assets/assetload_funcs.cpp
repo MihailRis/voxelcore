@@ -23,6 +23,7 @@
 #include "graphics/core/Shader.hpp"
 #include "graphics/core/Texture.hpp"
 #include "graphics/core/TextureAnimation.hpp"
+#include "logic/scripting/scripting.hpp"
 #include "io/io.hpp"
 #include "util/stringutil.hpp"
 
@@ -43,6 +44,20 @@ static bool load_animated_texture(
     const std::string& name,
     Atlas* dstAtlas
 );
+
+assetload::postfunc assetload::animation(
+    AssetsLoader&,
+    const ResPaths& paths,
+    const std::string& filename,
+    const std::string& name,
+    const std::shared_ptr<AssetCfg>&
+) {
+    auto path = paths.find(filename + ".vca");
+    if (io::is_regular_file(path)) {
+        scripting::load_vca_animation(path, name);
+    }
+    return [](auto&) {};
+}
 
 assetload::postfunc assetload::texture(
     AssetsLoader&,

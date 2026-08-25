@@ -279,7 +279,7 @@ end
 
 local cached_tracks = {}
 
-function this.load_vca(filepath)
+function this.load_vca(filepath, identifier)
     local track = cached_tracks[filepath]
     if track then
         return track
@@ -287,8 +287,16 @@ function this.load_vca(filepath)
     local source = file.read(filepath)
     local raw_track = parse_track(xml.parse_vcd(source, "track"))
     track = this.compile_track(raw_track, filepath)
-    cached_tracks[filepath] = track
+    cached_tracks[identifier] = track
     return track
+end
+
+function this.get_track(identifier)
+    return cached_tracks[identifier]
+end
+
+function __vc_internals.load_vca_animation(filepath, identifier)
+    this.load_vca(filepath, identifier)
 end
 
 return this

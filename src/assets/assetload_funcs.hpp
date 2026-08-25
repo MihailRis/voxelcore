@@ -13,6 +13,13 @@ struct AssetCfg;
 
 /// @brief see AssetsLoader.h: aloader_func
 namespace assetload {
+    postfunc animation(
+        AssetsLoader&,
+        const ResPaths& paths,
+        const std::string& filename,
+        const std::string& name,
+        const std::shared_ptr<AssetCfg>& settings
+    );
     postfunc texture(
         AssetsLoader&,
         const ResPaths& paths,
