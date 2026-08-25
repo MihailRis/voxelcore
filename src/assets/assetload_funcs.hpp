@@ -1,9 +1,9 @@
 #pragma once
 
+#include "Assets.hpp"
+
 #include <memory>
 #include <string>
-
-#include "Assets.hpp"
 
 class ResPaths;
 class Assets;

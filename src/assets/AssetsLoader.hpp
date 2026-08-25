@@ -1,5 +1,12 @@
 #pragma once
 
+#include "delegates.hpp"
+#include "interfaces/Task.hpp"
+#include "typedefs.hpp"
+#include "Assets.hpp"
+#include "data/dv.hpp"
+#include "io/fwd.hpp"
+
 #include <functional>
 #include <map>
 #include <set>
@@ -7,13 +14,6 @@
 #include <queue>
 #include <string>
 #include <utility>
-
-#include "delegates.hpp"
-#include "interfaces/Task.hpp"
-#include "typedefs.hpp"
-#include "Assets.hpp"
-#include "data/dv.hpp"
-#include "io/fwd.hpp"
 
 class ResPaths;
 class AssetsLoader;
@@ -72,7 +72,12 @@ struct ModelCfg : AssetCfg {
 
 using aloader_func = std::function<
     assetload::
-        postfunc(AssetsLoader&, const ResPaths&, const std::string&, const std::string&, std::shared_ptr<AssetCfg>)>;
+        postfunc(
+            AssetsLoader&,
+            const ResPaths&,
+            const std::string&,
+            const std::string&,
+            std::shared_ptr<AssetCfg>)>;
 
 struct aloader_entry {
     AssetType tag;
