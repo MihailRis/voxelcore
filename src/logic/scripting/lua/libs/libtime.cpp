@@ -22,7 +22,7 @@ static int l_utc_time(lua::State* L) {
 }
 
 static int l_precise_utc_time(lua::State* L) {
-    auto now = std::chrono::steady_clock::now();
+    auto now = std::chrono::system_clock::now();
     return lua::pushnumber(
         L, std::chrono::duration<double>(now.time_since_epoch()).count()
     );

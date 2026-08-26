@@ -39,15 +39,24 @@ glm::vec2 Panel::getContentSize() const {
 }
 
 void Panel::cropToContent() {
+    int maxInt = std::numeric_limits<int>::max();
+    bool isHorizontal = orientation == Orientation::HORIZONTAL;
+    
+    int minLengthX = isHorizontal ? minLength : 0;
+    int maxLengthX = isHorizontal ? maxLength : maxInt;
+
+    int minLengthY = isHorizontal ? 0 : minLength;
+    int maxLengthY = isHorizontal ? maxInt : maxLength;
+
     if (maxLength > 0.0f) {
         setSize(glm::vec2(
-            glm::max(minLength, glm::min(maxLength, actualLengthX)),
-            glm::max(minLength, glm::min(maxLength, actualLengthY))
+            glm::max(minLengthX, glm::min(maxLengthX, actualLengthX)),
+            glm::max(minLengthY, glm::min(maxLengthY, actualLengthY))
         ));
     } else {
         setSize(glm::vec2(
-            glm::max(minLength, actualLengthX),
-            glm::max(minLength, actualLengthY)
+            glm::max(minLengthX, actualLengthX),
+            glm::max(minLengthY, actualLengthY)
         ));
     }
 }

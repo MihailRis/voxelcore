@@ -10,6 +10,8 @@ namespace lua {
         std::shared_ptr<Heightmap> map;
         std::unique_ptr<fnl_state> noise;
     public:
+        bool normalizedNoise = false;
+
         LuaHeightmap(const std::shared_ptr<Heightmap>& map);
         LuaHeightmap(uint width, uint height);
 

@@ -139,6 +139,12 @@ string.left_pad(str: string, size: int, char: string) -> string
 -- Adds a char to the right of the string until its size equals size.
 -- By default, char is equal to the space character.
 string.right_pad(str: string, size: int, char: string) -> string
+
+-- Encodes a string into URL format, replacing special characters with their hexadecimal representations.
+string.url_encode(str: string) -> string
+
+-- Decodes a string from URL format, replacing hexadecimal representations with their corresponding characters.
+string.url_decode(str: string) -> string
 ```
 
 ## Math extensions
