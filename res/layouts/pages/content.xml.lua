@@ -52,7 +52,10 @@ function reposition_func(_pack)
     else
         tbl = packs_excluded
         local packinfo = pack.get_info(_pack)
-        packinfo[packinfo.id] = {packinfo.id, packinfo.title}
+        packinfo[packinfo.id] = {
+            id = packinfo.id,
+            title = packinfo.title
+        }
         table.insert(packs_excluded, packinfo.id)
     end
 
@@ -77,7 +80,7 @@ function refresh_search()
         end
         local res = math.max(
             search_utils.fuzzy_score(id, search_text),
-            search_utils.fuzzy_score(packs_info[id][2], search_text)
+            search_utils.fuzzy_score(packs_info[id].title, search_text)
         )
         smart_score_cache[id] = res
         return res
@@ -90,7 +93,7 @@ function refresh_search()
         if score_a ~= score_b then
             return score_a > score_b
         else
-            return packs_info[a][2] < packs_info[b][2]
+            return packs_info[a].title < packs_info[b].title
         end
     end
 
@@ -350,12 +353,18 @@ function refresh()
 
     for _,id in ipairs(base_packs) do
         local packinfo = pack.get_info(id)
-        packs_info[id] = {packinfo.id, packinfo.title}
+        packs_info[id] = {
+            id = packinfo.id,
+            title = packinfo.title
+        }
     end
 
     for _,id in ipairs(packs_all) do
         local packinfo = pack.get_info(id)
-        packs_info[id] = {packinfo.id, packinfo.title}
+        packs_info[id] = {
+            id = packinfo.id,
+            title = packinfo.title
+        }
     end
 
     if #packs_excluded == 0 then packs_excluded = table.copy(packs_available) end

@@ -41,14 +41,14 @@ function refresh_search()
     local smart_score_cache = {}
 
     local function smart_fuzzy_score(a)
-        if smart_score_cache[a[1]] then
-            return smart_score_cache[a[1]]
+        if smart_score_cache[a.id] then
+            return smart_score_cache[a.id]
         end
         local res = math.max(
-            search_utils.fuzzy_score(a[1], search_text),
-            search_utils.fuzzy_score(a[2], search_text)
+            search_utils.fuzzy_score(a.id, search_text),
+            search_utils.fuzzy_score(a.title, search_text)
         )
-        smart_score_cache[a[1]] = res
+        smart_score_cache[a.id] = res
         if res > 0 then
             score_non_zero_num = score_non_zero_num + 1
         end
@@ -59,7 +59,7 @@ function refresh_search()
         local score_a = smart_fuzzy_score(a)
         local score_b = smart_fuzzy_score(b)
         if score_a == score_b then
-            return a[2] > b[2]
+            return a.title > b.title
         else
             return score_a > score_b
         end
@@ -68,7 +68,7 @@ function refresh_search()
     table.sort(packs, cmp)
 
     for i, v in ipairs(packs) do
-        local id = v[1]
+        local id = v.id
         local content = document["pack_" .. id]
         local pos = content.pos
         local size = content.size
@@ -304,7 +304,10 @@ function refresh()
         local packinfo = packinfos[id]
 
         packinfo.id = id
-        packs_installed[i] = {packinfo.id, packinfo.title}
+        packs_installed[i] = {
+            id = packinfo.id,
+            title = packinfo.title
+        }
         local callback = string.format('open_pack("%s")', id)
         place_pack(contents, packinfo, callback)
     end
