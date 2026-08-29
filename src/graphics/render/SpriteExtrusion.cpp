@@ -1,5 +1,7 @@
 #include "SpriteExtrusion.hpp"
 
+#include <cstddef>
+
 std::vector<SpriteEdge> find_sprite_edges(
     const std::vector<bool>& opaque, int width
 ) {
@@ -20,7 +22,7 @@ std::vector<SpriteEdge> find_sprite_edges(
         if (x < 0 || y < 0 || x >= width || y >= height) {
             return false;
         }
-        return opaque[static_cast<size_t>(y) * width + x];
+        return opaque[static_cast<std::size_t>(y) * width + x];
     };
     // A run is open while the pixels keep asking for the same edge, and is
     // written down the moment they stop.
