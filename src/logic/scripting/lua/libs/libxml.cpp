@@ -51,7 +51,7 @@ static std::unique_ptr<xml::xmlelement> toxml(lua::State* L) {
                 break;
             }
             auto key = lua::require_lstring(L, -1);
-            if (key == "@") {
+            if (key == TAG_ATTR) {
                 break;
             }
             auto value = lua::require_lstring(L, -2);

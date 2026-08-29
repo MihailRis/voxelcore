@@ -128,11 +128,10 @@ static int l_noise(lua::State* L) {
                     }
 
                     float noiseValue = fnlGetNoise2D(noise, u, v);
+                    float t = 1.0f / static_cast<float>(1 << c) * multiplier;
                     if (normalizedNoise) {
-                        float t = 1.0f / (static_cast<float>(1 << c) * multiplier);
                         value = value * (1.0f - t) + noiseValue * t;
                     } else {
-                        float t = 1.0f / static_cast<float>(1 << c) * multiplier;
                         value += noiseValue * t;
                     }
                     heights[i] = value;
