@@ -12,7 +12,11 @@ std::vector<SpriteEdge> find_sprite_edges(
     // Off the image is off the sprite: an item drawn to the very border of
     // its own texture is still an item with a rim, not one welded to the
     // next square of the atlas.
-    auto solid = [&](int x, int y) {
+    //
+    // Spelled `-> bool` because indexing a vector<bool> gives a proxy and
+    // not a bool, and a lambda whose two returns disagree about their type
+    // is not a lambda every compiler will take.
+    auto solid = [&](int x, int y) -> bool {
         if (x < 0 || y < 0 || x >= width || y >= height) {
             return false;
         }
