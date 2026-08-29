@@ -1,3 +1,5 @@
+local search_utils = require("search_utils")
+
 local packs_installed = {}
 local pack_open = {}
 local PARSERS = {
@@ -33,14 +35,45 @@ function refresh_search()
     local interval = 4
     local step = -1
 
-    for i, v in ipairs(packs_installed) do
+    local packs = table.copy(packs_installed)
+
+    local score_non_zero_num = 0
+    local smart_score_cache = {}
+
+    local function smart_fuzzy_score(a)
+        if smart_score_cache[a[1]] then
+            return smart_score_cache[a[1]]
+        end
+        local res = math.max(
+            search_utils.fuzzy_score(a[1], search_text),
+            search_utils.fuzzy_score(a[2], search_text)
+        )
+        smart_score_cache[a[1]] = res
+        if res > 0 then
+            score_non_zero_num = score_non_zero_num + 1
+        end
+        return res
+    end
+
+    local function cmp(a, b)
+        local score_a = smart_fuzzy_score(a)
+        local score_b = smart_fuzzy_score(b)
+        if score_a == score_b then
+            return a[2] > b[2]
+        else
+            return score_a > score_b
+        end
+    end
+
+    table.sort(packs, cmp)
+
+    for i, v in ipairs(packs) do
         local id = v[1]
-        local title = v[2]
         local content = document["pack_" .. id]
         local pos = content.pos
         local size = content.size
 
-        if title:lower():find(search_text) or id:lower():find(search_text) or search_text == '' then
+        if i <= score_non_zero_num then
             content.enabled = true
             content.pos = {pos[1], visible * (size[2] + interval) - step}
             visible = visible + 1

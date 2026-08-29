@@ -1,3 +1,5 @@
+local search_utils = require("search_utils")
+
 function on_open(params)
     if params then
         mode = params.mode
@@ -67,16 +69,23 @@ function refresh_search()
     local new_included = table.copy(packs_included)
     local new_excluded = table.copy(packs_excluded)
 
-    local function score(pack_id, pack_name)
-        if pack_name:lower():find(search_text) or pack_id:lower():find(search_text) then
-            return 1
+    local smart_score_cache = {}
+
+    local function smart_fuzzy_score(id)
+        if smart_score_cache[id] then
+            return smart_score_cache[id]
         end
-        return 0
+        local res = math.max(
+            search_utils.fuzzy_score(id, search_text),
+            search_utils.fuzzy_score(packs_info[id][2], search_text)
+        )
+        smart_score_cache[id] = res
+        return res
     end
 
-    local function sorting(a, b)
-        local score_a = score(a, packs_info[a][2])
-        local score_b = score(b, packs_info[b][2])
+    local function cmp(a, b)
+        local score_a = smart_fuzzy_score(a)
+        local score_b = smart_fuzzy_score(b)
 
         if score_a ~= score_b then
             return score_a > score_b
@@ -85,8 +94,8 @@ function refresh_search()
         end
     end
 
-    table.sort(new_included, sorting)
-    table.sort(new_excluded, sorting)
+    table.sort(new_included, cmp)
+    table.sort(new_excluded, cmp)
 
     packs_included = new_included
     packs_excluded = new_excluded
