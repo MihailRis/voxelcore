@@ -1,5 +1,8 @@
 local search_utils = require("search_utils")
 
+local MATCHED_COLOR = "[#4FC3F7]"
+local NORMAL_COLOR = "[#FFFFFF]"
+
 local packs_installed = {}
 local pack_open = {}
 local PARSERS = {
@@ -20,10 +23,11 @@ function place_pack(panel, packinfo, callback)
     if packinfo.error then
         callback = nil
     end
+    local id_md = packinfo.id_md or packinfo.id
     if packinfo.has_indices then
-        packinfo.id_verbose = packinfo.id.."*"
+        packinfo.id_verbose = id_md.."\\*"
     else
-        packinfo.id_verbose = packinfo.id
+        packinfo.id_verbose = id_md
     end
     packinfo.callback = callback
     panel:add(gui.template("pack", packinfo))
@@ -39,16 +43,23 @@ function refresh_search()
 
     local score_non_zero_num = 0
     local smart_score_cache = {}
+    local colored_ids = {}
+    local colored_titles = {}
 
     local function smart_fuzzy_score(a)
         if smart_score_cache[a.id] then
             return smart_score_cache[a.id]
         end
-        local res = math.max(
-            search_utils.fuzzy_score(a.id, search_text),
-            search_utils.fuzzy_score(a.title, search_text)
-        )
+        local id_score, colored_id = search_utils.fuzzy_score(a.id, search_text,
+                                        MATCHED_COLOR, NORMAL_COLOR)
+        local title_score, colored_title = search_utils.fuzzy_score(a.title, search_text,
+                                                MATCHED_COLOR, NORMAL_COLOR)
+        local res = math.max(id_score, title_score)
+
         smart_score_cache[a.id] = res
+        colored_ids[a.id] = colored_id
+        colored_titles[a.id] = colored_title
+
         if res > 0 then
             score_non_zero_num = score_non_zero_num + 1
         end
@@ -67,19 +78,33 @@ function refresh_search()
 
     table.sort(packs, cmp)
 
+    local contents = document.contents
+    contents:clear()
+
     for i, v in ipairs(packs) do
         local id = v.id
+
+        local packinfo = table.copy(packs[i])
+        if colored_ids[id] then
+            packinfo.id_md = colored_ids[id]
+        end
+        if colored_titles[id] then
+            packinfo.title = colored_titles[id]
+        end
+
+        place_pack(contents, packinfo, callback)
+
         local content = document["pack_" .. id]
         local pos = content.pos
         local size = content.size
 
         if i <= score_non_zero_num then
             content.enabled = true
-            content.pos = {pos[1], visible * (size[2] + interval) - step}
+            content.pos = { pos[1], visible * (size[2] + interval) - step }
             visible = visible + 1
         else
             content.enabled = false
-            content.pos = {pos[1], (visible + #packs_installed - i) * (size[2] + interval) - step}
+            content.pos = { pos[1], (visible + #packs_installed - i) * (size[2] + interval) - step }
         end
     end
 end
@@ -302,12 +327,9 @@ function refresh()
     local packinfos = pack.get_info(packs_installed)
     for i, id in ipairs(packs_installed) do
         local packinfo = packinfos[id]
-
         packinfo.id = id
-        packs_installed[i] = {
-            id = packinfo.id,
-            title = packinfo.title
-        }
+        packs_installed[i] = packinfo
+
         local callback = string.format('open_pack("%s")', id)
         place_pack(contents, packinfo, callback)
     end

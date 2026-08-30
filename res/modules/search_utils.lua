@@ -1,9 +1,22 @@
 local M = {}
 
--- Оценивает схожесть строк и возвращает целое число,
--- чем оно больше, тем больше совпадение
-function M.fuzzy_score(sample, pattern)
+-- Оценивает схожесть строк и возвращает совпадение (>= 0) и если переданы
+-- параметры color_matched и color_normal, возвращает также исходную строку,
+-- в которой совпадающие части обрамлены в color_matched и color_normal
+---@param sample str где ищем совпадения
+---@param pattern str какие совпадения ищем
+---@param color_matched? str
+---@param color_normal? str
+---@return int match
+---@return str? colored_sample
+function M.fuzzy_score(sample, pattern, color_matched, color_normal)
     if pattern == "" then return 0 end
+
+    local do_coloring = color_matched and color_normal
+    local colored_sample
+    if do_coloring then
+        colored_sample = ""
+    end
 
     local sample_lower = string.lower(sample)
     local pattern_lower = string.lower(pattern)
@@ -21,9 +34,13 @@ function M.fuzzy_score(sample, pattern)
     local last_match_pos = -1
 
     for i = 1, sample_len do
-        if pattern_idx <= pattern_len and
-            sample_lower:sub(i, i) == pattern_lower:sub(pattern_idx, pattern_idx) then
+        if pattern_idx <= pattern_len and (
+                sample_lower:sub(i, i) ==
+                pattern_lower:sub(pattern_idx, pattern_idx)) then
             matched_chars = matched_chars + 1
+            if consecutive == 0 and do_coloring then
+                colored_sample = colored_sample .. color_matched
+            end
             consecutive = consecutive + 1
             if consecutive > max_consecutive then
                 max_consecutive = consecutive
@@ -36,8 +53,17 @@ function M.fuzzy_score(sample, pattern)
 
             pattern_idx = pattern_idx + 1
         else
+            if consecutive ~= 0 and do_coloring then
+                colored_sample = colored_sample .. color_normal
+            end
             consecutive = 0
         end
+        if do_coloring then
+            colored_sample = colored_sample .. sample:sub(i, i)
+        end
+    end
+    if consecutive ~= 0 and do_coloring then
+        colored_sample = colored_sample .. color_normal
     end
 
     if pattern_idx <= pattern_len then
@@ -66,7 +92,7 @@ function M.fuzzy_score(sample, pattern)
         score = score + 30
     end
 
-    return math.max(0, score)
+    return math.max(0, score), colored_sample
 end
 
 return M
