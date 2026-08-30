@@ -133,7 +133,7 @@ public:
         const std::vector<io::path>& alternatives
     );
 
-    int addReload(const io::path& path, AssetsLoader& dst);
+    int addReload(const io::path& path);
     void attachToFile(const io::path& file, AssetFullId assetId);
 
     Assets& getAssets();

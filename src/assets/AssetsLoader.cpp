@@ -421,14 +421,14 @@ void AssetsLoader::attachToFile(const io::path& file, AssetFullId assetId) {
     assetsLoadInfo.referencedAssets.insert({file, std::move(assetId)});
 }
 
-int AssetsLoader::addReload(const io::path& path, AssetsLoader& dst) {
+int AssetsLoader::addReload(const io::path& path) {
     int added = 0;
 
     auto range = assetsLoadInfo.referencedAssets.equal_range(path);
     for (auto it = range.first; it != range.second; ++it) {
         const auto& recipe = assetsLoadInfo.processedEntries.find(it->second);
         if (recipe != assetsLoadInfo.processedEntries.end()) {
-            dst.entries.push(recipe->second);
+            entries.push(recipe->second);
             added++;
         }
     }
