@@ -348,6 +348,7 @@ static assetload::postfunc load_vec3_model(
     const std::string& name,
     const std::shared_ptr<ModelCfg>& config
 ) {
+    loader.attachToFile(file, {name, AssetType::MODEL});
     auto bytes = io::read_bytes_buffer(file);
     auto modelVEC3 = std::make_shared<vec3::File>(vec3::load(file.string(), bytes));
     return [&loader, name, file, config, modelVEC3 = std::move(modelVEC3)](
@@ -392,6 +393,7 @@ static assetload::postfunc load_obj_model(
     const std::string& name,
     const std::shared_ptr<ModelCfg>&
 ) {
+    loader.attachToFile(file, {name, AssetType::MODEL});
     auto text = io::read_string(file);
     try {
         auto model = obj::parse(file.string(), text).release();
@@ -411,6 +413,7 @@ static assetload::postfunc load_vcm_model(
     const std::string& name,
     const std::shared_ptr<ModelCfg>& cfg
 ) {
+    loader.attachToFile(file, {name, AssetType::MODEL});
     auto text = io::read_string(file);
     try {
         auto vcmModel = vcm::parse(file.string(), text, file.extension() == ".xml");
