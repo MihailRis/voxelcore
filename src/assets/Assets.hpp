@@ -3,6 +3,7 @@
 #include "util/stringutil.hpp"
 #include "util/ObjectsKeeper.hpp"
 #include "graphics/core/TextureAnimation.hpp"
+#include "io/fwd.hpp"
 
 #include <functional>
 #include <memory>
@@ -16,6 +17,8 @@
 #include <vector>
 
 class Assets;
+struct AssetsLoadInfo;
+class AssetsLoader;
 
 enum class AssetType {
     ANIMATION,
@@ -33,8 +36,6 @@ enum class AssetType {
 namespace assetload {
     /// @brief final work to do in the main thread
     using postfunc = std::function<void(Assets&)>;
-
-    using setupfunc = std::function<void(const Assets&)>;
 
     template <class T>
     void assets_setup(const Assets&);
@@ -63,15 +64,13 @@ namespace assetload {
             return reason;
         }
     };
+
 }
 
 class Assets {
-    util::ObjectsKeeper* vault;
-    std::vector<TextureAnimation> animations;
-
-    using assets_map = std::unordered_map<std::string, std::shared_ptr<void>>;
-    std::unordered_map<std::type_index, assets_map> assets;
 public:
+    using assets_map = std::unordered_map<std::string, std::shared_ptr<void>>;
+
     Assets(util::ObjectsKeeper* vault);
     Assets(const Assets&) = delete;
     ~Assets();
@@ -142,6 +141,16 @@ public:
         }
         return &mapIter->second;
     }
+
+    AssetsLoadInfo& getLoadInfo() const {
+        return *assetsLoadInfo;
+    }
+private:
+    util::ObjectsKeeper* vault;
+    std::vector<TextureAnimation> animations;
+
+    std::unordered_map<std::type_index, assets_map> assets;
+    std::unique_ptr<AssetsLoadInfo> assetsLoadInfo;
 };
 
 template <class T>

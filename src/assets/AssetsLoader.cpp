@@ -29,7 +29,10 @@ static debug::Logger logger("assets-loader");
 AssetsLoader::AssetsLoader(
     Engine& engine, Assets& assets, const ResPaths& paths
 )
-    : engine(engine), assets(assets), paths(paths) {
+    : engine(engine),
+      assets(assets),
+      paths(paths),
+      assetsLoadInfo(assets.getLoadInfo()) {
     addLoader(AssetType::ANIMATION, assetload::animation);
     addLoader(AssetType::ATLAS, assetload::atlas);
     addLoader(AssetType::FONT, assetload::font);
@@ -53,11 +56,11 @@ void AssetsLoader::add(
     std::shared_ptr<AssetCfg> settings,
     bool overwrite
 ) {
-    if (!overwrite && enqueued.find({tag, alias}) != enqueued.end()){
+    if (!overwrite && enqueued.find({alias, tag}) != enqueued.end()){
         return;
     }
     entries.push(aloader_entry {tag, filename, alias, std::move(settings)});
-    enqueued.insert({tag, alias});
+    enqueued.insert({alias, tag});
 }
 
 bool AssetsLoader::hasNext() const {
@@ -75,7 +78,7 @@ aloader_func AssetsLoader::getLoader(AssetType tag) {
 }
 
 void AssetsLoader::loadNext() {
-    const aloader_entry& entry = entries.front();
+    aloader_entry& entry = entries.front();
     logger.info() << "loading " << entry.filename << " as " << entry.alias;
 
     std::string error {};
@@ -96,6 +99,8 @@ void AssetsLoader::loadNext() {
         entries.pop();
         throw assetload::error(tag, std::move(filename), std::move(error));
     }
+    assetsLoadInfo.processedEntries[{entry.alias, entry.tag}] =
+        std::move(entry);
     entries.pop();
 }
 
@@ -410,4 +415,23 @@ std::shared_ptr<Task> AssetsLoader::startTask(runnable onDone, int maxWorkers) {
         pool->enqueueJob(std::move(entry));
     }
     return pool;
+}
+
+void AssetsLoader::attachToFile(const io::path& file, AssetFullId assetId) {
+    assetsLoadInfo.referencedAssets.insert({file, std::move(assetId)});
+}
+
+int AssetsLoader::addReload(const io::path& path, AssetsLoader& dst) {
+    int added = 0;
+
+    auto range = assetsLoadInfo.referencedAssets.equal_range(path);
+    for (auto it = range.first; it != range.second; ++it) {
+        const auto& recipe = assetsLoadInfo.processedEntries.find(it->second);
+        if (recipe != assetsLoadInfo.processedEntries.end()) {
+            dst.entries.push(recipe->second);
+            added++;
+        }
+    }
+
+    return added;
 }
