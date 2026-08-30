@@ -413,7 +413,7 @@ namespace audio {
     /// @brief Load audio file info and PCM data
     /// @param file audio file
     /// @param headerOnly read header only
-    /// @throws std::runtime_error if I/O error ocurred or format is unknown
+    /// @throws std::runtime_error if I/O error occurred or format is unknown
     /// @return PCM audio data
     std::unique_ptr<PCM> load_PCM(const io::path& file, bool headerOnly);
 
@@ -421,7 +421,7 @@ namespace audio {
     /// @param file audio file path
     /// @param keepPCM store PCM data in sound to make it accessible with
     /// Sound::getPCM
-    /// @throws std::runtime_error if I/O error ocurred or format is unknown
+    /// @throws std::runtime_error if I/O error occurred or format is unknown
     /// @return new Sound instance
     std::unique_ptr<Sound> load_sound(const io::path& file, bool keepPCM);
 
@@ -434,7 +434,7 @@ namespace audio {
 
     /// @brief Open new PCM stream from file
     /// @param file audio file path
-    /// @throws std::runtime_error if I/O error ocurred or format is unknown
+    /// @throws std::runtime_error if I/O error occurred or format is unknown
     /// @return new PCMStream instance
     std::unique_ptr<PCMStream> open_PCM_stream(const io::path& file);
 

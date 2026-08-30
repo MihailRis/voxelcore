@@ -8,10 +8,10 @@
 #include "util/EnumMetadata.hpp"
 
 enum class ParticleSpawnShape {
-    /// @brief Coordinates are regulary distributed within 
+    /// @brief Coordinates are regularly distributed within 
     /// the volume of a ball.
     BALL = 0,
-    /// @brief Coordinates are regulary distributed on 
+    /// @brief Coordinates are regularly distributed on 
     /// a sphere.
     SPHERE,
     /// @brief Coordinates are uniform distributed within 

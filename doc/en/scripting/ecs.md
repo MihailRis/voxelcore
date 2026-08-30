@@ -8,7 +8,7 @@ The entity object is available in components as a global variable **entity**.
 -- Deletes an entity (the entity may continue to exist until the frame ends, but will not be displayed in that frame)
 entity:despawn()
 
--- Returns entity defintion index (integer ID)
+-- Returns entity definition index (integer ID)
 entity:def_index() -> int
 
 -- Returns entity definition name (string ID)

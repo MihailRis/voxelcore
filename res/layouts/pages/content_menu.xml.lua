@@ -11,6 +11,7 @@ local CONFIG_NAMES = {
 
 function on_open()
     refresh()
+    document.search_textbox.focused = true
 end
 
 function place_pack(panel, packinfo, callback)
@@ -39,7 +40,7 @@ function refresh_search()
         local pos = content.pos
         local size = content.size
 
-        if title:lower():find(search_text) or search_text == '' then
+        if title:lower():find(search_text) or id:lower():find(search_text) or search_text == '' then
             content.enabled = true
             content.pos = {pos[1], visible * (size[2] + interval) - step}
             visible = visible + 1

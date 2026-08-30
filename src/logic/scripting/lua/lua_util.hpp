@@ -323,7 +323,7 @@ namespace lua {
 
         if (found == usertypeNames.end()) {
             log_error(
-                "usertype is not registred: " + std::string(typeid(T).name())
+                "usertype is not registered: " + std::string(typeid(T).name())
             );
         } else if (getglobal(L, found->second)) {
             setmetatable(L);

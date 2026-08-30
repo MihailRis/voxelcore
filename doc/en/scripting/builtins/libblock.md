@@ -151,7 +151,7 @@ block.raycast(start: vec3, dir: vec3, max_distance: number, [optional] dest: tab
 Casts a ray from the start point in the direction of *dir*. Max_distance specifies the maximum ray length.
 
 Argument `filter` can be used to tell ray what blocks can be skipped(passed through) during ray-casting.
-To use filter `dest` argument must be filled with some value(can be nil), it's done for backwards compatability 
+To use filter `dest` argument must be filled with some value(can be nil), it's done for backwards compatibility 
 
 The `include_non_selectable` argument determines whether blocks that cannot be selected by the cursor will be included.
 Example - `base:water`

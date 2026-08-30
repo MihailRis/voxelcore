@@ -145,6 +145,9 @@ private:
 
     // Does block allow to see other blocks sides (is it transparent)
     bool isOpen(const glm::ivec3& pos, const Block& def, const Variant& variant) const {
+        if (pos.y >= CHUNK_H) {
+            return true;
+        }
         const auto& vox = voxelsBuffer->pickBlock(
             chunk->x * CHUNK_W + pos.x, pos.y, chunk->z * CHUNK_D + pos.z
         );
