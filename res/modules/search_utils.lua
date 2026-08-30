@@ -1,18 +1,22 @@
 local M = {}
 
--- Оценивает схожесть строк и возвращает совпадение (>= 0) и если переданы
--- параметры color_matched и color_normal, возвращает также исходную строку,
--- в которой совпадающие части обрамлены в color_matched и color_normal
----@param sample str где ищем совпадения
----@param pattern str какие совпадения ищем
----@param color_matched? str
----@param color_normal? str
----@return int match
+M.MATCHED_COLOR_DEFAULT = "[#4FC3F7]"
+M.NORMAL_COLOR_DEFAULT = "[#FFFFFF]"
+
+---Calculate fuzzy score
+---@param sample str
+---@param pattern str
+---@param do_coloring? bool if passed, then function will also return colored_sample, where matched
+---characters batched will be wrapped in color_matched and color_normal strings
+---@param color_matched? str if not passed, uses the default M.MATCHED_COLOR_DEFAULT
+---@param color_normal? str if not passed, uses the default M.NORMAL_COLOR_DEFAULT
+---@return int match pattern match intensity, 0 for absence
 ---@return str? colored_sample
-function M.fuzzy_score(sample, pattern, color_matched, color_normal)
+function M.fuzzy_score(sample, pattern, do_coloring, color_matched, color_normal)
     if pattern == "" then return 0 end
 
-    local do_coloring = color_matched and color_normal
+    color_matched = color_matched or M.MATCHED_COLOR_DEFAULT
+    color_normal = color_normal or M.NORMAL_COLOR_DEFAULT
     local colored_sample
     if do_coloring then
         colored_sample = ""

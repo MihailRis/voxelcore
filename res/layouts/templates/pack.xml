@@ -1,8 +1,10 @@
 <container id='pack_%{id}' onclick='%{callback}' size='0,80' color='#00000040' hover-color='#00000080' position-func="%{position_func}" z-index="%{index}">
-    <label color='#FFFFFF80' size='340,25' align='right' gravity='top-right' markup='md'>
-    [%{id_verbose} %{version}]
+    <label id='pack_%{id}_id' color='#FFFFFF80' size='340,25' align='right' gravity='top-right' markup='md'>
+        [%{id_verbose} %{version}]
     </label>
-    <label pos='78,6' markup='md'>%{title}</label>
+    <label id='pack_%{id}_title' pos='78,6' markup='md'>
+        %{title}
+    </label>
     <label if='%{creator}' color='#CCFFE5B2' size='300,20' align='right' 
            gravity='bottom-right'>
         %{creator}
