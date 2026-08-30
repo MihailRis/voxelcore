@@ -114,7 +114,7 @@ void Container::act(float delta) {
 
 void Container::scrolled(int value) {
     auto size = getSize();
-    bool isVertical = actualLengthY > size.y;
+    bool isVertical = mainScrollDir == Orientation::VERTICAL;
     int diff = (isVertical ? actualLengthY - size.y : actualLengthX - size.x);
     int& scroll = (isVertical ? scrollY : scrollX);
 
@@ -245,6 +245,7 @@ void Container::setSize(const glm::vec2& size) {
     for (auto& node : nodes) {
         node->reposition();
     }
+    scrolled(0);
 }
 
 int Container::getScrollStep() const {

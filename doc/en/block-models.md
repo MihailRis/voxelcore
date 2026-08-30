@@ -1,4 +1,4 @@
-# Block Models (depricated)
+# Block Models (deprecated)
 
 > ![WARNING]
 > The `model-primitives` property is deprecated. Use the [VCM format](vcm.md) for a textual description of the model's primitives.
