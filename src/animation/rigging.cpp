@@ -208,7 +208,9 @@ void SkeletonConfig::render(
                 model,
                 &skeleton.textures
             );
-        }
+        } else if (!node->model.name.empty()) {
+            node->model.updateFlag = true;
+        } 
     }
 }
 
