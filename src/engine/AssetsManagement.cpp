@@ -53,11 +53,11 @@ void AssetsManagement::loadAssets(Content* content) {
     logger.info() << "loading assets";
     Shader::preprocessor->setPaths(&paths.resPaths);
 
-    auto new_assets = std::make_unique<Assets>(
+    auto newAssets = std::make_unique<Assets>(
         settings.system.preserveAssetsDuringFrame.get() ? &assetsVault : nullptr 
     );
-    AssetsLoader loader(engine, *new_assets, paths.resPaths);
-    AssetsLoader::addDefaults(loader, content);
+    AssetsLoader loader(engine, *newAssets, paths.resPaths);
+    loader.addDefaults(content);
 
     // no need
     // correct log messages order is more useful
@@ -73,11 +73,10 @@ void AssetsManagement::loadAssets(Content* content) {
             loader.loadNext();
         }
     }
-    assets = std::move(new_assets);
+    assets = std::move(newAssets);
     if (content) {
         ModelsGenerator::prepare(*content, *assets);
     }
-    assets->setup();
     engine.getGUI().onAssetsLoad(assets.get());
 }
 

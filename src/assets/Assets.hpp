@@ -71,7 +71,6 @@ class Assets {
 
     using assets_map = std::unordered_map<std::string, std::shared_ptr<void>>;
     std::unordered_map<std::type_index, assets_map> assets;
-    std::vector<assetload::setupfunc> setupFuncs;
 public:
     Assets(util::ObjectsKeeper* vault);
     Assets(const Assets&) = delete;
@@ -142,16 +141,6 @@ public:
             return std::nullopt;
         }
         return &mapIter->second;
-    }
-
-    void setup() {
-        for (auto& setupFunc : setupFuncs) {
-            setupFunc(*this);
-        }
-    }
-
-    void addSetupFunc(assetload::setupfunc setupfunc) {
-        setupFuncs.push_back(setupfunc);
     }
 };
 
