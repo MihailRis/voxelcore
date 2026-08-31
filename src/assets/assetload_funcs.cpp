@@ -29,7 +29,6 @@
 
 #include <array>
 #include <filesystem>
-#include <iostream>
 #include <stdexcept>
 
 static debug::Logger logger("assetload-funcs");
@@ -129,13 +128,15 @@ assetload::postfunc assetload::shader(
 }
 
 assetload::postfunc assetload::posteffect(
-    AssetsLoader&,
+    AssetsLoader& loader,
     const ResPaths& paths,
     const std::string& file,
     const std::string& name,
     const std::shared_ptr<AssetCfg>& settings
 ) {
     io::path effectFile = paths.find(file + ".glsl");
+    loader.attachToFile(effectFile, {name, AssetType::POST_EFFECT});
+
     std::string effectSource = io::read_string(effectFile);
 
     auto& preprocessor = *Shader::preprocessor;
@@ -222,7 +223,7 @@ assetload::postfunc assetload::font(
 ) {
     auto cfg = std::dynamic_pointer_cast<FontCfg>(config);
     auto ext = fs::path(filename).extension().string();
-    if (ext == ".ttf" || ext == ".otf") {
+    if (!ext.empty()) {
         logger.info() << "loading vector font " << util::quote(filename);
         return [=](Assets& assets) {
             using FontFile = vector_fonts::FontFile;
@@ -402,7 +403,8 @@ static assetload::postfunc load_obj_model(
             assets.store(std::unique_ptr<model::Model>(model), name);
         };
     } catch (const parsing_error& err) {
-        std::cerr << err.errorLog() << std::endl;
+        logger.error() << "error on loading model " << name << ": "
+                       << err.errorLog();
         throw;
     }
 }
@@ -457,7 +459,8 @@ static assetload::postfunc load_vcm_model(
             );
         };
     } catch (const parsing_error& err) {
-        std::cerr << err.errorLog() << std::endl;
+        logger.error() << "error on loading model " << name << ": "
+                       << err.errorLog();
         throw;
     }
 }
@@ -629,8 +632,7 @@ static bool load_animated_texture(
             read_anim_file(animFile, frameList);
         }
         for (const auto& file : paths.listdir(animsDir + "/" + name)) {
-            if (!frameList.empty() &&
-                !contains(frameList, file.stem())) {
+            if (!frameList.empty() && !contains(frameList, file.stem())) {
                 continue;
             }
             if (!append_atlas(builder, file)) continue;
