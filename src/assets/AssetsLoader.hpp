@@ -86,22 +86,14 @@ struct aloader_entry {
     std::shared_ptr<AssetCfg> config;
 };
 
+using AssetFullId = std::pair<std::string, AssetType>;
+
+struct AssetsLoadInfo {
+    std::map<AssetFullId, aloader_entry> processedEntries;
+    std::multimap<io::path, AssetFullId> referencedAssets;
+};
+
 class AssetsLoader {
-    Engine& engine;
-    Assets& assets;
-    std::map<AssetType, aloader_func> loaders;
-    std::queue<aloader_entry> entries;
-    std::set<std::pair<AssetType, std::string>> enqueued;
-    const ResPaths& paths;
-
-    void tryAddSound(const std::string& name);
-
-    void processPreload(
-        AssetType tag, const std::string& name, const dv::value& map
-    );
-    void processPreloadList(AssetType tag, const dv::value& list);
-    void processPreloadConfig(const io::path& file);
-    void processPreloadConfigs(const Content* content);
 public:
     AssetsLoader(Engine& engine, Assets& assets, const ResPaths& paths);
     AssetsLoader(const AssetsLoader&) = delete;
@@ -132,9 +124,8 @@ public:
     aloader_func getLoader(AssetType tag);
 
     /// @brief Enqueue core and content assets
-    /// @param loader target loader
     /// @param content engine content
-    static void addDefaults(AssetsLoader& loader, const Content* content);
+    void addDefaults(const Content* content);
 
     static bool loadExternalTexture(
         AssetsLoader& loader,
@@ -142,6 +133,25 @@ public:
         const std::vector<io::path>& alternatives
     );
 
+    int addReload(const io::path& path);
+    void attachToFile(const io::path& file, AssetFullId assetId);
+
     Assets& getAssets();
     Engine& getEngine();
+private:
+    Engine& engine;
+    Assets& assets;
+    std::map<AssetType, aloader_func> loaders;
+    std::queue<aloader_entry> entries;
+    std::set<AssetFullId> enqueued;
+
+    const ResPaths& paths;
+    AssetsLoadInfo& assetsLoadInfo;
+
+    void processPreload(
+        AssetType tag, const std::string& name, const dv::value& map
+    );
+    void processPreloadList(AssetType tag, const dv::value& list);
+    void processPreloadConfig(const io::path& file);
+    void processPreloadConfigs(const Content* content);
 };

@@ -29,7 +29,10 @@ static debug::Logger logger("assets-loader");
 AssetsLoader::AssetsLoader(
     Engine& engine, Assets& assets, const ResPaths& paths
 )
-    : engine(engine), assets(assets), paths(paths) {
+    : engine(engine),
+      assets(assets),
+      paths(paths),
+      assetsLoadInfo(assets.getLoadInfo()) {
     addLoader(AssetType::ANIMATION, assetload::animation);
     addLoader(AssetType::ATLAS, assetload::atlas);
     addLoader(AssetType::FONT, assetload::font);
@@ -53,11 +56,11 @@ void AssetsLoader::add(
     std::shared_ptr<AssetCfg> settings,
     bool overwrite
 ) {
-    if (!overwrite && enqueued.find({tag, alias}) != enqueued.end()){
+    if (!overwrite && enqueued.find({alias, tag}) != enqueued.end()){
         return;
     }
     entries.push(aloader_entry {tag, filename, alias, std::move(settings)});
-    enqueued.insert({tag, alias});
+    enqueued.insert({alias, tag});
 }
 
 bool AssetsLoader::hasNext() const {
@@ -75,7 +78,7 @@ aloader_func AssetsLoader::getLoader(AssetType tag) {
 }
 
 void AssetsLoader::loadNext() {
-    const aloader_entry& entry = entries.front();
+    aloader_entry& entry = entries.front();
     logger.info() << "loading " << entry.filename << " as " << entry.alias;
 
     std::string error {};
@@ -96,6 +99,8 @@ void AssetsLoader::loadNext() {
         entries.pop();
         throw assetload::error(tag, std::move(filename), std::move(error));
     }
+    assetsLoadInfo.processedEntries[{entry.alias, entry.tag}] =
+        std::move(entry);
     entries.pop();
 }
 
@@ -118,14 +123,6 @@ static void add_layouts(
             std::make_shared<LayoutCfg>(&loader.getEngine().getGUI(), env)
         );
     }
-}
-
-void AssetsLoader::tryAddSound(const std::string& name) {
-    if (name.empty()) {
-        return;
-    }
-    std::string file = SOUNDS_FOLDER + "/" + name;
-    add(AssetType::SOUND, file, name);
 }
 
 static std::string assets_def_folder(AssetType tag) {
@@ -165,7 +162,8 @@ void AssetsLoader::processPreload(
     }
     std::shared_ptr<AssetCfg> config = nullptr;
     map.at("path").get(path);
-    logger.debug() << "processing preload " << util::quote(name) << " path: " << util::quote(path);
+    logger.debug() << "processing preload " << util::quote(name)
+                   << " path: " << util::quote(path);
     switch (tag) {
         case AssetType::SOUND: {
             bool keepPCM = false;
@@ -269,65 +267,73 @@ static void add_variant(AssetsLoader& loader, const Variant& variant) {
     }
 }
 
-void AssetsLoader::addDefaults(AssetsLoader& loader, const Content* content) {
-    loader.processPreloadConfigs(content);
-    if (content) {
-        for (auto& entry : content->getBlockMaterials()) {
-            auto& material = *entry.second;
-            loader.tryAddSound(material.stepsSound);
-            loader.tryAddSound(material.placeSound);
-            loader.tryAddSound(material.breakSound);
-            loader.tryAddSound(material.hitSound);
+void AssetsLoader::addDefaults(const Content* content) {
+    processPreloadConfigs(content);
+    if (content == nullptr) {
+        return;
+    }
+    auto tryAddSound = [this](const std::string& name){
+        if (name.empty()) {
+            return;
         }
+        std::string file = SOUNDS_FOLDER + "/" + name;
+        add(AssetType::SOUND, file, name);
+    };
+    for (auto& entry : content->getBlockMaterials()) {
+        auto& material = *entry.second;
+        tryAddSound(material.stepsSound);
+        tryAddSound(material.placeSound);
+        tryAddSound(material.breakSound);
+        tryAddSound(material.hitSound);
+    }
 
-        for (auto& entry : content->getPacks()) {
-            auto pack = entry.second.get();
-            auto& info = pack->getInfo();
-            io::path folder = info.folder / "layouts";
-            add_layouts(pack->getEnvironment(), info.id, folder, loader);
-        }
+    for (auto& entry : content->getPacks()) {
+        auto pack = entry.second.get();
+        auto& info = pack->getInfo();
+        io::path folder = info.folder / "layouts";
+        add_layouts(pack->getEnvironment(), info.id, folder, *this);
+    }
 
-        for (const auto& entry : content->getPacks()) {
-            io::path skeletonsDir = entry.first + ":skeletons";
-            if (!io::is_directory(skeletonsDir)) {
-                continue;
-            }
-            for (const auto& file : io::directory_iterator(skeletonsDir)) {
-                loader.add(
-                    AssetType::SKELETON,
-                    (file.parent() / file.stem()).string(),
-                    entry.first + ":" + file.stem()
-                );
-            }
+    for (const auto& entry : content->getPacks()) {
+        io::path skeletonsDir = entry.first + ":skeletons";
+        if (!io::is_directory(skeletonsDir)) {
+            continue;
         }
+        for (const auto& file : io::directory_iterator(skeletonsDir)) {
+            add(
+                AssetType::SKELETON,
+                (file.parent() / file.stem()).string(),
+                entry.first + ":" + file.stem()
+            );
+        }
+    }
 
-        for (const auto& [_, def] : content->blocks.getDefs()) {
-            if (def->variants) {
-                for (const auto& variant : def->variants->variants) {
-                    add_variant(loader, variant);
-                }
-            } else {
-                add_variant(loader, def->defaults);
+    for (const auto& [_, def] : content->blocks.getDefs()) {
+        if (def->variants) {
+            for (const auto& variant : def->variants->variants) {
+                add_variant(*this, variant);
             }
+        } else {
+            add_variant(*this, def->defaults);
         }
-        for (const auto& [_, def] : content->items.getDefs()) {
-            if (def->modelName.find(':') == std::string::npos) {
-                loader.add(
-                    AssetType::MODEL,
-                    MODELS_FOLDER + "/" + def->modelName,
-                    def->modelName
-                );
-            }
+    }
+    for (const auto& [_, def] : content->items.getDefs()) {
+        if (def->modelName.find(':') == std::string::npos) {
+            add(
+                AssetType::MODEL,
+                MODELS_FOLDER + "/" + def->modelName,
+                def->modelName
+            );
         }
-        for (const auto& [_, def] : content->entities.getDefs()) {
-            if (def->skeletonName.find(':') == std::string::npos) {
-                // expecting a VCM with skeleton
-                loader.add(
-                    AssetType::MODEL,
-                    MODELS_FOLDER + "/" + def->skeletonName,
-                    def->skeletonName
-                );
-            }
+    }
+    for (const auto& [_, def] : content->entities.getDefs()) {
+        if (def->skeletonName.find(':') == std::string::npos) {
+            // expecting a VCM with skeleton
+            add(
+                AssetType::MODEL,
+                MODELS_FOLDER + "/" + def->skeletonName,
+                def->skeletonName
+            );
         }
     }
 }
@@ -409,4 +415,23 @@ std::shared_ptr<Task> AssetsLoader::startTask(runnable onDone, int maxWorkers) {
         pool->enqueueJob(std::move(entry));
     }
     return pool;
+}
+
+void AssetsLoader::attachToFile(const io::path& file, AssetFullId assetId) {
+    assetsLoadInfo.referencedAssets.insert({file, std::move(assetId)});
+}
+
+int AssetsLoader::addReload(const io::path& path) {
+    int added = 0;
+
+    auto range = assetsLoadInfo.referencedAssets.equal_range(path);
+    for (auto it = range.first; it != range.second; ++it) {
+        const auto& recipe = assetsLoadInfo.processedEntries.find(it->second);
+        if (recipe != assetsLoadInfo.processedEntries.end()) {
+            entries.push(recipe->second);
+            added++;
+        }
+    }
+
+    return added;
 }
