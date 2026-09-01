@@ -291,7 +291,7 @@ void scripting::on_content_load(Content* content) {
 
     lua::getregistry(L, "app");
     lua::setglobal(L, "__vc_app");
-    lua::getregistry(L, "internals");
+    lua::getregistry(L, lua::INTERNALS_TABLE);
     lua::setglobal(L, "__vc_internals");
     try {
         load_script("post_content.lua", true);
@@ -367,7 +367,7 @@ void scripting::on_world_quit() {
     for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldquit");
     }
-    if (lua::getglobal(L, "__vc_on_world_quit")) {
+    if (lua::get_from_registry(L, lua::INTERNALS_TABLE, "on_world_quit", true)) {
         lua::call_nothrow(L, 0, 0);
     }
     scripting::level = nullptr;
@@ -849,7 +849,7 @@ void scripting::load_vca_animation(
     const std::string& identifier
 ) {
     auto L = lua::get_main_state();
-    if (lua::get_from_registry(L, "internals", "load_vca_animation", true)) {
+    if (lua::get_from_registry(L, lua::INTERNALS_TABLE, "load_vca_animation", true)) {
         lua::pushlstring(L, file.string());
         lua::pushlstring(L, identifier);
         if (lua::call(L, 2, 0)) {

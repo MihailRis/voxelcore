@@ -1,5 +1,6 @@
-local __app = __vc_app
+local app = __vc_app
 local __rules = rules
+local internals = __vc_internals
 
 local function configure_SSAO()
     -- Temporary using slot to configure built-in SSAO effect
@@ -32,7 +33,7 @@ local function configure_SSAO()
     end
     events.on("core:setting.graphics.ssao.set", update_ssao_quality)
 
-    update_ssao_quality(__app.get_setting("graphics.ssao"))
+    update_ssao_quality(app.get_setting("graphics.ssao"))
 end
 
 local function __vc_on_hud_open()
@@ -165,7 +166,8 @@ file.__close_all_descriptors = nil
 gui_util.__reset_local = nil
 stdcomp.reset = nil
 
-local function __vc_on_world_quit()
+function internals.on_world_quit()
+    internals.stop_all_actions()
     __rules.clear()
     __gui_util_reset_local()
     __stdcomp_reset()
@@ -215,13 +217,16 @@ function time.post_runnable(runnable)
     table.insert(__post_runnables, runnable)
 end
 
+function internals.on_render()
+    internals.on_animation_frame()
+end
+
 return {
     __vc_on_hud_open = __vc_on_hud_open,
     __vc_on_world_open = __vc_on_world_open,
     __vc_on_world_tick = __vc_on_world_tick,
     __vc_process_before_quit = __vc_process_before_quit,
     __vc_on_world_save = __vc_on_world_save,
-    __vc_on_world_quit = __vc_on_world_quit,
     __vc__process_post_runnables = __vc__process_post_runnables,
     __vc_is_post_runnable_context = function()
         return __vc__is_post_runnable

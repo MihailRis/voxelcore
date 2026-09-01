@@ -299,4 +299,27 @@ function __vc_internals.load_vca_animation(filepath, identifier)
     this.load_vca(filepath, identifier)
 end
 
+local running_actions = {}
+
+function this.action(func)
+    table.insert(running_actions, coroutine.create(func))
+end
+
+function __vc_internals.on_animation_frame()
+    for i=#running_actions,1,-1 do
+        local co = running_actions[i]
+        local status, result = coroutine.resume(co)
+        if not status then
+            debug.error("error in animation action: "..result)
+            table.remove(running_actions, i)
+        elseif coroutine.status(co) == "dead" then
+            table.remove(running_actions, i)
+        end
+    end
+end
+
+function __vc_internals.stop_all_actions()
+    running_actions = {}
+end
+
 return this

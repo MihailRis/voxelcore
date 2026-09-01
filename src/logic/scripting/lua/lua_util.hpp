@@ -16,6 +16,7 @@ namespace lua {
     inline std::string CHUNKS_TABLE = "$C";   // precompiled lua chunks
     inline std::string PACK_ENVS_TABLE = "$P";
     inline std::string ENVS_TABLE = "$E";
+    inline std::string INTERNALS_TABLE = "$I";
     extern std::unordered_map<std::type_index, std::string> usertypeNames;
     int userdata_destructor(lua::State* L);
 
