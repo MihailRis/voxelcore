@@ -46,7 +46,7 @@ local function complete_app_lib(app)
     app.tick = __app_tick
 
     local function call_in_app_script_co(func, ...)
-        if internals.post_runnable_context() then
+        if internals.is_post_runnable_context() then
             func(...)
             return
         end
