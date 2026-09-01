@@ -179,7 +179,7 @@ void Engine::initialize(CoreParameters coreParameters) {
     content = std::make_unique<ContentControl>(
         *project, *paths, input.get(), [this]() { onContentLoad(); }
     );
-    scripting::initialize(this);
+    scripting::initialize(*this);
 
     if (!isHeadless()) {
         gui->getMenu()->setPageLoader(scripting::create_page_loader());

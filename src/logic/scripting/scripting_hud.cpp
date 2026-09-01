@@ -47,9 +47,7 @@ void scripting::on_frontend_init(
 
     load_script("hud_classes.lua");
 
-    if (lua::getglobal(L, "__vc_on_hud_open")) {
-        lua::call_nothrow(L, 0, 0);
-    }
+    lua::call_internal(L, "on_hud_open");
 
     for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(
@@ -65,9 +63,7 @@ void scripting::on_frontend_init(
 void scripting::on_frontend_render() {
     auto L = lua::get_main_state();
 
-    if (lua::get_from_registry(L, lua::INTERNALS_TABLE, "on_render", true)) {
-        lua::call_nothrow(L, 0, 0);
-    }
+    lua::call_internal(L, "on_render");
     for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.hudrender", [](lua::State* L) {
             return 0;

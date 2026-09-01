@@ -65,14 +65,13 @@ int scripting::load_script(
     return lua::execute(lua::get_main_state(), env, src, fileName);
 }
 
-void scripting::initialize(Engine* engine) {
-    scripting::engine = engine;
-    scripting::content_control = &engine->getContentControl();
-    lua::initialize(engine->getPaths(), engine->getCoreParameters());
+void scripting::initialize(Engine& engine) {
+    scripting::engine = &engine;
+    scripting::content_control = &engine.getContentControl();
+    lua::initialize(engine.getPaths(), engine.getCoreParameters());
 
     load_script(io::path("stdlib.lua"), true);
     load_script(io::path("classes.lua"), true);
-    load_script(io::path("internal_events.lua"), true);
 }
 
 class LuaCoroutine : public Process {
@@ -244,9 +243,7 @@ std::unique_ptr<Process> scripting::start_app_script(const io::path& script) {
 
 void scripting::process_post_runnables() {
     auto L = lua::get_main_state();
-    if (lua::getglobal(L, "__vc__process_post_runnables")) {
-        lua::call_nothrow(L, 0, 0);
-    }
+    lua::call_internal(L, "process_post_runnables");
 }
 
 template <class T, typename IdType>
@@ -321,9 +318,7 @@ void scripting::on_world_load(LevelController* controller) {
     scripting::controller = controller;
 
     auto L = lua::get_main_state();
-    if (lua::getglobal(L, "__vc_on_world_open")) {
-        lua::call_nothrow(L, 0, 0);
-    } 
+    lua::call_internal(L, "on_world_open");
     
     for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldopen", [](auto L) {
@@ -336,7 +331,7 @@ void scripting::on_world_load(LevelController* controller) {
 
 void scripting::on_world_tick(int tps) {
     auto L = lua::get_main_state();
-    if (lua::getglobal(L, "__vc_on_world_tick")) {
+    if (lua::get_from_registry(L, lua::INTERNALS_TABLE, "on_world_tick", true)) {
         lua::pushinteger(L, tps);
         lua::call_nothrow(L, 1, 0);
     } 
@@ -350,16 +345,12 @@ void scripting::on_world_save() {
     for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldsave");
     }
-    if (lua::getglobal(L, "__vc_on_world_save")) {
-        lua::call_nothrow(L, 0, 0);
-    }
+    lua::call_internal(L, "on_world_save");
 }
 
 void scripting::process_before_quit() {
     auto L = lua::get_main_state();
-    if (lua::getglobal(L, "__vc_process_before_quit")) {
-        lua::call_nothrow(L, 0, 0);
-    }
+    lua::call_internal(L, "process_before_quit");
 }
 
 void scripting::on_world_quit() {
@@ -367,9 +358,7 @@ void scripting::on_world_quit() {
     for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldquit");
     }
-    if (lua::get_from_registry(L, lua::INTERNALS_TABLE, "on_world_quit", true)) {
-        lua::call_nothrow(L, 0, 0);
-    }
+    lua::call_internal(L, "on_world_quit");
     scripting::level = nullptr;
     scripting::content = nullptr;
     scripting::indices = nullptr;

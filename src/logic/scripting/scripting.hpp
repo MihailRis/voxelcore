@@ -48,7 +48,7 @@ namespace scripting {
     extern std::ostream* output_stream;
     extern std::ostream* error_stream;
 
-    void initialize(Engine* engine);
+    void initialize(Engine& engine);
 
     void on_content_load(Content* content);
     void on_content_reset();

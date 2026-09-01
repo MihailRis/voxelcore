@@ -636,6 +636,12 @@ namespace lua {
     int call(lua::State*, int argc, int nresults = -1);
     int call_nothrow(lua::State*, int argc, int nresults = 1);
 
+    inline void call_internal(lua::State* L, const std::string& name) {
+        if (lua::get_from_registry(L, lua::INTERNALS_TABLE, name, true)) {
+            lua::call_nothrow(L, 0, 0);
+        }
+    }
+
     inline int eval(
         lua::State* L,
         int env,
