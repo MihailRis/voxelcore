@@ -639,6 +639,7 @@ namespace lua {
     inline void call_internal(lua::State* L, const std::string& name) {
         if (lua::get_from_registry(L, lua::INTERNALS_TABLE, name, true)) {
             lua::call_nothrow(L, 0, 0);
+            pop(L);
         }
     }
 

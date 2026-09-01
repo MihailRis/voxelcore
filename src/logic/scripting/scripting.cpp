@@ -334,6 +334,7 @@ void scripting::on_world_tick(int tps) {
     if (lua::get_from_registry(L, lua::INTERNALS_TABLE, "on_world_tick", true)) {
         lua::pushinteger(L, tps);
         lua::call_nothrow(L, 1, 0);
+        lua::pop(L);
     } 
     for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldtick");
