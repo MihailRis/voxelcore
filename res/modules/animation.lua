@@ -1,15 +1,20 @@
-local this = {}
+local internals = __vc_internals
 
-local CH_TRANSLATE = 1
-local CH_ROTATE = 2
+local this = {
+    CH_TRANSLATE = 1,
+    CH_ROTATE = 2,
 
-local INT_CONST = 1
-local INT_LINEAR = 2
-local INT_BEZIER = 3
+    INT_CONST = 1,
+    INT_LINEAR = 2,
+    INT_BEZIER = 3,
 
-local TRACE_CODEGEN = false
+    TRACE_CODEGEN = false,
+}
 
-local DEFAULT_FPS = 60
+local INT_CONST = this.INT_CONST
+local INT_BEZIER = this.INT_BEZIER
+local CH_TRANSLATE = this.CH_TRANSLATE
+local CH_ROTATE = this.CH_ROTATE
 
 local function bezier(a, b, c, d, u)
     local s = 1 - u
@@ -151,90 +156,6 @@ local function codegen_track(raw_track, lines, memoised, keysets)
     return code
 end
 
-local action_to_channel = {
-    move = CH_TRANSLATE,
-    rotate = CH_ROTATE
-}
-
-local curve_to_interp = {
-    const = INT_CONST,
-    linear = INT_LINEAR,
-    bezier = INT_BEZIER,
-}
-
-local function parse_configure(raw_track, node)
-    if node.fps then
-        raw_track.fps = node.fps
-    end
-    if node.frames then
-        raw_track.duration = node.frames / node.fps
-    elseif node.duration then
-        raw_track.duration = node.duration
-    end
-end
-
-local function parse_curve(line, node)
-    line.interp = curve_to_interp[node.curve]
-    line.keys = {}
-    for j, key_node in ipairs(node) do
-        local keyframe = {
-            frame = tonumber(key_node.frame),
-            value = tonumber(key_node.value),
-        }
-        if line.interp == INT_BEZIER then
-            keyframe.lx = tonumber(key_node.lx)
-            keyframe.ly = tonumber(key_node.ly)
-            keyframe.rx = tonumber(key_node.rx)
-            keyframe.ry = tonumber(key_node.ry)
-        end
-        table.insert(line.keys, keyframe)
-    end
-end
-
-local function parse_track(root)
-    local raw_track = {
-        duration = math.huge,
-        fps = DEFAULT_FPS,
-        linesets = {},
-    }
-    local linesets = raw_track.linesets
-    for i, node in ipairs(root) do
-        if type(node) == "string" then
-            goto continue
-        end
-        local tag = node['#']
-        if tag == "configure" then
-            parse_configure(raw_track, node)
-            goto continue
-        end
-
-        local bone = node.bone
-
-        local lineset = linesets[bone]
-        if not lineset then
-            lineset = {lines = {}}
-            linesets[bone] = lineset
-        end
-
-        local line = {
-            axis = ("xyz"):find(node.by),
-            channel = action_to_channel[tag]
-        }
-        if node.func then
-            line.expression = node.func
-        elseif node.curve then
-            parse_curve(line, node)
-        else
-            error("not implemented")
-        end
-
-        table.insert(lineset.lines, line)
-        ::continue::
-    end
-    return raw_track
-end
-
-
 function this.compile_track(raw_track, track_name)
     local code = ""
     local memoised = {}
@@ -261,7 +182,7 @@ function this.compile_track(raw_track, track_name)
     local src = "return function(rig, t, m)\n local dst = DST\n"
         .. code .. "\nend"
 
-    if TRACE_CODEGEN then
+    if this.TRACE_CODEGEN then
         debug.log("["..
             string.escape(track_name or "nil").." codegen trace]:\n"..src)
     end
@@ -277,26 +198,14 @@ function this.compile_track(raw_track, track_name)
     }
 end
 
-local cached_tracks = {}
+local loaded_tracks = {}
 
-function this.load_vca(filepath, identifier)
-    local track = cached_tracks[filepath]
-    if track then
-        return track
-    end
-    local source = file.read(filepath)
-    local raw_track = parse_track(xml.parse_vcd(source, "track"))
-    track = this.compile_track(raw_track, filepath)
-    cached_tracks[identifier] = track
-    return track
+function internals.store_animation(name, track)
+    loaded_tracks[name] = track
 end
 
 function this.get_track(identifier)
-    return cached_tracks[identifier]
-end
-
-function __vc_internals.load_vca_animation(filepath, identifier)
-    this.load_vca(filepath, identifier)
+    return loaded_tracks[identifier]
 end
 
 local running_actions = {}
@@ -305,7 +214,7 @@ function this.action(func)
     table.insert(running_actions, coroutine.create(func))
 end
 
-function __vc_internals.on_animation_frame()
+function internals.on_animation_frame()
     for i=#running_actions,1,-1 do
         local co = running_actions[i]
         local status, result = coroutine.resume(co)
@@ -318,7 +227,7 @@ function __vc_internals.on_animation_frame()
     end
 end
 
-function __vc_internals.stop_all_actions()
+function internals.stop_all_actions()
     running_actions = {}
 end
 
