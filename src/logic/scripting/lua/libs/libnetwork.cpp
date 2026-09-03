@@ -237,7 +237,7 @@ static int l_udp_server_send_to(lua::State* L, network::Network& network) {
     return 0;
 }
 
-static int l_recv(lua::State* L, network::Network& network) {
+static int read(lua::State* L, network::Network& network, int (*fn)(network::TcpConnection*, char*, int)) {
     u64id_t id = lua::tointeger(L, 1);
     int length = lua::tointeger(L, 2);
 
@@ -248,11 +248,12 @@ static int l_recv(lua::State* L, network::Network& network) {
     }
 
     auto tcpConnection = dynamic_cast<network::TcpConnection*>(connection);
+    auto tcp = dynamic_cast<network::TcpConnection*>(connection);
 
     length = glm::min(length, tcpConnection->available());
     util::Buffer<char> buffer(length);
-    
-    int size = tcpConnection->recv(buffer.data(), length);
+
+    int size = fn(tcp, buffer.data(), length);
     if (size == -1) {
         return 0;
     }
@@ -266,6 +267,18 @@ static int l_recv(lua::State* L, network::Network& network) {
     } else {
         return lua::create_bytearray(L, buffer.data(), size);
     }
+}
+
+static int l_recv(lua::State* L, network::Network& network) {
+    return read(L, network, [](auto* tcp, char* buf, int len) {
+        return tcp->recv(buf, len);
+    });
+}
+
+static int l_peek(lua::State* L, network::Network& network) {
+    return read(L, network, [](auto* tcp, char* buf, int len) {
+        return tcp->peek(buf, len);
+    });
 }
 
 static int l_available(lua::State* L, network::Network& network) {
@@ -566,6 +579,7 @@ const luaL_Reg networklib[] = {
     {"__close", wrap<l_close>},
     {"__send", wrap<l_send>},
     {"__recv", wrap<l_recv>},
+    {"__peek", wrap<l_peek>},
     {"__available", wrap<l_available>},
     {"__is_alive", wrap<l_is_alive>},
     {"__is_connected", wrap<l_is_connected>},

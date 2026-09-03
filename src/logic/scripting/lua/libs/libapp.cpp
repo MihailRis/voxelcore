@@ -405,6 +405,20 @@ static int l_start_background_instance(lua::State* L) {
 
     auto scriptPath = lua::require_lstring(L, 1);
     io::path outputPath = lua::isstring(L, 2) ? lua::require_lstring(L, 2) : "";
+
+    std::vector<std::pair<std::string, std::string>> projectArgs;
+    if (lua::istable(L, 3)) {
+        lua::pushnil(L);
+        while (lua::next(L, 3)) {
+            lua::pushvalue(L, -2);
+            auto key = lua::tolstring(L, -1);
+            auto value = lua::tolstring(L, -2);
+            projectArgs.emplace_back(key, value);
+            lua::pop(L, 2);
+        }
+        lua::pop(L);
+    }
+
     const auto& paths = engine->getPaths();
 
     std::vector<std::string> args {
@@ -418,6 +432,17 @@ static int l_start_background_instance(lua::State* L) {
     };
     args.emplace_back("--project");
     args.emplace_back(io::resolve(engine->getProject().path).u8string());
+
+    if (!projectArgs.empty()) {
+        args.emplace_back("--");
+        for (const auto& [key, value] : projectArgs) {
+            if (key.empty()) {
+                throw std::runtime_error("empty project argument name passed");
+            }
+            args.emplace_back("--" + key);
+            args.emplace_back(value);
+        }
+    }
 
     int handle = -1;
     for (int i = 0; i < ::processes.size(); i++) {

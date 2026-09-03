@@ -162,7 +162,9 @@ app.start_background_instance(
     -- файл сценария
     app_script: string,
     -- файл лога
-    output_file: string | nil
+    output_file: string,
+    -- параметры проекта, что будут доступны через vc.get_project_arg(name)
+    project_args: table<string, string> | nil,
 ) -> int
 
 -- Проверяет, жив ли под-экземпляр движка.

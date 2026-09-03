@@ -196,15 +196,26 @@ public:
         });
     }
 
-    int recv(char* buffer, size_t length) override {
-        std::lock_guard lock(mutex);
-
+    int read(char* buffer, size_t length) {
         if (state != ConnectionState::CONNECTED && readBatch.empty()) {
             return -1;
         }
         int size = std::min(readBatch.size(), length);
         std::memcpy(buffer, readBatch.data(), size);
-        readBatch.erase(readBatch.begin(), readBatch.begin() + size);
+        return size;
+    }
+
+    int peek(char* buffer, size_t length) override {
+        std::lock_guard lock(mutex);
+        return read(buffer, length);
+    }
+
+    int recv(char* buffer, size_t length) override {
+        std::lock_guard lock(mutex);
+        int size = read(buffer, length);
+        if (size != -1) {
+            readBatch.erase(readBatch.begin(), readBatch.begin() + size);
+        }
         return size;
     }
 

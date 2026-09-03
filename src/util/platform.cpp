@@ -281,6 +281,9 @@ public:
             return exitCode == STILL_ACTIVE;
         }
         return false;
+#elif defined(__APPLE__)
+        // FIXME: completely implement SystemProcess for MacOS
+        return false;
 #endif
     }
 

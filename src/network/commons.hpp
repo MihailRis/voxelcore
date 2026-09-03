@@ -79,6 +79,7 @@ namespace network {
     class ReadableConnection : public Connection {
     public:
         virtual int recv(char* buffer, size_t length) = 0;
+        virtual int peek(char* buffer, size_t length) = 0;
         virtual int available() = 0;
     };
 

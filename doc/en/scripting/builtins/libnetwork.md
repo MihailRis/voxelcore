@@ -92,6 +92,21 @@ socket:recv_async(
     [optional] usetable: bool=false
 ) -> nil|table|Bytearray
 
+-- `peek` and `peek_async` are analogous to the `recv` and `recv_async` methods
+-- with the exception that `peek` and `peek_async` do not advance the socket buffer position
+-- This means they do not remove bytes from the socket, so the bytes can be received after
+socket:peek(
+    length: int,
+    [optional] usetable: boolean=false
+) -> nil|table|Bytearray
+
+socket:peek_async(
+    length: int,
+    [optional] usetable: boolean=false
+) -> nil|table|Bytearray
+
+Translated with DeepL.com (free version)
+
 -- Closes the connection
 socket:close()
 
