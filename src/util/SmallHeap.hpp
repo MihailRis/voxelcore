@@ -19,7 +19,7 @@ namespace util {
 
     /// @brief Simple heap implementation for memory-optimal sparse array of 
     /// small different structures
-    /// @note alignment is not impemented 
+    /// @note alignment is not implemented 
     /// (impractical in the context of scripting and memory consumption)
     /// @tparam Tindex entry index type
     /// @tparam Tsize entry size type

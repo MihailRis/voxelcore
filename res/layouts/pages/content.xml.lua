@@ -67,16 +67,16 @@ function refresh_search()
     local new_included = table.copy(packs_included)
     local new_excluded = table.copy(packs_excluded)
 
-    local function score(pack_name)
-        if pack_name:lower():find(search_text) then
+    local function score(pack_id, pack_name)
+        if pack_name:lower():find(search_text) or pack_id:lower():find(search_text) then
             return 1
         end
         return 0
     end
 
     local function sorting(a, b)
-        local score_a = score(packs_info[a][2])
-        local score_b = score(packs_info[b][2])
+        local score_a = score(a, packs_info[a][2])
+        local score_b = score(b, packs_info[b][2])
 
         if score_a ~= score_b then
             return score_a > score_b

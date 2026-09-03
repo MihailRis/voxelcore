@@ -119,7 +119,7 @@ class Hud : public util::ObjectsKeeper {
     /// @brief Allow actual pause
     bool allowPause = true;
     bool debug = false;
-    /// @brief UI element will be dynamicly positioned near to inventory or in screen center
+    /// @brief UI element will be dynamically positioned near to inventory or in screen center
     std::shared_ptr<gui::UINode> secondUI;
 
     std::shared_ptr<gui::UINode> debugMinimap;

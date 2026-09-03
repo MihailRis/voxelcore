@@ -20,6 +20,7 @@ namespace gui {
         int actualLengthY = 0;
         int actualLengthX = 0;
         bool scrollable = true;
+        Orientation mainScrollDir = Orientation::VERTICAL;
 
         bool isScrolling() const {
             return scrollbarTriggered;
