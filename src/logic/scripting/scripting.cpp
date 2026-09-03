@@ -260,6 +260,14 @@ static int push_properties_tables(
     return 1;
 }
 
+void scripting::on_assets_loading() {
+     lua::call_internal(lua::get_main_state(), "backup_and_clear_animation");
+}
+
+void scripting::revert_assets_loading() {
+    lua::call_internal(lua::get_main_state(), "restore_animation_backup");
+}
+
 void scripting::on_content_load(Content* content) {
     scripting::content = content;
     scripting::indices = content->getIndices();

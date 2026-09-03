@@ -208,6 +208,7 @@ function this.compile_track(raw_track, track_name)
 end
 
 local loaded_tracks = {}
+local backup_tracks = {}
 
 function internals.store_animation(name, track)
     loaded_tracks[name] = track
@@ -236,8 +237,16 @@ function internals.on_animation_frame()
     end
 end
 
-function internals.stop_all_actions()
+function internals.stop_animation_actions()
     running_actions = {}
+end
+
+function internals.backup_and_clear_animation()
+    loaded_tracks, backup_tracks = backup_tracks, {}
+end
+
+function internals.restore_animation_backup()
+    loaded_tracks, backup_tracks = backup_tracks, {}
 end
 
 return this

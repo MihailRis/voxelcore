@@ -168,7 +168,7 @@ gui_util.__reset_local = nil
 stdcomp.reset = nil
 
 function internals.on_world_quit()
-    internals.stop_all_actions()
+    internals.stop_animation_actions()
     __rules.clear()
     __gui_util_reset_local()
     __stdcomp_reset()

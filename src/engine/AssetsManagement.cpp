@@ -9,6 +9,7 @@
 #include "graphics/core/Shader.hpp"
 #include "graphics/render/ModelsGenerator.hpp"
 #include "graphics/ui/GUI.hpp"
+#include "logic/scripting/scripting.hpp"
 
 static debug::Logger logger("assets-management");
 
@@ -49,6 +50,8 @@ AssetsLoader& AssetsManagement::acquireBackgroundLoader() {
 void AssetsManagement::loadAssets(Content* content) {
     finishBackgroundLoader();
 
+    scripting::on_assets_loading();
+
     const auto& paths = engine.getPaths();
     logger.info() << "loading assets";
     Shader::preprocessor->setPaths(&paths.resPaths);
@@ -59,19 +62,24 @@ void AssetsManagement::loadAssets(Content* content) {
     AssetsLoader loader(engine, *newAssets, paths.resPaths);
     loader.addDefaults(content);
 
-    // no need
-    // correct log messages order is more useful
-    // todo: before setting to true, check if GLSLExtension thread safe 
-    bool threading = false; // look at three upper lines
-    if (threading) {
-        auto task = loader.startTask(
-            [=]() {}, 0
-        );
-        task->waitForEnd();
-    } else {
-        while (loader.hasNext()) {
-            loader.loadNext();
+    try {
+        // no need
+        // correct log messages order is more useful
+        // todo: before setting to true, check if GLSLExtension thread safe 
+        bool threading = false; // look at three upper lines
+        if (threading) {
+            auto task = loader.startTask(
+                [=]() {}, 0
+            );
+            task->waitForEnd();
+        } else {
+            while (loader.hasNext()) {
+                loader.loadNext();
+            }
         }
+    } catch (...) {
+        scripting::revert_assets_loading();
+        throw;
     }
     assets = std::move(newAssets);
     if (content) {

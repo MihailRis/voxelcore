@@ -50,6 +50,9 @@ namespace scripting {
 
     void initialize(Engine& engine);
 
+    void on_assets_loading();
+    void revert_assets_loading();
+
     void on_content_load(Content* content);
     void on_content_reset();
 
