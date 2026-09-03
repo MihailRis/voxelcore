@@ -77,6 +77,9 @@ static int l_get_matrix(lua::State* L) {
 
 static int l_set_matrix(lua::State* L) {
     if (auto skeleton = get_skeleton(L)) {
+        if (lua::isnoneornil(L, 2)) {
+            return 0;
+        }
         auto index = index_range_check(*skeleton, lua::tointeger(L, 2));
         skeleton->pose.matrices[index] = lua::tomat4(L, 3);
     }
