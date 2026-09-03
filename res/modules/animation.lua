@@ -3,6 +3,7 @@ local internals = __vc_internals
 local this = {
     CH_TRANSLATE = 1,
     CH_ROTATE = 2,
+    CH_SCALE = 3,
 
     INT_CONST = 1,
     INT_LINEAR = 2,
@@ -13,8 +14,6 @@ local this = {
 
 local INT_CONST = this.INT_CONST
 local INT_BEZIER = this.INT_BEZIER
-local CH_TRANSLATE = this.CH_TRANSLATE
-local CH_ROTATE = this.CH_ROTATE
 
 local function bezier(a, b, c, d, u)
     local s = 1 - u
@@ -119,6 +118,7 @@ local function codegen_track(raw_track, lines, memoised, keysets)
     local code = ""
     local translation = {false, false, false}
     local rotation = {false, false, false}
+    local scale = {false, false, false}
     for i, line in ipairs(lines) do
         if line.expression then
             code = code .. "\n  local l" .. i .. " = (" ..
@@ -130,10 +130,12 @@ local function codegen_track(raw_track, lines, memoised, keysets)
                 i, i, raw_track.fps, line.interp)
         end
 
-        if line.channel == CH_TRANSLATE then
+        if line.channel == this.CH_TRANSLATE then
             translation[line.axis] = i
-        elseif line.channel == CH_ROTATE then
+        elseif line.channel == this.CH_ROTATE then
             rotation[line.axis] = i
+        elseif line.channel == this.CH_SCALE then
+            scale[line.axis] = i
         end
     end
 
@@ -151,6 +153,13 @@ local function codegen_track(raw_track, lines, memoised, keysets)
             code = code .. "\n  mat4.rotate(dst, " .. axis_names[axis] ..
                 ",l" ..  var .. ", dst)"
         end
+    end
+
+    if scale[1] or scale[2] or scale[3] then
+        code = code .. "\n  mat4.scale(dst, {" ..
+        (scale[1] and ("l" .. scale[1]) or '1').. ", " ..
+        (scale[2] and ("l" .. scale[2]) or '1').. ", " ..
+        (scale[3] and ("l" .. scale[3]) or '1').. "}, dst)"
     end
 
     return code

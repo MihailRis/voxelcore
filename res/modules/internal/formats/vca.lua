@@ -5,7 +5,8 @@ local INT_BEZIER = animation.INT_BEZIER
 
 local action_to_channel = {
     move = animation.CH_TRANSLATE,
-    rotate = animation.CH_ROTATE
+    rotate = animation.CH_ROTATE,
+    scale = animation.CH_SCALE,
 }
 
 local curve_to_interp = {
@@ -60,12 +61,11 @@ local function parse_track(root)
             goto continue
         end
 
-        local bone = node.bone
-
-        local lineset = linesets[bone]
+        local target_name = node.bone or ""
+        local lineset = linesets[target_name]
         if not lineset then
             lineset = {lines = {}}
-            linesets[bone] = lineset
+            linesets[target_name] = lineset
         end
 
         local line = {
@@ -83,6 +83,7 @@ local function parse_track(root)
         table.insert(lineset.lines, line)
         ::continue::
     end
+    debug.print(raw_track)
     return raw_track
 end
 
