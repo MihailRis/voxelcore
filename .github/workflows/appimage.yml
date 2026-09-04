@@ -31,7 +31,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libglfw3-dev libglfw3 libglew-dev libglew2.2 \
             libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev \
-            libcurl4-openssl-dev libgtest-dev libfreetype6-dev cmake squashfs-tools valgrind
+            libcurl4-openssl-dev libssl-dev libgtest-dev libfreetype6-dev cmake squashfs-tools valgrind
           # fix luajit paths
           sudo ln -s /usr/lib/x86_64-linux-gnu/libluajit-5.1.a /usr/lib/x86_64-linux-gnu/liblua5.1.a
           sudo ln -s /usr/include/luajit-2.1 /usr/include/lua
@@ -46,7 +46,7 @@ jobs:
       - name: Build
         run: cmake --build build -t install
       - name: Run tests
-        run: ctest --test-dir build
+        run: ctest --output-on-failure --test-dir build
       - name: Run engine tests
         timeout-minutes: 1
         run: |

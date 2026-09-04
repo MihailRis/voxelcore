@@ -25,6 +25,7 @@ extern const luaL_Reg byteutillib[];
 extern const luaL_Reg cameralib[];
 extern const luaL_Reg consolelib[];
 extern const luaL_Reg corelib[];
+extern const luaL_Reg cryptolib[];
 extern const luaL_Reg entitylib[];
 extern const luaL_Reg filelib[];
 extern const luaL_Reg generationlib[];
@@ -93,3 +94,4 @@ namespace lua {
 }
 
 void initialize_libs_extends(lua::State* L);
+void initialize_cryptolib(lua::State* L);
