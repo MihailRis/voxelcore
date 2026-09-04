@@ -1,3 +1,7 @@
+local search_utils = require("search_utils")
+
+local score_func = search_utils.fuzzy_score
+
 function on_open(params)
     if params then
         mode = params.mode
@@ -50,7 +54,10 @@ function reposition_func(_pack)
     else
         tbl = packs_excluded
         local packinfo = pack.get_info(_pack)
-        packinfo[packinfo.id] = {packinfo.id, packinfo.title}
+        packinfo[packinfo.id] = {
+            id = packinfo.id,
+            title = packinfo.title
+        }
         table.insert(packs_excluded, packinfo.id)
     end
 
@@ -60,6 +67,18 @@ function reposition_func(_pack)
     return pos[1], pos[2]
 end
 
+local function update_pack_id_title(packinfo)
+    local id_el = document["pack_"..packinfo.id.."_id"]
+    local title_el = document["pack_"..packinfo.id.."_title"]
+
+    local id_md = packinfo.id_md or packinfo.id
+    if packinfo.has_indices then
+        id_md = id_md .. "\\*"
+    end
+    id_el.text = string.format("[%s %s]", id_md, packinfo.version)
+
+    title_el.text = packinfo.title_md or packinfo.title
+end
 
 function refresh_search()
     local search_text = document.search_textbox.text:lower()
@@ -67,26 +86,38 @@ function refresh_search()
     local new_included = table.copy(packs_included)
     local new_excluded = table.copy(packs_excluded)
 
-    local function score(pack_id, pack_name)
-        if pack_name:lower():find(search_text) or pack_id:lower():find(search_text) then
-            return 1
+    local smart_score_cache = {}
+    local colored_ids = {}
+    local colored_titles = {}
+
+    local function smart_score(id)
+        if smart_score_cache[id] then
+            return smart_score_cache[id]
         end
-        return 0
+        local id_score, colored_id = score_func(id, search_text, true)
+        local title_score, colored_title = score_func(
+            packs_info[id].title, search_text, true)
+        local res = math.max(id_score, title_score)
+
+        smart_score_cache[id] = res
+        colored_ids[id] = colored_id
+        colored_titles[id] = colored_title
+        return res
     end
 
-    local function sorting(a, b)
-        local score_a = score(a, packs_info[a][2])
-        local score_b = score(b, packs_info[b][2])
+    local function cmp(a, b)
+        local score_a = smart_score(a)
+        local score_b = smart_score(b)
 
         if score_a ~= score_b then
             return score_a > score_b
         else
-            return packs_info[a][2] < packs_info[b][2]
+            return packs_info[a].title < packs_info[b].title
         end
     end
 
-    table.sort(new_included, sorting)
-    table.sort(new_excluded, sorting)
+    table.sort(new_included, cmp)
+    table.sort(new_excluded, cmp)
 
     packs_included = new_included
     packs_excluded = new_excluded
@@ -94,6 +125,10 @@ function refresh_search()
     for _, id in ipairs(table.merge(table.copy(packs_included), packs_excluded)) do
         local content = document["pack_" .. id]
         content:reposition()
+        local packinfo = pack.get_info(id)
+        packinfo.id_md = colored_ids[id]
+        packinfo.title_md = colored_titles[id]
+        update_pack_id_title(packinfo)
     end
 end
 
@@ -162,21 +197,20 @@ function move_right()
     refresh_changes()
 end
 
+
 function place_pack(panel, packinfo, callback, position_func)
     if packinfo.error then
         callback = nil
     end
-    if packinfo.has_indices then
-        packinfo.id_verbose = packinfo.id.."*"
-    else
-        packinfo.id_verbose = packinfo.id
-    end
+    packinfo.id_verbose = ""
+
     packinfo.callback = callback
     packinfo.position_func = position_func or function () end
     panel:add(gui.template("pack", packinfo))
     if not callback then
         document["pack_"..packinfo.id].enabled = false
     end
+    update_pack_id_title(packinfo)
 end
 
 local Version = {}
@@ -341,12 +375,18 @@ function refresh()
 
     for _,id in ipairs(base_packs) do
         local packinfo = pack.get_info(id)
-        packs_info[id] = {packinfo.id, packinfo.title}
+        packs_info[id] = {
+            id = packinfo.id,
+            title = packinfo.title
+        }
     end
 
     for _,id in ipairs(packs_all) do
         local packinfo = pack.get_info(id)
-        packs_info[id] = {packinfo.id, packinfo.title}
+        packs_info[id] = {
+            id = packinfo.id,
+            title = packinfo.title
+        }
     end
 
     if #packs_excluded == 0 then packs_excluded = table.copy(packs_available) end
