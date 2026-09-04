@@ -172,7 +172,9 @@ app.start_background_instance(
     -- script file
     app_script: string,
     -- log file
-    output_file: string | nil
+    output_file: string,
+    -- project parameters (can be read with vc.get_project_arg(name))
+    project_args: table<string, string> | nil
 ) -> int
 
 -- Checks if the engine sub-instance is alive.

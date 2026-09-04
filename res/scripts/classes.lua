@@ -39,6 +39,7 @@ end
 local Socket = {__index={
     send=function(self, ...) return network.__send(self.id, ...) end,
     recv=function(self, ...) return network.__recv(self.id, ...) end,
+    peek=function(self, ...) return network.__peek(self.id, ...) end,
     recv_async=function(self, length, usetable)
         while self:is_alive() do
             local available = self:available()
@@ -48,6 +49,16 @@ local Socket = {__index={
             coroutine.yield()
         end
         return self:recv(length, usetable)
+    end,
+    peek_async=function(self, length, usetable)
+        while self:is_alive() do
+            local available = self:available()
+            if available >= length then
+                return self:peek(length, usetable)
+            end
+            coroutine.yield()
+        end
+        return self:peek(length, usetable)
     end,
     as_stream=network.__as_stream,
     close=function(self) return network.__close(self.id) end,

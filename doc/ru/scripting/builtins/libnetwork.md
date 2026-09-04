@@ -92,6 +92,19 @@ socket:recv_async(
     [опционально] usetable: boolean=false
 ) -> nil|table|Bytearray
 
+-- `peek` и `peek_async` являются аналогами методов `recv` и `recv_async`
+-- за тем исключением, что `peek` и `peek_async` не двигают позицию буфера сокета
+-- Это означает, что они не удаляют байты из сокета, а значит байты могут быть прочитаны после
+socket:peek(
+    length: int,
+    [опционально] usetable: boolean=false
+) -> nil|table|Bytearray
+
+socket:peek_async(
+    length: int,
+    [опционально] usetable: boolean=false
+) -> nil|table|Bytearray
+
 -- Оборачивает сокет в io_stream (см. ../io_stream.md)
 socket:as_stream(
     [опционально] binary_mode: boolean=true
