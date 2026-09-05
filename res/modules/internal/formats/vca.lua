@@ -69,7 +69,11 @@ local function parse_track(root)
         local target_name = node.bone or ""
         local lineset = linesets[target_name]
         if not lineset then
-            lineset = {lines = {}, target_type = target_type}
+            lineset = {
+                lines = {},
+                target_type = target_type,
+                target_name = target_name
+            }
             linesets[target_name] = lineset
         end
 

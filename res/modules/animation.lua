@@ -106,6 +106,9 @@ local env = {
             return left.value
         end
         right = keys[right]
+        if left == nil then
+            return right.value
+        end
         local t = (frame - left.frame) / (right.frame - left.frame)
         if interp == INT_BEZIER then
             return bezier_interpolation(left, right, t)
@@ -128,13 +131,15 @@ local env = {
                 target:set_scale(scale)
             end
         end
-    end
+    end,
+    dump = debug.print
 }
 table.extend(env, math)
 
-local function codegen_track(raw_track, lines, memoised, keysets, transforms)
+local function codegen_track(raw_track, lineset, memoised, keysets, use_tsf)
+    local lines = lineset.lines
     local code = ""
-    local hastsf = false
+    local has_tsf = false
     local translation = {false, false, false}
     local rotation = {false, false, false}
     local scale = {false, false, false}
@@ -143,27 +148,33 @@ local function codegen_track(raw_track, lines, memoised, keysets, transforms)
             code = code .. "\n   local l" .. i .. " = (" ..
                 process_expression(line.expression, memoised) .. ")"
         elseif line.keys then
-            keysets[i] = line.keys
+            debug.print(raw_track)
+            local target_keysets = keysets[lineset.target_name]
+            if not target_keysets then
+                target_keysets = {}
+                keysets[lineset.target_name] = target_keysets
+            end
+            target_keysets[i] = line.keys
             code = code .. string.format(
-                "\n   local l%d = value_at(keysets[%d], t * %s, %s)",
-                i, i, raw_track.fps, line.interp)
+                "\n   local l%d = value_at(keysets['%s'][%d], t * %s, %s)",
+                i, lineset.target_name, i, raw_track.fps, line.interp)
         end
 
         if line.channel == this.CH_TRANSLATE then
             translation[line.axis] = i
-            hastsf = true
+            has_tsf = true
         elseif line.channel == this.CH_ROTATE then
             rotation[line.axis] = i
-            hastsf = true
+            has_tsf = true
         elseif line.channel == this.CH_SCALE then
             scale[line.axis] = i
-            hastsf = true
+            has_tsf = true
         elseif line.channel == this.CH_ZOOM then
             code = code .. "\n  zoom = l" .. i
         end
     end
 
-    if not hastsf or not transforms then
+    if not has_tsf or not use_tsf then
         return code
     end
 
@@ -201,7 +212,7 @@ local function codegen_rig_target(raw_track, memoised, keysets)
             goto continue
         end
         local lineset_code = codegen_track(
-            raw_track, lineset.lines, memoised, keysets, true)
+            raw_track, lineset, memoised, keysets, true)
 
         code = code .. "\n  do" .. lineset_code .. "\n  end\n" ..
             "  target:set_matrix(target:index(" .. string.escape(bone) .. "), dst)\n"
@@ -218,7 +229,7 @@ local function codegen_object_target(raw_track, memoised, keysets)
         return ""
     end
     local lineset_code = codegen_track(
-        raw_track, lineset.lines, memoised, keysets, true)
+        raw_track, lineset, memoised, keysets, true)
     code = code .. "\n  do" .. lineset_code .. "\n  end\n"
     .. "  set_matrix(target, dst)\n"
     return code .. " end"
@@ -232,7 +243,7 @@ local function codegen_camera_target(raw_track, memoised, keysets)
         return ""
     end
     local lineset_code = codegen_track(
-        raw_track, lineset.lines, memoised, keysets, false)
+        raw_track, lineset, memoised, keysets, false)
     code = code .. "\n  do" .. lineset_code .. "\n  end\n"
     .. "  target:set_zoom(zoom)\n"
     return code .. " end"
@@ -309,6 +320,7 @@ function internals.on_animation_frame()
             table.remove(running_actions, i)
         end
     end
+    local delta = time.delta()
     for i=1,#playing_tracks do
         local track_info = playing_tracks[i]
         local track = loaded_tracks[track_info.name]
@@ -316,7 +328,7 @@ function internals.on_animation_frame()
             debug.error("animation track not found: "..track_info.name)
             table.remove(playing_tracks, i)
         else
-            track_info.timer = track_info.timer + time.delta()
+            track_info.timer = track_info.timer + delta
             if track_info.timer > track.duration then
                 table.remove(playing_tracks, i)
             else
