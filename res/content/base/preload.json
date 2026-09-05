@@ -9,9 +9,6 @@
         "ambient/rain",
         "ambient/thunder"
     ],
-    "models": [
-        "drop-item"
-    ],
     "textures": [
         "misc/moon",
         "misc/moon_flare",

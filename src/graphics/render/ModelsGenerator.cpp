@@ -1,12 +1,18 @@
 #include "ModelsGenerator.hpp"
 
+#include "SpriteExtrusion.hpp"
 #include "assets/Assets.hpp"
 #include "assets/assets_util.hpp"
+#include "graphics/core/Atlas.hpp"
+#include "graphics/core/ImageData.hpp"
 #include "items/ItemDef.hpp"
 #include "voxels/Block.hpp"
 #include "content/Content.hpp"
 #include "debug/Logger.hpp"
 #include "core_defs.hpp"
+
+#include <cmath>
+#include <optional>
 
 static debug::Logger logger("models-generator");
 
@@ -30,13 +36,163 @@ static void configure_textures(
     }
 }
 
+/// The square a flat item is drawn in, in blocks. Where an item sits in a
+/// hand and how large it looks lying on the ground are both measured off
+/// this, so it is the size the model this replaced was drawn at.
+inline constexpr float SPRITE_SIZE = 0.565f;
+/// And that model sat a hair above the middle of its own square. Kept, so
+/// that nothing an item hangs off has to move.
+inline constexpr float SPRITE_Y_OFFSET = 0.0107f;
+/// Below this an alpha channel is a hole rather than a faint pixel. The
+/// halfway point the alpha clip in the shader uses, so the rim ends up
+/// where the sprite visibly ends.
+inline constexpr ubyte SPRITE_ALPHA_CLIP = 128;
+
+/// @brief The pixels behind a texture name, and which of them are the sprite.
+///
+/// An atlas keeps its raster after handing one to the GPU, which is the
+/// only reason any of this can be worked out without reading a texture
+/// back off it.
+struct SpritePixels {
+    const ImageData* image;
+    int x, y, width, height;
+};
+
+static std::optional<SpritePixels> find_sprite_pixels(
+    const Assets& assets, const std::string& name
+) {
+    size_t sep = name.find(':');
+    if (sep == std::string::npos || sep + 1 >= name.length()) {
+        return std::nullopt;
+    }
+    const auto* atlas = assets.get<Atlas>(name.substr(0, sep));
+    if (atlas == nullptr) {
+        return std::nullopt;
+    }
+    const auto* image = atlas->getImage();
+    auto region = atlas->getIf(name.substr(sep + 1));
+    if (image == nullptr || !region.has_value()) {
+        return std::nullopt;
+    }
+    auto to_pixels = [](float v, uint size) {
+        return static_cast<int>(std::lround(v * static_cast<float>(size)));
+    };
+    int x = to_pixels(region->u1, image->getWidth());
+    int y = to_pixels(region->v1, image->getHeight());
+    int width = to_pixels(region->u2, image->getWidth()) - x;
+    int height = to_pixels(region->v2, image->getHeight()) - y;
+    if (width <= 0 || height <= 0) {
+        return std::nullopt;
+    }
+    return SpritePixels {image, x, y, width, height};
+}
+
+/// A picture with no alpha channel has no holes in it, which is the answer
+/// this gives rather than a special case somewhere further down.
+static std::vector<bool> read_alpha_mask(const SpritePixels& sprite) {
+    const auto& image = *sprite.image;
+    std::vector<bool> opaque(
+        static_cast<size_t>(sprite.width) * sprite.height, true
+    );
+    if (image.getFormat() != ImageFormat::RGBA8888) {
+        return opaque;
+    }
+    const ubyte* data = image.getData();
+    for (int y = 0; y < sprite.height; y++) {
+        for (int x = 0; x < sprite.width; x++) {
+            size_t at =
+                ((static_cast<size_t>(sprite.y + y) * image.getWidth()) +
+                 sprite.x + x) * 4;
+            opaque[static_cast<size_t>(y) * sprite.width + x] =
+                data[at + 3] >= SPRITE_ALPHA_CLIP;
+        }
+    }
+    return opaque;
+}
+
+/// @brief A sprite given the thickness of one of its own pixels.
+///
+/// The model this replaced was forty-two copies of the sprite stacked a
+/// fraction apart with no sides at all: solid enough from the front, and
+/// edge-on nothing but coplanar quads fighting over the depth buffer. This
+/// is a front, a back, and a rim that follows the shape the sprite
+/// actually is, so from the side an item is its own silhouette.
 static model::Model create_flat_model(
     const std::string& texture, const Assets& assets
 ) {
-    auto model = assets.require<model::Model>("drop-item");
-    for (auto& mesh : model.meshes) {
-        if (mesh.texture == "$0") {
-            mesh.texture = texture;
+    auto sprite = find_sprite_pixels(assets, texture);
+    // Without the raster there is nothing to trace. A plain slab is still
+    // a solid of the right size; it is only square where it should have
+    // been the shape of the drawing.
+    int width = 1;
+    int height = 1;
+    std::vector<bool> opaque {true};
+    if (sprite.has_value()) {
+        width = sprite->width;
+        height = sprite->height;
+        opaque = read_alpha_mask(*sprite);
+    }
+    const float pixelX = SPRITE_SIZE / width;
+    const float pixelY = SPRITE_SIZE / height;
+    // One pixel thick, so a sprite is as deep as its own pixels are wide
+    // and reads as a slab of them rather than a sheet.
+    const float halfThickness = pixelX * 0.5f;
+    const float left = -SPRITE_SIZE * 0.5f;
+    const float bottom = -SPRITE_SIZE * 0.5f + SPRITE_Y_OFFSET;
+
+    model::Model model;
+    auto& mesh = model.addMesh(texture);
+    const glm::vec3 centre {0.0f, SPRITE_Y_OFFSET, 0.0f};
+    const glm::vec3 halfX {SPRITE_SIZE * 0.5f, 0.0f, 0.0f};
+    const glm::vec3 halfY {0.0f, SPRITE_SIZE * 0.5f, 0.0f};
+    const glm::vec3 depth {0.0f, 0.0f, halfThickness};
+    // Whole, both of them: the transparent pixels are drawn and thrown
+    // away by the alpha clip exactly as they always were. What the rim
+    // adds below is the part a flat sprite never had.
+    mesh.addPlane(
+        centre + depth, halfX, halfY, {0, 0, 1}, UVRegion(0, 0, 1, 1)
+    );
+    mesh.addPlane(
+        centre - depth, -halfX, halfY, {0, 0, -1}, UVRegion(1, 0, 0, 1)
+    );
+
+    for (const auto& edge : find_sprite_edges(opaque, width)) {
+        // A rim face takes the colour of the pixel that asked for it,
+        // sampled down the middle of that pixel: the boundary between a
+        // drawn pixel and the hole beside it is exactly where a sampler
+        // cannot be trusted to pick the drawn one.
+        if (edge.outwardY != 0) {
+            const float y =
+                bottom + (edge.line + (edge.outwardY > 0 ? 1 : 0)) * pixelY;
+            const float x0 = left + edge.from * pixelX;
+            const float x1 = left + (edge.to + 1) * pixelX;
+            const float v = (edge.line + 0.5f) / height;
+            mesh.addPlane(
+                {(x0 + x1) * 0.5f, y, 0.0f},
+                {(x1 - x0) * 0.5f, 0.0f, 0.0f},
+                // right cross up has to come out the way the face looks,
+                // or it is a face drawn from behind and culled away.
+                {0.0f, 0.0f, -halfThickness * edge.outwardY},
+                {0.0f, static_cast<float>(edge.outwardY), 0.0f},
+                UVRegion(
+                    (edge.from + 0.5f) / width, v, (edge.to + 0.5f) / width, v
+                )
+            );
+        } else {
+            const float x =
+                left + (edge.line + (edge.outwardX > 0 ? 1 : 0)) * pixelX;
+            const float y0 = bottom + edge.from * pixelY;
+            const float y1 = bottom + (edge.to + 1) * pixelY;
+            const float u = (edge.line + 0.5f) / width;
+            mesh.addPlane(
+                {x, (y0 + y1) * 0.5f, 0.0f},
+                {0.0f, 0.0f, -halfThickness * edge.outwardX},
+                {0.0f, (y1 - y0) * 0.5f, 0.0f},
+                {static_cast<float>(edge.outwardX), 0.0f, 0.0f},
+                UVRegion(
+                    u, (edge.from + 0.5f) / height, u, (edge.to + 0.5f) / height
+                )
+            );
         }
     }
     return model;
