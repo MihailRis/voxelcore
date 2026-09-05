@@ -7,6 +7,7 @@ local action_to_channel = {
     move = animation.CH_TRANSLATE,
     rotate = animation.CH_ROTATE,
     scale = animation.CH_SCALE,
+    zoom = animation.CH_ZOOM,
 }
 
 local curve_to_interp = {
@@ -61,15 +62,19 @@ local function parse_track(root)
             goto continue
         end
 
+        local target_type = nil
+        if node.bone then
+            target_type = "bone"
+        end
         local target_name = node.bone or ""
         local lineset = linesets[target_name]
         if not lineset then
-            lineset = {lines = {}}
+            lineset = {lines = {}, target_type = target_type}
             linesets[target_name] = lineset
         end
 
         local line = {
-            axis = ("xyz"):find(node.by),
+            axis = node.by and ("xyz"):find(node.by) or "",
             channel = action_to_channel[tag]
         }
         if node.func then
@@ -90,6 +95,7 @@ end
 local function load_vca(filepath)
     local source = file.read(filepath)
     local raw_track = parse_track(xml.parse_vcd(source, "track"))
+    debug.print(raw_track)
     return animation.compile_track(raw_track, filepath)
 end
 

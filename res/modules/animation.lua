@@ -4,12 +4,13 @@ local this = {
     CH_TRANSLATE = 1,
     CH_ROTATE = 2,
     CH_SCALE = 3,
+    CH_ZOOM = 4,
 
     INT_CONST = 1,
     INT_LINEAR = 2,
     INT_BEZIER = 3,
 
-    TRACE_CODEGEN = false,
+    TRACE_CODEGEN = true,
 }
 
 local INT_CONST = this.INT_CONST
@@ -111,37 +112,64 @@ local env = {
         end
         return left.value * (1.0 - t) + right.value * t
     end,
+    set_matrix = function(target, matrix)
+        local info = mat4.decompose(matrix)
+        if info then
+            local pos = info.translation
+            local rot = info.rotation
+            local scale = info.scale
+            if target.set_pos then
+                target:set_pos(pos)
+            end
+            if target.set_rot then
+                target:set_rot(rot)
+            end
+            if target.set_scale then
+                target:set_scale(scale)
+            end
+        end
+    end
 }
 table.extend(env, math)
 
-local function codegen_track(raw_track, lines, memoised, keysets)
+local function codegen_track(raw_track, lines, memoised, keysets, transforms)
     local code = ""
+    local hastsf = false
     local translation = {false, false, false}
     local rotation = {false, false, false}
     local scale = {false, false, false}
     for i, line in ipairs(lines) do
         if line.expression then
-            code = code .. "\n  local l" .. i .. " = (" ..
+            code = code .. "\n   local l" .. i .. " = (" ..
                 process_expression(line.expression, memoised) .. ")"
         elseif line.keys then
             keysets[i] = line.keys
             code = code .. string.format(
-                "\n  local l%d = value_at(keysets[%d], t * %s, %s)",
+                "\n   local l%d = value_at(keysets[%d], t * %s, %s)",
                 i, i, raw_track.fps, line.interp)
         end
 
         if line.channel == this.CH_TRANSLATE then
             translation[line.axis] = i
+            hastsf = true
         elseif line.channel == this.CH_ROTATE then
             rotation[line.axis] = i
+            hastsf = true
         elseif line.channel == this.CH_SCALE then
             scale[line.axis] = i
+            hastsf = true
+        elseif line.channel == this.CH_ZOOM then
+            code = code .. "\n  zoom = l" .. i
         end
     end
 
-    code = code .. "\n  mat4.idt(dst)"
+    if not hastsf or not transforms then
+        return code
+    end
+
+    code = code .. "\n   mat4.idt(dst)"
     if translation[1] or translation[2] or translation[3] then
-        code = code .. "\n  mat4.translate(dst, {" ..
+        code = code .. "\n   mat4.translate(dst, {" ..
         (translation[1] and ("l" .. translation[1]) or '0').. ", " ..
         (translation[2] and ("l" .. translation[2]) or '0').. ", " ..
         (translation[3] and ("l" .. translation[3]) or '0').. "}, dst)"
@@ -150,13 +178,13 @@ local function codegen_track(raw_track, lines, memoised, keysets)
     local axis_names = {"X", "Y", "Z"}
     for axis, var in ipairs(rotation) do
         if var then
-            code = code .. "\n  mat4.rotate(dst, " .. axis_names[axis] ..
+            code = code .. "\n   mat4.rotate(dst, " .. axis_names[axis] ..
                 ",l" ..  var .. ", dst)"
         end
     end
 
     if scale[1] or scale[2] or scale[3] then
-        code = code .. "\n  mat4.scale(dst, {" ..
+        code = code .. "\n   mat4.scale(dst, {" ..
         (scale[1] and ("l" .. scale[1]) or '1').. ", " ..
         (scale[2] and ("l" .. scale[2]) or '1').. ", " ..
         (scale[3] and ("l" .. scale[3]) or '1').. "}, dst)"
@@ -165,18 +193,59 @@ local function codegen_track(raw_track, lines, memoised, keysets)
     return code
 end
 
+local function codegen_rig_target(raw_track, memoised, keysets)
+    local code = "\n if target.set_matrix and target.index then\n"
+    code = code .. "  local dst = DST\n"
+    for bone, lineset in pairs(raw_track.linesets) do
+        if lineset.target_type ~= "bone" then
+            goto continue
+        end
+        local lineset_code = codegen_track(
+            raw_track, lineset.lines, memoised, keysets, true)
+
+        code = code .. "\n  do" .. lineset_code .. "\n  end\n" ..
+            "  target:set_matrix(target:index(" .. string.escape(bone) .. "), dst)\n"
+        ::continue::
+    end
+    return code .. " end"
+end
+
+local function codegen_object_target(raw_track, memoised, keysets)
+    local code = "\n if target.set_pos then\n"
+    code = code .. "  local dst = DST\n"
+    local lineset = raw_track.linesets[""]
+    if not lineset then
+        return ""
+    end
+    local lineset_code = codegen_track(
+        raw_track, lineset.lines, memoised, keysets, true)
+    code = code .. "\n  do" .. lineset_code .. "\n  end\n"
+    .. "  set_matrix(target, dst)\n"
+    return code .. " end"
+end
+
+local function codegen_camera_target(raw_track, memoised, keysets)
+    local code = "\n if target.set_zoom then\n"
+    code = code .. "  local zoom = 1.0\n"
+    local lineset = raw_track.linesets[""]
+    if not lineset then
+        return ""
+    end
+    local lineset_code = codegen_track(
+        raw_track, lineset.lines, memoised, keysets, false)
+    code = code .. "\n  do" .. lineset_code .. "\n  end\n"
+    .. "  target:set_zoom(zoom)\n"
+    return code .. " end"
+end
+
 function this.compile_track(raw_track, track_name)
     local code = ""
     local memoised = {}
     local keysets = {}
 
-    for bone, lineset in pairs(raw_track.linesets) do
-        local lineset_code = codegen_track(
-            raw_track, lineset.lines, memoised, keysets)
-
-        code = code .. "\n do" .. lineset_code .. "\n end\n" ..
-            " rig:set_matrix(rig:index(" .. string.escape(bone) .. "), dst)\n"
-    end
+    code = code .. codegen_rig_target(raw_track, memoised, keysets)
+    code = code .. codegen_object_target(raw_track, memoised, keysets)
+    code = code .. codegen_camera_target(raw_track, memoised, keysets)
 
     local memoised_code = ""
     for name, expression in pairs(memoised) do
@@ -188,7 +257,7 @@ function this.compile_track(raw_track, track_name)
         code = memoised_code .. "\n" .. code
     end
 
-    local src = "return function(rig, t, m)\n local dst = DST\n"
+    local src = "return function(target, t, m)\n"
         .. code .. "\nend"
 
     if this.TRACE_CODEGEN then
@@ -219,13 +288,18 @@ function this.get_track(identifier)
 end
 
 local running_actions = {}
+local playing_tracks = {}
 
 function this.action(func)
     table.insert(running_actions, coroutine.create(func))
 end
 
+function this.play(name, target)
+    table.insert(playing_tracks, {name=name, target=target, timer=0.0})
+end
+
 function internals.on_animation_frame()
-    for i=#running_actions,1,-1 do
+    for i=1,#running_actions do
         local co = running_actions[i]
         local status, result = coroutine.resume(co)
         if not status then
@@ -233,6 +307,21 @@ function internals.on_animation_frame()
             table.remove(running_actions, i)
         elseif coroutine.status(co) == "dead" then
             table.remove(running_actions, i)
+        end
+    end
+    for i=1,#playing_tracks do
+        local track_info = playing_tracks[i]
+        local track = loaded_tracks[track_info.name]
+        if not track then
+            debug.error("animation track not found: "..track_info.name)
+            table.remove(playing_tracks, i)
+        else
+            track_info.timer = track_info.timer + time.delta()
+            if track_info.timer > track.duration then
+                table.remove(playing_tracks, i)
+            else
+                track.func(track_info.target, track_info.timer)
+            end
         end
     end
 end
