@@ -249,6 +249,7 @@ function mat4.idt(dst)
         for i=1,16 do
             dst[i] = (i % 5 == 1) and 1 or 0
         end
+        return dst
     end
     return {
         1, 0, 0, 0,
