@@ -1,6 +1,7 @@
 language = "VCA"
 extensions = ["vca"]
 line-comment = "#"
+identifier-part-chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
 keywords = [
-    "bone", "by", "func", "curve", "fps", "duration", "frames"
+    "bone", "by", "func", "curve", "fps", "duration", "frames", "rotation-order"
 ]
