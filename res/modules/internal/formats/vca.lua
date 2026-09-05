@@ -25,6 +25,7 @@ local function parse_configure(raw_track, node)
     elseif node.duration then
         raw_track.duration = node.duration
     end
+    raw_track.rotation_order = string.upper(node["rotation-order"]) or "XYZ"
 end
 
 local function parse_curve(line, node)

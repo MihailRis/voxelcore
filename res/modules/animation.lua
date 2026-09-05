@@ -187,10 +187,14 @@ local function codegen_track(raw_track, lineset, memoised, keysets, use_tsf)
     end
 
     local axis_names = {"X", "Y", "Z"}
-    for axis, var in ipairs(rotation) do
+    local axis_indices = {X=1, Y=2, Z=3}
+    local rotation_order = raw_track.rotation_order
+    for i=1,3 do
+        local axis = axis_indices[rotation_order[i]]
+        local var = rotation[axis]
         if var then
             code = code .. "\n   mat4.rotate(dst, " .. axis_names[axis] ..
-                ",l" ..  var .. ", dst)"
+                ", l" ..  var .. ", dst)"
         end
     end
 
