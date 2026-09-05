@@ -1,3 +1,5 @@
+local ALMOST_HUGE = 1e9
+
 local rig = entity.skeleton
 
 local states = {}
@@ -50,7 +52,11 @@ local function update(delta)
 
         state.track = state.track or animation.get_track(state.track_id)
         if state.track and intensity > 0.0 then
-            state.track.func(rig, state.timer, intensity * state.max_intencity)
+            state.track.func(
+                rig,
+                state.timer % math.min(ALMOST_HUGE, state.track.duration),
+                intensity * state.max_intencity
+            )
         end
     end
 end

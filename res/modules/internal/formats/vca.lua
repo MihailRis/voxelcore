@@ -21,7 +21,7 @@ local function parse_configure(raw_track, node)
         raw_track.fps = node.fps
     end
     if node.frames then
-        raw_track.duration = node.frames / node.fps
+        raw_track.duration = node.frames / (node.fps or DEFAULT_FPS)
     elseif node.duration then
         raw_track.duration = node.duration
     end
