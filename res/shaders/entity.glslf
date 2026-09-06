@@ -13,6 +13,7 @@ uniform vec3 u_fogColor;
 uniform float u_fogFactor;
 uniform float u_fogCurve;
 uniform bool u_alphaClip;
+uniform bool u_dithering;
 uniform vec3 u_sunDir;
 
 const float BAYER_MATRIX[64] = float[](
@@ -35,13 +36,17 @@ void main() {
     vec4 texColor = texture(u_texture0, a_texCoord);
     float alpha = a_color.a * texColor.a;
     // anyway it's any alpha-test alternative required
-    if (u_alphaClip) {
-        float bayer = calc_bayer(gl_FragCoord.xy);
-        if (alpha - bayer < 0.01f) {
+    if (u_dithering) {
+        if (u_alphaClip) {
+            float bayer = calc_bayer(gl_FragCoord.xy);
+            if (alpha - bayer < 0.01f) {
+                discard;
+            }
+            alpha = 1.0;
+        } else if (alpha < 0.05f) {
             discard;
         }
-        alpha = 1.0;
-    } else if (alpha < 0.05f) {
+    } else if (alpha < (u_alphaClip ? 0.5f : 0.15f)) {
         discard;
     }
     f_color = a_color * texColor;
