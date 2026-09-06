@@ -55,22 +55,8 @@ sudo dnf install glfw-devel glew-devel glm-devel libpng-devel libvorbis-devel op
 
 #### Arch based distros
 
-If you use X11:
-
 ```sh
-sudo pacman -S glfw-x11 glew glm libpng libvorbis openal luajit libcurl freetype2
-```
-
-If you use Wayland:
-
-```sh
-sudo pacman -S glfw-wayland glew glm libpng libvorbis openal luajit libcurl freetype2
-```
-
-And install EnTT:
-
-```sh
-yay -S entt
+sudo pacman -S glfw glew glm libpng libvorbis openal luajit curl freetype2
 ```
 
 ### Building engine with CMake
