@@ -1,4 +1,5 @@
 local __app = __vc_app
+local internals = __vc_internals
 local enable_experimental = __app.get_setting("debug.enable-experimental")
 
 ------------------------------------------------
@@ -45,7 +46,7 @@ local function complete_app_lib(app)
     app.tick = __app_tick
 
     local function call_in_app_script_co(func, ...)
-        if __vc_is_post_runnable_context() then
+        if internals.is_post_runnable_context() then
             func(...)
             return
         end
@@ -208,7 +209,7 @@ function start_coroutine(chunk, name)
     __vc_named_coroutines[name] = co
 end
 
-function __vc_update_coroutines()
+function internals.update_coroutines()
     local dead = {}
     for name, co in pairs(__vc_named_coroutines) do
         local success, err = coroutine.resume(co)
@@ -332,6 +333,9 @@ end
 world.raycast = entities.__world_raycast
 entities.__world_raycast = nil
 
+animation = require "core:animation"
+require "core:internal/formats/vca"
+
 __vc_scripts_registry = require "core:internal/scripts_registry"
 
 file.open = require "core:internal/stream_providers/file"
@@ -366,6 +370,7 @@ core.get_core_token = audio.input.__get_core_token
 
 require "core:internal/console"
 require "core:internal/deprecated"
+require "core:internal/internal_events"
 
 
 ------------------------------------------
@@ -395,5 +400,4 @@ __vc_app = nil
 __vc_internals = nil
 __vc_lock_internal_modules()
 __vc_lock_internal_modules = nil
-__vc_update_coroutines = nil
 __VC_SCRIPT_NAME = ""

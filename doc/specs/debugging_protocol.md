@@ -1,4 +1,4 @@
-# VC-DBG protocol v1
+# VC-DBG protocol v1.1
 
 ## Notes
 
@@ -113,6 +113,15 @@ Then `value` is:
         "type": "table",
         "short": "{...}"
     }
+}
+```
+
+### File hot-reload signal
+
+```json
+{
+    "type": "hot-reload",
+    "file": "string"
 }
 ```
 

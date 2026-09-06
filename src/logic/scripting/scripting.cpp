@@ -65,14 +65,13 @@ int scripting::load_script(
     return lua::execute(lua::get_main_state(), env, src, fileName);
 }
 
-void scripting::initialize(Engine* engine) {
-    scripting::engine = engine;
-    scripting::content_control = &engine->getContentControl();
-    lua::initialize(engine->getPaths(), engine->getCoreParameters());
+void scripting::initialize(Engine& engine) {
+    scripting::engine = &engine;
+    scripting::content_control = &engine.getContentControl();
+    lua::initialize(engine.getPaths(), engine.getCoreParameters());
 
     load_script(io::path("stdlib.lua"), true);
     load_script(io::path("classes.lua"), true);
-    load_script(io::path("internal_events.lua"), true);
 }
 
 class LuaCoroutine : public Process {
@@ -244,9 +243,7 @@ std::unique_ptr<Process> scripting::start_app_script(const io::path& script) {
 
 void scripting::process_post_runnables() {
     auto L = lua::get_main_state();
-    if (lua::getglobal(L, "__vc__process_post_runnables")) {
-        lua::call_nothrow(L, 0, 0);
-    }
+    lua::call_internal(L, "process_post_runnables");
 }
 
 template <class T, typename IdType>
@@ -261,6 +258,14 @@ static int push_properties_tables(
         lua::rawseti(L, i);
     }
     return 1;
+}
+
+void scripting::on_assets_loading() {
+     lua::call_internal(lua::get_main_state(), "backup_and_clear_animation");
+}
+
+void scripting::revert_assets_loading() {
+    lua::call_internal(lua::get_main_state(), "restore_animation_backup");
 }
 
 void scripting::on_content_load(Content* content) {
@@ -291,13 +296,15 @@ void scripting::on_content_load(Content* content) {
 
     lua::getregistry(L, "app");
     lua::setglobal(L, "__vc_app");
-    lua::getregistry(L, "internals");
+    lua::getregistry(L, lua::INTERNALS_TABLE);
     lua::setglobal(L, "__vc_internals");
     try {
         load_script("post_content.lua", true);
     } catch (const std::exception&) {
         lua::pushnil(L);
         lua::setglobal(L, "__vc_app");
+        lua::pushnil(L);
+        lua::setglobal(L, "__vc_internals");
         throw;
     }
     lua::pushnil(L);
@@ -319,9 +326,7 @@ void scripting::on_world_load(LevelController* controller) {
     scripting::controller = controller;
 
     auto L = lua::get_main_state();
-    if (lua::getglobal(L, "__vc_on_world_open")) {
-        lua::call_nothrow(L, 0, 0);
-    } 
+    lua::call_internal(L, "on_world_open");
     
     for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldopen", [](auto L) {
@@ -334,9 +339,10 @@ void scripting::on_world_load(LevelController* controller) {
 
 void scripting::on_world_tick(int tps) {
     auto L = lua::get_main_state();
-    if (lua::getglobal(L, "__vc_on_world_tick")) {
+    if (lua::get_from_registry(L, lua::INTERNALS_TABLE, "on_world_tick", true)) {
         lua::pushinteger(L, tps);
         lua::call_nothrow(L, 1, 0);
+        lua::pop(L);
     } 
     for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldtick");
@@ -348,16 +354,12 @@ void scripting::on_world_save() {
     for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldsave");
     }
-    if (lua::getglobal(L, "__vc_on_world_save")) {
-        lua::call_nothrow(L, 0, 0);
-    }
+    lua::call_internal(L, "on_world_save");
 }
 
 void scripting::process_before_quit() {
     auto L = lua::get_main_state();
-    if (lua::getglobal(L, "__vc_process_before_quit")) {
-        lua::call_nothrow(L, 0, 0);
-    }
+    lua::call_internal(L, "process_before_quit");
 }
 
 void scripting::on_world_quit() {
@@ -365,9 +367,7 @@ void scripting::on_world_quit() {
     for (auto& pack : content_control->getAllContentPacks()) {
         lua::emit_event(L, pack.id + ":.worldquit");
     }
-    if (lua::getglobal(L, "__vc_on_world_quit")) {
-        lua::call_nothrow(L, 0, 0);
-    }
+    lua::call_internal(L, "on_world_quit");
     scripting::level = nullptr;
     scripting::content = nullptr;
     scripting::indices = nullptr;
@@ -840,6 +840,21 @@ void scripting::load_layout_script(
     script.onclose = lua::hasfield(L, "on_close");
     script.ondestroy = lua::hasfield(L, "on_destroy");
     lua::pop(L);
+}
+
+void scripting::load_vca_animation(
+    const io::path& file,
+    const std::string& identifier
+) {
+    auto L = lua::get_main_state();
+    if (lua::get_from_registry(L, lua::INTERNALS_TABLE, "load_vca_animation", true)) {
+        lua::pushlstring(L, file.string());
+        lua::pushlstring(L, identifier);
+        if (lua::call(L, 2, 0)) {
+            lua::pop(L);
+        }
+        lua::pop(L);
+    }
 }
 
 void scripting::close() {

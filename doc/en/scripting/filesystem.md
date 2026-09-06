@@ -100,7 +100,7 @@ xml.tostring(data: XML, multiline: bool = true) -> str
 -- Parses XML
 xml.parse(code: str) -> XML
 
--- Parses the VCD (VoxelCore Declaration) format used by the VCM format.
+-- Parses the VCD (VoxelCore Declaration) format used by VCM and VCA formats.
 -- root_tag - a root element with the specified tag will be implicitly created,
 -- containing all root elements
 xml.parse_vcd(code: str, root_tag: str = "root") -> XML

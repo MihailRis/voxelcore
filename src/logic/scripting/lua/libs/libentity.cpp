@@ -1,20 +1,20 @@
 #include "libentity.hpp"
 
+#include "animation/rigging.hpp"
 #include "assets/Assets.hpp"
 #include "content/Content.hpp"
 #include "content/ContentPack.hpp"
 #include "engine/Engine.hpp"
 #include "engine/EnginePaths.hpp"
 #include "objects/Entities.hpp"
-#include "objects/EntityDef.hpp"
 #include "objects/Entity.hpp"
-#include "objects/Rigidbody.hpp"
+#include "objects/EntityDef.hpp"
 #include "objects/Player.hpp"
-#include "objects/rigging.hpp"
+#include "objects/Rigidbody.hpp"
 #include "physics/Hitbox.hpp"
-#include "voxels/Chunks.hpp"
 #include "voxels/Block.hpp"
 #include "voxels/blocks_agent.hpp"
+#include "voxels/Chunks.hpp"
 #include "window/Camera.hpp"
 
 #include <set>
@@ -116,6 +116,10 @@ static int l_set_skeleton(lua::State* L) {
         return 0;
     }
     if (auto entity = get_entity(L, 1)) {
+        if (lua::isnil(L, 2)) {
+            entity->setRig(nullptr);
+            return 0;
+        }
         std::string skeletonName = lua::require_string(L, 2);
         auto rigConfig = assets->getShared<rigging::SkeletonConfig>(skeletonName);
         if (rigConfig == nullptr) {

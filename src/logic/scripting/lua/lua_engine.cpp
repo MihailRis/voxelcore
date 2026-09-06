@@ -77,7 +77,7 @@ static void create_libs(State* L, StateType stateType) {
     createtable(L, 0, 0);
     pushvalue(L, -1);
     setglobal(L, "__vc_internals");
-    setregistry(L, "internals");
+    setregistry(L, lua::INTERNALS_TABLE);
 
     if (stateType == StateType::SCRIPT) {
         getregistry(L, "app");

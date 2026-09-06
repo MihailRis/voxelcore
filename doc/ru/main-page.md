@@ -21,4 +21,5 @@
 - [Скриптинг](scripting.md)
 - [Стили текста](text-styles.md)
 - [Формат моделей VCM](vcm.md)
+- [Формат анимации VCA](vca.md)
 - [Частицы](particles.md)

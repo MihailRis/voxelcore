@@ -1,5 +1,6 @@
 #include "WorldRenderer.hpp"
 
+#include "animation/rigging.hpp"
 #include "BlockWrapsRenderer.hpp"
 #include "ChunksRenderer.hpp"
 #include "CloudsRenderer.hpp"
@@ -42,7 +43,6 @@
 #include "maths/voxmaths.hpp"
 #include "objects/Entities.hpp"
 #include "objects/Player.hpp"
-#include "objects/rigging.hpp"
 #include "settings.hpp"
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"

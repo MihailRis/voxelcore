@@ -48,7 +48,10 @@ namespace scripting {
     extern std::ostream* output_stream;
     extern std::ostream* error_stream;
 
-    void initialize(Engine* engine);
+    void initialize(Engine& engine);
+
+    void on_assets_loading();
+    void revert_assets_loading();
 
     void on_content_load(Content* content);
     void on_content_reset();
@@ -250,6 +253,11 @@ namespace scripting {
         const io::path& file,
         const std::string& fileName,
         UiDocScript& script
+    );
+    
+    void load_vca_animation(
+        const io::path& file,
+        const std::string& identifier
     );
 
     /// @brief Finalize lua state. Using scripting after will lead to Lua panic

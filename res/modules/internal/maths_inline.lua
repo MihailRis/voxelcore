@@ -1,3 +1,8 @@
+local sin = math.sin
+local cos = math.cos
+local sqrt = math.sqrt
+local rad = math.rad
+
 -- =================================================== --
 -- ====================== vec3 ======================= --
 -- =================================================== --
@@ -237,4 +242,94 @@ function vec2.mix(a, b, t, dest)
             a[2] * (1.0 - t) + b[2] * t,
         }
     end
+end
+
+function mat4.idt(dst)
+    if dst then
+        for i=1,16 do
+            dst[i] = (i % 5 == 1) and 1 or 0
+        end
+        return dst
+    end
+    return {
+        1, 0, 0, 0,
+        0, 1, 0, 0,
+        0, 0, 1, 0,
+        0, 0, 0, 1
+    }
+end
+
+function mat4.rotate(...)
+    local argc = select("#", ...)
+
+    local matrix, axis, angle, dst
+
+    if argc == 2 then
+        axis, angle = ...
+        matrix = mat4.idt()
+    elseif argc == 3 then
+        matrix, axis, angle = ...
+    elseif argc == 4 then
+        matrix, axis, angle, dst = ...
+    else
+        error("invalid arguments number (2, 3 or 4 expected)")
+    end
+
+    angle = rad(angle)
+
+    local x, y, z = axis[1], axis[2], axis[3]
+
+    local len = sqrt(x * x + y * y + z * z)
+    if len == 0 then
+        error("rotation axis has zero length")
+    end
+
+    x = x / len
+    y = y / len
+    z = z / len
+
+    local c = cos(angle)
+    local s = sin(angle)
+    local t = 1 - c
+
+    local r00 = t * x * x + c
+    local r01 = t * x * y - s * z
+    local r02 = t * x * z + s * y
+
+    local r10 = t * x * y + s * z
+    local r11 = t * y * y + c
+    local r12 = t * y * z - s * x
+
+    local r20 = t * x * z - s * y
+    local r21 = t * y * z + s * x
+    local r22 = t * z * z + c
+
+    local out = dst or {}
+
+    local m1,  m2,  m3,  m4  = matrix[1],  matrix[2],  matrix[3],  matrix[4]
+    local m5,  m6,  m7,  m8  = matrix[5],  matrix[6],  matrix[7],  matrix[8]
+    local m9,  m10, m11, m12 = matrix[9],  matrix[10], matrix[11], matrix[12]
+    local m13, m14, m15, m16 = matrix[13], matrix[14], matrix[15], matrix[16]
+
+    out[1]  = m1 * r00 + m5 * r10 + m9  * r20
+    out[2]  = m2 * r00 + m6 * r10 + m10 * r20
+    out[3]  = m3 * r00 + m7 * r10 + m11 * r20
+    out[4]  = m4 * r00 + m8 * r10 + m12 * r20
+
+    out[5]  = m1 * r01 + m5 * r11 + m9  * r21
+    out[6]  = m2 * r01 + m6 * r11 + m10 * r21
+    out[7]  = m3 * r01 + m7 * r11 + m11 * r21
+    out[8]  = m4 * r01 + m8 * r11 + m12 * r21
+
+    out[9]  = m1 * r02 + m5 * r12 + m9  * r22
+    out[10] = m2 * r02 + m6 * r12 + m10 * r22
+    out[11] = m3 * r02 + m7 * r12 + m11 * r22
+    out[12] = m4 * r02 + m8 * r12 + m12 * r22
+
+    out[13] = m13
+    out[14] = m14
+    out[15] = m15
+    out[16] = m16
+
+    return out
 end

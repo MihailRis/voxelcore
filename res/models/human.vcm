@@ -1,0 +1,30 @@
+@bone name 'body' {
+    @box from (-0.2,0,-0.125) to (0.2,0.5,0.15)
+    @bone name 'head' move (0,0.5,0) {
+        @box from (-0.2,0,-0.2) to (0.2,0.4,0.2)
+    }
+    @bone name 'leg_left' move (-0.125, 0, 0) rotate (-0,0,0) {
+        @box from (-0.075, -0.45, -0.125) to (0.125, 0.0, 0.15)
+        @bone name 'leg_left_btm' move (0, -0.45, 0) rotate (0,0,0) {
+            @box from (-0.075, -0.45, -0.125) to (0.125, 0.0, 0.15)
+        }
+    }
+    @bone name 'leg_right' move (0.125, 0.0, 0) rotate (0,0,0) {
+        @box from (-0.125, -0.45, -0.125) to (0.075, 0.0, 0.15)
+        @bone name 'leg_right_btm' move (0, -0.45, 0) rotate (0,0,0) {
+            @box from (-0.125, -0.45, -0.125) to (0.075, 0.0, 0.15)
+        }
+    }
+    @bone name 'hand_left' move (-0.325, 0.5, 0) rotate (-0,0,0) {
+        @box from (-0.075, -0.45, -0.125) to (0.125, 0.0, 0.15)
+        @bone name 'hand_left_btm' move (0, -0.45, 0) rotate (-0,0,0) {
+            @box from (-0.075, -0.45, -0.125) to (0.125, 0.0, 0.15)
+        }
+    }
+    @bone name 'hand_right' move (0.325, 0.5, 0) rotate (0,0,0) {
+        @box from (-0.125, -0.45, -0.125) to (0.075, 0.0, 0.15)
+        @bone name 'hand_right_btm' move (0, -0.45, 0) rotate (-0,0,0) {
+            @box from (-0.125, -0.45, -0.125) to (0.075, 0.0, 0.15)
+        }
+    }
+}
