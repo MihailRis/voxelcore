@@ -192,7 +192,12 @@ static void perform_rect(const xmlelement& root, ModelBuilder& builder) {
     }
     std::string texture = root.attr("texture", "$0").getText();
 
-    auto normal = glm::cross(glm::normalize(right), glm::normalize(up));
+    glm::vec3 normal;
+    if (root.has("normal")) {
+        normal = root.attr("normal").asVec3();
+    } else {
+        normal = glm::cross(glm::normalize(right), glm::normalize(up));
+    }
     builder.addRect(
         texture,
         shading,
@@ -218,7 +223,12 @@ static void perform_triangle(const xmlelement& root, ModelBuilder& builder) {
 
     glm::vec3 ba = pointB - pointA;
     glm::vec3 ca = pointC - pointA;
-    glm::vec3 normal = glm::normalize(glm::cross(ba, ca));
+    glm::vec3 normal;
+    if (root.has("normal")) {
+        normal = root.attr("normal").asVec3();
+    } else {
+        normal = glm::normalize(glm::cross(ba, ca));
+    }
     
     if (root.has("uv")) {
         root.attr("uv").asNumbers(glm::value_ptr(uvs[0]), 6);

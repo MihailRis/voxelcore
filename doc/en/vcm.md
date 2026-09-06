@@ -41,6 +41,7 @@ This primitive describes a triangle.
 - `region` - UV region within the selected texture, defined by the positions of opposite corners of a square of normalized texture coordinates. Example: `region (0,0,1,1)`
 - `region-scale` - multiplier vector for the UV region. Example: `region-scale (0.5,1)`
 - `shading` - determines whether shading is enabled on the primitive. Example: `shading off`
+- `normal` - overrides normal vector. Example: `normal (0,1,0)`
 
 By default, texture coordinates are not affected by shape or size, unlike other primitives.
 
@@ -56,6 +57,7 @@ This primitive describes a parallelogram using the right and up vectors.
 - `region-scale` - the multiplier vector for the automatically selected UV region. Example: `region-scale (0.5,1)`
 - `shading` - determines whether shading is enabled on the primitive. Example: `shading off`
 - `flip` - flips the UV region horizontally or vertically. Example: `flip v`
+- `normal` - overrides normal vector. Example: `normal (0,1,0)`
 
 ### `box` Properties
 
@@ -66,8 +68,8 @@ This primitive describes a rectangular parallelepiped.
 - `origin` - the point relative to which the rotation will be applied. Default: the center of the primitive. Example: `origin (0.5,0.5,0.5)`
 - `rotate` - rotation around the (x,y,z) axes in degrees, or a quaternion (x,y,z,w). Example: `rotate (45,0,0)` or `rotate (0.3826834, 0, 0, 0.9238795)`
 - `texture` - the default texture to display for all sides.
-- `shading` determines whether shading is enabled on the primitive. Example: `shading off`
-- `delete` deletes sides by name (top, bottom, east, west, north, south)
+- `shading` - determines whether shading is enabled on the primitive. Example: `shading off`
+- `delete` - deletes sides by name (top, bottom, east, west, north, south)
 
 ### `part` properties (nested in `box`)
 
@@ -76,7 +78,7 @@ This primitive describes the properties of the sides of a rectangular parallelep
 - `tags` - determines which side the properties will be applied to. Example: `tags (top,bottom)`
 - `texture` - the texture to display. Default: `$side_index`.
 - `region` - the UV region within the selected texture, defined by the positions of opposite corners. Example: `region (0,0,1,1)`
-- `region-scale` is a multiplier vector for the automatically selected UV region. Example: `region-scale (0.5,1)`
+- `region-scale` - multiplier vector for the automatically selected UV region. Example: `region-scale (0.5,1)`
 
 ## Skeleton
 
