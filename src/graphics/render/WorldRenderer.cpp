@@ -244,6 +244,7 @@ void WorldRenderer::renderOpaque(
     }
 
     entityShader.uniform1i("u_alphaClip", true);
+    entityShader.uniform1i("u_dithering", 1);
     entityShader.uniform1f("u_opacity", 1.0f);
     level.entities->render(
         assets,
@@ -512,6 +513,7 @@ void WorldRenderer::renderWeatherEffects(Camera& camera) {
         float one = weather->fall.maxOpacity;
         float t = (weather->intensity * (one - zero)) * maxIntensity + zero;
         entityShader.uniform1i("u_alphaClip", weather->fall.opaque);
+        entityShader.uniform1i("u_dithering", 0);
         entityShader.uniform1f(
             "u_opacity", weather->fall.opaque ? t * t : t
         );
