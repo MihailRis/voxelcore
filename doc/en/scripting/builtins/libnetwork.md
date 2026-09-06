@@ -105,8 +105,6 @@ socket:peek_async(
     [optional] usetable: boolean=false
 ) -> nil|table|Bytearray
 
-Translated with DeepL.com (free version)
-
 -- Closes the connection
 socket:close()
 
