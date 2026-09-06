@@ -134,7 +134,14 @@ local env = {
     end,
     dump = debug.print
 }
-table.extend(env, math)
+
+local math_funcs = {
+    "sqrt", "min", "max", "deg", "rad", "log", "log10", "floor", "ceil", "sin",
+    "tan", "noise", "noise2", "sign", "round", "exp", "pi", "e"
+}
+for _, name in ipairs(math_funcs) do
+    env[name] = math[name]
+end
 
 local function codegen_track(raw_track, lineset, memoised, keysets, use_tsf)
     local lines = lineset.lines
