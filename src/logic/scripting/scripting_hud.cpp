@@ -12,6 +12,7 @@
 #include "lua/libs/api_lua.hpp"
 #include "lua/lua_engine.hpp"
 #include "scripting.hpp"
+#include "typedefs.hpp"
 
 using namespace scripting;
 
@@ -108,6 +109,31 @@ void scripting::on_inventory_interact(int invid, int slot, int action, int mode)
             }
         );
     }
+}
+
+void scripting::on_slot_middle_click(int invid, int slot) {
+    auto L = lua::get_main_state();
+    lua::emit_event(
+        L,
+        "core:slot_middle_click",
+        [&](lua::State* L) {
+            lua::pushinteger(L, invid);
+            lua::pushinteger(L, slot);
+            return 2;
+        }
+    );
+}
+
+void scripting::on_access_panel_slot_middle_click(const itemid_t itemid) {
+    auto L = lua::get_main_state();
+    lua::emit_event(
+        L,
+        "core:access_panel_slot_middle_click",
+        [&](lua::State* L) {
+            lua::pushinteger(L, itemid);
+            return 1;
+        }
+    );
 }
 
 void scripting::load_hud_script(
