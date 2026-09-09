@@ -37,6 +37,7 @@
             openal
             luajit
             curl
+            openssl
             entt
             mesa
             freeglut

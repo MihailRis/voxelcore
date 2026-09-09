@@ -18,6 +18,7 @@ endif()
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(CURL REQUIRED)
+find_package(OpenSSL 3.0 REQUIRED COMPONENTS Crypto)
 find_package(glfw3 REQUIRED)
 find_package(Freetype REQUIRED)
 if(NOT APPLE)
@@ -79,12 +80,13 @@ target_link_libraries(
             ZLIB::ZLIB
             PNG::PNG
             CURL::libcurl
+            OpenSSL::Crypto
             OpenAL::OpenAL
             Vorbis::vorbis
             Vorbis::vorbisfile
-            luajit::luajit
             Freetype::Freetype
-    PUBLIC glm::glm # Need public for src/delegates.hpp, which including to
+    PUBLIC luajit::luajit
+           glm::glm # Need public for src/delegates.hpp, which including to
                     # main.cpp
 )
 
