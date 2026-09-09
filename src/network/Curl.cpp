@@ -63,7 +63,7 @@ public:
         buffer.clear();
 
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, request.method);
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, request.method.c_str());
         
         curl_slist* hs = nullptr;
         
