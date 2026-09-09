@@ -63,19 +63,7 @@ public:
         buffer.clear();
 
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        switch (request.method) {
-            case HttpMethod::GET:
-                break;
-            case HttpMethod::POST:
-                curl_easy_setopt(curl, CURLOPT_POST, true);
-                break;
-            case HttpMethod::PUT:
-                curl_easy_setopt(curl, CURLOPT_UPLOAD, true);
-                break;
-            case HttpMethod::DELETE:
-                curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
-                break;
-        }
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, request.method);
         
         curl_slist* hs = nullptr;
         
