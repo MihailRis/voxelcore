@@ -11,6 +11,7 @@
 #include "graphics/commons/Model.hpp"
 #include "graphics/core/Atlas.hpp"
 #include "graphics/core/Texture.hpp"
+#include "io/io.hpp"
 #include "util/Buffer.hpp"
 
 using namespace scripting;
@@ -63,6 +64,20 @@ static int l_load_texture(lua::State* L) {
         );
         lua::pop(L);
     }
+    return 0;
+}
+
+static int l_parse_animation(lua::State* L) {
+    auto format = lua::require_lstring(L, 1);
+    auto string = lua::require_lstring(L, 2);
+    std::string name = lua::require_string(L, 3);
+
+    if (format != "vca") {
+        throw std::runtime_error(
+            "unknown format " + util::quote(std::string(format))
+        );
+    }
+    scripting::load_vca_animation(name, &string, name);
     return 0;
 }
 
@@ -161,6 +176,7 @@ static int l_to_canvas(lua::State* L) {
 const luaL_Reg assetslib[] = {
     {"request_texture", lua::wrap<l_request_texture>},
     {"load_texture", lua::wrap<l_load_texture>},
+    {"parse_animation", lua::wrap<l_parse_animation>},
     {"parse_model", lua::wrap<l_parse_model>},
     {"to_canvas", lua::wrap<l_to_canvas>},
     {nullptr, nullptr}

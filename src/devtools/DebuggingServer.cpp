@@ -1,9 +1,13 @@
 #include "DebuggingServer.hpp"
 
-#include "engine/Engine.hpp"
-#include "network/Network.hpp"
-#include "debug/Logger.hpp"
+#include "assets/AssetsLoader.hpp"
 #include "coders/json.hpp"
+#include "data/dv.hpp"
+#include "debug/Logger.hpp"
+#include "engine/AssetsManagement.hpp"
+#include "engine/Engine.hpp"
+#include "io/path.hpp"
+#include "network/Network.hpp"
 
 using namespace devtools;
 
@@ -260,6 +264,16 @@ bool DebuggingServer::performCommand(
             }
         });
         return true;
+    } else if (type == "hot-reload") {
+        if (!map.has("file")) {
+            return false;
+        }
+        logger.info() << "hot-reload: " << map["file"].asString();
+        int count = engine.getAssetsManagement().acquireBackgroundLoader().addReload(
+            map["file"].asString()
+        );
+        logger.info() << "enqueued to reload: " << count;
+        return false;
     } else {
         logger.error() << "unsupported command '" << type << "'";
     }

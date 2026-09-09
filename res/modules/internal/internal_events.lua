@@ -1,3 +1,5 @@
+local internals = __vc_internals
+
 local updating_blocks = {}
 local present_queues = {}
 local REGISTER_BIT = 0x1
@@ -5,7 +7,7 @@ local UPDATING_BIT = 0x2
 local PRESENT_BIT = 0x4
 local REMOVED_BIT = 0x8
 
-block.__perform_ticks = function(delta)
+function internals.tick_updating_blocks(delta)
     for id, entry in pairs(updating_blocks) do
         entry.timer = entry.timer + delta
         local steps = math.floor(entry.timer / entry.delta * #entry / 3)
@@ -63,7 +65,7 @@ end
 local block_pull_register_events = block.__pull_register_events
 block.__pull_register_events = nil
 
-block.__process_register_events = function()
+function internals.process_block_register_events()
     local register_events = block_pull_register_events()
     if not register_events then
         return

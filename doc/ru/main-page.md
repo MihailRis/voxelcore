@@ -6,6 +6,7 @@
 ## Разделы
 
 - [XML разметка интерфейса](xml-ui-layouts.md)
+- [Анимация](animation.md)
 - [Аудио](audio.md)
 - [Движок генерации мира](world-generator.md)
 - [Консоль](console.md)
@@ -21,4 +22,5 @@
 - [Скриптинг](scripting.md)
 - [Стили текста](text-styles.md)
 - [Формат моделей VCM](vcm.md)
+- [Формат анимации VCA](vca.md)
 - [Частицы](particles.md)

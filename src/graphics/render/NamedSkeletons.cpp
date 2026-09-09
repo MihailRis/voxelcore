@@ -1,6 +1,6 @@
 #include "NamedSkeletons.hpp"
 
-#include "objects/rigging.hpp"
+#include "animation/rigging.hpp"
 
 using namespace rigging;
 

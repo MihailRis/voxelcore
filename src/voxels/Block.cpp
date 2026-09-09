@@ -167,6 +167,9 @@ void Block::cloneTo(Block& dst) {
     dst.translucent = translucent;
     dst.explictlySolid = explictlySolid;
     dst.tags = tags;
+    if (dataStruct) {
+        dst.dataStruct = std::make_unique<data::StructLayout>(*dataStruct);
+    }
     if (particles) {
         dst.particles = std::make_unique<ParticlesPreset>(*particles);
     }

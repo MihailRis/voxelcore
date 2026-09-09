@@ -17,7 +17,7 @@ entity:def_name() -> str
 -- Возращает имя скелета сущности
 entity:get_skeleton() -> str
 -- Заменяет скелет сущности
-entity:set_skeleton(name: str)
+entity:set_skeleton(name: str | nil)
 
 -- Возращает уникальный идентификатор сущности
 entity:get_uid() -> int

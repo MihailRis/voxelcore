@@ -38,6 +38,16 @@ assets.parse_model(
     skeleton_name: string
 )
 
+-- Парсит и загружает анимацию
+assets.parse_animation(
+    -- Формат файла анимации (vca)
+    format: string,
+    -- Содержимое файла анимации
+    content: string,
+    -- Имя анимации после загрузки
+    name: string
+)
+
 -- Создаёт холст (Canvas) из загруженной текстуры
 assets.to_canvas(
     -- Имя загруженной текстуры. 

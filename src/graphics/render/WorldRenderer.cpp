@@ -1,5 +1,6 @@
 #include "WorldRenderer.hpp"
 
+#include "animation/rigging.hpp"
 #include "BlockWrapsRenderer.hpp"
 #include "ChunksRenderer.hpp"
 #include "CloudsRenderer.hpp"
@@ -42,7 +43,6 @@
 #include "maths/voxmaths.hpp"
 #include "objects/Entities.hpp"
 #include "objects/Player.hpp"
-#include "objects/rigging.hpp"
 #include "settings.hpp"
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"
@@ -244,6 +244,7 @@ void WorldRenderer::renderOpaque(
     }
 
     entityShader.uniform1i("u_alphaClip", true);
+    entityShader.uniform1i("u_dithering", 1);
     entityShader.uniform1f("u_opacity", 1.0f);
     level.entities->render(
         assets,
@@ -513,6 +514,7 @@ void WorldRenderer::renderWeatherEffects(Camera& camera) {
         float one = weather->fall.maxOpacity;
         float t = (weather->intensity * (one - zero)) * maxIntensity + zero;
         entityShader.uniform1i("u_alphaClip", weather->fall.opaque);
+        entityShader.uniform1i("u_dithering", 0);
         entityShader.uniform1f(
             "u_opacity", weather->fall.opaque ? t * t : t
         );

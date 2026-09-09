@@ -1,6 +1,7 @@
 #define VC_ENABLE_REFLECTION
 #include "Entities.hpp"
 
+#include "animation/rigging.hpp"
 #include "assets/Assets.hpp"
 #include "content/Content.hpp"
 #include "data/dv_util.hpp"
@@ -17,7 +18,6 @@
 #include "maths/rays.hpp"
 #include "maths/util.hpp"
 #include "physics/PhysicsSolver.hpp"
-#include "rigging.hpp"
 #include "world/Level.hpp"
 
 #include <entt/entity/registry.hpp>
@@ -59,7 +59,11 @@ entityid_t Entities::spawn(
     if (assets) {
         skeleton = assets->get<rigging::SkeletonConfig>(def.skeletonName);
         if (skeleton == nullptr) {
-            throw std::runtime_error("skeleton " + def.skeletonName + " not found");
+            if (def.skeletonName == def.name) {
+                logger.warning() << "skeleton " + def.skeletonName + " not found";
+            } else {
+                throw std::runtime_error("skeleton " + def.skeletonName + " not found");
+            }
         }
     }
     entityid_t id;
@@ -100,7 +104,9 @@ entityid_t Entities::spawn(
 
     auto& scripting = registry->emplace<ScriptComponents>(entity);
     if (assets) {
-        registry->emplace<rigging::Skeleton>(entity, skeleton->instance());
+        registry->emplace<rigging::Skeleton>(
+            entity, skeleton ? skeleton->instance() : rigging::Skeleton(nullptr)
+        );
     }
 
     for (auto& instance : def.components) {

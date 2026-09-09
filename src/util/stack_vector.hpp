@@ -103,6 +103,22 @@ namespace util {
             return data_.ptr()[index];
         }
 
+        T& front() {
+            return data_.ptr()[0];
+        }
+
+        T& back() {
+            return data_.ptr()[size_ - 1];
+        }
+
+        const T& front() const {
+            return data_.ptr()[0];
+        }
+
+        const T& back() const {
+            return data_.ptr()[size_ - 1];
+        }
+
         int size() const { 
             return size_;
         }

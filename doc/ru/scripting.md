@@ -9,6 +9,7 @@
 - [Свойства и методы UI элементов](scripting/ui.md)
 - [Сущности и компоненты](scripting/ecs.md)
 - [Библиотеки](#)
+    - [animation](scripting/builtins/libanimation.md)
     - [app](scripting/builtins/libapp.md)
     - [assets](scripting/builtins/libassets.md)
     - [base64](scripting/builtins/libbase64.md)

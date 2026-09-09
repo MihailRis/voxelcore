@@ -1,13 +1,13 @@
 #include "HandsRenderer.hpp"
 
-#include <glm/ext.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-#include "ModelBatch.hpp"
+#include "animation/rigging.hpp"
 #include "content/Content.hpp"
 #include "graphics/commons/Model.hpp"
-#include "objects/rigging.hpp"
+#include "ModelBatch.hpp"
 #include "window/Camera.hpp"
+
+#include <glm/ext.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 using namespace rigging;
 

@@ -190,5 +190,9 @@ public:
         return *appScripts;
     }
 
+    AssetsManagement& getAssetsManagement() const {
+        return *assets;
+    }
+
     void detachDebugger();
 };

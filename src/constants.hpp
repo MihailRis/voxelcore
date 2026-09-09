@@ -75,13 +75,14 @@ inline constexpr int DEFAULT_FONT_SIZE = 16;
 
 inline constexpr int DEFAULT_PRE_RENDER_FONT_PAGES = 1; // must be at least 1
 
-inline const std::string SHADERS_FOLDER = "shaders";
-inline const std::string TEXTURES_FOLDER = "textures";
+inline const std::string ANIMATION_FOLDER = "animation";
 inline const std::string FONTS_FOLDER = "fonts";
 inline const std::string LAYOUTS_FOLDER = "layouts";
-inline const std::string SOUNDS_FOLDER = "sounds";
 inline const std::string MODELS_FOLDER = "models";
-inline const std::string SKELETONS_FOLDER = "skeletons";
 inline const std::string POST_EFFECTS_FOLDER = "shaders/effects";
+inline const std::string SHADERS_FOLDER = "shaders";
+inline const std::string SKELETONS_FOLDER = "skeletons";
+inline const std::string SOUNDS_FOLDER = "sounds";
+inline const std::string TEXTURES_FOLDER = "textures";
 
 inline const std::string FONT_DEFAULT = "normal";

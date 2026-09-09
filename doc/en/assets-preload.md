@@ -3,11 +3,13 @@
 `preload.json` in content-pack folder is used for specifying additional assets should be loaded, like sounds.
 
 The file contains following categories available:
+- animation
 - fonts
-- shaders
-- textures
-- sounds
 - models
+- shaders
+- skeletons
+- sounds
+- textures
 
 > [!NOTE]
 > Sound loading with all variations following template:

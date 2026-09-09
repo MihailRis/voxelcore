@@ -17,6 +17,8 @@ namespace devtools {
         std::wstring multilineCommentEnd;
         std::wstring multilineStringStart;
         std::wstring multilineStringEnd;
+        std::wstring identifierStarts;
+        std::wstring identifierParts;
     
         dv::value serialize() const override;
         void deserialize(const dv::value& src) override;

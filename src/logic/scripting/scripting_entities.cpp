@@ -37,6 +37,11 @@ static inline const std::string STDCOMP = "stdcomp";
         lua::setfield(L, name);
         lua::pop(L);
     }
+    if (lua::getfield(L, "ordered_components")) {
+        lua::pushenv(L, id);
+        lua::rawseti(L, lua::objlen(L, -2) + 1);
+        lua::pop(L);
+    }
     lua::pop(L);
 
     return std::shared_ptr<int>(new int(id), [=](int* id) { //-V508

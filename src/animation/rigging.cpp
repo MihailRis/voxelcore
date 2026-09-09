@@ -13,7 +13,7 @@ using namespace rigging;
 
 void ModelReference::refresh(const Assets& assets) {
     if (updateFlag) {
-        model = assets.get<model::Model>(name);
+        model = assets.getShared<model::Model>(name);
         updateFlag = false;
     }
 }
@@ -29,24 +29,27 @@ Bone::Bone(
       name(std::move(name)),
       bones(std::move(bones)),
       offset(offset),
-      model({model, nullptr, true}) {
+      model({model, {}, true}) {
 }
 
 void Bone::setModel(const std::string& name) {
     if (model.name == name) {
         return;
     }
-    model = {name, nullptr, true};
+    model = {name, {}, true};
 }
 
 Skeleton::Skeleton(std::shared_ptr<const SkeletonConfig> config)
     : config(config),
-      pose(config->getBones().size()),
-      calculated(config->getBones().size()),
-      flags(config->getBones().size()),
+      pose(config ? config->getBones().size() : 0),
+      calculated(config ? config->getBones().size() : 0),
+      flags(config ? config->getBones().size() : 0),
       textures(),
-      modelOverrides(config->getBones().size()),
+      modelOverrides(config ? config->getBones().size() : 0),
       visible(true) {
+    if (config == nullptr) {
+        return;
+    }
     const auto& bones = config->getBones();
     for (size_t i = 0; i < bones.size(); i++) {
         flags[i].visible = true;
@@ -89,19 +92,15 @@ void Skeleton::deserialize(const dv::value& root) {
 void Skeleton::setConfig(std::shared_ptr<const SkeletonConfig> rigConfig) {
     config = std::move(rigConfig);
 
-    const auto& bones = config->getBones();
+    int bonesCount = config ? config->getBones().size() : 0;
+    
+    pose.matrices.resize(bonesCount, glm::mat4(1.0f));
+    calculated.matrices.resize(bonesCount, glm::mat4(1.0f));
 
-    pose.matrices.resize(
-        bones.size(), glm::mat4(1.0f)
-    );
-    calculated.matrices.resize(
-        bones.size(), glm::mat4(1.0f)
-    );
+    modelOverrides.resize(bonesCount);
+    flags.resize(bonesCount);
 
-    modelOverrides.resize(bones.size());
-    flags.resize(bones.size());
-
-    for (size_t i = 0; i < bones.size(); i++) {
+    for (size_t i = 0; i < bonesCount; i++) {
         flags[i].visible = true;
     }
 }
@@ -194,12 +193,14 @@ void SkeletonConfig::render(
             continue;
         }
         node->model.refresh(assets);
-        auto model = node->model.model;
+        auto model = node->model.model.lock().get(); // TODO: cache model pointer during frame
         auto& modelOverride = skeleton.modelOverrides.at(i);
         if (modelOverride.updateFlag) {
             modelOverride.refresh(assets);
         }
-        model = modelOverride.model ? modelOverride.model : model;
+        if (auto foundOverride = modelOverride.model.lock()) {
+            model = foundOverride.get();
+        }
         if (model) {
             batch.draw(
                 skeleton.calculated.matrices[i],
@@ -207,7 +208,9 @@ void SkeletonConfig::render(
                 model,
                 &skeleton.textures
             );
-        }
+        } else if (!node->model.name.empty()) {
+            node->model.updateFlag = true;
+        } 
     }
 }
 
