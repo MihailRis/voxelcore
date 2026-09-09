@@ -68,13 +68,26 @@ end
 
 local running_actions = {}
 local playing_tracks = {}
+local next_track_id = 1
 
 function this.action(func)
     table.insert(running_actions, coroutine.create(func))
 end
 
 function this.play(name, target)
-    table.insert(playing_tracks, {name=name, target=target, timer=0.0})
+    local id = next_track_id
+    table.insert(playing_tracks, {id=id, name=name, target=target, timer=0.0})
+    next_track_id = id + 1
+    return id
+end
+
+function this.stop(id)
+    for i, entry in pairs(playing_tracks) do
+        if entry.id == id then
+            table.remove(playing_tracks, i)
+            return
+        end
+    end
 end
 
 function internals.on_animation_frame()
