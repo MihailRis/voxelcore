@@ -543,6 +543,14 @@ static std::basic_string<CharT> upper_case(const std::basic_string<CharT>& str) 
     return result;
 }
 
+std::string util::lower_case(const std::string& str) {
+    return ::lower_case(str);
+}
+
+std::string util::upper_case(const std::string& str) {
+    return ::upper_case(str);
+}
+
 std::wstring util::lower_case(const std::wstring& str) {
     return ::lower_case(str);
 }
