@@ -104,10 +104,18 @@ local http_request = network.__request
 local http_get = network.__get
 local http_get_binary = network.__get_binary
 local http_post = network.__post
+local open_tcp = network.__open_tcp
+local open_udp = network.__open_udp
+local connect_tcp = network.__connect_tcp
+local connect_udp = network.__connect_udp
 network.__request = nil
 network.__get = nil
 network.__get_binary = nil
 network.__post = nil
+network.__open_tcp = nil
+network.__open_udp = nil
+network.__connect_tcp = nil
+network.__connect_udp = nil
 
 local function request(url, params)
     local id = http_request(url, params)
@@ -152,7 +160,7 @@ network.post = function(url, data, callback, errorCallback, headers)
 end
 
 network.tcp_open = function (port, handler)
-    local socket = setmetatable({id=network.__open_tcp(port)}, ServerSocket)
+    local socket = setmetatable({id=open_tcp(port)}, ServerSocket)
 
     _tcp_server_callbacks[socket.id] = function(id)
         handler(setmetatable({id=id}, Socket))
@@ -162,7 +170,7 @@ end
 
 network.tcp_connect = function(address, port, callback, errorCallback)
     local socket = setmetatable({id=0}, Socket)
-    socket.id = network.__connect_tcp(address, port)
+    socket.id = connect_tcp(address, port)
     _tcp_client_callbacks[socket.id] = function() callback(socket) end
     if errorCallback then
         _tcp_client_error_callbacks[socket.id] = function(message) errorCallback(socket, message) end
@@ -175,7 +183,7 @@ network.udp_open = function (port, datagramHandler)
         error "udp server cannot be opened without datagram handler"
     end
 
-    local socket = setmetatable({id=network.__open_udp(port)}, DatagramServerSocket)
+    local socket = setmetatable({id=open_udp(port)}, DatagramServerSocket)
 
     _udp_server_callbacks[socket.id] = function(address, port, data)
         datagramHandler(address, port, data, socket)
@@ -190,7 +198,7 @@ network.udp_connect = function (address, port, datagramHandler, openCallback)
     end
 
     local socket = setmetatable({id=0}, WriteableSocket)
-    socket.id = network.__connect_udp(address, port)
+    socket.id = connect_udp(address, port)
 
     _udp_client_datagram_callbacks[socket.id] = datagramHandler
     if openCallback then
