@@ -68,22 +68,7 @@ namespace network {
         Network(std::unique_ptr<Requests> requests);
         ~Network();
 
-        void get(
-            const std::string& url,
-            OnResponse onResponse,
-            OnReject onReject = nullptr,
-            std::vector<std::string> headers = {},
-            long maxSize=0
-        );
-
-        void post(
-            const std::string& url,
-            const std::string& fieldsData,
-            OnResponse onResponse,
-            OnReject onReject = nullptr,
-            std::vector<std::string> headers = {},
-            long maxSize=0
-        );
+        void request(HttpRequest request);
 
         [[nodiscard]] Connection* getConnection(u64id_t id, bool includePrivate);
         [[nodiscard]] Server* getServer(u64id_t id, bool includePrivate) const;

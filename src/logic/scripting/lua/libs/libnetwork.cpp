@@ -3,6 +3,7 @@
 #include "engine/Engine.hpp"
 #include "network/Network.hpp"
 #include "devtools/Project.hpp"
+#include "util/stringutil.hpp"
 
 #include <variant>
 #include <utility>
@@ -91,24 +92,26 @@ static int perform_get(lua::State* L, network::Network& network, bool binary) {
 
     int currentRequestId = request_id++;
 
-    network.get(
-        url,
+    network::HttpRequest request {};
+    request.url = std::move(url);
+    request.onResponse =
         [currentRequestId, binary](std::vector<char> bytes) {
             push_event(NetworkEvent(
                 RESPONSE,
                 ResponseEventDto {
                     200, binary, currentRequestId, std::move(bytes)}
             ));
-        },
+        };
+    request.onReject =
         [currentRequestId, binary](int code, std::vector<char> bytes) {
             push_event(NetworkEvent(
                 RESPONSE,
                 ResponseEventDto {
                     code, binary, currentRequestId, std::move(bytes)}
             ));
-        },
-        std::move(headers)
-    );
+        };
+    request.headers = std::move(headers);
+    network.request(std::move(request));
     return lua::pushinteger(L, currentRequestId);
 }
 
@@ -134,25 +137,28 @@ static int l_post(lua::State* L, network::Network& network) {
     auto headers = read_headers(L, 3);
     int currentRequestId = request_id++;
 
-    network.post(
-        url,
-        string,
+    network::HttpRequest request {};
+    request.url = std::move(url);
+    request.body = string;
+    request.headers = std::move(headers);
+    request.headers.emplace_back("Content-Type: application/json");
+    request.onResponse =
         [currentRequestId](std::vector<char> bytes) {
             push_event(NetworkEvent(
                 RESPONSE,
                 ResponseEventDto {
                     200, false, currentRequestId, std::move(bytes)}
             ));
-        },
+        };
+    request.onReject =
         [currentRequestId](int code, std::vector<char> bytes) {
             push_event(NetworkEvent(
                 RESPONSE,
                 ResponseEventDto {
                     code, false, currentRequestId, std::move(bytes)}
             ));
-        },
-        std::move(headers)
-    );
+        };
+    network.request(std::move(request));
     return lua::pushinteger(L, currentRequestId);
 }
 

@@ -23,21 +23,6 @@ static size_t write_callback(
     return size * nmemb;
 }
 
-enum class RequestType {
-    GET, POST
-};
-
-struct Request {
-    RequestType type;
-    std::string url;
-    OnResponse onResponse;
-    OnReject onReject;
-    long maxSize;
-    bool followLocation = false;
-    std::string data;
-    std::vector<std::string> headers;
-};
-
 class CurlRequests : public Requests {
     CURLM* multiHandle;
     CURL* curl;
@@ -50,7 +35,7 @@ class CurlRequests : public Requests {
     std::vector<char> buffer;
     std::string url;
 
-    std::queue<Request> requests;
+    std::queue<HttpRequest> requests;
 public:
     CurlRequests(CURLM* multiHandle, CURL* curl)
         : multiHandle(multiHandle), curl(curl) {
@@ -61,47 +46,12 @@ public:
         curl_easy_cleanup(curl);
         curl_multi_cleanup(multiHandle);
     }
-    void get(
-        const std::string& url,
-        OnResponse onResponse,
-        OnReject onReject,
-        std::vector<std::string> headers,
-        long maxSize
-    ) override {
-        Request request {
-            RequestType::GET,
-            url,
-            onResponse,
-            onReject,
-            maxSize,
-            true,
-            "",
-            std::move(headers)};
+
+    void request(HttpRequest request) override {
         processRequest(std::move(request));
     }
 
-    void post(
-        const std::string& url,
-        const std::string& data,
-        OnResponse onResponse,
-        OnReject onReject=nullptr,
-        std::vector<std::string> headers = {},
-        long maxSize=0
-    ) override {
-        Request request {
-            RequestType::POST,
-            url,
-            onResponse,
-            onReject,
-            maxSize,
-            false,
-            "",
-            std::move(headers)};
-        request.data = data;
-        processRequest(std::move(request));
-    }
-
-    void processRequest(Request request) {
+    void processRequest(HttpRequest request) {
         if (!url.empty()) {
             requests.push(request);
             return;
@@ -113,7 +63,19 @@ public:
         buffer.clear();
 
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_POST, request.type == RequestType::POST);
+        switch (request.method) {
+            case HttpMethod::GET:
+                break;
+            case HttpMethod::POST:
+                curl_easy_setopt(curl, CURLOPT_POST, true);
+                break;
+            case HttpMethod::PUT:
+                curl_easy_setopt(curl, CURLOPT_UPLOAD, true);
+                break;
+            case HttpMethod::DELETE:
+                curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+                break;
+        }
         
         curl_slist* hs = nullptr;
         
@@ -121,16 +83,9 @@ public:
             hs = curl_slist_append(hs, header.c_str());
         }
 
-        switch (request.type) {
-            case RequestType::GET:
-                break;
-            case RequestType::POST: 
-                hs = curl_slist_append(hs, "Content-Type: application/json");
-                curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, request.data.length());
-                curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, request.data.c_str());
-                break;
-            default:
-                throw std::runtime_error("not implemented");
+        if (!request.body.empty()) {
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, request.body.length());
+            curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, request.body.data());
         }
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, request.followLocation);

@@ -10,6 +10,10 @@
 #include <mutex>
 
 namespace network {
+    enum class HttpMethod {
+        GET, POST, PUT, DELETE,
+    };
+
     using OnResponse = std::function<void(std::vector<char>)>;
     using OnReject = std::function<void(int, std::vector<char>)>;
     using ConnectCallback = std::function<void(u64id_t, u64id_t)>;
@@ -17,26 +21,23 @@ namespace network {
     using ServerDatagramCallback = std::function<void(u64id_t sid, const std::string& addr, int port, const char* buffer, size_t length)>;
     using ClientDatagramCallback = std::function<void(u64id_t cid, const char* buffer, size_t length)>;
 
+    struct HttpRequest {
+        HttpMethod method;
+        std::string url;
+        std::string body;
+        std::vector<std::string> headers;
+
+        OnResponse onResponse;
+        OnReject onReject;
+        bool followLocation = false;
+        long maxSize = -1;
+    };
+
     class Requests {
     public:
         virtual ~Requests() {}
 
-        virtual void get(
-            const std::string& url,
-            OnResponse onResponse,
-            OnReject onReject=nullptr,
-            std::vector<std::string> headers = {},
-            long maxSize=0
-        ) = 0;
-
-        virtual void post(
-            const std::string& url,
-            const std::string& data,
-            OnResponse onResponse,
-            OnReject onReject=nullptr,
-            std::vector<std::string> headers = {},
-            long maxSize=0
-        ) = 0;
+        virtual void request(HttpRequest request) = 0;
 
         [[nodiscard]] virtual size_t getTotalUpload() const = 0;
         [[nodiscard]] virtual size_t getTotalDownload() const = 0;
