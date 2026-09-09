@@ -86,6 +86,35 @@ static std::vector<std::string> read_headers(lua::State* L, int index) {
 
 static int request_id = 1;
 
+static int l_request(lua::State* L, network::Network& network) {
+    network::HttpRequest request {};
+    request.url = lua::require_lstring(L, 1);
+
+    if (!lua::istable(L, 2)) {
+        throw std::runtime_error("table expected as argument #2");
+    }
+    if (lua::getfield(L, "method", 2)) {
+        request.method = util::upper_case(lua::require_string(L, -1));
+        lua::pop(L);
+    }
+    if (lua::getfield(L, "headers", 2)) {
+        request.headers = read_headers(L, -1);
+        lua::pop(L);
+    }
+    if (lua::getfield(L, "body", 2)) {
+        request.body = lua::require_lstring(L, -1);
+        lua::pop(L);
+    }
+    if (lua::getfield(L, "follow_location", 2)) {
+        request.followLocation = lua::toboolean(L, -1);
+        lua::pop(L);
+    }
+
+    int currentRequestId = request_id++;
+    network.request(std::move(request));
+    return lua::pushinteger(L, currentRequestId);
+}
+
 static int perform_get(lua::State* L, network::Network& network, bool binary) {
     std::string url(lua::require_lstring(L, 1));
     auto headers = read_headers(L, 2);
@@ -568,6 +597,7 @@ int wrap(lua_State* L) {
 }
 
 const luaL_Reg networklib[] = {
+    {"__request", wrap<l_request>},
     {"__get", wrap<l_get>},
     {"__get_binary", wrap<l_get_binary>},
     {"__post", wrap<l_post>},

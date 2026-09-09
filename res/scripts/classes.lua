@@ -100,8 +100,29 @@ local _udp_client_open_callbacks = {}
 local _http_response_callbacks = {}
 local _http_error_callbacks = {}
 
+local http_request = network.__request
+local http_get = network.__get
+local http_get_binary = network.__get_binary
+local http_post = network.__post
+network.__request = nil
+network.__get = nil
+network.__get_binary = nil
+network.__post = nil
+
+local function request(url, params)
+    local id = http_request(url, params)
+    if params.on_response then
+        _http_response_callbacks[id] = params.on_response
+    end
+    if params.on_error then
+        _http_error_callbacks[id] = params.on_error
+    end
+end
+
+network.request = request
+
 network.get = function(url, callback, errorCallback, headers)
-    local id = network.__get(url, headers)
+    local id = http_get(url, headers)
     if callback then
         _http_response_callbacks[id] = callback
     end
@@ -111,7 +132,7 @@ network.get = function(url, callback, errorCallback, headers)
 end
 
 network.get_binary = function(url, callback, errorCallback, headers)
-    local id = network.__get_binary(url, headers)
+    local id = http_get_binary(url, headers)
     if callback then
         _http_response_callbacks[id] = callback
     end
@@ -121,7 +142,7 @@ network.get_binary = function(url, callback, errorCallback, headers)
 end
 
 network.post = function(url, data, callback, errorCallback, headers)
-    local id = network.__post(url, data, headers)
+    local id = http_post(url, data, headers)
     if callback then
         _http_response_callbacks[id] = callback
     end
