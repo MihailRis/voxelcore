@@ -106,7 +106,7 @@ end
 
 local function load_vca(source, filepath)
     local raw_track = parse_track(xml.parse_vcd(source, "track"))
-    return animation.compile_track(raw_track, filepath)
+    return internals.compile_animation_track(raw_track, filepath)
 end
 
 function internals.load_vca_animation(filepath, source, identifier)
