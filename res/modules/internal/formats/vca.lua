@@ -1,7 +1,6 @@
 local internals = __vc_internals
 
 local DEFAULT_FPS = 60
-local INT_BEZIER = animation.INT_BEZIER
 
 local action_to_channel = {
     move = animation.CH_TRANSLATE,
@@ -29,14 +28,19 @@ local function parse_configure(raw_track, node)
 end
 
 local function parse_curve(line, node)
-    line.interp = curve_to_interp[node.curve]
+    if node.curve:starts_with(".") then
+        line.interp = animation.INT_CUSTOM
+        line.curve_func = node.curve:sub(2)
+    else
+        line.interp = curve_to_interp[node.curve]
+    end
     line.keys = {}
     for j, key_node in ipairs(node) do
         local keyframe = {
             frame = tonumber(key_node.frame),
             value = tonumber(key_node.value),
         }
-        if line.interp == INT_BEZIER then
+        if line.interp == animation.INT_BEZIER then
             keyframe.lx = tonumber(key_node.lx)
             keyframe.ly = tonumber(key_node.ly)
             keyframe.rx = tonumber(key_node.rx)
@@ -51,6 +55,7 @@ local function parse_track(root)
         duration = math.huge,
         fps = DEFAULT_FPS,
         linesets = {},
+        curves = {},
     }
     local linesets = raw_track.linesets
     for i, node in ipairs(root) do
@@ -60,6 +65,9 @@ local function parse_track(root)
         local tag = node['#']
         if tag == "configure" then
             parse_configure(raw_track, node)
+            goto continue
+        elseif tag == "curve" then
+            raw_track.curves[node.name] = node
             goto continue
         end
 

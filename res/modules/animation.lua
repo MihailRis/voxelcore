@@ -9,6 +9,7 @@ local this = {
     INT_CONST = 1,
     INT_LINEAR = 2,
     INT_BEZIER = 3,
+    INT_CUSTOM = 4,
 
     TRACE_CODEGEN = false,
 }
@@ -53,10 +54,7 @@ local function bezier_interpolation(k0, k1, t)
     return bezier(k0.value, k0.ry, k1.ly, k1.value, u)
 end
 
-local patterns =  {
-    {name="sint", pattern="sin(t)"},
-    {name="sint2", pattern="sin(t * 2)"},
-}
+local patterns =  {}
 local exclude_patters = {
     "end",
     (string.pattern_safe("'")),
@@ -127,8 +125,23 @@ local env = {
         local t = (frame - left.frame) / (right.frame - left.frame)
         if interp == INT_BEZIER then
             return bezier_interpolation(left, right, t)
+        elseif type(interp) == "function" then
+            return interp(left.value, right.value, t)
         end
         return left.value * (1.0 - t) + right.value * t
+    end,
+    value_at_custom = function(keys, frame, func)
+        local left, right = key_neighbors(keys, frame)
+        if left == right then
+            return keys[left].value
+        end
+        left = keys[left]
+        right = keys[right]
+        if left == nil then
+            return right.value
+        end
+        local t = (frame - left.frame) / (right.frame - left.frame)
+        return func(left, right, t)
     end,
     set_matrix = function(target, matrix)
         local info = mat4.decompose(matrix)
@@ -176,9 +189,18 @@ local function codegen_track(raw_track, lineset, memoised, keysets, use_tsf)
                 keysets[lineset.target_name] = target_keysets
             end
             target_keysets[i] = line.keys
-            code = code .. string.format(
-                "\n   local l%d = value_at(keysets['%s'][%d], t * %s, %s)",
-                i, lineset.target_name, i, raw_track.fps, line.interp)
+
+            if line.curve_func then
+                local valueat = string.format("curves[%s]", string.escape(line.curve_func))
+
+                code = code .. string.format(
+                "\n   local l%d = value_at_custom(keysets['%s'][%d], t * %s, %s)",
+                i, lineset.target_name, i, raw_track.fps, valueat)
+            else
+                code = code .. string.format(
+                    "\n   local l%d = value_at(keysets['%s'][%d], t * %s, %s)",
+                    i, lineset.target_name, i, raw_track.fps, line.interp)
+            end
         end
 
         if line.channel == this.CH_TRANSLATE then
@@ -229,7 +251,7 @@ local function codegen_track(raw_track, lineset, memoised, keysets, use_tsf)
     return code
 end
 
-local function codegen_rig_target(raw_track, memoised, keysets)
+local function codegen_rig_target(raw_track, context)
     local code = "\n if target.set_matrix and target.index then\n"
     code = code .. "  local dst = DST\n"
     for bone, lineset in pairs(raw_track.linesets) do
@@ -237,7 +259,7 @@ local function codegen_rig_target(raw_track, memoised, keysets)
             goto continue
         end
         local lineset_code = codegen_track(
-            raw_track, lineset, memoised, keysets, true)
+            raw_track, lineset, context.memoised, context.keysets, true)
 
         code = code .. "\n  do" .. lineset_code .. "\n  end\n" ..
             "  target:set_matrix(target:index(" .. string.escape(bone) .. "), dst)\n"
@@ -246,7 +268,7 @@ local function codegen_rig_target(raw_track, memoised, keysets)
     return code .. " end"
 end
 
-local function codegen_object_target(raw_track, memoised, keysets)
+local function codegen_object_target(raw_track, context)
     local code = "\n if target.set_pos then\n"
     code = code .. "  local dst = DST\n"
     local lineset = raw_track.linesets[""]
@@ -254,13 +276,13 @@ local function codegen_object_target(raw_track, memoised, keysets)
         return ""
     end
     local lineset_code = codegen_track(
-        raw_track, lineset, memoised, keysets, true)
+        raw_track, lineset, context.memoised, context.keysets, true)
     code = code .. "\n  do" .. lineset_code .. "\n  end\n"
     .. "  set_matrix(target, dst)\n"
     return code .. " end"
 end
 
-local function codegen_camera_target(raw_track, memoised, keysets)
+local function codegen_camera_target(raw_track, context)
     local code = "\n if target.set_zoom then\n"
     code = code .. "  local zoom = 1.0\n"
     local lineset = raw_track.linesets[""]
@@ -268,7 +290,7 @@ local function codegen_camera_target(raw_track, memoised, keysets)
         return ""
     end
     local lineset_code = codegen_track(
-        raw_track, lineset, memoised, keysets, false)
+        raw_track, lineset, context.memoised, context.keysets, false)
     code = code .. "\n  do" .. lineset_code .. "\n  end\n"
     .. "  target:set_zoom(zoom)\n"
     return code .. " end"
@@ -276,15 +298,24 @@ end
 
 function this.compile_track(raw_track, track_name)
     local code = ""
-    local memoised = {}
-    local keysets = {}
+    local context = {
+        memoised = {},
+        keysets = {},
+        curves = {},
+    }
+    for name, curve in pairs(raw_track.curves) do
+        context.curves[name] = load(string.format(
+            "return function(kl, kr, t) return %s end",
+            process_expression(curve.func, context.memoised)
+        ), "<curve>", "t", env)()
+    end
 
-    code = code .. codegen_rig_target(raw_track, memoised, keysets)
-    code = code .. codegen_object_target(raw_track, memoised, keysets)
-    code = code .. codegen_camera_target(raw_track, memoised, keysets)
+    code = code .. codegen_rig_target(raw_track, context)
+    code = code .. codegen_object_target(raw_track, context)
+    code = code .. codegen_camera_target(raw_track, context)
 
     local memoised_code = ""
-    for name, expression in pairs(memoised) do
+    for name, expression in pairs(context.memoised) do
         memoised_code = memoised_code .. "\n local " .. name .. " = "
             .. expression
     end
@@ -302,7 +333,9 @@ function this.compile_track(raw_track, track_name)
     end
 
     local generator, err = load(
-        src, "<expr>", "bt", table.extend({keysets = keysets}, env))
+        src, "<expr>", "bt", table.extend({
+            keysets = context.keysets, curves = context.curves
+        }, env))
     if not generator then
         error(err)
     end
