@@ -71,10 +71,12 @@ public:
             hs = curl_slist_append(hs, header.c_str());
         }
 
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, request.body.length());
         if (!request.body.empty()) {
-            curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, request.body.length());
             curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, request.body.data());
         }
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, request.verifySSL);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, request.verifySSL);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, request.followLocation);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);

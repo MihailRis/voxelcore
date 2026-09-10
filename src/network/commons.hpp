@@ -26,6 +26,7 @@ namespace network {
         OnResponse onResponse;
         OnReject onReject;
         bool followLocation = false;
+        bool verifySSL = true;
         long maxSize = -1;
     };
 
