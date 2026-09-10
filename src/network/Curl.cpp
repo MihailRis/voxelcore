@@ -80,6 +80,9 @@ public:
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "curl/7.81.0");
+#ifndef NDEBUG
+        // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+#endif
         if (request.maxSize == 0) {
             curl_easy_setopt(
                 curl, CURLOPT_MAXFILESIZE, std::numeric_limits<long>::max()
@@ -119,7 +122,8 @@ public:
             if(msg->msg == CURLMSG_DONE) {
                 curl_multi_remove_handle(multiHandle, curl);
             }
-            int response;
+            int response = -1;
+            CURLcode result = msg->data.result;
             curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &response);
             if (response == HTTP_OK) {
                 long size;
@@ -132,6 +136,11 @@ public:
                 totalDownload += buffer.size();
                 if (onResponse) {
                     onResponse(std::move(buffer));
+                }
+            } else if (response == 0) {
+                logger.error() << curl_easy_strerror(result) << " (" << url << ")";
+                if (onReject) {
+                    onReject(response, {});
                 }
             } else {
                 logger.error()

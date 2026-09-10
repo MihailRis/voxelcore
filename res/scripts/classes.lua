@@ -125,17 +125,21 @@ network.request = request
 
 network.get = function(url, callback, errorCallback, headers)
     return request(url, {
+        method = "GET",
         headers = headers,
         on_response = callback,
         on_error = errorCallback,
+        follow_location = true,
     })
 end
 
 network.get_binary = function(url, callback, errorCallback, headers)
     return request(url, {
+        method = "GET",
         headers = headers,
         on_response = callback and (function (response) return callback(Bytearray(response)) end),
-        on_error = errorCallback
+        on_error = errorCallback,
+        follow_location = true,
     })
 end
 

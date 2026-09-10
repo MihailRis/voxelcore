@@ -111,6 +111,19 @@ static int l_request(lua::State* L, network::Network& network) {
     }
 
     int currentRequestId = request_id++;
+    request.onResponse = [currentRequestId](std::vector<char> bytes) {
+        push_event(NetworkEvent(
+            RESPONSE,
+            ResponseEventDto {200, false, currentRequestId, std::move(bytes)}
+        ));
+    };
+    request.onReject = [currentRequestId](int code, std::vector<char> bytes) {
+        push_event(NetworkEvent(
+            RESPONSE,
+            ResponseEventDto {code, false, currentRequestId, std::move(bytes)}
+        ));
+    };
+
     network.request(std::move(request));
     return lua::pushinteger(L, currentRequestId);
 }
