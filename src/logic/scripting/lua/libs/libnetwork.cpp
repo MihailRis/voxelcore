@@ -94,7 +94,7 @@ static int l_request(lua::State* L, network::Network& network) {
         throw std::runtime_error("table expected as argument #2");
     }
     if (lua::getfield(L, "method", 2)) {
-        request.method = util::upper_case(lua::require_string(L, -1));
+        request.method = lua::require_string(L, -1);
         lua::pop(L);
     }
     if (lua::getfield(L, "headers", 2)) {
@@ -111,82 +111,6 @@ static int l_request(lua::State* L, network::Network& network) {
     }
 
     int currentRequestId = request_id++;
-    network.request(std::move(request));
-    return lua::pushinteger(L, currentRequestId);
-}
-
-static int perform_get(lua::State* L, network::Network& network, bool binary) {
-    std::string url(lua::require_lstring(L, 1));
-    auto headers = read_headers(L, 2);
-
-    int currentRequestId = request_id++;
-
-    network::HttpRequest request {};
-    request.url = std::move(url);
-    request.onResponse =
-        [currentRequestId, binary](std::vector<char> bytes) {
-            push_event(NetworkEvent(
-                RESPONSE,
-                ResponseEventDto {
-                    200, binary, currentRequestId, std::move(bytes)}
-            ));
-        };
-    request.onReject =
-        [currentRequestId, binary](int code, std::vector<char> bytes) {
-            push_event(NetworkEvent(
-                RESPONSE,
-                ResponseEventDto {
-                    code, binary, currentRequestId, std::move(bytes)}
-            ));
-        };
-    request.headers = std::move(headers);
-    network.request(std::move(request));
-    return lua::pushinteger(L, currentRequestId);
-}
-
-static int l_get(lua::State* L, network::Network& network) {
-    return perform_get(L, network, false);
-}
-
-static int l_get_binary(lua::State* L, network::Network& network) {
-    return perform_get(L, network, true);
-}
-
-static int l_post(lua::State* L, network::Network& network) {
-    std::string url(lua::require_lstring(L, 1));
-    auto data = lua::tovalue(L, 2);
-
-    std::string string;
-    if (data.isString()) {
-        string = data.asString();
-    } else {
-        string = json::stringify(data, false);
-    }
-
-    auto headers = read_headers(L, 3);
-    int currentRequestId = request_id++;
-
-    network::HttpRequest request {};
-    request.url = std::move(url);
-    request.body = string;
-    request.headers = std::move(headers);
-    request.headers.emplace_back("Content-Type: application/json");
-    request.onResponse =
-        [currentRequestId](std::vector<char> bytes) {
-            push_event(NetworkEvent(
-                RESPONSE,
-                ResponseEventDto {
-                    200, false, currentRequestId, std::move(bytes)}
-            ));
-        };
-    request.onReject =
-        [currentRequestId](int code, std::vector<char> bytes) {
-            push_event(NetworkEvent(
-                RESPONSE,
-                ResponseEventDto {
-                    code, false, currentRequestId, std::move(bytes)}
-            ));
-        };
     network.request(std::move(request));
     return lua::pushinteger(L, currentRequestId);
 }
@@ -598,9 +522,6 @@ int wrap(lua_State* L) {
 
 const luaL_Reg networklib[] = {
     {"__request", wrap<l_request>},
-    {"__get", wrap<l_get>},
-    {"__get_binary", wrap<l_get_binary>},
-    {"__post", wrap<l_post>},
     {"get_total_upload", wrap<l_get_total_upload>},
     {"get_total_download", wrap<l_get_total_download>},
     {"find_free_port", wrap<l_find_free_port>},

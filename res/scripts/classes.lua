@@ -101,17 +101,11 @@ local _http_response_callbacks = {}
 local _http_error_callbacks = {}
 
 local http_request = network.__request
-local http_get = network.__get
-local http_get_binary = network.__get_binary
-local http_post = network.__post
 local open_tcp = network.__open_tcp
 local open_udp = network.__open_udp
 local connect_tcp = network.__connect_tcp
 local connect_udp = network.__connect_udp
 network.__request = nil
-network.__get = nil
-network.__get_binary = nil
-network.__post = nil
 network.__open_tcp = nil
 network.__open_udp = nil
 network.__connect_tcp = nil
@@ -130,33 +124,31 @@ end
 network.request = request
 
 network.get = function(url, callback, errorCallback, headers)
-    local id = http_get(url, headers)
-    if callback then
-        _http_response_callbacks[id] = callback
-    end
-    if errorCallback then
-        _http_error_callbacks[id] = errorCallback
-    end
+    return request(url, {
+        headers = headers,
+        on_response = callback,
+        on_error = errorCallback,
+    })
 end
 
 network.get_binary = function(url, callback, errorCallback, headers)
-    local id = http_get_binary(url, headers)
-    if callback then
-        _http_response_callbacks[id] = callback
-    end
-    if errorCallback then
-        _http_error_callbacks[id] = errorCallback
-    end
+    return request(url, {
+        headers = headers,
+        on_response = callback and (function (response) return callback(Bytearray(response)) end),
+        on_error = errorCallback
+    })
 end
 
-network.post = function(url, data, callback, errorCallback, headers)
-    local id = http_post(url, data, headers)
-    if callback then
-        _http_response_callbacks[id] = callback
-    end
-    if errorCallback then
-        _http_error_callbacks[id] = errorCallback
-    end
+network.post = function(url, body, callback, errorCallback, headers)
+    return request(url, {
+        method = "POST",
+        headers = table.extend({
+            "Content-Type: application/json"
+        }, headers),
+        body = body,
+        on_response = callback,
+        on_error = errorCallback,
+    })
 end
 
 network.tcp_open = function (port, handler)
