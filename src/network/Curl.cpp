@@ -138,9 +138,15 @@ public:
                     onResponse(std::move(buffer));
                 }
             } else if (response == 0) {
-                logger.error() << curl_easy_strerror(result) << " (" << url << ")";
+                auto message = std::string(curl_easy_strerror(result));
+                logger.error() << message << " (" << url << ")";
                 if (onReject) {
-                    onReject(response, {});
+                    onReject(
+                        response,
+                        std::vector<char>(
+                            message.data(), message.data() + message.size()
+                        )
+                    );
                 }
             } else {
                 logger.error()
