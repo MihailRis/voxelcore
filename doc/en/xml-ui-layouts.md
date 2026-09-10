@@ -198,6 +198,21 @@ Example of list description:
     - `select` - default mode.
     - `button` - button mode: the text is not replaced with the selected option; the element rendered as a regular button.
 
+## Progress bar - *progressbar*
+
+Non-interactive element for displaying progress. Draws a background and a filled part.
+
+- `min` - minimal value. Type: number. Default: 0
+- `max` - maximal value. Type: number. Default: 100
+- `value` - initial value. Type: number. Default: 0
+- `color` - color of the filled part. Type: RGBA color. Default: blue `#3399FFCC`
+- `bg-color` - background color (empty part). Type: RGBA color. Default: semi-transparent black `#00000066`
+- `orientation` - fill direction: `horizontal` / `vertical`
+- `smooth` - smooth value change on updates. Type: boolean. Default: false
+- `smooth-speed` - smooth transition speed in units per second. Type: number. Default: 120
+- `text-color` - text color. Type: RGBA color. Default: white `#FFFFFFFF`
+- `font` - font name. Type: string. Default: "normal"
+
 ## *bindbox*
 
 An element for displaying and editing key or mouse button bindings.
