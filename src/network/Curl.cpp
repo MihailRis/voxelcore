@@ -24,9 +24,19 @@ static size_t write_callback(
 }
 
 struct ProcessingRequest {
+    CURLM* multiHandle;
     CURL* curl;
     HttpRequest request;
     std::vector<char> buffer;
+
+    ProcessingRequest(CURLM* multiHandle) : multiHandle(multiHandle) {
+        curl = curl_easy_init();
+    }
+
+    ~ProcessingRequest() {
+        curl_multi_remove_handle(multiHandle, curl);
+        curl_easy_cleanup(curl);
+    }
 };
 
 class CurlRequests : public Requests {
@@ -40,10 +50,7 @@ public:
     }
 
     virtual ~CurlRequests() {
-        for (auto& entry : requests) {
-            curl_multi_remove_handle(multiHandle, entry->curl);
-            curl_easy_cleanup(entry->curl);
-        }
+        requests.clear();
         curl_multi_cleanup(multiHandle);
     }
 
@@ -52,10 +59,8 @@ public:
     }
 
     void processRequest(HttpRequest request) {
-        auto curl = curl_easy_init();
-
-        auto entry = std::make_unique<ProcessingRequest>();
-        entry->curl = curl;
+        auto entry = std::make_unique<ProcessingRequest>(multiHandle);
+        auto curl = entry->curl;
 
         curl_easy_setopt(curl, CURLOPT_URL, request.url.c_str());
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, request.method.c_str());
@@ -123,8 +128,10 @@ public:
                 logger.error() << "could not find request for cURL handle";
                 return;
             }
-            auto& entry = *found;
+            auto entry = std::move(*found);
             auto& req = entry->request;
+
+            requests.erase(found);
 
             if(msg->msg == CURLMSG_DONE) {
                 curl_multi_remove_handle(multiHandle, curl);
