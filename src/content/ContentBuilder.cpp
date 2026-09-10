@@ -33,11 +33,11 @@ std::unique_ptr<Content> ContentBuilder::build() {
 
         if (def.variants) {
             for (auto& variant : def.variants->variants) {
-                variant.rt.solid = isSolid(variant) || def.explictlySolid;
+                variant.rt.solid = isSolid(variant) || def.explicitlySolid;
             }
             def.defaults = def.variants->variants.at(0);
         } else {
-            def.defaults.rt.solid = isSolid(def.defaults) || def.explictlySolid;
+            def.defaults.rt.solid = isSolid(def.defaults) || def.explicitlySolid;
         }
         def.rt.solid = def.defaults.rt.solid;
 
