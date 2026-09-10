@@ -23,27 +23,27 @@ static size_t write_callback(
     return size * nmemb;
 }
 
+struct ProcessingRequest {
+    CURL* curl;
+    HttpRequest request;
+    std::vector<char> buffer;
+};
+
 class CurlRequests : public Requests {
     CURLM* multiHandle;
-    CURL* curl;
+    std::vector<std::unique_ptr<ProcessingRequest>> requests;
 
     size_t totalUpload = 0;
     size_t totalDownload = 0;
-
-    OnResponse onResponse;
-    OnReject onReject;
-    std::vector<char> buffer;
-    std::string url;
-
-    std::queue<HttpRequest> requests;
 public:
-    CurlRequests(CURLM* multiHandle, CURL* curl)
-        : multiHandle(multiHandle), curl(curl) {
+    CurlRequests(CURLM* multiHandle) : multiHandle(multiHandle) {
     }
 
     virtual ~CurlRequests() {
-        curl_multi_remove_handle(multiHandle, curl);
-        curl_easy_cleanup(curl);
+        for (auto& entry : requests) {
+            curl_multi_remove_handle(multiHandle, entry->curl);
+            curl_easy_cleanup(entry->curl);
+        }
         curl_multi_cleanup(multiHandle);
     }
 
@@ -52,17 +52,12 @@ public:
     }
 
     void processRequest(HttpRequest request) {
-        if (!url.empty()) {
-            requests.push(request);
-            return;
-        }
-        onResponse = request.onResponse;
-        onReject = request.onReject;
-        url = request.url;
+        auto curl = curl_easy_init();
 
-        buffer.clear();
+        auto entry = std::make_unique<ProcessingRequest>();
+        entry->curl = curl;
 
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+        curl_easy_setopt(curl, CURLOPT_URL, request.url.c_str());
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, request.method.c_str());
         
         curl_slist* hs = nullptr;
@@ -80,7 +75,7 @@ public:
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, request.followLocation);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &entry->buffer);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "curl/7.81.0");
 #ifndef NDEBUG
         // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
@@ -97,12 +92,13 @@ public:
         CURLMcode res = curl_multi_perform(multiHandle, &running);
         if (res != CURLM_OK) {
             auto message = curl_multi_strerror(res);
-            logger.error() << message << " (" << url << ")";
-            if (onReject) {
-                onReject(HTTP_BAD_GATEWAY, {});
+            logger.error() << message << " (" << request.url << ")";
+            if (request.onReject) {
+                request.onReject(HTTP_BAD_GATEWAY, {});
             }
-            url = "";
         }
+        entry->request = std::move(request);
+        requests.push_back(std::move(entry));
     }
 
     void update() override {
@@ -112,15 +108,24 @@ public:
         CURLMcode res = curl_multi_perform(multiHandle, &running);
         if (res != CURLM_OK) {
             auto message = curl_multi_strerror(res);
-            logger.error() << message << " (" << url << ")";
-            if (onReject) {
-                onReject(HTTP_BAD_GATEWAY, {});
-            }
-            curl_multi_remove_handle(multiHandle, curl);
-            url = "";
+            logger.error() << message;
             return;
         }
         if ((msg = curl_multi_info_read(multiHandle, &messagesLeft)) != nullptr) {
+            auto curl = msg->easy_handle;
+            auto found = std::find_if(
+                requests.begin(), requests.end(),
+                [curl](const std::unique_ptr<ProcessingRequest>& entry) {
+                    return entry->curl == curl;
+                }
+            );
+            if (found == requests.end()) {
+                logger.error() << "could not find request for cURL handle";
+                return;
+            }
+            auto& entry = *found;
+            auto& req = entry->request;
+
             if(msg->msg == CURLMSG_DONE) {
                 curl_multi_remove_handle(multiHandle, curl);
             }
@@ -135,15 +140,15 @@ public:
                 if (!curl_easy_getinfo(curl, CURLINFO_HEADER_SIZE, &size)) {
                     totalDownload += size;
                 }
-                totalDownload += buffer.size();
-                if (onResponse) {
-                    onResponse(std::move(buffer));
+                totalDownload += entry->buffer.size();
+                if (req.onResponse) {
+                    req.onResponse(std::move(entry->buffer));
                 }
             } else if (response == 0) {
                 auto message = std::string(curl_easy_strerror(result));
-                logger.error() << message << " (" << url << ")";
-                if (onReject) {
-                    onReject(
+                logger.error() << message << " (" << req.url << ")";
+                if (req.onReject) {
+                    req.onReject(
                         response,
                         std::vector<char>(
                             message.data(), message.data() + message.size()
@@ -152,21 +157,15 @@ public:
                 }
             } else {
                 logger.error()
-                    << "response code " << response << " (" << url << ")"
-                    << (buffer.empty()
+                    << "response code " << response << " (" << req.url << ")"
+                    << (entry->buffer.empty()
                             ? ""
-                            : std::to_string(buffer.size()) + " byte(s)");
-                totalDownload += buffer.size();
-                if (onReject) {
-                    onReject(response, std::move(buffer));
+                            : std::to_string(entry->buffer.size()) + " byte(s)");
+                totalDownload += entry->buffer.size();
+                if (req.onReject) {
+                    req.onReject(response, std::move(entry->buffer));
                 }
             }
-            url = "";
-        }
-        if (url.empty() && !requests.empty()) {
-            auto request = std::move(requests.front());
-            requests.pop();
-            processRequest(std::move(request));
         }
     }
 
@@ -181,14 +180,14 @@ public:
     static std::unique_ptr<CurlRequests> create() {
         auto curl = curl_easy_init();
         if (curl == nullptr) {
-            throw std::runtime_error("could not initialzie cURL");
+            throw std::runtime_error("could not initialize cURL");
         }
         auto multiHandle = curl_multi_init();
         if (multiHandle == nullptr) {
             curl_easy_cleanup(curl);
-            throw std::runtime_error("could not initialzie cURL-multi");
+            throw std::runtime_error("could not initialize cURL-multi");
         }
-        return std::make_unique<CurlRequests>(multiHandle, curl);
+        return std::make_unique<CurlRequests>(multiHandle);
     }
 };
 
