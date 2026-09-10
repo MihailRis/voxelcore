@@ -68,26 +68,40 @@ end
 
 local running_actions = {}
 local playing_tracks = {}
-local next_track_id = 1
 
 function this.action(func)
     table.insert(running_actions, coroutine.create(func))
 end
 
-function this.play(name, target)
-    local id = next_track_id
-    table.insert(playing_tracks, {id=id, name=name, target=target, timer=0.0})
-    next_track_id = id + 1
-    return id
-end
-
-function this.stop(id)
-    for i, entry in pairs(playing_tracks) do
-        if entry.id == id then
-            table.remove(playing_tracks, i)
-            return
+local PlayingTrack = {
+    __index = {
+        stop = function(self)
+            table.remove_value(playing_tracks, self)
+            self.__timer = 0.0
+            self.__playing = false
+        end,
+        pause = function(self)
+            table.remove_value(playing_tracks, self)
+            self.__playing = false
+        end,
+        resume = function(self)
+            if not self.__playing then
+                table.insert(playing_tracks, self)
+                self.__playing = true
+            end
         end
-    end
+    }
+}
+
+function this.play(name, target)
+    local track = setmetatable({
+        name = name,
+        target = target,
+        __timer = 0.0,
+        __playing = true,
+    }, PlayingTrack)
+    table.insert(playing_tracks, track)
+    return track
 end
 
 function internals.on_animation_frame()
@@ -109,11 +123,11 @@ function internals.on_animation_frame()
             debug.error("animation track not found: "..track_info.name)
             table.remove(playing_tracks, i)
         else
-            track_info.timer = track_info.timer + delta
-            if track_info.timer > track.duration then
+            track_info.__timer = track_info.__timer + delta
+            if track_info.__timer > track.duration then
                 table.remove(playing_tracks, i)
             else
-                track.func(track_info.target, track_info.timer)
+                track.func(track_info.target, track_info.__timer)
             end
         end
     end

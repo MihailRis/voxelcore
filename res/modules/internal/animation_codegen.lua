@@ -182,7 +182,7 @@ local function codegen_track(raw_track, lineset, memoised, keysets, use_tsf)
 
     local axis_names = {"X", "Y", "Z"}
     local axis_indices = {X=1, Y=2, Z=3}
-    local rotation_order = raw_track.rotation_order
+    local rotation_order = raw_track.rotation_order or "XYZ"
     for i=1,3 do
         local axis = axis_indices[rotation_order[i]]
         local var = rotation[axis]
