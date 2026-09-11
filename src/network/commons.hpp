@@ -28,6 +28,7 @@ namespace network {
         bool followLocation = false;
         bool verifySSL = true;
         long maxSize = -1;
+        long timeoutMs = 0;
     };
 
     class Requests {

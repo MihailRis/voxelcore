@@ -82,6 +82,9 @@ public:
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &entry->buffer);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "curl/7.81.0");
+        if (request.timeoutMs > 0) {
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, request.timeoutMs);
+        }
 #ifndef NDEBUG
         // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 #endif
