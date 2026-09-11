@@ -3,6 +3,7 @@
 #include "engine/Engine.hpp"
 #include "network/Network.hpp"
 #include "devtools/Project.hpp"
+#include "util/stringutil.hpp"
 
 #include <variant>
 #include <utility>
@@ -85,74 +86,49 @@ static std::vector<std::string> read_headers(lua::State* L, int index) {
 
 static int request_id = 1;
 
-static int perform_get(lua::State* L, network::Network& network, bool binary) {
-    std::string url(lua::require_lstring(L, 1));
-    auto headers = read_headers(L, 2);
+static int l_request(lua::State* L, network::Network& network) {
+    network::HttpRequest request {};
+    request.url = lua::require_lstring(L, 1);
 
-    int currentRequestId = request_id++;
-
-    network.get(
-        url,
-        [currentRequestId, binary](std::vector<char> bytes) {
-            push_event(NetworkEvent(
-                RESPONSE,
-                ResponseEventDto {
-                    200, binary, currentRequestId, std::move(bytes)}
-            ));
-        },
-        [currentRequestId, binary](int code, std::vector<char> bytes) {
-            push_event(NetworkEvent(
-                RESPONSE,
-                ResponseEventDto {
-                    code, binary, currentRequestId, std::move(bytes)}
-            ));
-        },
-        std::move(headers)
-    );
-    return lua::pushinteger(L, currentRequestId);
-}
-
-static int l_get(lua::State* L, network::Network& network) {
-    return perform_get(L, network, false);
-}
-
-static int l_get_binary(lua::State* L, network::Network& network) {
-    return perform_get(L, network, true);
-}
-
-static int l_post(lua::State* L, network::Network& network) {
-    std::string url(lua::require_lstring(L, 1));
-    auto data = lua::tovalue(L, 2);
-
-    std::string string;
-    if (data.isString()) {
-        string = data.asString();
-    } else {
-        string = json::stringify(data, false);
+    if (!lua::istable(L, 2)) {
+        throw std::runtime_error("table expected as argument #2");
+    }
+    if (lua::getfield(L, "method", 2)) {
+        request.method = lua::require_string(L, -1);
+        lua::pop(L);
+    }
+    if (lua::getfield(L, "headers", 2)) {
+        request.headers = read_headers(L, -1);
+        lua::pop(L);
+    }
+    if (lua::getfield(L, "body", 2)) {
+        request.body = lua::require_lstring(L, -1);
+        lua::pop(L);
+    }
+    if (lua::getfield(L, "follow_location", 2)) {
+        request.followLocation = lua::toboolean(L, -1);
+        lua::pop(L);
+    }
+    if (lua::getfield(L, "timeout_ms", 2)) {
+        request.timeoutMs = lua::tointeger(L, -1);
+        lua::pop(L);
     }
 
-    auto headers = read_headers(L, 3);
     int currentRequestId = request_id++;
+    request.onResponse = [currentRequestId](std::vector<char> bytes) {
+        push_event(NetworkEvent(
+            RESPONSE,
+            ResponseEventDto {200, false, currentRequestId, std::move(bytes)}
+        ));
+    };
+    request.onReject = [currentRequestId](int code, std::vector<char> bytes) {
+        push_event(NetworkEvent(
+            RESPONSE,
+            ResponseEventDto {code, false, currentRequestId, std::move(bytes)}
+        ));
+    };
 
-    network.post(
-        url,
-        string,
-        [currentRequestId](std::vector<char> bytes) {
-            push_event(NetworkEvent(
-                RESPONSE,
-                ResponseEventDto {
-                    200, false, currentRequestId, std::move(bytes)}
-            ));
-        },
-        [currentRequestId](int code, std::vector<char> bytes) {
-            push_event(NetworkEvent(
-                RESPONSE,
-                ResponseEventDto {
-                    code, false, currentRequestId, std::move(bytes)}
-            ));
-        },
-        std::move(headers)
-    );
+    network.request(std::move(request));
     return lua::pushinteger(L, currentRequestId);
 }
 
@@ -562,9 +538,7 @@ int wrap(lua_State* L) {
 }
 
 const luaL_Reg networklib[] = {
-    {"__get", wrap<l_get>},
-    {"__get_binary", wrap<l_get_binary>},
-    {"__post", wrap<l_post>},
+    {"__request", wrap<l_request>},
     {"get_total_upload", wrap<l_get_total_upload>},
     {"get_total_download", wrap<l_get_total_download>},
     {"find_free_port", wrap<l_find_free_port>},

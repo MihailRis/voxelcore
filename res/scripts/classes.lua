@@ -100,38 +100,63 @@ local _udp_client_open_callbacks = {}
 local _http_response_callbacks = {}
 local _http_error_callbacks = {}
 
+local http_request = network.__request
+local open_tcp = network.__open_tcp
+local open_udp = network.__open_udp
+local connect_tcp = network.__connect_tcp
+local connect_udp = network.__connect_udp
+network.__request = nil
+network.__open_tcp = nil
+network.__open_udp = nil
+network.__connect_tcp = nil
+network.__connect_udp = nil
+
+local function request(url, params)
+    local id = http_request(url, params)
+    if params.on_response then
+        _http_response_callbacks[id] = params.on_response
+    end
+    if params.on_error then
+        _http_error_callbacks[id] = params.on_error
+    end
+end
+
+network.request = request
+
 network.get = function(url, callback, errorCallback, headers)
-    local id = network.__get(url, headers)
-    if callback then
-        _http_response_callbacks[id] = callback
-    end
-    if errorCallback then
-        _http_error_callbacks[id] = errorCallback
-    end
+    return request(url, {
+        method = "GET",
+        headers = headers,
+        on_response = callback,
+        on_error = errorCallback,
+        follow_location = true,
+    })
 end
 
 network.get_binary = function(url, callback, errorCallback, headers)
-    local id = network.__get_binary(url, headers)
-    if callback then
-        _http_response_callbacks[id] = callback
-    end
-    if errorCallback then
-        _http_error_callbacks[id] = errorCallback
-    end
+    return request(url, {
+        method = "GET",
+        headers = headers,
+        on_response = callback and (function (response) return callback(Bytearray(response)) end),
+        on_error = errorCallback,
+        follow_location = true,
+    })
 end
 
-network.post = function(url, data, callback, errorCallback, headers)
-    local id = network.__post(url, data, headers)
-    if callback then
-        _http_response_callbacks[id] = callback
-    end
-    if errorCallback then
-        _http_error_callbacks[id] = errorCallback
-    end
+network.post = function(url, body, callback, errorCallback, headers)
+    return request(url, {
+        method = "POST",
+        headers = table.extend({
+            "Content-Type: application/json"
+        }, headers),
+        body = body,
+        on_response = callback,
+        on_error = errorCallback,
+    })
 end
 
 network.tcp_open = function (port, handler)
-    local socket = setmetatable({id=network.__open_tcp(port)}, ServerSocket)
+    local socket = setmetatable({id=open_tcp(port)}, ServerSocket)
 
     _tcp_server_callbacks[socket.id] = function(id)
         handler(setmetatable({id=id}, Socket))
@@ -141,7 +166,7 @@ end
 
 network.tcp_connect = function(address, port, callback, errorCallback)
     local socket = setmetatable({id=0}, Socket)
-    socket.id = network.__connect_tcp(address, port)
+    socket.id = connect_tcp(address, port)
     _tcp_client_callbacks[socket.id] = function() callback(socket) end
     if errorCallback then
         _tcp_client_error_callbacks[socket.id] = function(message) errorCallback(socket, message) end
@@ -154,7 +179,7 @@ network.udp_open = function (port, datagramHandler)
         error "udp server cannot be opened without datagram handler"
     end
 
-    local socket = setmetatable({id=network.__open_udp(port)}, DatagramServerSocket)
+    local socket = setmetatable({id=open_udp(port)}, DatagramServerSocket)
 
     _udp_server_callbacks[socket.id] = function(address, port, data)
         datagramHandler(address, port, data, socket)
@@ -169,7 +194,7 @@ network.udp_connect = function (address, port, datagramHandler, openCallback)
     end
 
     local socket = setmetatable({id=0}, WriteableSocket)
-    socket.id = network.__connect_udp(address, port)
+    socket.id = connect_udp(address, port)
 
     _udp_client_datagram_callbacks[socket.id] = datagramHandler
     if openCallback then

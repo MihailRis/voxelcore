@@ -23,97 +23,47 @@ static size_t write_callback(
     return size * nmemb;
 }
 
-enum class RequestType {
-    GET, POST
-};
+struct ProcessingRequest {
+    CURLM* multiHandle;
+    CURL* curl;
+    HttpRequest request;
+    std::vector<char> buffer;
 
-struct Request {
-    RequestType type;
-    std::string url;
-    OnResponse onResponse;
-    OnReject onReject;
-    long maxSize;
-    bool followLocation = false;
-    std::string data;
-    std::vector<std::string> headers;
+    ProcessingRequest(CURLM* multiHandle) : multiHandle(multiHandle) {
+        curl = curl_easy_init();
+    }
+
+    ~ProcessingRequest() {
+        curl_multi_remove_handle(multiHandle, curl);
+        curl_easy_cleanup(curl);
+    }
 };
 
 class CurlRequests : public Requests {
     CURLM* multiHandle;
-    CURL* curl;
+    std::vector<std::unique_ptr<ProcessingRequest>> requests;
 
     size_t totalUpload = 0;
     size_t totalDownload = 0;
-
-    OnResponse onResponse;
-    OnReject onReject;
-    std::vector<char> buffer;
-    std::string url;
-
-    std::queue<Request> requests;
 public:
-    CurlRequests(CURLM* multiHandle, CURL* curl)
-        : multiHandle(multiHandle), curl(curl) {
+    CurlRequests(CURLM* multiHandle) : multiHandle(multiHandle) {
     }
 
     virtual ~CurlRequests() {
-        curl_multi_remove_handle(multiHandle, curl);
-        curl_easy_cleanup(curl);
+        requests.clear();
         curl_multi_cleanup(multiHandle);
     }
-    void get(
-        const std::string& url,
-        OnResponse onResponse,
-        OnReject onReject,
-        std::vector<std::string> headers,
-        long maxSize
-    ) override {
-        Request request {
-            RequestType::GET,
-            url,
-            onResponse,
-            onReject,
-            maxSize,
-            true,
-            "",
-            std::move(headers)};
+
+    void request(HttpRequest request) override {
         processRequest(std::move(request));
     }
 
-    void post(
-        const std::string& url,
-        const std::string& data,
-        OnResponse onResponse,
-        OnReject onReject=nullptr,
-        std::vector<std::string> headers = {},
-        long maxSize=0
-    ) override {
-        Request request {
-            RequestType::POST,
-            url,
-            onResponse,
-            onReject,
-            maxSize,
-            false,
-            "",
-            std::move(headers)};
-        request.data = data;
-        processRequest(std::move(request));
-    }
+    void processRequest(HttpRequest request) {
+        auto entry = std::make_unique<ProcessingRequest>(multiHandle);
+        auto curl = entry->curl;
 
-    void processRequest(Request request) {
-        if (!url.empty()) {
-            requests.push(request);
-            return;
-        }
-        onResponse = request.onResponse;
-        onReject = request.onReject;
-        url = request.url;
-
-        buffer.clear();
-
-        curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
-        curl_easy_setopt(curl, CURLOPT_POST, request.type == RequestType::POST);
+        curl_easy_setopt(curl, CURLOPT_URL, request.url.c_str());
+        curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, request.method.c_str());
         
         curl_slist* hs = nullptr;
         
@@ -121,22 +71,23 @@ public:
             hs = curl_slist_append(hs, header.c_str());
         }
 
-        switch (request.type) {
-            case RequestType::GET:
-                break;
-            case RequestType::POST: 
-                hs = curl_slist_append(hs, "Content-Type: application/json");
-                curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, request.data.length());
-                curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, request.data.c_str());
-                break;
-            default:
-                throw std::runtime_error("not implemented");
+        curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, request.body.length());
+        if (!request.body.empty()) {
+            curl_easy_setopt(curl, CURLOPT_COPYPOSTFIELDS, request.body.data());
         }
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, request.verifySSL);
+        curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, request.verifySSL);
         curl_easy_setopt(curl, CURLOPT_HTTPHEADER, hs);
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, request.followLocation);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_callback);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buffer);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &entry->buffer);
         curl_easy_setopt(curl, CURLOPT_USERAGENT, "curl/7.81.0");
+        if (request.timeoutMs > 0) {
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT_MS, request.timeoutMs);
+        }
+#ifndef NDEBUG
+        // curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+#endif
         if (request.maxSize == 0) {
             curl_easy_setopt(
                 curl, CURLOPT_MAXFILESIZE, std::numeric_limits<long>::max()
@@ -149,12 +100,13 @@ public:
         CURLMcode res = curl_multi_perform(multiHandle, &running);
         if (res != CURLM_OK) {
             auto message = curl_multi_strerror(res);
-            logger.error() << message << " (" << url << ")";
-            if (onReject) {
-                onReject(HTTP_BAD_GATEWAY, {});
+            logger.error() << message << " (" << request.url << ")";
+            if (request.onReject) {
+                request.onReject(HTTP_BAD_GATEWAY, {});
             }
-            url = "";
         }
+        entry->request = std::move(request);
+        requests.push_back(std::move(entry));
     }
 
     void update() override {
@@ -164,19 +116,31 @@ public:
         CURLMcode res = curl_multi_perform(multiHandle, &running);
         if (res != CURLM_OK) {
             auto message = curl_multi_strerror(res);
-            logger.error() << message << " (" << url << ")";
-            if (onReject) {
-                onReject(HTTP_BAD_GATEWAY, {});
-            }
-            curl_multi_remove_handle(multiHandle, curl);
-            url = "";
+            logger.error() << message;
             return;
         }
         if ((msg = curl_multi_info_read(multiHandle, &messagesLeft)) != nullptr) {
+            auto curl = msg->easy_handle;
+            auto found = std::find_if(
+                requests.begin(), requests.end(),
+                [curl](const std::unique_ptr<ProcessingRequest>& entry) {
+                    return entry->curl == curl;
+                }
+            );
+            if (found == requests.end()) {
+                logger.error() << "could not find request for cURL handle";
+                return;
+            }
+            auto entry = std::move(*found);
+            auto& req = entry->request;
+
+            requests.erase(found);
+
             if(msg->msg == CURLMSG_DONE) {
                 curl_multi_remove_handle(multiHandle, curl);
             }
-            int response;
+            int response = -1;
+            CURLcode result = msg->data.result;
             curl_easy_getinfo(msg->easy_handle, CURLINFO_RESPONSE_CODE, &response);
             if (response == HTTP_OK) {
                 long size;
@@ -186,27 +150,32 @@ public:
                 if (!curl_easy_getinfo(curl, CURLINFO_HEADER_SIZE, &size)) {
                     totalDownload += size;
                 }
-                totalDownload += buffer.size();
-                if (onResponse) {
-                    onResponse(std::move(buffer));
+                totalDownload += entry->buffer.size();
+                if (req.onResponse) {
+                    req.onResponse(std::move(entry->buffer));
+                }
+            } else if (response == 0) {
+                auto message = std::string(curl_easy_strerror(result));
+                logger.error() << message << " (" << req.url << ")";
+                if (req.onReject) {
+                    req.onReject(
+                        response,
+                        std::vector<char>(
+                            message.data(), message.data() + message.size()
+                        )
+                    );
                 }
             } else {
                 logger.error()
-                    << "response code " << response << " (" << url << ")"
-                    << (buffer.empty()
+                    << "response code " << response << " (" << req.url << ")"
+                    << (entry->buffer.empty()
                             ? ""
-                            : std::to_string(buffer.size()) + " byte(s)");
-                totalDownload += buffer.size();
-                if (onReject) {
-                    onReject(response, std::move(buffer));
+                            : std::to_string(entry->buffer.size()) + " byte(s)");
+                totalDownload += entry->buffer.size();
+                if (req.onReject) {
+                    req.onReject(response, std::move(entry->buffer));
                 }
             }
-            url = "";
-        }
-        if (url.empty() && !requests.empty()) {
-            auto request = std::move(requests.front());
-            requests.pop();
-            processRequest(std::move(request));
         }
     }
 
@@ -221,14 +190,14 @@ public:
     static std::unique_ptr<CurlRequests> create() {
         auto curl = curl_easy_init();
         if (curl == nullptr) {
-            throw std::runtime_error("could not initialzie cURL");
+            throw std::runtime_error("could not initialize cURL");
         }
         auto multiHandle = curl_multi_init();
         if (multiHandle == nullptr) {
             curl_easy_cleanup(curl);
-            throw std::runtime_error("could not initialzie cURL-multi");
+            throw std::runtime_error("could not initialize cURL-multi");
         }
-        return std::make_unique<CurlRequests>(multiHandle, curl);
+        return std::make_unique<CurlRequests>(multiHandle);
     }
 };
 
