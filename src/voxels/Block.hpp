@@ -255,7 +255,7 @@ public:
     bool translucent = false;
 
     /// @brief Explicitly overriding 'solid' property if true assigned
-    bool explictlySolid = false;
+    bool explicitlySolid = false;
 
     /// @brief Grounding behaviour
     GroundingBehaviour groundingBehaviour = GroundingBehaviour::PARTIAL;
@@ -328,7 +328,6 @@ public:
     } rt {};
 
     Block(const std::string& name);
-    Block(std::string name, const std::string& texture);
     Block(const Block&) = delete;
     ~Block();
 
@@ -349,16 +348,15 @@ public:
     }
 
     const Variant& getVariant(uint8_t index) const {
-        if (index == 0)
+        if (index == 0 || variants == nullptr)
             return defaults;
+        assert(index < variants->variants.size());
         return variants->variants[index];
     }
 
     const BlockModel& getModel(uint8_t bits) const {
         return getVariantByBits(bits).model;
     }
-
-    static bool isReservedBlockField(std::string_view view);
 };
 
 inline glm::ivec3 get_ground_direction(const Block& def, int rotation) {
