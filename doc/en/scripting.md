@@ -15,6 +15,7 @@ Subsections:
     - [bjson, json, toml, yaml](scripting/filesystem.md)
     - [block](scripting/builtins/libblock.md)
     - [byteutil](scripting/builtins/libbyteutil.md)
+    - [crypto](scripting/builtins/libcrypto.md)
     - [cameras](scripting/builtins/libcameras.md)
     - [ctypes](scripting/builtins/libctypes.md)
     - [entities](scripting/builtins/libentities.md)
