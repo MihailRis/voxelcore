@@ -211,21 +211,21 @@ static int l_tostring(lua::State* L) {
     return lua::pushstring(L, ss.str());
 }
 
-#define VECLIB_BASE(dimension)                                  \
-{"add", lua::wrap<l_binop<dimension, std::plus>>},              \
-{"sub", lua::wrap<l_binop<dimension, std::minus>>},             \
-{"mul", lua::wrap<l_binop<dimension, std::multiplies>>},        \
-{"div", lua::wrap<l_binop<dimension, std::divides>>},           \
-{"distance", lua::wrap<l_distance<dimension>>},                 \
-{"normalize", lua::wrap<l_unaryop<dimension, glm::normalize>>}, \
-{"length", lua::wrap<l_scalar_op<dimension, glm::length>>},     \
-{"tostring", lua::wrap<l_tostring<dimension>>},                 \
-{"abs", lua::wrap<l_unaryop<dimension, glm::abs>>},             \
-{"round", lua::wrap<l_unaryop<dimension, glm::round>>},         \
-{"inverse", lua::wrap<l_inverse<dimension>>},                   \
-{"pow", lua::wrap<l_pow<dimension>>},                           \
-{"dot", lua::wrap<l_dot<dimension>>},                           \
-{"mix", lua::wrap<l_mix<dimension>>},
+#define VECLIB_BASE(n)                                  \
+{"add", lua::wrap<l_binop<n, std::plus>>},              \
+{"sub", lua::wrap<l_binop<n, std::minus>>},             \
+{"mul", lua::wrap<l_binop<n, std::multiplies>>},        \
+{"div", lua::wrap<l_binop<n, std::divides>>},           \
+{"distance", lua::wrap<l_distance<n>>},                 \
+{"normalize", lua::wrap<l_unaryop<n, glm::normalize>>}, \
+{"length", lua::wrap<l_scalar_op<n, glm::length>>},     \
+{"tostring", lua::wrap<l_tostring<n>>},                 \
+{"abs", lua::wrap<l_unaryop<n, glm::abs>>},             \
+{"round", lua::wrap<l_unaryop<n, glm::round>>},         \
+{"inverse", lua::wrap<l_inverse<n>>},                   \
+{"pow", lua::wrap<l_pow<n>>},                           \
+{"dot", lua::wrap<l_dot<n>>},                           \
+{"mix", lua::wrap<l_mix<n>>},
 
 const luaL_Reg vec2lib[] = {
     VECLIB_BASE(2)
