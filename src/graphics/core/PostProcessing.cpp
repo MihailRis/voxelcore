@@ -1,4 +1,7 @@
 #include "PostProcessing.hpp"
+
+#include <GL/glew.h>
+
 #include "Mesh.hpp"
 #include "Shader.hpp"
 #include "GBuffer.hpp"
@@ -10,15 +13,37 @@
 #include "window/Camera.hpp"
 
 #include <stdexcept>
-#include <random>
 
 // TODO: REFACTOR WHOLE RENDER ENGINE
 
 using namespace advanced_pipeline;
 
+static uint create_noise_texture() {
+    std::vector<glm::vec3> ssaoNoise;
+    for (unsigned int i = 0; i < 16; i++) {
+        glm::vec3 noise(
+            (rand() / static_cast<float>(RAND_MAX)) * 2.0 - 1.0,
+            (rand() / static_cast<float>(RAND_MAX)) * 2.0 - 1.0,
+            0.0f
+        );
+        ssaoNoise.push_back(noise);
+    }
+
+    uint noiseTexture;
+    glGenTextures(1, &noiseTexture);
+    glBindTexture(GL_TEXTURE_2D, noiseTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, ssaoNoise.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    return noiseTexture;
+}
+
 PostProcessing::PostProcessing(size_t effectSlotsCount)
     : effectSlots(effectSlotsCount) {
-    // Fullscreen quad mesh bulding
+    // Fullscreen quad mesh building
     PostProcessingVertex meshData[] {
         {{-1.0f, -1.0f}},
         {{-1.0f, 1.0f}},
@@ -29,27 +54,12 @@ PostProcessing::PostProcessing(size_t effectSlotsCount)
     };
 
     quadMesh = std::make_unique<Mesh<PostProcessingVertex>>(meshData, 6);
-
-    std::vector<glm::vec3> ssaoNoise;
-    for (unsigned int i = 0; i < 16; i++)
-    {
-        glm::vec3 noise(
-            (rand() / static_cast<float>(RAND_MAX)) * 2.0 - 1.0, 
-            (rand() / static_cast<float>(RAND_MAX)) * 2.0 - 1.0, 
-            0.0f); 
-        ssaoNoise.push_back(noise);
-    }  
-    glGenTextures(1, &noiseTexture);
-    glBindTexture(GL_TEXTURE_2D, noiseTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, ssaoNoise.data());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glBindTexture(GL_TEXTURE_2D, 0);
+    noiseTexture = create_noise_texture();
 }
 
-PostProcessing::~PostProcessing() = default;
+PostProcessing::~PostProcessing() {
+    glDeleteTextures(1, &noiseTexture);
+}
 
 void PostProcessing::use(DrawContext& context, bool gbufferPipeline) {
     const auto& vp = context.getViewport();
@@ -105,8 +115,9 @@ void PostProcessing::configureEffect(
     shader.uniform3f("u_cameraPos", camera.position);
     shader.uniform1f("u_timer", timer);
     shader.uniformMatrix("u_projection", camera.getProjection());
-    shader.uniformMatrix("u_view", camera.getView());
-    shader.uniformMatrix("u_inverseView", glm::inverse(camera.getView()));
+    const auto view = camera.getView();
+    shader.uniformMatrix("u_view", view);
+    shader.uniformMatrix("u_inverseView", glm::inverse(view));
 }
 
 void PostProcessing::renderDeferredShading(
@@ -150,15 +161,15 @@ void PostProcessing::renderDeferredShading(
         gbuffer->bindSSAOBuffer();
 
         glActiveTexture(GL_TEXTURE0);
-        
+
         gbuffer->bindBuffers();
 
-        auto& effect = assets.require<PostEffect>("deferred_lighting");
-        auto& shader = effect.use();
+        auto& lightingEffect = assets.require<PostEffect>("deferred_lighting");
+        auto& lightingShader = lightingEffect.use();
         configureEffect(
             context,
-            effect,
-            shader,
+            lightingEffect,
+            lightingShader,
             timer,
             camera
         );

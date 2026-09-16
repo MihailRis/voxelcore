@@ -78,5 +78,5 @@ private:
     std::unique_ptr<Mesh<PostProcessingVertex>> quadMesh;
     std::vector<std::shared_ptr<PostEffect>> effectSlots;
     std::unique_ptr<GBuffer> gbuffer;
-    uint noiseTexture;
+    uint noiseTexture = 0;
 };
