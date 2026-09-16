@@ -19,29 +19,6 @@
 
 using namespace advanced_pipeline;
 
-static uint create_noise_texture() {
-    std::vector<glm::vec3> ssaoNoise;
-    for (unsigned int i = 0; i < 16; i++) {
-        glm::vec3 noise(
-            (rand() / static_cast<float>(RAND_MAX)) * 2.0 - 1.0,
-            (rand() / static_cast<float>(RAND_MAX)) * 2.0 - 1.0,
-            0.0f
-        );
-        ssaoNoise.push_back(noise);
-    }
-
-    uint noiseTexture;
-    glGenTextures(1, &noiseTexture);
-    glBindTexture(GL_TEXTURE_2D, noiseTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, ssaoNoise.data());
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glBindTexture(GL_TEXTURE_2D, 0);
-    return noiseTexture;
-}
-
 PostProcessing::PostProcessing(size_t effectSlotsCount)
     : effectSlots(effectSlotsCount) {
     // Fullscreen quad mesh building
@@ -55,7 +32,24 @@ PostProcessing::PostProcessing(size_t effectSlotsCount)
     };
 
     quadMesh = std::make_unique<Mesh<PostProcessingVertex>>(meshData, 6);
-    noiseTexture = create_noise_texture();
+
+    std::vector<glm::vec3> ssaoNoise;
+    for (unsigned int i = 0; i < 16; i++)
+    {
+        glm::vec3 noise(
+            (rand() / static_cast<float>(RAND_MAX)) * 2.0 - 1.0, 
+            (rand() / static_cast<float>(RAND_MAX)) * 2.0 - 1.0, 
+            0.0f);
+        ssaoNoise.push_back(noise);
+    }  
+    glGenTextures(1, &noiseTexture);
+    glBindTexture(GL_TEXTURE_2D, noiseTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, ssaoNoise.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 PostProcessing::~PostProcessing() {
