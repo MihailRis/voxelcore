@@ -24,8 +24,6 @@ struct PostProcessingVertex {
 };
 
 /// @brief Framebuffer with blitting with shaders.
-/// @attention Current implementation does not support multiple render passes 
-/// for multiple effects. Will be implemented in v0.21
 class PostProcessing {
 public:
     PostProcessing(size_t effectSlotsCount);
@@ -73,7 +71,7 @@ private:
 
     void refreshFbos(uint width, uint height);
 
-    /// @brief Main framebuffer (lasy field)
+    /// @brief Main framebuffer (lazy field)
     std::unique_ptr<Framebuffer> fbo;
     std::unique_ptr<Framebuffer> fboSecond;
     /// @brief Fullscreen quad mesh as the post-processing canvas
