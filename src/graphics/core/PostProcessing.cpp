@@ -159,12 +159,12 @@ void PostProcessing::renderDeferredShading(
 
         gbuffer->bindBuffers();
 
-        auto& lightingEffect = assets.require<PostEffect>("deferred_lighting");
-        auto& lightingShader = lightingEffect.use();
+        auto& effect = assets.require<PostEffect>("deferred_lighting");
+        auto& shader = effect.use();
         configureEffect(
             context,
-            lightingEffect,
-            lightingShader,
+            effect,
+            shader,
             timer,
             camera
         );
