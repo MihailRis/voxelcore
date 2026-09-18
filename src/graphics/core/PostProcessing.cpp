@@ -1,4 +1,7 @@
 #include "PostProcessing.hpp"
+
+#include <GL/glew.h>
+
 #include "Mesh.hpp"
 #include "Shader.hpp"
 #include "GBuffer.hpp"
@@ -18,7 +21,7 @@ using namespace advanced_pipeline;
 
 PostProcessing::PostProcessing(size_t effectSlotsCount)
     : effectSlots(effectSlotsCount) {
-    // Fullscreen quad mesh bulding
+    // Fullscreen quad mesh building
     PostProcessingVertex meshData[] {
         {{-1.0f, -1.0f}},
         {{-1.0f, 1.0f}},
@@ -36,7 +39,7 @@ PostProcessing::PostProcessing(size_t effectSlotsCount)
         glm::vec3 noise(
             (rand() / static_cast<float>(RAND_MAX)) * 2.0 - 1.0, 
             (rand() / static_cast<float>(RAND_MAX)) * 2.0 - 1.0, 
-            0.0f); 
+            0.0f);
         ssaoNoise.push_back(noise);
     }  
     glGenTextures(1, &noiseTexture);
@@ -49,7 +52,9 @@ PostProcessing::PostProcessing(size_t effectSlotsCount)
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-PostProcessing::~PostProcessing() = default;
+PostProcessing::~PostProcessing() {
+    glDeleteTextures(1, &noiseTexture);
+}
 
 void PostProcessing::use(DrawContext& context, bool gbufferPipeline) {
     const auto& vp = context.getViewport();
@@ -105,8 +110,9 @@ void PostProcessing::configureEffect(
     shader.uniform3f("u_cameraPos", camera.position);
     shader.uniform1f("u_timer", timer);
     shader.uniformMatrix("u_projection", camera.getProjection());
-    shader.uniformMatrix("u_view", camera.getView());
-    shader.uniformMatrix("u_inverseView", glm::inverse(camera.getView()));
+    const auto view = camera.getView();
+    shader.uniformMatrix("u_view", view);
+    shader.uniformMatrix("u_inverseView", glm::inverse(view));
 }
 
 void PostProcessing::renderDeferredShading(
@@ -150,7 +156,7 @@ void PostProcessing::renderDeferredShading(
         gbuffer->bindSSAOBuffer();
 
         glActiveTexture(GL_TEXTURE0);
-        
+
         gbuffer->bindBuffers();
 
         auto& effect = assets.require<PostEffect>("deferred_lighting");
