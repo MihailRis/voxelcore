@@ -189,6 +189,8 @@ New overloads:
 
 ## Fixes
 
+- [fix slow xml/vcm loading in Windows](https://github.com/MihailRis/voxelcore/pull/983)
+- [fix file.ext](https://github.com/MihailRis/voxelcore/commit/b9b17358a1576e740c4dcf7cf28e553b9d829db0)
 - [fix stack_vector](https://github.com/MihailRis/voxelcore/commit/1fbf16e3dcf145f322849b182be20bac1272a82b)
 - [fix audio.input.request_open](https://github.com/MihailRis/voxelcore/commit/8a19c903e44b7569a38e470ec7b260a03cd4d673)
 - [fix: block/item.properties not inheriting parent content unit properties](https://github.com/MihailRis/voxelcore/commit/a9d185256ae14789c17b005b27f7be94895f7dca)
