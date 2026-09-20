@@ -1,6 +1,6 @@
-# 0.31 - 2026.03.22
+# 0.32 - 20xx.xx.xx
 
-[Documentation](https://github.com/MihailRis/VoxelEngine-Cpp/tree/release-0.31/doc/en/main-page.md) for 0.31
+[Documentation](https://github.com/MihailRis/VoxelEngine-Cpp/tree/release-0.32/doc/en/main-page.md) for 0.32
 
 Table of contents:
 
@@ -13,169 +13,280 @@ Table of contents:
 
 ## New Features
 
-- solid entities with solid hitboxes
-- rendering ui to texture with 'frame' element
-- loading vector fonts support with freetype library
-- defining skeletons in VCM files
-- project permissions system
-- executing commands from stdin ('--stdin-cmd' command line argument enables it)
+- animation
+- semi-transparent entities
+- client-side --script, --test support
+- environments
+- translators
+- VCA format
 
 ## Added
 
-- added clouds, so sky is no more so deadly clear
-- ui:
-    - added 'onmouseenter', 'onmouseleave' events
-    - added 'zIndex' common scripting property
-    - added 'inventory' scripting property to slot element
-    - added 'font' attribute
-    - added 'text-align' label attribute
-    - added 'frame' element
-    - added 'fallback' image attribute
-- particles:
-    - added 'spawn_offset' property
-- audio:
-    - added acoustic effects (reverb)
-    - added 'audio.acoustic-effects' setting
-    - added 'record-audio' project permission
-- projects system:
-    - added project permissions configuration
-    - added 'debugging' permission
-- added 'base:flat_grass' world generator
-- added ssao quality setting
-- added background assets loader
-- vcm format:
-    - added 'bone' (model/skeleton node) element
-    - added 'tri' (triangle) element
-- added 'on_inventory_interact' hud event
-- added weather properties:
-    - 'sky_tint'
-    - 'clouds_tint'
-    - 'min_sky_light'
-- added block properties:
-    - 'grounding-behaviour' (extended blocks)
-    - explicit 'solid' visual property
-- added world generator parameters:
-    - 'player-spawn-radius'
-    - 'player-min-spawn-height'
-    - 'player-max-spawn-height'
-- added 'material' entity property
-- added patch number to engine build produced by release pipeline
-- new functions arguments:
-    - added 'skeleton_name' argument to assets.parse_model
-    - added 'include_non_selectable' argument to block.raycast
-    - added 'variant_index' argument to block.get_model, block.model_name, block.get_textures
-    - added optional 'emission' argument to gfx.blockwraps.wrap
-    - added gui.load_document namespace extension table 
-- added freetype dependency
+- events:
+    - main.lua script:
+        - on_scripts_loading
+        - on_content_loaded
+    - world.lua script:
+        - on_entity_spawned
+        - on_entity_despawned
+    - entity component:
+        - on_player_set
+- libraries:
+    - animation
+    - crypto
+    - ctypes
+    - test
+    - vc
+    - xml
+- new classes:
+    - debug.Logger
+    - I8view
+    - I64view
+    - U64view
+    - FLTview
+    - DBLview
+    - private PlayingTrack
+    - private Hash
+- 3d text 'font' property
+- documented:
+    - block `material` property
+- defaults:
+    - block-material
+- permissions:
+    - sub-instances
+- `--log` command line argument
+- `ladder` rotation profile
+- new ui properties:
+    - `select` element `button` mode
+    - `onrightclick`
+    - `onmiddleclick`
+- verbose parsing error messages
+- content menu: pack version display
+- Heightmap.normalNoise field
+- content menu: filtering by pack id
+- `hot-reload` VC-DBG signal
+- `normal` attribute for `tri` and `rect` VCM primitives
+- `lighting-mode` entity property
+- vca syntax highlighting
 
 ## New Functions
 
-- assets.request_texture
-- block.get_hitbox
-- entity.rigidbody:get_elasticity
-- entity.rigidbody:get_mass
-- entity.rigidbody:get_material
-- entity.rigidbody:set_elasticity
-- entity.rigidbody:set_mass
-- entity.rigidbody:set_material
-- entity.rigidbody:get_ground_vel
-- gfx.blockwraps.set_faces
-- gfx.blockwraps.set_tints
-- gui.close_menu
-- gui.create_frame
-- gui.get_active_frame
-- gui.set_active_frame
-- hud.get_second_inventory
-- hud.is_player_inventory_open
-- mat4.perspective
-- quat.from_euler
-- session.get
-- session.has
-- session.reset
+- animation.action
+- animation.play
+- app.get_content
+- app.is_instance_alive
+- app.start_background_instance
+- app.terminate_instance
+- assets.parse_animation
+- Bytearray:copy
+- Bytearray:fill
+- Bytearray:move
+- crypto.aes_gcm_decrypt
+- crypto.aes_gcm_encrypt
+- crypto.chacha20_poly1305_decrypt
+- crypto.chacha20_poly1305_encrypt
+- crypto.constant_time_equal
+- crypto.ecdsa_keypair
+- crypto.ecdsa_public
+- crypto.ecdsa_sign
+- crypto.ecdsa_verify
+- crypto.ed25519_keypair
+- crypto.ed25519_public
+- crypto.ed25519_sign
+- crypto.ed25519_verify
+- crypto.features
+- crypto.hash
+- crypto.hkdf_expand
+- crypto.hkdf_extract
+- crypto.hmac
+- crypto.md5
+- crypto.p256_keypair
+- crypto.p256_public
+- crypto.p256_shared
+- crypto.pbkdf2
+- crypto.random_bytes
+- crypto.rsa_pkcs1_verify
+- crypto.rsa_pss_verify
+- crypto.scrypt
+- crypto.sha256
+- crypto.sha384
+- crypto.sha512
+- crypto.x25519
+- crypto.x25519_keypair
+- crypto.x25519_public
+- crypto.x25519_shared
+- ctypes.int16
+- ctypes.int32
+- ctypes.int64
+- ctypes.int8
+- ctypes.uint16
+- ctypes.uint32
+- ctypes.uint64
+- ctypes.uint8
+- entities.def_solid
+- events.remove
+- file.remove_ext <undocumented>
+- gfx.text3d.get_entity
+- gfx.text3d.set_entity
+- gui.screenshot
+- Hash:final
+- Hash:update
+- Heightmap:ceil
+- Heightmap:cos
+- Heightmap:floor
+- Heightmap:round
+- Heightmap:sin
+- Heightmap:tan
+- input.get_mouse_scroll
+- inventory.set_all_data
+- io_stream:available
+- io_stream:tell
+- io_stream:wrap_bytearray
+- math.noise
+- math.noise2d
+- math.sign
+- network.request
+- PlayingTrack:pause <undocumented>
+- PlayingTrack:stop <undocumented>
+- quat.mul
+- quat.mul_vec3
+- rigidbody:set_selectable
+- socket:as_stream
+- socket:peek
+- socket:peek_async
+- string.url_decode
+- string.url_encode
+- table.keys <undocumented>
+- test.click
+- test.fill
+- test.find_by_attr
+- test.find_by_attr_presence
+- test.find_by_text
+- test.press
+- time.precise_time
+- time.precise_utc_time
+- Tview:typesize
+- vc.get_setting
+- vc.get_setting_info
+- vc.get_version
+- vc.is_client
+- vc.is_headless
+- vc.str_setting
+- world.raycast
+- xml.parse
+- xml.parse_vcd
+- xml.tostring
 
-now documented:
+New overloads:
 
-- audio.input.get_input_info
-- gui.ask
-- gui.show_message
+- asserts.equals(Canvas)
+- skeleton:set_color(int, ...)
 
 ## Changes
 
-- minor visual restoration
-- assets.parse_model now supports OBJ format
-- chunks loading optimizations
-- app.load_content, app.reset_content, app.reconfig_packs and app.config_packs calling limited to app script coroutine and time.post_runnable context
-- debug panel updated a bit
-- pass app library from standard pages loader
-- skeletons are now assets
+- inventory interaction enchancements [#897](https://github.com/MihailRis/voxelcore/issues/897)
+- breaking: document events removed from 'events' library temporary
 
 ## Fixes
 
-- [fix vec3 shadeless flag](https://github.com/MihailRis/voxelcore/commit/5e05b44c26c1b57aaceb5e3478ccf5f98e3f14d7)
-- [fix: missing extended block size limit check](https://github.com/MihailRis/voxelcore/commit/9628177698b29488965bffc60fa305e752245c13)
-- [fix extended block grounding](https://github.com/MihailRis/voxelcore/commit/0b7dc14f5512478c7b7df408bab007d06de6f9ae)
-- [fix blocks variants](https://github.com/MihailRis/voxelcore/commit/0cc8c70a1704bf511635c1c1e19fe707e8477127)
-- [fix fatal exception caused by empty skeleton model texture name](https://github.com/MihailRis/voxelcore/commit/fc04284b34d5dfc8afd008933b61644dda6b73c6)
-- [fix blocks random tick](https://github.com/MihailRis/voxelcore/commit/9ac8406558ebe6183071545aeb8e34a968503c18)
-- [fix 'attempt to compare string with number' in audio.input.fetch](https://github.com/MihailRis/voxelcore/commit/ba2546e096c93e13fc0abfcf0e0447eb1721960f)
-- [fix: FFI library access from non-built-in scripts vulnerability](https://github.com/MihailRis/voxelcore/commit/a32845d083f3d2528f04eebe173ed7358cd2cf14)
-- [fix non-lighted chunks saving](https://github.com/MihailRis/voxelcore/commit/5b8c2d6162092f3655e2d857fa75ee42d879e604)
-- [fix: attempting to build lights in non-local players chunk matrices](https://github.com/MihailRis/voxelcore/commit/3308a61d560c2d9bbff0c81d2ed5d391103ec5d0)
-- [fix extended blocks collision detection](https://github.com/MihailRis/voxelcore/commit/c8e884009bdc7b7ee8025b05cfb12284f340d0af)
-- [fix: block inventory not removing in some cases](https://github.com/MihailRis/voxelcore/commit/e4d21c940be9048076180976eaba31f0138661a3)
-- [fix extended blocks culling on chunk borders](https://github.com/MihailRis/voxelcore/commit/7abbe43c3cf21bbf7afa3cf392b08e52950fa163)
-- [fix: player name text is still visible when suspended](https://github.com/MihailRis/voxelcore/commit/49aa7cdfba19ebc6d141dca28f7ed269c2e443fa)
-- [fix: crouching falling prevention does not reset velocity & fix small hitboxes horizontal collision](https://github.com/MihailRis/voxelcore/commit/bfa8b7cf3d483b2ea3f4f7166f49b1682a471363)
-- [fix: macos build pipeline uses OpenAL.Framework instead of openal-soft](https://github.com/MihailRis/voxelcore/commit/cd537cc1cbf490b614cdbd8ab38a3a26364c29f6)
-- [fix: assets access attempts in headless mode leading to segfaults](https://github.com/MihailRis/voxelcore/commit/a92efe581f3b6a37f3217684a7174efb50bb6ef9)
-- [fix crash in headless](https://github.com/MihailRis/voxelcore/commit/2b4c3c08f35c0ce0de85789a27b77a47ce134c53)
-- [fix advanced render setting tooltip](https://github.com/MihailRis/voxelcore/commit/fcbbf4814a10b6db09ba30e90b21be7dc0c96d9f)
-- [fix io_stream.write_line](https://github.com/MihailRis/voxelcore/commit/4809003aa8af28ed04d78a396f32580ee5506c39)
-- [fix bytearray view classes](https://github.com/MihailRis/voxelcore/commit/3f68fc1fc4fce39328a570253583d9a796779d7d)
-- [fix extra faces when dense mode is off](https://github.com/MihailRis/voxelcore/commit/89485dc592f138cd244d61ac6871d745c3e82e9d)
-- [fix fatal error when skeleton is missing](https://github.com/MihailRis/voxelcore/commit/8b5261f4f14ee31894dcf5125a4836ff140de8a9)
-- [fix entity skeleton name serialization](https://github.com/MihailRis/voxelcore/commit/d07c8e523429393a26dbccaaf7fc7275079fa577)
-- [fix on_chunk_register_event](https://github.com/MihailRis/voxelcore/commit/d197415739f0e75369a4b14de808ce9c16c808d8)
-- [fix: player entity body is active before player flight state applied](https://github.com/MihailRis/voxelcore/commit/5785060ffb85edb33c72410e0c65123c094fb3dd)
-- [fix: player not spawning entity after set_suspended(pid, false)](https://github.com/MihailRis/voxelcore/commit/088bfc878efc05fdd92078581068e16d1e38f652)
-- [fix incorrect 3d text preset for existing players](https://github.com/MihailRis/voxelcore/commit/d9a914ee5423ec216e216f6839785a887eb47036)
-- [fix: player.set_suspend(pid, true) leaves entity in the world](https://github.com/MihailRis/voxelcore/commit/a4fc4a5044d394a8f1d054ecf76d18c6ebba0a78)
-- [fix nested vcm elements](https://github.com/MihailRis/voxelcore/commit/22e0c469c006217b82b1dcac9193cd38b8072cd2)
-- [fix unchecked indices buffer overflow](https://github.com/MihailRis/voxelcore/commit/336ae09f669fe734ac9a69ebcbb3550596f26a56)
-- [fix gui.show_input_dialog key:escape reaction](https://github.com/MihailRis/voxelcore/commit/1644751b1a32a3ecc2b4604e4a5a1cb00c7692bd)
-- [fix app.reset_content args](https://github.com/MihailRis/voxelcore/commit/43fa181398c6064fd165cd6244ed4847933cef4c)
-- [fix gfx.posteffects.set_intensity](https://github.com/MihailRis/voxelcore/commit/f171d3e30844c69a0675d23db583f34abdcd4f6c)
-- [fix blocks raycast filter](https://github.com/MihailRis/voxelcore/commit/ce769143f881afbaa1136ec6a0692ff2b4cc2bd4)
-- [fix conditional jump or move depends on uninitialised value in GLFWWindow](https://github.com/MihailRis/voxelcore/commit/e371153288c3eb99e568fe19fb725f151d6a58ac)
-- [fix debugging server creation](https://github.com/MihailRis/voxelcore/commit/72040b5dbb37c6588a53e6d7584f16e98ed0a8e2)
-- [fix on_blocks_tick interval](https://github.com/MihailRis/voxelcore/commit/cd43d9545a52ca153b7548585c65af8b98bbfc7f)
-- [fix: inventory interaction on "disablePlayerInventory = true"](https://github.com/MihailRis/voxelcore/commit/dba10805f8d98aedf6d7ab3f5f8d7ca5c2280e8e)
-- [fix: checkbox hover color](https://github.com/MihailRis/voxelcore/commit/76d5af85cc04b6560e7dde4cb9116b8d6d638036)
-- [fix a typo in the vector3:rot and duplicate vector2.\_\_eq](https://github.com/MihailRis/voxelcore/commit/334666a5615e0996fa036cc44ed94777aee76867)
-- [fix gfx.blockwraps.set_texture](https://github.com/MihailRis/voxelcore/commit/e423c746280c690ab26a217b1e8668253cdd1372)
-- [fix: chunk border wigth change when render block selection](https://github.com/MihailRis/voxelcore/commit/963e7d78f5f555940517e9afa4dccafbe7085d17)
-- [fix block model change wrapper reaction](https://github.com/MihailRis/voxelcore/commit/6d6d38c2180ae79d69498acdd3a525399579995a)
-- [fix: InventoryView: when moving one object with the right mouse button, the phantom remained](https://github.com/MihailRis/voxelcore/commit/c7da5fa5698113710dca986516372a483ebfa0c7)
-- [fix: integers signs are unspecified in binary_json_spec.md](https://github.com/MihailRis/voxelcore/commit/e5f9e4d02aba96678afac533be9679523487006b)
-- [fix fragment:place lights](https://github.com/MihailRis/voxelcore/commit/7a513949e94764797abd09410836f4475da8156a)
-- [fix: 'shadeless' block property ignored if custom model is used](https://github.com/MihailRis/voxelcore/commit/78062e2197be750d3a6fa87d44e8079286323cdd)
-- [fix custom model blocks lighting](https://github.com/MihailRis/voxelcore/commit/36f7fb759a6266edae91f2e2986882eba066bdaf)
-- [fix inventory.set](https://github.com/MihailRis/voxelcore/commit/c394df4e07641b9c18dc8a4ee1bcd1c519a82f66)
-- [fix fatal error on invalid item id in inventory](https://github.com/MihailRis/voxelcore/commit/180dd5051b5a7358200ae705fd20b632b0d96f72)
-- [fix on_block_tick timer](https://github.com/MihailRis/voxelcore/commit/77b4382577dc9cc3a21317190290e9019355ec9b)
-- [fix on_block_tick triggered while paused](https://github.com/MihailRis/voxelcore/commit/4d53eb97c359b7453209af91eedfe56b03042a6e)
-- [fix hover elements lifetime](https://github.com/MihailRis/voxelcore/commit/55e4e6de02e606b756dba57cefe2fdb3574c389d)
-- [fix shadeless blocks with soft lights disabled](https://github.com/MihailRis/voxelcore/commit/ea8e1301eadcc1298668bcc5d7c6d9893f916e1d)
-- [fix libpng error handling](https://github.com/MihailRis/voxelcore/commit/ba405ee6fc1541c2e84f62a6a047da711a313ff4)
-- [fix corrupted voxel reset](https://github.com/MihailRis/voxelcore/commit/e0b5c8457b93d2caa9d7959a28960cd456bbd61d)
-- [fix overriden content units scripts overriding](https://github.com/MihailRis/voxelcore/commit/719ba6e17a995d689e2c6e4845d920b6c42856c1)
-- [fix block ticks](https://github.com/MihailRis/voxelcore/commit/4a880177da63b282d0889493c4497bf81c4780ae)
-- [fix nil coords passed to on_block_tick](https://github.com/MihailRis/voxelcore/commit/ee21debe520a48759af9bbe2a27de148d91b371c)
-- [fix: incomplete size transform support by entities](https://github.com/MihailRis/voxelcore/commit/fefc975832685f1377736aefd8a048b1fd943130)
-- [fix exception if model having invalid variable texture passed to modelviewer](https://github.com/MihailRis/voxelcore/commit/1d56d83b72d59da34ceac5cc104ce3aa278dd299)
-- [fix canvas:set_data with table argument](https://github.com/MihailRis/voxelcore/commit/e678195a2ae3cfd1ddc39435dd103292806dd4bc)
-- [fix generated item's script](https://github.com/MihailRis/voxelcore/commit/4df4209bc59944e97102be7a618292378dc301a4)
-- [fix ui elements overriding](https://github.com/MihailRis/voxelcore/commit/c214d70f1d33785f9262c552a6f7b933b41e9125)
-- [fix: pack environment not passed to components](https://github.com/MihailRis/voxelcore/commit/69cf4c1c046281106571341702c48d74c27a3788)
-- [fix 'unexpected end' while parsing .obj](https://github.com/MihailRis/voxelcore/commit/31e7a4ebc0076b6fdb12f4775ffba0903a11ba4e)
-- [fix: bad_alloc if canvas element size is negative](https://github.com/MihailRis/voxelcore/commit/7c74eece99e1ec52e3022803975c92b951ec11c0)
+- [fix stack_vector](https://github.com/MihailRis/voxelcore/commit/1fbf16e3dcf145f322849b182be20bac1272a82b)
+- [fix audio.input.request_open](https://github.com/MihailRis/voxelcore/commit/8a19c903e44b7569a38e470ec7b260a03cd4d673)
+- [fix: block/item.properties not inheriting parent content unit properties](https://github.com/MihailRis/voxelcore/commit/a9d185256ae14789c17b005b27f7be94895f7dca)
+- [fix: player name 3d text not updating by Decorator](https://github.com/MihailRis/voxelcore/commit/33db2633a282a9ba532143e223e3ae8b4d12fc22)
+- [fix lua::toquat](https://github.com/MihailRis/voxelcore/commit/9d7e95db807f6210cd18e3e4b58d05eb5ab165d3)
+- [fix: destroyed skeleton config access on skeleton reload](https://github.com/MihailRis/voxelcore/commit/9893c09fd5459eda2f013b7603fd32db18e02b98)
+- [fix entity bounding box check on block place](https://github.com/MihailRis/voxelcore/commit/bb44b4186bd617281614c5f04329bd4221b08c0d)
+- [fix: cursor is not hidden in wayland if previously changed by glfwSetCursor](https://github.com/MihailRis/voxelcore/commit/6896fa433ca2a5f6bfd5205072edfaded7107a42)
+- [fix process_properties](https://github.com/MihailRis/voxelcore/commit/dde8c674b81835e6d7a6591bd0732a9c5c140be0)
+- [fix stringutil locale-related functions](https://github.com/MihailRis/voxelcore/commit/30177b9d2a3f87955005f39418dbcf8b1c76dfca)
+- [fix teleports loop on low obstacles](https://github.com/MihailRis/voxelcore/commit/e28af89de2ff4b79cbfc84515005fc3ae3074004)
+- [fix entity spawn/despawn](https://github.com/MihailRis/voxelcore/commit/2dd8024b7e0f82bfc79cd6e5e389c3dd6a5a700c)
+- [fix 3d text scaling in projected display mode](https://github.com/MihailRis/voxelcore/commit/736cdb0980f68f64e5b3c0135cf5962169c05349)
+- [fix audio.play type checks](https://github.com/MihailRis/voxelcore/commit/6daaa4895bee30e4a92b3e769116ec8e473f2728)
+- [fix app.reconfig_packs](https://github.com/MihailRis/voxelcore/commit/73837082c2f629614dd28e04880d9ca6f59908b1)
+- [fix skeletons behaviour in preload.json](https://github.com/MihailRis/voxelcore/commit/acff9454924f630fb69719f868e78bcf319956e4)
+- [fix LevelScreen::saveWorldPreview](https://github.com/MihailRis/voxelcore/commit/91b14f4264b57cda3779e991b426bf832fc1d9a7)
+- [fix core:player component mob.set_flight call](https://github.com/MihailRis/voxelcore/commit/66796019af77d33be0577bb7bf7a0f30307246e7)
+- [fix components parent environment](https://github.com/MihailRis/voxelcore/commit/dcaf87988bfac2b622eba4003ff7c52b41088601)
+- [fix utf8.sub behaviour](https://github.com/MihailRis/voxelcore/commit/31478977099e501752271094802a6f057eb4f01e)
+- [fix multiline textbox wrappping](https://github.com/MihailRis/voxelcore/commit/99c66c61bb4da0b8defc7aa3219088de32ae4fab)
+- [fix: manually changing textbox.caret does not reset selection](https://github.com/MihailRis/voxelcore/commit/843cc3769dffe1318b32a25f1dbeb8a0390a074d)
+- [fix tick intervals in headless mode](https://github.com/MihailRis/voxelcore/commit/0975fcd8193025c171acf0644babfb570e53c468)
+- [fix player ticks](https://github.com/MihailRis/voxelcore/commit/47f2bf75d79f73a28afd618f52509767c0876881)
+- [fix selection reset on end reached with shift pressed](https://github.com/MihailRis/voxelcore/commit/1d4abd7758db633fd389990ddd015f37c5803ed3)
+- [fix textbox scrolling](https://github.com/MihailRis/voxelcore/commit/bebb5049efaa8b242b3eba25eeb8227dfb06a161)
+- [fix lua syntax highlighting](https://github.com/MihailRis/voxelcore/commit/b307b5c93b6ab2d2102e81310e3441930f55e682)
+- [fix controls settings panel height](https://github.com/MihailRis/voxelcore/commit/c4bddba6b73a42b7ed1da4cbc81e4c79d48b7117)
+- [fix lua::bytearray_as_string](https://github.com/MihailRis/voxelcore/commit/3f81494d4b14f3a8d6be0f9e9a489f0d26c88e37)
+- [particles fix](https://github.com/MihailRis/voxelcore/commit/e6ac30143c8e0ade446d61b92119ebdecb616e28)
+- [blocks.fill fix](https://github.com/MihailRis/voxelcore/commit/31a90bd91172eb07923ea41c0ed18bdaee83f462)
+- [lighting fix](https://github.com/MihailRis/voxelcore/commit/0bbde3a778762f7f6740cd65b494824111313c2e)
+- [fix gui.load_document environment extension](https://github.com/MihailRis/voxelcore/commit/b1974405c69596edf0cfd4a4b5cd42ba0d65448e)
+- [fix serialization error for specific types](https://github.com/MihailRis/voxelcore/commit/2f729bd3cbb793f20c5e060a75e38a18d0d88d0f)
+- [fix vcm texture sides](https://github.com/MihailRis/voxelcore/commit/38bebac37ee2a290315c3148576e98c825efa46d)
+- [fix post-runnable context in content-related functions](https://github.com/MihailRis/voxelcore/commit/0ffefddee1781389fc6e8014ea00856e09cfff1d)
+- [fix: app.reconfig_packs attempts to remove indices in generator test mode](https://github.com/MihailRis/voxelcore/commit/ce189c810d13512225b82933724603781a1ecef1)
+- [fix: duplicating core:chat event handlers in in-game chat](https://github.com/MihailRis/voxelcore/commit/52829023c2718876ce97bc91345b3cadfdd7d10e)
+- [fix document events & breaking: document events removed from 'events' library temporary](https://github.com/MihailRis/voxelcore/commit/089bcbbb64b8009db03fb9b6ed04c491e46d6933)
+- [fix uinode.parent property](https://github.com/MihailRis/voxelcore/commit/902c885fe0d72cbe5bd2ea9a95d4551516197d4a)
+- [fix ui elements related things](https://github.com/MihailRis/voxelcore/commit/84b2aef81f82d46b07d9bd059540d7ac90cae3ec)
+- [fix segfault on world.get_chunk_data if no world open](https://github.com/MihailRis/voxelcore/commit/4a11dd28ec9b7a0344c21a6fc4c3ab80c429eb50)
+- [fix ceiling collision](https://github.com/MihailRis/voxelcore/commit/625a5caeccbce1d06a0ad1c743e56995d9b42343)
+- [fix of io_stream:read_fully for binary and yield mode](https://github.com/MihailRis/voxelcore/commit/fdec2d722d2b81e7bdbdfec2209a9df28d10dde0)
+- [fix of io_stream:available for non-buffered streams when "length" arg defined](https://github.com/MihailRis/voxelcore/commit/cd040cfeb47f91b29c6d138f745b442483f4cf44)
+- [fix dead skeleton model references](https://github.com/MihailRis/voxelcore/commit/9d3a60328f7a44e0361a31e2e8c5b9079282810b)
+- [fix maths_inline version of mat4.rotate](https://github.com/MihailRis/voxelcore/commit/87310dd38f848ca059b627fc0b6d1d2503d05071)
+- [fix BasicParser power function](https://github.com/MihailRis/voxelcore/commit/c45d994216e57811b36d9463fab7ad2c7cc051c0)
+- [fix exponential notation parsing (](https://github.com/MihailRis/voxelcore/commit/b024b6cddfcee9bc436d8260cdb3f1647087af96 "fix exponential notation parsing (#857)")[#857](https://github.com/MihailRis/voxelcore/pull/857)[)](https://github.com/MihailRis/voxelcore/commit/b024b6cddfcee9bc436d8260cdb3f1647087af96)
+- [fix graphics settings & reduce extra GL calls](https://github.com/MihailRis/voxelcore/commit/5b868ae857b1b425a4f529c663b3dad55fcbf59a)
+- [fix integer raycast filters & add simple raycast test](https://github.com/MihailRis/voxelcore/commit/39a42365534ebd4c4c0be690e9ea0646e1459a7b)
+- [fix canvas:encode produces flipped images for png](https://github.com/MihailRis/voxelcore/commit/279fb92b94a0f8b8d28ed141b54b160450ec91f7)
+- [fix canvas:line lines clipping](https://github.com/MihailRis/voxelcore/commit/a5596ed5cd65bc62b983ec9dff3263beeced2dd7)
+- [fix newly created raycast bug](https://github.com/MihailRis/voxelcore/commit/46b4aab6dce9e7c195b5c29584168f8e5b8fbb52)
+- [fix Skeleton::setConfig](https://github.com/MihailRis/voxelcore/commit/a0b7e81a94d8a4f2750fbbd507ba6bd2e688f8b4)
+- [fix audio input device settings](https://github.com/MihailRis/voxelcore/commit/a99c6aa8e08d440d9b049007747ac769c2fff431)
+- [fix: missing font usage produces fatal error](https://github.com/MihailRis/voxelcore/commit/420d0daf28853e1db1a985f9a74ec38f3d978ddc)
+- [fix texture-faces reading](https://github.com/MihailRis/voxelcore/commit/d3eb7a10bea6825c0ff2da9f459a1b528a6a410f)
+- [fix the margin](https://github.com/MihailRis/voxelcore/commit/86fdcb289b1cfa510c861c677731599b4f0f0519)
+- [fix components order & add skeleton:get_matrix overload & add skeleton:reset_pose](https://github.com/MihailRis/voxelcore/commit/8242d299ed68c8f27e691e464562e43c936788da)
+- [fix user component initialization exception handling & fix fatal error on uninitialized component access](https://github.com/MihailRis/voxelcore/commit/28385f236c3e3d2ccf020b116f08a8f6d33ec1a3)
+- [fix projected 3d text for non-monospace fonts](https://github.com/MihailRis/voxelcore/commit/4837e1de027e738bd59c4ba9c91b654e5d866f9a)
+- [fix custom model blocks render (with some conditions)](https://github.com/MihailRis/voxelcore/commit/e0be7a8d8c9f8d54d7af1b6b976fefc941ebba1f)
+- [fix 3d texts antialiasing render issue](https://github.com/MihailRis/voxelcore/commit/40e73ca34b14939468f64a5d349a98400e704bbb)
+- [fixing errors in rules.lua](https://github.com/MihailRis/voxelcore/commit/81af4b9e2acba5d67b5bacdb343618c686dd9d5f)
+- [fix block.index() calls in grass_block.lua and export base:util.calc_loot()](https://github.com/MihailRis/voxelcore/commit/2eae8f6f275e7a41ac30309e61f8d22d8a644ac7)
+- [fix fix lua version comparision](https://github.com/MihailRis/voxelcore/commit/4be73acc61f6805c9df2743e68a86ee646d43e25)
+- [fix lua version compare](https://github.com/MihailRis/voxelcore/commit/9444dc0c4596bd0c1fd2710488c8d412da8aab1f)
+- [fix zIndex type in docs](https://github.com/MihailRis/voxelcore/commit/c445f1a68f9bc1c9c9877cd91d010a1dd5240f0d)
+- [fix double click behaviour](https://github.com/MihailRis/voxelcore/commit/9ea50148b8a02a74befbcbc618a6a7dca7643316)
+- [fix horizontal panel behaviour](https://github.com/MihailRis/voxelcore/commit/2448869bf922a5773dbfd420a0a0e2cb151b0712)
+- [fix: stdcomp calling non-component global functions](https://github.com/MihailRis/voxelcore/commit/64a5a74f53722aa0db17b47bd0aa9fce106a661c)
+- [fix missing keys support](https://github.com/MihailRis/voxelcore/commit/df67236adbb9c29eddb3ec5a455dd61fb03c0a16)
+- [fix: temporary focus fix](https://github.com/MihailRis/voxelcore/commit/9fa6070cced55583ff6e0eaa654e4ca5b5495c32)
+- [fix rivers in base:demo](https://github.com/MihailRis/voxelcore/commit/75cd9aeefb2cccb544e0169063908760977d6615)
+- [fix gui.ask](https://github.com/MihailRis/voxelcore/commit/dd7e01488f3cbc4b2df58a945027ac3a9ea35eac)
+- [fix 3d text render](https://github.com/MihailRis/voxelcore/commit/717d41e7a544d657ae8b27397b5c5dbd9fb50b80)
+- [fix skeleton:get_model](https://github.com/MihailRis/voxelcore/commit/a73c181b0173b4d1c61159e03407cb5f3b3eb3bd)
+- [fix iframe.src = ""](https://github.com/MihailRis/voxelcore/commit/e2a65412bc6d49b0b2d264b11cd8df2e2c4e1d8f)
+- [fix blank texture overwritten by screen frame output](https://github.com/MihailRis/voxelcore/commit/fa0f87349b5c61ee0ca43d7d6b5b64237c39a6a4)
+- [fix stairs model](https://github.com/MihailRis/voxelcore/commit/423685139fe83bb2e571fbdfa41327ce61a64dd0)
+- [fix custom models solidity detection](https://github.com/MihailRis/voxelcore/commit/02dbd01e73f2c69168a1ba4c1929c9d5be263718)
+- [fix default vcm aabb uv generation](https://github.com/MihailRis/voxelcore/commit/693befcde8d6a4dddfc9049d74d303b027953b25)
+- [fix panel extra interval at end](https://github.com/MihailRis/voxelcore/commit/bd4d5f0e4bc8dd1d9652cde42b3c2b13a9924be4)
+- [fix xml escapes in attribute values](https://github.com/MihailRis/voxelcore/commit/fc8065e5505654906e59d744ba636753d79e0210)
+- [fix Texture::reload](https://github.com/MihailRis/voxelcore/commit/f2018334cb97c7b9a8187eb4e155dbda97b0b1cb)
+- [fix side collision](https://github.com/MihailRis/voxelcore/commit/78e27c812a87c8ee2cec1d6605049b9f8535ef2d)
+- [fix WorldConverter::createBlockFieldsConvertTasks](https://github.com/MihailRis/voxelcore/commit/fbe992755e70a3b4d321dc7d17981aec512bf0c1)
+- [fix heightmap noise multiplier argument](https://github.com/MihailRis/voxelcore/commit/95b9b346ac16a50d3c72423503f579d3d712c392)
+- [fix blocks render at the top of the world](https://github.com/MihailRis/voxelcore/commit/8214f1bd096ca3682212ac57648017ab8179948f)
+- [fix containers scroll](https://github.com/MihailRis/voxelcore/commit/bf50c37b823cab0a5bc20d8877ae4b5c23eee697)
+- [fix typos in comments and log messages](https://github.com/MihailRis/voxelcore/commit/515e27b402fd09a33d0e9800792e15f1f6caa7f8)
+- [fix models load functions](https://github.com/MihailRis/voxelcore/commit/395dc15fb6460d5e50c3e613cb1ea46d3332580c)
+- [fix rig:set_matrix for nil index](https://github.com/MihailRis/voxelcore/commit/4370eedc0a4324de15916f1a7890295133aa75c3)
+- [fix maths_inline mat4.idt(dst)](https://github.com/MihailRis/voxelcore/commit/32876aa9e461afb687ddb1f94a8672bd81543018)
+- [fixed packages for arch distro](https://github.com/MihailRis/voxelcore/commit/05cea922eb334607a2ffbb9229b9f22bf6b2dc74)
+- [fix weather effects render](https://github.com/MihailRis/voxelcore/commit/9989f8119601b6f8d21eaccc7c554253a5cd5667)
+- [fix missing textures load request for vcm](https://github.com/MihailRis/voxelcore/commit/41713e89a4f2a8d83d7dc62f8d25b7e23653c8ca)
+- [fix: block fields not inherited](https://github.com/MihailRis/voxelcore/commit/7d0f714cf232809f609862c3a2b793ae84012e5e)
+- [fix: validate content pack dependency versions](https://github.com/MihailRis/voxelcore/commit/28b849229c7bd7d52c25aa1f009ff1d342f3f423)
+- [fix custom model blocks with disabled ambient-occlusion](https://github.com/MihailRis/voxelcore/commit/56d2ab9f1466b781a45e17298c3b4907c70a40bc)
