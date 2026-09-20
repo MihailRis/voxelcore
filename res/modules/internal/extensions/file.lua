@@ -8,7 +8,7 @@ function file.stem(path)
 end
 
 function file.ext(path)
-    return path:match("%.([^:/\\]+)$")
+    return path:match("[^:/\\.]%.([^.:/\\]+)$")
 end
 
 function file.prefix(path)
@@ -24,7 +24,11 @@ function file.parent(path)
 end
 
 function file.remove_ext(path)
-    return string.format("%s/%s", file.parent(path), file.stem(path))
+    local ext = file.ext(path)
+    if not ext then
+        return path
+    end
+    return path:sub(1, -#ext - 2)
 end
 
 function file.path(path)

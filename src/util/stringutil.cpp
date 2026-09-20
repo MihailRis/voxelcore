@@ -1,6 +1,8 @@
 #include "stringutil.hpp"
 
 #include <algorithm>
+#include <charconv>
+#include <cctype>
 #include <cmath>
 #include <iomanip>
 #include <locale>
@@ -509,13 +511,18 @@ int util::replaceAll(
     return replace_all(str, from, to);
 }
 
-// replace it with std::from_chars in the far far future
 double util::parse_double(const std::string& str) {
-    std::istringstream ss(str);
-    ss.imbue(std::locale("C"));
-    double d;
-    ss >> d;
-    if (ss.fail()) {
+    const char* begin = str.data();
+    const char* end = begin + str.size();
+    while (begin != end && std::isspace(static_cast<unsigned char>(*begin))) {
+        begin++;
+    }
+    if (begin != end && *begin == '+') {
+        begin++;
+    }
+    double d = 0.0;
+    const auto result = std::from_chars(begin, end, d);
+    if (result.ec != std::errc()) {
         throw std::runtime_error("invalid number format");
     }
     return d;
