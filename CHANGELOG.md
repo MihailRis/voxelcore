@@ -146,8 +146,8 @@ Table of contents:
 - math.noise2d
 - math.sign
 - network.request
-- PlayingTrack:pause <undocumented>
-- PlayingTrack:stop <undocumented>
+- PlayingTrack:pause
+- PlayingTrack:stop
 - quat.mul
 - quat.mul_vec3
 - rigidbody:set_selectable
@@ -156,7 +156,7 @@ Table of contents:
 - socket:peek_async
 - string.url_decode
 - string.url_encode
-- table.keys <undocumented>
+- table.keys
 - test.click
 - test.fill
 - test.find_by_attr
