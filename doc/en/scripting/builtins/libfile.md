@@ -164,6 +164,12 @@ file.ext(path: str) --> str
 Extracts the extension from the path. Example: `world:data/base/config.toml` -> `toml`.
 
 ```lua
+file.remove_ext(path: string) -> string
+```
+
+Returns the path without the extension. Example: `world:data/base/config.toml` -> `world:data/base/config`.
+
+```lua
 file.prefix(path: str) --> str
 ```
 
