@@ -3,7 +3,7 @@
 ## Latest release
 
 - [Download](https://github.com/MihailRis/VoxelCore/releases/latest) | [Скачать](https://github.com/MihailRis/VoxelCore/releases/latest)
-- [Documentation](https://github.com/MihailRis/VoxelCore/blob/release-0.31/doc/en/main-page.md) | [Документация](https://github.com/MihailRis/VoxelCore/blob/release-0.31/doc/ru/main-page.md)
+- [Documentation](https://github.com/MihailRis/VoxelCore/blob/release-0.32/doc/en/main-page.md) | [Документация](https://github.com/MihailRis/VoxelCore/blob/release-0.32/doc/ru/main-page.md)
 
 ---
 
