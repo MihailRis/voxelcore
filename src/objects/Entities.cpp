@@ -485,6 +485,7 @@ void Entities::render(
         if (eid.uid == fpsEntity) {
             continue;
         }
+        const auto& def = eid.def;
         const auto& pos = transform.pos;
         const auto& size = transform.size;
         if (frustum && !frustum->isBoxVisible(pos - size, pos + size)) {
@@ -494,7 +495,13 @@ void Entities::render(
         const auto& rigConfig = skeleton.config;
         if (rigConfig) {
             rigConfig->render(
-                assets, batch, skeleton, transform.rot, pos, size
+                assets,
+                batch,
+                skeleton,
+                def.lightingMode,
+                transform.rot,
+                pos,
+                size
             );
         }
     }

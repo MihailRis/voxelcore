@@ -58,8 +58,8 @@ local Skeleton = {__index={
     index=function(self, s) return __skeleton.index(self.eid, s) end,
     is_visible=function(self, i) return __skeleton.is_visible(self.eid, i) end,
     set_visible=function(self, i, b) return __skeleton.set_visible(self.eid, i, b) end,
-    get_color=function(self) return __skeleton.get_color(self.eid) end,
-    set_color=function(self, color) return __skeleton.set_color(self.eid, color) end,
+    get_color=function(self, ...) return __skeleton.get_color(self.eid, ...) end,
+    set_color=function(self, color, ...) return __skeleton.set_color(self.eid, color, ...) end,
     set_interpolated=function(self, b) return __skeleton.set_interpolated(self.eid, b) end,
 }}
 

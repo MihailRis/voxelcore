@@ -66,3 +66,10 @@ const std::string& gui::Frame::getOutputTexture() const {
 const std::string& gui::Frame::getFrameId() const {
     return frameId;
 }
+
+std::unique_ptr<ImageData> gui::Frame::takeScreenshot() const {
+    if (fbo == nullptr) {
+        return nullptr;
+    }
+    return fbo->readData();
+}

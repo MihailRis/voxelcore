@@ -8,10 +8,7 @@
 #include "data/dv.hpp"
 #include "maths/aabb.hpp"
 #include "physics/Hitbox.hpp"
-
-namespace rigging {
-    class SkeletonConfig;
-}
+#include "animation/rigging.hpp"
 
 struct ComponentInstance {
     std::string component;
@@ -41,6 +38,9 @@ struct EntityDef {
 
     /// @brief Solid entity material material
     std::string material;
+
+    /// @brief Model lighting mode
+    ModelLightingMode lightingMode = ModelLightingMode::SOLID;
 
     /// @brief Can the entity be interacted with cursor (on_attack, on_use)
     bool selectable = true;

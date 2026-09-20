@@ -117,6 +117,13 @@ std::shared_ptr<Texture> Framebuffer::getSharedTexture() const {
     return texture;
 }
 
+std::unique_ptr<ImageData> Framebuffer::readData() const {
+    if (!texture) {
+        return nullptr;
+    }
+    return texture->readData();
+}
+
 uint Framebuffer::getWidth() const {
     return width;
 }

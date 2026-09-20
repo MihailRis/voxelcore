@@ -127,6 +127,11 @@ Defines the entity's material (same as for blocks).
 
 The default value is the same as the entity name. Determines which skeleton will be used by the entity. See [rigging](rigging.md).
 
+### *lighting-mode*
+
+- *bone-based* - lighting is calculated for each skeletal bone separately.
+- *solid* - lighting is calculated for the entire entity.
+
 ## Saving/Loading
 
 In addition to custom components, the engine automatically saves data from the built-in ones: transform, rigidbody, skeleton.

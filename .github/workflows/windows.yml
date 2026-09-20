@@ -38,7 +38,7 @@ jobs:
       - name: Run engine tests
         run: |
             build/vctest/RelWithDebInfo/vctest.exe -e build/RelWithDebInfo/VoxelEngine.exe -d dev/tests -u build
-        timeout-minutes: 1
+        timeout-minutes: 5
       - name: Package for Windows
         run: |
           mkdir packaged

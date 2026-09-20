@@ -208,7 +208,7 @@ function Version.__less(ver1, ver2)
 end
 
 function Version.__greater_or_equal(ver1, ver2)
-    return not Version.__less(ver2, ver1)
+    return not Version.__less(ver1, ver2)
 end
 
 function Version.__less_or_equal(ver1, ver2)
@@ -226,6 +226,11 @@ Version.operators = {
 function Version.compare(op, ver1, ver2)
     ver1 = string.split(ver1, ".")
     ver2 = string.split(ver2, ".")
+
+    for i = 1, 3 do
+        ver1[i] = tonumber(ver1[i]) or 0
+        ver2[i] = tonumber(ver2[i]) or 0
+    end
 
     local comparison_func = Version.operators[op];
 
@@ -252,7 +257,7 @@ end
 
 local function compare_version(op, dependent_version, actual_version)
     if Version.matches_pattern(dependent_version) and Version.matches_pattern(actual_version) then
-        return Version.compare(op, dep_ver, actual_version)
+        return Version.compare(op, actual_version, dependent_version)
     elseif dependent_version == "*" or dependent_version == actual_version then
         return true
     else

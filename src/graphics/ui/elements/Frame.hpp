@@ -4,6 +4,7 @@
 
 class Framebuffer;
 class UiDocument;
+class ImageData;
 
 namespace gui {
     class Frame final : public Container {
@@ -18,6 +19,8 @@ namespace gui {
         const std::string& getOutputTexture() const;
 
         const std::string& getFrameId() const;
+
+        std::unique_ptr<ImageData> takeScreenshot() const;
     private:
         std::string frameId;
         std::unique_ptr<Framebuffer> fbo;

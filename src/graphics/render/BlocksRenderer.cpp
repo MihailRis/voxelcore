@@ -357,20 +357,30 @@ void BlocksRenderer::blockCustomModel(
                 const auto& vcoord = vertex.coord - 0.5f;
 
                 glm::vec4 aoColor {1.0f, 1.0f, 1.0f, 1.0f};
-                if (shading && ao) {
+                if (shading) {
                     const float eps = 0.05f;
                     auto p = coord + vcoord.x * X + vcoord.y * Y + vcoord.z * Z +
-                             r * 0.5f + t * 0.5f + n * eps;
-                    auto p1 = p + n * eps;
-                    auto p2 = p + n * 0.5f;
-                    aoColor = pickSoftLight(p1.x, p1.y, p1.z, glm::ivec3(r), glm::ivec3(t));
-                    if (!block.lightPassing) {
-                        aoColor = glm::max(
-                            aoColor,
-                            pickSoftLight(
-                                p2.x, p2.y, p2.z, glm::ivec3(r), glm::ivec3(t)
-                            )
-                        );
+                            r * 0.5f + t * 0.5f + n * eps;
+                    if (ao) {
+                        auto p1 = p + n * eps;
+                        auto p2 = p + n * 0.5f;
+                        aoColor = pickSoftLight(p1.x, p1.y, p1.z, glm::ivec3(r), glm::ivec3(t));
+                        if (!block.lightPassing) {
+                            aoColor = glm::max(
+                                aoColor,
+                                pickSoftLight(
+                                    p2.x, p2.y, p2.z, glm::ivec3(r), glm::ivec3(t)
+                                )
+                            );
+                        }
+                    } else {
+                        aoColor = pickLight(glm::floor(p + 0.5f) + 0.5f);
+                        if (!block.lightPassing) {
+                            aoColor = glm::max(
+                                aoColor,
+                                pickLight(glm::floor(p + n + 0.5f) + 0.5f)
+                            );
+                        }
                     }
                 }
                 this->vertex(

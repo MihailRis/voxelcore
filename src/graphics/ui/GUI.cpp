@@ -374,6 +374,14 @@ std::shared_ptr<gui::Frame> GUI::getActiveFrame() const {
     return activeFrame;
 }
 
+std::shared_ptr<gui::Frame> GUI::getFrame(const std::string& id) {
+    const auto& found = frames.find(id);
+    if (found == frames.end()) {
+        return nullptr;
+    }
+    return found->second;
+}
+
 void GUI::remove(UINode* node) noexcept {
     container->remove(node);
 }

@@ -137,6 +137,8 @@ namespace gui {
 
         std::shared_ptr<Frame> getActiveFrame() const;
 
+        std::shared_ptr<Frame> getFrame(const std::string& id);
+
         /// @brief Remove node from the main container
         void remove(UINode* node) noexcept;
 

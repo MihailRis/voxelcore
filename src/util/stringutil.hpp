@@ -101,6 +101,8 @@ namespace util {
 
     std::string capitalized(const std::string& str);
 
+    std::string lower_case(const std::string& str);
+    std::string upper_case(const std::string& str);
     std::wstring lower_case(const std::wstring& str);
     std::wstring upper_case(const std::wstring& str);
     std::wstring capitalized(const std::wstring& str);

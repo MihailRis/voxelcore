@@ -53,6 +53,8 @@ static void create_libs(State* L, StateType stateType) {
     openlib(L, "bjson", bjsonlib);
     openlib(L, "block", blocklib);
     openlib(L, "byteutil", byteutillib);
+    openlib(L, "crypto", cryptolib);
+    initialize_cryptolib(L);
     openlib(L, "file", filelib);
     openlib(L, "generation", generationlib);
     openlib(L, "item", itemlib);

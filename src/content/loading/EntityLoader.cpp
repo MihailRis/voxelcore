@@ -94,4 +94,8 @@ template<> void ContentUnitLoader<EntityDef>::loadUnit(
     root.at("mass").get(def.mass);
     root.at("elasticity").get(def.elasticity);
     root.at("step-height").get(def.stepHeight);
+    
+    std::string lightingModeName;
+    root.at("lighting-mode").get(lightingModeName);
+    ModelLightingModeMeta.getItem(lightingModeName, def.lightingMode);
 }

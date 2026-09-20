@@ -82,12 +82,75 @@ inline glm::vec4 do_tint(float value) {
     return {value, value, value, 1.0f};
 }
 
+void MainBatch::quad(
+    const glm::vec3& pos,
+    const glm::vec3& right,
+    const glm::vec3& up,
+    const glm::vec3& normal,
+    const glm::vec2& size,
+    const glm::vec4& light,
+    const glm::vec4& tint,
+    const UVRegion& subregion,
+    float emission
+) {
+    prepare(6);
+    vertex(
+        pos - right * size.x * 0.5f - up * size.y * 0.5f,
+        {subregion.u1, subregion.v1},
+        light,
+        tint,
+        normal,
+        emission
+    );
+    vertex(
+        pos + right * size.x * 0.5f - up * size.y * 0.5f,
+        {subregion.u2, subregion.v1},
+        light,
+        tint,
+        normal,
+        emission
+    );
+    vertex(
+        pos + right * size.x * 0.5f + up * size.y * 0.5f,
+        {subregion.u2, subregion.v2},
+        light,
+        tint,
+        normal,
+        emission
+    );
+
+    vertex(
+        pos - right * size.x * 0.5f - up * size.y * 0.5f,
+        {subregion.u1, subregion.v1},
+        light,
+        tint,
+        normal,
+        emission
+    );
+    vertex(
+        pos + right * size.x * 0.5f + up * size.y * 0.5f,
+        {subregion.u2, subregion.v2},
+        light,
+        tint,
+        normal,
+        emission
+    );
+    vertex(
+        pos - right * size.x * 0.5f + up * size.y * 0.5f,
+        {subregion.u1, subregion.v2},
+        light,
+        tint,
+        normal,
+        emission
+    );
+}
+
 void MainBatch::cube(
     const glm::vec3& coord,
     const glm::vec3& size,
     const UVRegion(&texfaces)[6],
     const glm::vec4& lights,
-    const glm::vec3 tints[],
+    const glm::vec4 tints[],
     float emission,
     uint8_t cullingBits
 ) {

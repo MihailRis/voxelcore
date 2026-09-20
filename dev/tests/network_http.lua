@@ -8,4 +8,4 @@ end, function (code)
     response_received = true
 end)
 
-app.sleep_until(function () return response_received end, nil, 10)
+app.sleep_until(function () return response_received end, nil, 5)

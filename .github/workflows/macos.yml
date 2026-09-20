@@ -23,13 +23,13 @@ jobs:
 
       - name: Install dependencies from brew
         run: |
-          brew install glfw3 glew libpng openal-soft luajit libvorbis  skypjack/entt/entt googletest glm freetype
+          brew install glfw3 glew libpng openal-soft luajit libvorbis skypjack/entt/entt googletest glm freetype
 
       - name: Configure
         run: |
           cmake -DOPENAL_INCLUDE_DIR=$(brew --prefix openal-soft)/include \
            -DOPENAL_LIBRARY=$(brew --prefix openal-soft)/lib/libopenal.dylib \
-           -S . -B build -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_TESTS=ON -DVOXELENGINE_BUILD_APPDIR=1 -DVC_BUILD_NAME="${{ inputs.build_name }}"
+           -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DVOXELENGINE_BUILD_TESTS=ON -DVOXELENGINE_BUILD_APPDIR=1 -DVC_BUILD_NAME="${{ inputs.build_name }}"
 
       - name: Build
         run: |
@@ -45,11 +45,11 @@ jobs:
         run: ctest --output-on-failure --test-dir build
 
       - name: Run engine tests
-        timeout-minutes: 1
+        timeout-minutes: 5
         run: |
           chmod +x build/VoxelEngine
           chmod +x AppDir/usr/bin/vctest
-          AppDir/usr/bin/vctest -e build/VoxelEngine -d dev/tests -u build --output-always
+          AppDir/usr/bin/vctest -e build/VoxelEngine -d dev/tests -u build --output-always --debugger "lldb -batch -o 'run' -o 'thread backtrace all' -o 'quit' -- "
       - name: Create DMG
         run: |
           mkdir VoxelEngineDmgContent

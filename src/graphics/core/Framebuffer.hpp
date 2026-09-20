@@ -6,6 +6,7 @@
 #include <memory>
 
 class Texture;
+class ImageData;
 
 class Framebuffer : public Bindable {
     uint fbo;
@@ -35,6 +36,8 @@ public:
     Texture* getTexture() const;
 
     std::shared_ptr<Texture> getSharedTexture() const;
+
+    std::unique_ptr<ImageData> readData() const;
 
     /// @brief Get framebuffer width
     uint getWidth() const;

@@ -161,7 +161,7 @@ void BlockWrapsRenderer::draw(const DrawContext& pctx) {
 u64id_t BlockWrapsRenderer::add(
     const glm::ivec3& position,
     const std::string& texture,
-    const glm::vec3& tint,
+    const glm::vec4& tint,
     float emission
 ) {
     u64id_t id = nextWrapper++;

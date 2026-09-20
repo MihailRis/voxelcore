@@ -190,10 +190,14 @@ rig:is_visible([optional] index: int) -> bool
 rig:set_visible([optional] index: int, status: bool)
 
 -- Returns the color of the entity
-rig:get_color() -> vec3
+rig:get_color() -> vec4
+-- Return the color of the bone by index
+rig:get_color(index: int) -> vec4
 
 -- Sets the color of the entity
-rig:set_color(color: vec3)
+rig:set_color(color: vec3 | vec4)
+-- Sets the color of the bone by index
+rig:set_color(color: vec3 | vec4, index: int)
 ```
 
 > [!WARNING]

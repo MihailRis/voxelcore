@@ -20,7 +20,7 @@ class DrawContext;
 struct BlockWrapper {
     glm::ivec3 position;
     std::array<std::string, 6> textureFaces {};
-    std::array<glm::vec3, 6> tints {};
+    std::array<glm::vec4, 6> tints {};
     float emission = 0.0f;
 
     // --- render cache ---
@@ -56,7 +56,7 @@ public:
     u64id_t add(
         const glm::ivec3& position,
         const std::string& texture,
-        const glm::vec3& tint,
+        const glm::vec4& tint,
         float emission
     );
 

@@ -179,10 +179,14 @@ rig:is_visible([optional] index: int) -> bool
 rig:set_visible([optional] index: int, status: bool)
 
 -- Возвращает цвет сущности
-rig:get_color() -> vec3
+rig:get_color() -> vec4
+-- Возвращает цвет кости по индексу
+rig:get_color(index: int) -> vec4
 
 -- Устанавливает цвет сущности
-rig:set_color(color: vec3)
+rig:set_color(color: vec3 | vec4)
+-- Устанавливает цвет кости по индексу
+rig:set_color(color: vec3 | vec4, index: int)
 ```
 
 ## Пользовательские компоненты

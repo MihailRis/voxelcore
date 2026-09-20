@@ -25,6 +25,7 @@
 #include "items/Inventories.hpp"
 #include "util/stringutil.hpp"
 #include "world/Level.hpp"
+#include "window/Window.hpp"
 #include "../usertypes/lua_type_canvas.hpp"
 
 using namespace gui;
@@ -1218,7 +1219,26 @@ static int l_get_active_frame(lua::State* L) {
     return lua::pushstring(L, frame->getId());
 }
 
+static int l_screenshot(lua::State* L) {
+    if (engine->isHeadless()) {
+        return 0;
+    }
+    std::unique_ptr<ImageData> image;
+    if (lua::isstring(L, 1)) {
+        auto& gui = engine->getGUI();
+        auto frame = gui.getFrame(lua::require_string(L, 1));
+        if (frame == nullptr) {
+            return 0;
+        }
+        image = frame->takeScreenshot();
+    } else {
+        image = engine->getWindow().takeScreenshot();
+    }
+    return lua::newuserdata<lua::LuaCanvas>(L, nullptr, std::move(image));
+}
+
 const luaL_Reg guilib[] = {
+    {"screenshot", lua::wrap<l_screenshot>},
     {"get_viewport", lua::wrap<l_gui_getviewport>},
     {"getattr", lua::wrap<l_gui_getattr>},
     {"setattr", lua::wrap<l_gui_setattr>},

@@ -69,6 +69,12 @@ gui.set_active_frame(
     -- Используется для пользовательской проекции (например в 3D)
     [опционально] cursorLocator: function() -> number, number
 )
+
+-- Создаёт снимок фрейма в виде объекта Canvas если указан id фрейма, или всего окна, в случае nil.
+gui.screenshot(
+    -- id фрейма, созданного через gui.create_frame
+    [опционально] frameId: str
+) -> Canvas | nil
 ```
 
 ## Разметка

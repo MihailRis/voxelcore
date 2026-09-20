@@ -61,6 +61,12 @@ gui.set_active_frame(
     -- Used for custom projection (e.g., in 3D)
     [optional] cursorLocator: function() -> number, number
 )
+
+-- Creates a screenshot of a frame as a Canvas object if the frame ID is specified, or the entire window if nil.
+gui.screenshot(
+    -- ID of the frame created via gui.create_frame
+    [optional] frameId: str
+) -> Canvas | nil
 ```
 
 ## Markup
