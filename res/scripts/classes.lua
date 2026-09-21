@@ -104,11 +104,15 @@ local open_tcp = network.__open_tcp
 local open_udp = network.__open_udp
 local connect_tcp = network.__connect_tcp
 local connect_udp = network.__connect_udp
+local http_open = network.__http_open
+local http_respond = network.__http_respond
 network.__request = nil
 network.__open_tcp = nil
 network.__open_udp = nil
 network.__connect_tcp = nil
 network.__connect_udp = nil
+network.__http_open = nil
+network.__http_respond = nil
 
 local function request(url, params)
     local id = http_request(url, params)
@@ -142,7 +146,7 @@ network.get_binary = function(url, callback, errorCallback, headers)
         method = "GET",
         headers = headers,
         on_response = callback and (function (response)
-            if response.code / 100 == 2 then
+            if response.status / 100 == 2 then
                 return callback(Bytearray(response.body))
             else
                 return errorCallback(response.status, response.body)
@@ -157,10 +161,10 @@ network.post = function(url, body, callback, errorCallback, headers)
         method = "POST",
         headers = table.extend({
             "Content-Type: application/json"
-        }, headers),
+        }, headers or {}),
         body = body,
         on_response = function(response)
-            if response.code / 100 == 2 then
+            if response.status / 100 == 2 then
                 return callback(Bytearray(response.body))
             else
                 return errorCallback(response.status, response.body)
@@ -221,6 +225,78 @@ network.udp_connect = function (address, port, datagramHandler, openCallback)
     return socket
 end
 
+local _http_server_handlers = {}
+
+local HttpRequest = {__index={
+    respond=function(self, status, body, headers)
+        if self.responded then
+            return
+        end
+        self.responded = true
+        http_respond(self.server_id, self.id, status or 200, headers or {}, body or "")
+    end,
+    json=function(self)
+        return json.parse(self.body)
+    end,
+}}
+
+-- timeout_ms: how long to wait for request:respond(...) before
+-- auto-sending 503 (default 60000); 0 means wait indefinitely
+network.http_open = function(port, handler, timeout_ms)
+    if handler == nil then
+        error "http server cannot be opened without a request handler"
+    end
+    local socket = setmetatable({id=http_open(port, timeout_ms or 60000)}, ServerSocket)
+    _http_server_handlers[socket.id] = handler
+    return socket
+end
+
+network.http_json = function(data, status, headers)
+    return {
+        status = status or 200,
+        headers = table.extend({"Content-Type: application/json"}, headers or {}),
+        body = json.tostring(data)
+    }
+end
+
+local function path_to_pattern(path)
+    local pattern = string.pattern_safe(path):gsub(":([%w_]+)", "([^/]+)")
+    return "^"..pattern.."$"
+end
+
+local Router = {}
+Router.__index = Router
+
+network.http_router = function()
+    return setmetatable({routes={}}, Router)
+end
+
+function Router:route(method, path, handler)
+    table.insert(self.routes, {
+        method = method:upper(),
+        pattern = path_to_pattern(path),
+        handler = handler
+    })
+    return self
+end
+function Router:get(path, handler) return self:route("GET", path, handler) end
+function Router:post(path, handler) return self:route("POST", path, handler) end
+function Router:put(path, handler) return self:route("PUT", path, handler) end
+function Router:delete(path, handler) return self:route("DELETE", path, handler) end
+function Router:patch(path, handler) return self:route("PATCH", path, handler) end
+
+function Router.__call(self, request)
+    for _, route in ipairs(self.routes) do
+        if route.method == request.method then
+            local params = {request.path:match(route.pattern)}
+            if params[1] ~= nil or request.path:match(route.pattern) then
+                return route.handler(request, unpack(params))
+            end
+        end
+    end
+    return {status=404, headers={"Content-Type: text/plain"}, body="Not Found"}
+end
+
 local function clean(iterable, checkFun, ...)
     local tables = { ... }
 
@@ -242,6 +318,7 @@ network.__process_events = function()
     local DATAGRAM = 3
     local RESPONSE = 4
     local CONNECTION_ERROR = 5
+    local HTTP_REQUEST = 6
 
     local ON_SERVER = 1
     local ON_CLIENT = 2
@@ -284,6 +361,33 @@ network.__process_events = function()
             if callback then
                 callback(event[4])
             end
+        elseif etype == HTTP_REQUEST then
+            local handler = _http_server_handlers[sid]
+            if handler then
+                local request = setmetatable({
+                    id = cid,
+                    server_id = sid,
+                    method = addr,
+                    path = port,
+                    query = side,
+                    headers = data,
+                    body = event[8],
+                    remote_addr = event[9],
+                    remote_port = event[10],
+                    responded = false,
+                }, HttpRequest)
+
+                local ok, result = pcall(handler, request)
+                if not request.responded then
+                    if ok and type(result) == 'table' then
+                        request:respond(result.status, result.body, result.headers)
+                    elseif ok then
+                        request:respond(204)
+                    else
+                        request:respond(500, tostring(result), {"Content-Type: text/plain"})
+                    end
+                end
+            end
         end
 
         -- remove dead servers
@@ -293,6 +397,8 @@ network.__process_events = function()
 
             clean(_udp_server_callbacks, network.__is_serveropen, _udp_server_callbacks)
             clean(_udp_client_datagram_callbacks, network.__is_alive, _udp_client_open_callbacks, _udp_client_datagram_callbacks)
+
+            clean(_http_server_handlers, network.__is_serveropen, _http_server_handlers)
 
             cleaned = true
         end

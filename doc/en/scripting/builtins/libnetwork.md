@@ -40,13 +40,13 @@ network.request(
 ```lua
 -- Performs a GET request to the specified URL.
 network.get(
-    url: str,
+    url: string,
     -- Function to call when response is received
-    callback: function(str),
+    callback: function(string),
     -- Error handler
-    [optional] onfailure: function(int, str),
+    [optional] onfailure: function(int, string),
     -- List of additional request headers
-    [optional] headers: table<str>
+    [optional] headers: table<string>
 )
 
 -- Example:
@@ -56,10 +56,10 @@ end)
 
 -- A variant for binary files, with a byte array instead of a string in the response.
 network.get_binary(
-    url: str,
+    url: string,
     callback: function(ByteArray),
-    [optional] onfailure: function(int, str),
-    [optional] headers: table<str>
+    [optional] onfailure: function(int, string),
+    [optional] headers: table<string>
 )
 
 -- Performs a POST request to the specified URL.
@@ -67,15 +67,15 @@ network.get_binary(
 -- After receiving the response, passes the text to the callback function.
 -- In case of an error, the HTTP response code will be passed to onfailure.
 network.post(
-    url: str,
+    url: string,
     -- Request body as a table (will be converted to JSON) or string
-    body: table|str,
+    body: table|string,
     -- Function called when response is received
-    callback: function(str),
+    callback: function(string),
     -- Error handler
-    [optional] onfailure: function(int, str),
+    [optional] onfailure: function(int, string),
     -- List of additional request headers
-    [optional] headers: table<str>
+    [optional] headers: table<string>
 )
 ```
 
@@ -84,7 +84,7 @@ network.post(
 ```lua
 network.tcp_connect(
     -- Address
-    address: str,
+    address: string,
     -- Port
     port: int,
     -- Function called upon successful connection
@@ -93,8 +93,8 @@ network.tcp_connect(
     callback: function(Socket),
     -- Function called when a connection error occurs
     -- Arguments passed: socket and error text
-    [optional] error_callback: function(Socket, str)
-) --> Socket
+    [optional] error_callback: function(Socket, string)
+) -> Socket
 ```
 
 Initiates TCP connection.
@@ -103,7 +103,7 @@ The Socket class has the following methods:
 
 ```lua
 -- Sends a byte array
-socket:send(table|ByteArray|str)
+socket:send(table|ByteArray|string)
 
 -- Reads the received data
 socket:recv(
@@ -142,16 +142,16 @@ socket:peek_async(
 socket:close()
 
 -- Returns the number of data bytes available for reading
-socket:available() --> int
+socket:available() -> int
 
 -- Checks that the socket exists and is not closed.
-socket:is_alive() --> bool
+socket:is_alive() -> bool
 
 -- Checks if the connection is present (using socket:send(...) is available).
-socket:is_connected() --> bool
+socket:is_connected() -> bool
 
 -- Returns the address and port of the connection.
-socket:get_address() --> str, int
+socket:get_address() -> string, int
 ```
 
 ```lua
@@ -162,7 +162,7 @@ network.tcp_open(
     -- Function called when connecting
     -- The socket of the connected client is passed as the only argument
     callback: function(Socket)
-) --> ServerSocket
+) -> ServerSocket
 ```
 
 The SocketServer class has the following methods:
@@ -172,26 +172,125 @@ The SocketServer class has the following methods:
 server:close()
 
 -- Checks if the TCP server exists and is open.
-server:is_open() --> bool
+server:is_open() -> bool
 
 -- Returns the server port.
-server:get_port() --> int
+server:get_port() -> int
 ```
+
+## HTTP Server
+
+```lua
+-- Opens an HTTP server on the given port.
+network.http_open(
+    -- Port
+    port: int,
+    -- HTTP request handler function
+    handler: function(request),
+    -- How long to wait for request:respond(...) before
+    -- auto-sending 503. 0 means wait indefinitely.
+    [optional] timeout_ms: int = 60000
+) -> ServerSocket
+```
+
+The ServerSocket class for the HTTP server is identical to the TCP server's
+
+The `handler` may respond in two ways:
+
+* return a response table `{status: int, headers: table<string>, body: string|Bytearray}`
+  (any field may be omitted; `status` defaults to `200`);
+* or call `request:respond(status, body, headers)` itself, e.g. from a
+  coroutine, for a delayed answer. In that case the handler's return value
+  is ignored.
+
+If the handler errors or does not respond within `timeout_ms`
+(60 seconds by default), an `Internal Server Error` (500) or
+`Service Unavailable` (503) response is sent automatically.
+
+The `request` class has the following fields and methods:
+
+```lua
+request.method       -> string, e.g. "GET"
+request.path         -> string, decoded path without the query string
+request.query        -> string, raw query string (part after '?', if any)
+request.headers      -> table<string>, "Name: value" entries
+request.body         -> string|Bytearray
+request.remote_addr  -> string
+request.remote_port  -> int
+
+-- Parses the request body as JSON.
+request:json() -> any
+
+-- Sends the response. May be called at most once, from anywhere
+-- (including a coroutine, an `on_response` callback, etc.)
+request:respond(
+    [optional] status: int=200,
+    [optional] body: string|Bytearray,
+    [optional] headers: table<string>
+)
+
+-- Builds a JSON response table ready to be returned from a handler.
+network.http_json(
+    data: any,
+    [optional] status: int=200,
+    [optional] headers: table<string>
+) --> table
+```
+
+### Router
+
+For URL routing, `network.http_router()` provides a small helper.
+Segments prefixed with `:` are captured and passed to the handler, in order.
+
+```lua
+local router = network.http_router()
+
+router:get("/users/:id", function(request, id)
+    return network.http_json({id = id})
+end)
+
+router:post("/users", function(request)
+    local data = request:json()
+    -- ...
+    return {status = 201}
+end)
+
+network.http_open(8080, router)
+```
+
+`Router` methods: `get`, `post`, `put`, `delete`, `patch`, and the generic
+`route(method, path, handler)`. Unmatched requests get a `404 Not Found`.
+
+### Example
+
+```lua
+network.http_open(8080, function(request)
+    if request.method == "GET" and request.path == "/status" then
+        return network.http_json({ok = true, uptime = time.uptime()})
+    end
+    return {status = 404, body = "Not Found"}
+end)
+```
+
+> The HTTP server supports HTTP/1.1 request/response bodies with
+> `Content-Length`; chunked request bodies are not supported and will be
+> rejected with `501 Not Implemented`. Every response closes the connection
+> (no keep-alive).
 
 ## Analytics
 
 ```lua
 -- Returns the approximate amount of data sent (including connections to localhost)
 -- in bytes.
-network.get_total_upload() --> int
+network.get_total_upload() -> int
 -- Returns the approximate amount of data received (including connections to localhost)
 -- in bytes.
-network.get_total_download() --> int
+network.get_total_download() -> int
 ```
 
 ## Other
 
 ```lua
 -- Looks for a free port to use.
-network.find_free_port() --> int or nil
+network.find_free_port() -> int or nil
 ```
