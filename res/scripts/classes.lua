@@ -240,8 +240,6 @@ local HttpRequest = {__index={
     end,
 }}
 
--- timeout_ms: how long to wait for request:respond(...) before
--- auto-sending 503 (default 60000); 0 means wait indefinitely
 network.http_open = function(port, handler, timeout_ms)
     if handler == nil then
         error "http server cannot be opened without a request handler"
