@@ -3,7 +3,6 @@
 #pragma comment(lib, "Ws2_32.lib")
 
 #define NOMINMAX
-#include <stdexcept>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
