@@ -233,7 +233,10 @@ local HttpRequest = {__index={
             return
         end
         self.responded = true
-        http_respond(self.server_id, self.id, status or 200, headers or {}, body or "")
+        http_respond(
+            self.server_id, self.id, status or 200,
+            headers or {}, body or ""
+        )
     end,
     json=function(self)
         return json.parse(self.body)
@@ -252,7 +255,7 @@ end
 network.http_json = function(data, status, headers)
     return {
         status = status or 200,
-        headers = table.extend({"Content-Type: application/json"}, headers or {}),
+        headers = table.extend({["Content-Type"]="application/json"}, headers or {}),
         body = json.tostring(data)
     }
 end
@@ -292,7 +295,7 @@ function Router.__call(self, request)
             end
         end
     end
-    return {status=404, headers={"Content-Type: text/plain"}, body="Not Found"}
+    return {status=404, headers={["Content-Type"]="text/plain"}, body="Not Found"}
 end
 
 local function clean(iterable, checkFun, ...)

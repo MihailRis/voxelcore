@@ -197,7 +197,7 @@ The ServerSocket class for the HTTP server is identical to the TCP server's
 
 The `handler` may respond in two ways:
 
-* return a response table `{status: int, headers: table<string>, body: string|Bytearray}`
+* return a response table `{status: int, headers: table<string,string>, body: string|Bytearray}`
   (any field may be omitted; `status` defaults to `200`);
 * or call `request:respond(status, body, headers)` itself, e.g. from a
   coroutine, for a delayed answer. In that case the handler's return value
@@ -213,7 +213,7 @@ The `request` class has the following fields and methods:
 request.method       -> string, e.g. "GET"
 request.path         -> string, decoded path without the query string
 request.query        -> string, raw query string (part after '?', if any)
-request.headers      -> table<string>, "Name: value" entries
+request.headers      -> table<string,string>, {["Name"] = "value", ...}
 request.body         -> string|Bytearray
 request.remote_addr  -> string
 request.remote_port  -> int
@@ -226,14 +226,14 @@ request:json() -> any
 request:respond(
     [optional] status: int=200,
     [optional] body: string|Bytearray,
-    [optional] headers: table<string>
+    [optional] headers: table<string,string>
 )
 
 -- Builds a JSON response table ready to be returned from a handler.
 network.http_json(
     data: any,
     [optional] status: int=200,
-    [optional] headers: table<string>
+    [optional] headers: table<string,string>
 ) --> table
 ```
 

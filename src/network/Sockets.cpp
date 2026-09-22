@@ -751,13 +751,13 @@ namespace {
         }
     }
 
-    bool http_header_has(const std::vector<std::string>& headers, const std::string& name) {
+    bool http_header_has(
+        const std::vector<std::pair<std::string, std::string>>& headers,
+        const std::string& name
+    ) {
         auto lname = util::lower_case(name);
         for (const auto& header : headers) {
-            if (header.find(':') == std::string::npos) continue;
-            auto [hname, hvalue] = util::split_at(header, ':');
-            util::trim(hname);
-            if (util::lower_case(hname) == lname) {
+            if (util::lower_case(header.first) == lname) {
                 return true;
             }
         }
@@ -769,7 +769,7 @@ namespace {
         out += "HTTP/1.1 " + std::to_string(response.status) + " " +
                http_reason_phrase(response.status) + "\r\n";
         for (const auto& header : response.headers) {
-            out += header + "\r\n";
+            out += header.first + ": " + header.second + "\r\n";
         }
         if (!http_header_has(response.headers, "Content-Length")) {
             out += "Content-Length: " + std::to_string(response.body.size()) + "\r\n";
@@ -990,7 +990,7 @@ namespace {
         size_t headEnd;
         while ((headEnd = buffer.find("\r\n\r\n")) == std::string::npos) {
             if (buffer.size() > HTTP_MAX_HEADER_SIZE) {
-                finish({431, {"Content-Type: text/plain"}, http_reason_phrase(431)});
+                finish({431, {{"Content-Type", "text/plain"}}, http_reason_phrase(431)});
                 return;
             }
             if (!http_recv_more(descriptor, buffer)) {
@@ -1012,7 +1012,7 @@ namespace {
         std::string target = tokens.size() > 1 ? tokens[1] : "";
 
         if (method.empty() || target.empty()) {
-            finish({400, {"Content-Type: text/plain"}, http_reason_phrase(400)});
+            finish({400, {{"Content-Type", "text/plain"}}, http_reason_phrase(400)});
             return;
         }
 
@@ -1024,7 +1024,7 @@ namespace {
         }
         path = url_decode(path);
 
-        std::vector<std::string> headers;
+        std::vector<std::pair<std::string, std::string>> headers;
         std::string contentLength;
         std::string transferEncoding;
 
@@ -1039,7 +1039,6 @@ namespace {
             auto [name, value] = util::split_at(line, ':');
             util::trim(name);
             util::trim(value);
-            headers.push_back(name + ": " + value);
 
             auto lname = util::lower_case(name);
             if (lname == "content-length") {
@@ -1047,10 +1046,12 @@ namespace {
             } else if (lname == "transfer-encoding") {
                 transferEncoding = util::lower_case(value);
             }
+
+            headers.emplace_back(std::move(name), std::move(value));
         }
 
         if (transferEncoding.find("chunked") != std::string::npos) {
-            finish({501, {"Content-Type: text/plain"}, http_reason_phrase(501)});
+            finish({501, {{"Content-Type", "text/plain"}}, http_reason_phrase(501)});
             return;
         }
 
@@ -1059,13 +1060,13 @@ namespace {
             try {
                 bodyLength = std::stoull(contentLength);
             } catch (...) {
-                finish({400, {"Content-Type: text/plain"}, http_reason_phrase(400)});
+                finish({400, {{"Content-Type", "text/plain"}}, http_reason_phrase(400)});
                 return;
             }
         }
 
         if (bodyLength > HTTP_MAX_BODY_SIZE) {
-            finish({413, {"Content-Type: text/plain"}, http_reason_phrase(413)});
+            finish({413, {{"Content-Type", "text/plain"}}, http_reason_phrase(413)});
             return;
         }
 
@@ -1112,7 +1113,7 @@ namespace {
                 response = std::move(pending->response);
             } else {
                 response.status = 503;
-                response.headers = {"Content-Type: text/plain"};
+                response.headers = {{"Content-Type", "text/plain"}};
                 response.body = http_reason_phrase(503);
             }
         }

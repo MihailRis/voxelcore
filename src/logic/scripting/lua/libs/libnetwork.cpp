@@ -91,6 +91,25 @@ static std::vector<std::string> read_headers(lua::State* L, int index) {
     return headers;
 }
 
+static std::vector<std::pair<std::string, std::string>> read_header_pairs(
+    lua::State* L, int index
+) {
+    std::vector<std::pair<std::string, std::string>> headers;
+    if (lua::istable(L, index)) {
+        lua::pushnil(L);
+        while (lua::next(L, index)) {
+            if (lua::type(L, -2) == LUA_TSTRING) {
+                headers.emplace_back(
+                    std::string(lua::tolstring(L, -2)),
+                    std::string(lua::tolstring(L, -1))
+                );
+            }
+            lua::pop(L);
+        }
+    }
+    return headers;
+}
+
 static int request_id = 1;
 
 static int l_request(lua::State* L, network::Network& network) {
@@ -371,7 +390,7 @@ static int l_http_respond(lua::State* L, network::Network& network) {
 
     network::HttpServerResponse response;
     response.status = lua::tointeger(L, 3);
-    response.headers = read_headers(L, 4);
+    response.headers = read_header_pairs(L, 4);
 
     if (lua::type(L, 5) == LUA_TCDATA) {
         response.body = lua::bytearray_as_string(L, 5);
@@ -595,10 +614,10 @@ static int l_pull_events(lua::State* L) {
                 lua::pushlstring(L, req.query);
                 lua::rawseti(L, 6);
 
-                lua::createtable(L, req.headers.size(), 0);
-                for (size_t j = 0; j < req.headers.size(); j++) {
-                    lua::pushlstring(L, req.headers[j]);
-                    lua::rawseti(L, j + 1);
+                lua::createtable(L, 0, req.headers.size());
+                for (const auto& header : req.headers) {
+                    lua::pushlstring(L, header.second);
+                    lua::setfield(L, header.first);
                 }
                 lua::rawseti(L, 7);
 

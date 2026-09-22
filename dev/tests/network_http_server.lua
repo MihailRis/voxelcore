@@ -10,7 +10,7 @@ do
         if request.path == "/hello" then
             return {
                 status = 200,
-                headers = {"Content-Type: text/plain"},
+                headers = {["Content-Type"] = "text/plain"},
                 body = "Hello, " .. request.query
             }
         end

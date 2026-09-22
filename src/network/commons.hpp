@@ -6,6 +6,7 @@
 #include "delegates.hpp"
 
 #include <memory>
+#include <utility>
 #include <vector>
 #include <mutex>
 
@@ -44,7 +45,7 @@ namespace network {
         std::string method;
         std::string path;
         std::string query;
-        std::vector<std::string> headers;
+        std::vector<std::pair<std::string, std::string>> headers;
         std::string body;
         std::string remoteAddr;
         int remotePort = 0;
@@ -52,7 +53,7 @@ namespace network {
 
     struct HttpServerResponse {
         int status = 200;
-        std::vector<std::string> headers;
+        std::vector<std::pair<std::string, std::string>> headers;
         std::string body;
     };
 

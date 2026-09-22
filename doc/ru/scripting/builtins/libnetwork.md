@@ -267,7 +267,7 @@ network.http_open(
 
 Ответить на запрос `handler` может двумя способами:
 
-* вернуть таблицу ответа `{status: int, headers: table<string>, body: string}`
+* вернуть таблицу ответа `{status: int, headers: table<string,string>, body: string}`
   (любое поле можно опустить; `status` по умолчанию равен `200`);
 * или самостоятельно вызвать `request:respond(status, body, headers)`,
   например из корутины, для отложенного ответа. В этом случае возвращаемое
@@ -282,7 +282,7 @@ network.http_open(
 request.method       -> string, например "GET"
 request.path         -> string, декодированный путь без строки запроса
 request.query        -> string, необработанная строка запроса (часть после '?', если есть)
-request.headers      -> table<string>, записи вида "Имя: значение"
+request.headers      -> table<string,string>, {["Имя"] = "значение", ...}
 request.body         -> string|Bytearray
 request.remote_addr  -> string
 request.remote_port  -> int
@@ -295,14 +295,14 @@ request:json() -> any
 request:respond(
     [опционально] status: int=200,
     [опционально] body: string|Bytearray,
-    [опционально] headers: table<string>
+    [опционально] headers: table<string,string>
 )
 
 -- Собирает таблицу JSON-ответа, готовую для возврата из обработчика.
 network.http_json(
     data: any,
     [опционально] status: int=200,
-    [опционально] headers: table<string>
+    [опционально] headers: table<string,string>
 ) -> table
 ```
 
