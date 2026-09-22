@@ -1031,10 +1031,14 @@ namespace {
         size_t pos = lineEnd == std::string::npos ? head.size() : lineEnd + 2;
         while (pos < head.size()) {
             size_t next = head.find("\r\n", pos);
-            if (next == std::string::npos) next = head.size();
+            if (next == std::string::npos) { 
+                next = head.size(); 
+            }
             std::string line = head.substr(pos, next - pos);
             pos = next + 2;
-            if (line.empty() || line.find(':') == std::string::npos) continue;
+            if (line.empty() || line.find(':') == std::string::npos) {
+                continue;
+            }
 
             auto [name, value] = util::split_at(line, ':');
             util::trim(name);

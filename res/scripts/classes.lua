@@ -98,6 +98,7 @@ local _udp_server_callbacks = {}
 local _udp_client_datagram_callbacks = {}
 local _udp_client_open_callbacks = {}
 local _http_response_callbacks = {}
+local _http_server_handlers = {}
 
 local http_request = network.__request
 local open_tcp = network.__open_tcp
@@ -225,8 +226,6 @@ network.udp_connect = function (address, port, datagramHandler, openCallback)
     return socket
 end
 
-local _http_server_handlers = {}
-
 local HttpRequest = {__index={
     respond=function(self, status, body, headers)
         if self.responded then
@@ -244,7 +243,7 @@ local HttpRequest = {__index={
 }}
 
 network.http_open = function(port, handler, timeout_ms)
-    if handler == nil then
+    if type(handler) ~= "function" then
         error "http server cannot be opened without a request handler"
     end
     local socket = setmetatable({id=http_open(port, timeout_ms or 60000)}, ServerSocket)
