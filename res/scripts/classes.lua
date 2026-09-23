@@ -243,7 +243,7 @@ local HttpRequest = {__index={
 }}
 
 network.http_open = function(port, handler, timeout_ms)
-    if type(handler) ~= "function" then
+    if handler == nil then
         error "http server cannot be opened without a request handler"
     end
     local socket = setmetatable({id=http_open(port, timeout_ms or 60000)}, ServerSocket)
