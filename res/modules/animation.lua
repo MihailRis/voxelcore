@@ -42,6 +42,7 @@ local this = {
     CH_ROTATE = 2,
     CH_SCALE = 3,
     CH_ZOOM = 4,
+    CH_TEXTURE = 5,
 
     INT_CONST = 1,
     INT_LINEAR = 2,

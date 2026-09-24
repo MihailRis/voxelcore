@@ -27,6 +27,7 @@ Two kinds of curve definitions are currently available, each producing a value `
 - `@rotate` - rotates an object/bone
 - `@scale` - scales an object/bone (multiplier)
 - `@zoom` - camera zoom (multiplier)
+- `@texture` - change of a dynamically assigned texture (see [skeleton:set_texture](scripting/ecs.md#skeleton))
 
 ## Metadata
 
@@ -72,6 +73,18 @@ Example for `curve bezier`:
 ```vcd
 @key frame 138 value 53.00411 lx 127.067 ly 53.00411 rx 138.001 ry 53.00411
 ```
+
+For the `texture` directive, it is simpler. Example:
+
+```vcd
+@texture name $0 {
+    @key frame 0 value entities/tireman:face_0
+    @key frame 24 value entities/tireman:face_1
+}
+```
+
+> Here, `entities/tireman` is the name of the texture atlas containing `face_*` textures.
+> The texture does not necessarily have to be in an atlas.
 
 ## Expression curves
 

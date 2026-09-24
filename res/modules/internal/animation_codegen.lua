@@ -60,6 +60,11 @@ local env = {
     Y = {0, 1, 0},
     Z = {0, 0, 1},
     DST = mat4.idt(),
+    string_at = function(keys, frame)
+        local left, _ = key_neighbors(keys, frame)
+        left = keys[left]
+        return left.value
+    end,
     value_at = function(keys, frame, interp)
         local left, right = key_neighbors(keys, frame)
         if left == right then
@@ -147,6 +152,10 @@ local function codegen_track(raw_track, lineset, memoised, keysets, use_tsf)
                 code = code .. string.format(
                 "\n   local l%d = value_at_custom(keysets['%s'][%d], t * %s, %s)",
                 i, lineset.target_name, i, raw_track.fps, valueat)
+            elseif line.channel == animation.CH_TEXTURE then
+                code = code .. string.format(
+                    "\n   local l%d = string_at(keysets['%s'][%d], t * %s)",
+                    i, lineset.target_name, i, raw_track.fps)
             else
                 code = code .. string.format(
                     "\n   local l%d = value_at(keysets['%s'][%d], t * %s, %s)",
@@ -164,7 +173,9 @@ local function codegen_track(raw_track, lineset, memoised, keysets, use_tsf)
             scale[line.axis] = i
             has_tsf = true
         elseif line.channel == animation.CH_ZOOM then
-            code = code .. "\n  zoom = l" .. i
+            code = code .. "\n   zoom = l" .. i
+        elseif line.channel == animation.CH_TEXTURE then
+            code = code .. string.format("\n   target:set_texture(%s, %s)", lineset.target_name:escape(), "l"..i)
         end
     end
 
@@ -206,14 +217,17 @@ local function codegen_rig_target(raw_track, context)
     local code = "\n if target.set_matrix and target.index then\n"
     code = code .. "  local dst = DST\n"
     for bone, lineset in pairs(raw_track.linesets) do
-        if lineset.target_type ~= "bone" then
+        if lineset.target_type ~= "bone" and lineset.target_type ~= "texture" then
             goto continue
         end
         local lineset_code = codegen_track(
             raw_track, lineset, context.memoised, context.keysets, true)
 
-        code = code .. "\n  do" .. lineset_code .. "\n  end\n" ..
-            "  target:set_matrix(target:index(" .. string.escape(bone) .. "), dst)\n"
+        code = code .. "\n  do" .. lineset_code .. "\n  end\n"
+        if lineset.target_type == "bone" then
+            code = code ..
+                "  target:set_matrix(target:index(" .. string.escape(bone) .. "), dst)\n"
+        end
         ::continue::
     end
     return code .. " end"

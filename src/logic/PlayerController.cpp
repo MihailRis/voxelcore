@@ -104,6 +104,8 @@ void CameraControl::updateMouse(PlayerInput& input, int windowHeight) {
 glm::vec3 CameraControl::updateCameraShaking(
     const Hitbox& hitbox, float delta
 ) {
+    delta = glm::min(delta, 0.1f);
+
     glm::vec3 offset {};
     const float k = CAM_SHAKE_DELTA_K;
     const float ov = CAM_SHAKE_OFFSET_Y;
