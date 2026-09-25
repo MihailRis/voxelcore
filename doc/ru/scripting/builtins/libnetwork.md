@@ -248,6 +248,106 @@ server:is_open() -> boolean
 server:get_port() -> int
 ```
 
+## HTTP-Сервер
+
+```lua
+-- Открывает HTTP-сервер на указанном порту.
+network.http_open(
+    -- Порт
+    port: int,
+    -- Функция-обработчик HTTP запроса
+    handler: function(request),
+    -- Сколько ждать вызова request:respond(...), прежде чем
+    -- автоматически отправить 503. 0 означает ждать бесконечно.
+    [опционально] timeout_ms: int = 60000
+) -> ServerSocket
+```
+
+Класс ServerSocket у HTTP-сервера идентичен классу TCP-сервера
+
+Ответить на запрос `handler` может двумя способами:
+
+* вернуть таблицу ответа `{status: int, headers: table<string,string>, body: string}`
+  (любое поле можно опустить; `status` по умолчанию равен `200`);
+* или самостоятельно вызвать `request:respond(status, body, headers)`,
+  например из корутины, для отложенного ответа. В этом случае возвращаемое
+  значение обработчика игнорируется.
+
+Если обработчик выбросил ошибку или не ответил в течение `timeout_ms`
+(по умолчанию 60 секунд), автоматически отправляется `Service Unavailable` (503).
+
+Класс `request` содержит следующие поля и методы:
+
+```lua
+request.method       -> string, например "GET"
+request.path         -> string, декодированный путь без строки запроса
+request.query        -> string, необработанная строка запроса (часть после '?', если есть)
+request.headers      -> table<string,string>, {["Имя"] = "значение", ...}
+request.body         -> string|Bytearray
+request.remote_addr  -> string
+request.remote_port  -> int
+
+-- Разбирает тело запроса как JSON.
+request:json() -> any
+
+-- Отправляет ответ. Может быть вызвана не более одного раза, из любого
+-- места (в том числе из корутины, из callback'а `on_response` и т.д.)
+request:respond(
+    [опционально] status: int=200,
+    [опционально] body: string|Bytearray,
+    [опционально] headers: table<string,string>
+)
+
+-- Собирает таблицу JSON-ответа, готовую для возврата из обработчика.
+network.http_json(
+    data: any,
+    [опционально] status: int=200,
+    [опционально] headers: table<string,string>
+) -> table
+```
+
+### Роутер
+
+Для маршрутизации по URL есть небольшой помощник `network.http_router()`.
+Сегменты пути с префиксом `:` захватываются и передаются в обработчик по
+порядку.
+
+```lua
+local router = network.http_router()
+
+router:get("/users/:id", function(request, id)
+    return network.http_json({id = id})
+end)
+
+router:post("/users", function(request)
+    local data = request:json()
+    -- ...
+    return {status = 201}
+end)
+
+network.http_open(8080, router)
+```
+
+Методы `Router`: `get`, `post`, `put`, `delete`, `patch`, а также общий
+`route(method, path, handler)`. На запросы, для которых не нашлось
+маршрута, отправляется `404 Not Found`.
+
+### Пример
+
+```lua
+network.http_open(8080, function(request)
+    if request.method == "GET" and request.path == "/status" then
+        return network.http_json({ok = true, uptime = time.uptime()})
+    end
+    return {status = 404, body = "Not Found"}
+end)
+```
+
+> HTTP-сервер поддерживает тела запросов и ответов HTTP/1.1 с заголовком
+> `Content-Length`; тела запросов с `chunked`-кодировкой не поддерживаются
+> и отклоняются с кодом `501 Not Implemented`. После каждого ответа
+> соединение закрывается (без keep-alive).
+
 ## Аналитика
 
 ```lua

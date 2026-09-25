@@ -16,6 +16,7 @@ enum NetworkEventType {
     DATAGRAM,
     RESPONSE,
     CONNECTION_ERROR,
+    HTTP_REQUEST,
 };
 
 struct ConnectionEventDto {
@@ -45,11 +46,17 @@ struct NetworkDatagramEventDto {
     std::vector<char> buffer;
 };
 
+struct HttpRequestEventDto {
+    u64id_t server;
+    network::HttpServerRequest request;
+};
+
 struct NetworkEvent {
     using Payload = std::variant<
         ConnectionEventDto,
         ResponseEventDto,
-        NetworkDatagramEventDto
+        NetworkDatagramEventDto,
+        HttpRequestEventDto
     >;
     NetworkEventType type;
 
@@ -78,6 +85,25 @@ static std::vector<std::string> read_headers(lua::State* L, int index) {
         for (int i = 1; i <= len; i++) {
             lua::rawgeti(L, i, index);
             headers.push_back(lua::tostring(L, -1));
+            lua::pop(L);
+        }
+    }
+    return headers;
+}
+
+static std::vector<std::pair<std::string, std::string>> read_header_pairs(
+    lua::State* L, int index
+) {
+    std::vector<std::pair<std::string, std::string>> headers;
+    if (lua::istable(L, index)) {
+        lua::pushnil(L);
+        while (lua::next(L, index)) {
+            if (lua::type(L, -2) == LUA_TSTRING) {
+                headers.emplace_back(
+                    std::string(lua::tolstring(L, -2)),
+                    std::string(lua::tolstring(L, -1))
+                );
+            }
             lua::pop(L);
         }
     }
@@ -346,6 +372,43 @@ static int l_open_udp(lua::State* L, network::Network& network) {
     return lua::pushinteger(L, id);
 }
 
+static int l_http_open(lua::State* L, network::Network& network) {
+    int port = lua::tointeger(L, 1);
+    long responseTimeoutMs = lua::tointeger(L, 2);
+    u64id_t id = network.openHttpServer(port, [](u64id_t sid, network::HttpServerRequest request) {
+        push_event(NetworkEvent(
+            HTTP_REQUEST,
+            HttpRequestEventDto {sid, std::move(request)}
+        ));
+    }, responseTimeoutMs);
+    return lua::pushinteger(L, id);
+}
+
+static int l_http_respond(lua::State* L, network::Network& network) {
+    u64id_t serverId = lua::tointeger(L, 1);
+    u64id_t requestId = lua::tointeger(L, 2);
+
+    network::HttpServerResponse response;
+    response.status = lua::tointeger(L, 3);
+    response.headers = read_header_pairs(L, 4);
+
+    if (lua::type(L, 5) == LUA_TCDATA) {
+        response.body = lua::bytearray_as_string(L, 5);
+    } else if (lua::isstring(L, 5)) {
+        response.body = lua::require_lstring(L, 5);
+    }
+
+    if (auto server = network.getServer(serverId, false)) {
+        if (server->getTransportType() != network::TransportType::HTTP)
+            throw std::runtime_error("the server must work on HTTP transport");
+
+        dynamic_cast<network::HttpServer*>(server)->respond(
+            requestId, std::move(response)
+        );
+    }
+    return 0;
+}
+
 static int l_is_alive(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
     if (auto connection = network.getConnection(id, false)) {
@@ -529,6 +592,45 @@ static int l_pull_events(lua::State* L) {
                 lua::rawseti(L, 4);
                 break;
             }
+            case HTTP_REQUEST: {
+                const auto& dto = std::get<HttpRequestEventDto>(event.payload);
+                const auto& req = dto.request;
+
+                lua::pushinteger(L, event.type);
+                lua::rawseti(L, 1);
+
+                lua::pushinteger(L, dto.server);
+                lua::rawseti(L, 2);
+
+                lua::pushinteger(L, req.requestId);
+                lua::rawseti(L, 3);
+
+                lua::pushlstring(L, req.method);
+                lua::rawseti(L, 4);
+
+                lua::pushlstring(L, req.path);
+                lua::rawseti(L, 5);
+
+                lua::pushlstring(L, req.query);
+                lua::rawseti(L, 6);
+
+                lua::createtable(L, 0, req.headers.size());
+                for (const auto& header : req.headers) {
+                    lua::pushlstring(L, header.second);
+                    lua::setfield(L, header.first);
+                }
+                lua::rawseti(L, 7);
+
+                lua::pushlstring(L, req.body);
+                lua::rawseti(L, 8);
+
+                lua::pushlstring(L, req.remoteAddr);
+                lua::rawseti(L, 9);
+
+                lua::pushinteger(L, req.remotePort);
+                lua::rawseti(L, 10);
+                break;
+            }
         }
         lua::rawseti(L, i + 1);
     }
@@ -572,6 +674,8 @@ const luaL_Reg networklib[] = {
     {"__pull_events", lua::wrap<l_pull_events>},
     {"__open_tcp", wrap<l_open_tcp>},
     {"__open_udp", wrap<l_open_udp>},
+    {"__http_open", wrap<l_http_open>},
+    {"__http_respond", wrap<l_http_respond>},
     {"__closeserver", wrap<l_closeserver>},
     {"__udp_server_send_to", wrap<l_udp_server_send_to>},
     {"__connect_tcp", wrap<l_connect_tcp>},

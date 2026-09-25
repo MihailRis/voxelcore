@@ -6,17 +6,20 @@
 #include "delegates.hpp"
 
 #include <memory>
+#include <utility>
 #include <vector>
 #include <mutex>
 
 namespace network {
     struct HttpResponse;
+    struct HttpServerRequest;
 
     using OnResponse = std::function<void(HttpResponse)>;
     using ConnectCallback = std::function<void(u64id_t, u64id_t)>;
     using ConnectErrorCallback = std::function<void(u64id_t, std::string)>;
     using ServerDatagramCallback = std::function<void(u64id_t sid, const std::string& addr, int port, const char* buffer, size_t length)>;
     using ClientDatagramCallback = std::function<void(u64id_t cid, const char* buffer, size_t length)>;
+    using HttpRequestCallback = std::function<void(u64id_t sid, HttpServerRequest)>;
 
     struct HttpRequest {
         std::string method;
@@ -37,6 +40,23 @@ namespace network {
         std::vector<char> body;
     };
 
+    struct HttpServerRequest {
+        u64id_t requestId;
+        std::string method;
+        std::string path;
+        std::string query;
+        std::vector<std::pair<std::string, std::string>> headers;
+        std::string body;
+        std::string remoteAddr;
+        int remotePort = 0;
+    };
+
+    struct HttpServerResponse {
+        int status = 200;
+        std::vector<std::pair<std::string, std::string>> headers;
+        std::string body;
+    };
+
     class Requests {
     public:
         virtual ~Requests() {}
@@ -54,7 +74,7 @@ namespace network {
     };
 
     enum class TransportType {
-        TCP, UDP
+        TCP, UDP, HTTP
     };
 
     class Connection {
