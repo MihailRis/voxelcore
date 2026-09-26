@@ -8,143 +8,62 @@ using namespace advanced_pipeline;
 
 static debug::Logger logger("gl-gbuffer");
 
-// TODO: REFACTOR
-
-void GBuffer::createColorBuffer() {
-    if (colorBuffer == 0)
-        glGenTextures(1, &colorBuffer);
-    glBindTexture(GL_TEXTURE_2D, colorBuffer);
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        GL_RGB,
-        width,
-        height,
-        0,
-        GL_RGB,
-        GL_UNSIGNED_BYTE,
-        nullptr
-    );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorBuffer, 0
-    );
+void GBuffer::createBuffer(Buffer& buffer) {
+    if (buffer.buffer == 0) {
+        if (&buffer == &depthBuffer)
+            glGenRenderbuffers(1, &depthBuffer.buffer);
+        else
+            glGenTextures(1, &buffer.buffer);
+    }
+    if (&buffer == &depthBuffer){
+        glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer.buffer);
+        glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+        glFramebufferRenderbuffer(
+            GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer.buffer
+        );
+    } else {
+        glBindTexture(GL_TEXTURE_2D, buffer.buffer);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            buffer.internalformat,
+            width,
+            height,
+            0,
+            buffer.format,
+            buffer.type,
+            nullptr
+        );
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        if (&buffer != &ssaoBuffer)
+        {
+            glFramebufferTexture2D(
+                GL_FRAMEBUFFER, buffer.attachment, GL_TEXTURE_2D, buffer.buffer, 0
+            );
+        }
+    }
 }
 
-void GBuffer::createPositionsBuffer() {
-    if (positionsBuffer == 0)
-        glGenTextures(1, &positionsBuffer);
-    glBindTexture(GL_TEXTURE_2D, positionsBuffer);
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        GL_RGBA16F,
-        width,
-        height,
-        0,
-        GL_RGBA,
-        GL_FLOAT,
-        nullptr
-    );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, positionsBuffer, 0
-    );
-}
+GBuffer::GBuffer(uint width, uint height)
+    : width(width), height(height), 
 
-void GBuffer::createNormalsBuffer() {
-    if (normalsBuffer == 0)
-        glGenTextures(1, &normalsBuffer);
-    glBindTexture(GL_TEXTURE_2D, normalsBuffer);
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        GL_RGBA16F,
-        width,
-        height,
-        0,
-        GL_RGB,
-        GL_FLOAT,
-        nullptr
-    );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, normalsBuffer, 0
-    );
-}
-
-void GBuffer::createEmissionBuffer() {
-    if (emissionBuffer == 0)
-        glGenTextures(1, &emissionBuffer);
-    glBindTexture(GL_TEXTURE_2D, emissionBuffer);
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        GL_R8,
-        width,
-        height,
-        0,
-        GL_RED,
-        GL_FLOAT,
-        nullptr
-    );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, emissionBuffer, 0
-    );
-}
-
-void GBuffer::createDepthBuffer() {
-    if (depthBuffer == 0)
-        glGenRenderbuffers(1, &depthBuffer);
-    glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
-    glFramebufferRenderbuffer(
-        GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer
-    );
-}
-
-void GBuffer::createSSAOBuffer() {
-    if (ssaoBuffer == 0)
-        glGenTextures(1, &ssaoBuffer);
-    glBindTexture(GL_TEXTURE_2D, ssaoBuffer);
-    glTexImage2D(
-        GL_TEXTURE_2D,
-        0,
-        GL_R16F,
-        width,
-        height,
-        0,
-        GL_RED,
-        GL_FLOAT,
-        nullptr
-    );
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-}
-
-GBuffer::GBuffer(uint width, uint height) : width(width), height(height) {
+      colorBuffer       {0, GL_RGB,     GL_RGB,  GL_UNSIGNED_BYTE, GL_COLOR_ATTACHMENT0},
+      positionsBuffer   {0, GL_RGBA16F, GL_RGBA, GL_FLOAT,         GL_COLOR_ATTACHMENT1},
+      normalsBuffer     {0, GL_RGBA16F, GL_RGB,  GL_FLOAT,         GL_COLOR_ATTACHMENT2},
+      emissionBuffer    {0, GL_R8,      GL_RED,  GL_FLOAT,         GL_COLOR_ATTACHMENT3},
+      depthBuffer       {0, 0,          0,       0,                0},
+      ssaoBuffer        {0, GL_R16F,    GL_RED,  GL_FLOAT,         0}
+{
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    createColorBuffer();
-    createPositionsBuffer();
-    createNormalsBuffer();
-    createEmissionBuffer();
+    createBuffer(colorBuffer);
+    createBuffer(positionsBuffer);
+    createBuffer(normalsBuffer);
+    createBuffer(emissionBuffer);
 
     GLenum attachments[4] = {
         GL_COLOR_ATTACHMENT0,
@@ -154,7 +73,7 @@ GBuffer::GBuffer(uint width, uint height) : width(width), height(height) {
     };
     glDrawBuffers(4, attachments);
 
-    createDepthBuffer();
+    createBuffer(depthBuffer);
 
     int status;
     if ((status = glCheckFramebufferStatus(GL_FRAMEBUFFER)) != GL_FRAMEBUFFER_COMPLETE) {
@@ -164,9 +83,9 @@ GBuffer::GBuffer(uint width, uint height) : width(width), height(height) {
 
     glGenFramebuffers(1, &ssaoFbo);
     glBindFramebuffer(GL_FRAMEBUFFER, ssaoFbo);
-    createSSAOBuffer();
+    createBuffer(ssaoBuffer);
     glFramebufferTexture2D(
-        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoBuffer, 0
+        GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoBuffer.buffer, 0
     );
     GLenum ssaoAttachments[1] = {GL_COLOR_ATTACHMENT0};
     glDrawBuffers(1, ssaoAttachments);
@@ -179,12 +98,12 @@ GBuffer::GBuffer(uint width, uint height) : width(width), height(height) {
 }
 
 GBuffer::~GBuffer() {
-    glDeleteTextures(1, &colorBuffer);
-    glDeleteTextures(1, &positionsBuffer);
-    glDeleteTextures(1, &normalsBuffer);
-    glDeleteTextures(1, &emissionBuffer);
-    glDeleteTextures(1, &ssaoBuffer);
-    glDeleteRenderbuffers(1, &depthBuffer);
+    glDeleteTextures(1, &colorBuffer.buffer);
+    glDeleteTextures(1, &positionsBuffer.buffer);
+    glDeleteTextures(1, &normalsBuffer.buffer);
+    glDeleteTextures(1, &emissionBuffer.buffer);
+    glDeleteTextures(1, &ssaoBuffer.buffer);
+    glDeleteRenderbuffers(1, &depthBuffer.buffer);
     glDeleteFramebuffers(1, &fbo);
     glDeleteFramebuffers(1, &ssaoFbo);
 }
@@ -204,23 +123,23 @@ void GBuffer::unbind() const {
 
 void GBuffer::bindBuffers() const {
     glActiveTexture(GL_TEXTURE0 + TARGET_EMISSION);
-    glBindTexture(GL_TEXTURE_2D, emissionBuffer);
+    glBindTexture(GL_TEXTURE_2D, emissionBuffer.buffer);
 
     glActiveTexture(GL_TEXTURE0 + TARGET_NORMALS);
-    glBindTexture(GL_TEXTURE_2D, normalsBuffer);
+    glBindTexture(GL_TEXTURE_2D, normalsBuffer.buffer);
 
     glActiveTexture(GL_TEXTURE0 + TARGET_POSITIONS);
-    glBindTexture(GL_TEXTURE_2D, positionsBuffer);
+    glBindTexture(GL_TEXTURE_2D, positionsBuffer.buffer);
 
     glActiveTexture(GL_TEXTURE0 + TARGET_COLOR);
-    glBindTexture(GL_TEXTURE_2D, colorBuffer);
+    glBindTexture(GL_TEXTURE_2D, colorBuffer.buffer);
 
     if (TARGET_COLOR != 0)
         glActiveTexture(GL_TEXTURE0);
 }
 
 void GBuffer::bindSSAOBuffer() const {
-    glBindTexture(GL_TEXTURE_2D, ssaoBuffer);
+    glBindTexture(GL_TEXTURE_2D, ssaoBuffer.buffer);
 }
 
 void GBuffer::bindDepthBuffer(int drawFbo) {
@@ -239,24 +158,24 @@ void GBuffer::resize(uint width, uint height) {
 
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
-    createDepthBuffer();
-    createColorBuffer();
-    createPositionsBuffer();
-    createNormalsBuffer();
-    createEmissionBuffer();
+    createBuffer(depthBuffer);
+    createBuffer(colorBuffer);
+    createBuffer(positionsBuffer);
+    createBuffer(normalsBuffer);
+    createBuffer(emissionBuffer);
 
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, ssaoFbo);
-    createSSAOBuffer();
+    createBuffer(ssaoBuffer);
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 std::unique_ptr<ImageData> GBuffer::toImage() const {
     auto data = std::make_unique<ubyte[]>(width * height * 3);
-    glBindTexture(GL_TEXTURE_2D, colorBuffer);
+    glBindTexture(GL_TEXTURE_2D, colorBuffer.buffer);
     glGetTexImage(GL_TEXTURE_2D, 0, GL_RGB, GL_UNSIGNED_BYTE, data.get());
     glBindTexture(GL_TEXTURE_2D, 0);
     return std::make_unique<ImageData>(
