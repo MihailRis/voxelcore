@@ -48,21 +48,25 @@ namespace util {
         }
 
         void push_back(const T& value) {
-            if (size_ < capacity) {
-                auto data = reinterpret_cast<char*>(data_.ptr() + (size_++));
-                new (data) T(value);
-            } else {
+            if (size_ >= capacity) {
                 throw std::overflow_error("stack vector capacity exceeded");
             }
+
+            void* p = data_.data + size_ * sizeof(T);
+            ::new (p) T(value);
+
+            ++size_;
         }
 
         void push_back(T&& value) {
-            if (size_ < capacity) {
-                auto data = reinterpret_cast<char*>(data_.ptr() + (size_++));
-                new (data) T(std::move(value));
-            } else {
+            if (size_ >= capacity) {
                 throw std::overflow_error("stack vector capacity exceeded");
             }
+
+            void* p = data_.data + size_ * sizeof(T);
+            ::new (p) T(std::move(value));
+
+            ++size_;
         }
 
         void pop_back() {
@@ -76,7 +80,7 @@ namespace util {
 
         void clear() {
             for (int i = 0; i < size_; ++i) {
-                data_.ptr()[i].~T();
+                data_.ptr()[i].~T(); 
             }
             size_ = 0;
         }

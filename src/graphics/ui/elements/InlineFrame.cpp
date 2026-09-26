@@ -25,8 +25,12 @@ void InlineFrame::setDocument(const std::shared_ptr<UiDocument>& document) {
     if (document == nullptr) {
         return;
     }
+    auto newRoot = document->getRoot();
+    if (newRoot->hasParent()) {
+        return;
+    }
     this->document = document;
-    this->root = document->getRoot();
+    this->root = std::move(newRoot);
     add(root);
 
     root->setSize(size);

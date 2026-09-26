@@ -60,6 +60,10 @@ bool UINode::isHover() const {
     return hover;
 }
 
+bool UINode::hasParent() const {
+    return parent != nullptr;
+}
+
 void UINode::setParent(UINode* node) {
     parent = node;
 }
@@ -376,14 +380,14 @@ void UINode::setGravity(Gravity gravity) {
     }
 }
 
-bool UINode::isSubnodeOf(const UINode* node) {
+bool UINode::isDescendantOf(const UINode* node) {
     if (parent == nullptr) {
         return false;
     }
     if (parent == node) {
         return true;
     }
-    return parent->isSubnodeOf(node);
+    return parent->isDescendantOf(node);
 }
 
 void UINode::getIndices(

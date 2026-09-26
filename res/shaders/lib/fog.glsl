@@ -8,12 +8,16 @@ uniform float u_weatherFogDencity;
 uniform float u_weatherFogCurve;
 
 float calc_fog(float depth, float fogFactor, float fogCurve) {
+#ifdef ENABLE_FOG
     return min(
         1.0,
         max(pow(depth * u_fogFactor * fogFactor, u_fogCurve * fogCurve),
             min(pow(depth * u_weatherFogDencity, u_weatherFogCurve),
                 u_weatherFogOpacity))
     );
+#else
+    return 0.0;
+#endif
 }
 
 float calc_fog(float depth) {

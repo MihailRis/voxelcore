@@ -40,6 +40,7 @@ pack.remove-confirm=Удалить весь поставляемый паком/
 # Подсказки
 audio.acoustic-effects.tooltip=Акустические эффекты могут не поддерживаться системой
 audio.recording-enabled.tooltip=Включает функции записи звука
+graphics.enable-fog.tooltip=Отображать туман / дымку
 graphics.gamma.tooltip=Кривая яркости освещения
 graphics.backlight.tooltip=Подсветка, предотвращающая полную темноту
 graphics.dense-render.tooltip=Включает прозрачность блоков, таких как листья
@@ -89,6 +90,7 @@ settings.Soft lighting=Мягкое освещение
 settings.Camera Shaking=Тряска Камеры
 settings.Camera Inertia=Инерция Камеры
 settings.Camera FOV Effects=Эффекты поля зрения
+settings.Fog=Туман
 settings.Fog Curve=Кривая Тумана
 settings.FOV=Поле Зрения
 settings.Fullscreen=Полный экран

@@ -165,6 +165,13 @@ static int l_container_set_interval(lua::State* L) {
 static int l_move_into(lua::State* L) {
     auto node = get_document_node(L, 1);
     auto dest = get_document_node(L, 2);
+    if (dest.node == nullptr) {
+        return 0;
+    }
+    if (dest.node->isDescendantOf(node.node.get())) {
+        luaL_error(L, "unable to move element to its descendant");
+        return 0;
+    }
     UINode::moveInto(
         node.node, std::dynamic_pointer_cast<Container>(dest.node)
     );

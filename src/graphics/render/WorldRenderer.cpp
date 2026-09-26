@@ -135,6 +135,7 @@ WorldRenderer::WorldRenderer(
     debugLines = std::make_unique<DebugLinesRenderer>(level);
     cloudsRenderer = std::make_unique<CloudsRenderer>();
 
+    keepAlive(observe_setting(settings.graphics.enableFog, dirtySettings));
     keepAlive(observe_setting(settings.graphics.advancedRender, dirtySettings));
     keepAlive(observe_setting(settings.graphics.shadowsQuality, dirtySettings));
     keepAlive(observe_setting(settings.graphics.ssao, dirtySettings));
@@ -156,10 +157,12 @@ void WorldRenderer::refreshSettings() {
     gbufferPipeline = graphics.advancedRender.get();
 
     int shadowsQuality = graphics.shadowsQuality.get() * gbufferPipeline;
+    bool enableFog = graphics.enableFog.get(); 
     shadowMapping->setQuality(shadowsQuality);
 
     std::vector<std::string> defines;
     if (shadowsQuality != 0) defines.emplace_back("ENABLE_SHADOWS");
+    if (enableFog) defines.emplace_back("ENABLE_FOG");
     if (graphics.ssao.get()) defines.emplace_back("ENABLE_SSAO");
     if (gbufferPipeline) defines.emplace_back("ADVANCED_RENDER");
 

@@ -42,6 +42,7 @@ This primitive describes a triangle.
 - `region-scale` - multiplier vector for the UV region. Example: `region-scale (0.5,1)`
 - `shading` - determines whether shading is enabled on the primitive. Example: `shading off`
 - `normal` - overrides normal vector. Example: `normal (0,1,0)`
+- `cull-face` - determines which side will be culled. Example: `cull-face front` or `cull-face off` (disables face culling)
 
 By default, texture coordinates are not affected by shape or size, unlike other primitives.
 
@@ -58,6 +59,7 @@ This primitive describes a parallelogram using the right and up vectors.
 - `shading` - determines whether shading is enabled on the primitive. Example: `shading off`
 - `flip` - flips the UV region horizontally or vertically. Example: `flip v`
 - `normal` - overrides normal vector. Example: `normal (0,1,0)`
+- `cull-face` - determines which side will be culled. Example: `cull-face front` or `cull-face off` (disables face culling)
 
 ### `box` Properties
 

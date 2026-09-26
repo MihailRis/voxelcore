@@ -40,6 +40,7 @@ function on_open()
     create_trackbar_setting("chunks.load-speed", "Load Speed", 1)
     create_trackbar_setting("graphics.fog-curve", "Fog Curve", 0.1)
 
+    create_checkbox("graphics.enable-fog", "Fog", "graphics.enable-fog.tooltip")
     create_checkbox("graphics.backlight", "Backlight", "graphics.backlight.tooltip")
     create_checkbox("graphics.soft-lighting", "Soft lighting", "graphics.soft-lighting.tooltip")
     create_checkbox("graphics.dense-render", "Dense blocks render", "graphics.dense-render.tooltip")

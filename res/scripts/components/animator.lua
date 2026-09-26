@@ -1,4 +1,4 @@
-local ALMOST_HUGE = 1e9
+local MAX_DURATION = animation.MAX_DURATION
 
 local rig = entity.skeleton
 
@@ -54,7 +54,7 @@ local function update(delta)
         if state.track and intensity > 0.0 then
             state.track.func(
                 rig,
-                state.timer % math.min(ALMOST_HUGE, state.track.duration),
+                state.timer % math.min(MAX_DURATION, state.track.duration),
                 intensity * state.max_intencity
             )
         end

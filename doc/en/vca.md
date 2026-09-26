@@ -86,6 +86,16 @@ For the `texture` directive, it is simpler. Example:
 > Here, `entities/tireman` is the name of the texture atlas containing `face_*` textures.
 > The texture does not necessarily have to be in an atlas.
 
+If you do not wish to limit the animation duration via `configure` but want to loop the keyframe animation for a specific line, you can use the `period` parameter to specify the animation's repetition period in frames. Example:
+
+```vcd
+@move by y curve linear period 24 {
+    @key frame 0 value 0
+    @key frame 12 value 1
+    @key frame 24 value 0
+}
+```
+
 ## Expression curves
 
 The attribute describes a function `f(t) = x`, where t is time in seconds.

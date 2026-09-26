@@ -106,7 +106,8 @@ local function parse_track(root)
         end
         local line = {
             axis = node.by and ("xyz"):find(node.by) or "",
-            channel = channel
+            channel = channel,
+            period = node.period or animation.MAX_FRAMES
         }
         if node.func then
             line.expression = node.func

@@ -69,6 +69,7 @@ SettingsHandler::SettingsHandler(EngineSettings& settings) {
     builder.add("padding", &settings.chunks.padding);
 
     builder.addSection("graphics");
+    builder.add("enable-fog", &settings.graphics.enableFog);
     builder.add("fog-curve", &settings.graphics.fogCurve);
     builder.add("backlight", &settings.graphics.backlight);
     builder.add("dense-render", &settings.graphics.denseRender);
