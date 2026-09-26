@@ -38,6 +38,8 @@ static Align align_from_string(std::string_view str, Align def) {
     return def;
 }
 
+static constexpr glm::vec4 INVENTORY_VIEW_BACKGROUND_COLOR = glm::vec4(0.122f, 0.122f, 0.122f, 0.878f);
+
 static Gravity gravity_from_string(const std::string& str) {
     static const std::unordered_map<std::string, Gravity> gravity_names {
         {"top-left", Gravity::TOP_LEFT},
@@ -860,7 +862,8 @@ static std::shared_ptr<UINode> read_inventory(
     UiXmlReader& reader, const xml::xmlelement& element
 ) {
     auto view = std::make_shared<InventoryView>(reader.getGUI());
-    view->setColor(glm::vec4(0.122f, 0.122f, 0.122f, 0.878f));  // TODO: fixme
+//    view->setColor(glm::vec4(0.122f, 0.122f, 0.122f, 0.878f));
+    view->setColor(INVENTORY_VIEW_BACKGROUND_COLOR); // fixed variant (magic color -> constant)
     reader.addIgnore("slot");
     reader.addIgnore("slots-grid");
     reader.readUINode(reader, element, *view);
