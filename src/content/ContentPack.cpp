@@ -160,6 +160,7 @@ ContentPack ContentPack::read(const io::path& folder) {
     checkContentPackId(pack.id, folder);
     root.at("title").get(pack.title);
     root.at("version").get(pack.version);
+    root.at("target-version").get(pack.targetVersion);
     if (root.has("creators")) {
         const auto& creators = root["creators"];
         for (int i = 0; i < creators.size(); i++) {
