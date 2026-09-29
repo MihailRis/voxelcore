@@ -27,23 +27,25 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     find_package(vorbis REQUIRED)
+    # Resolve luajit from the toolchain-provided installed tree
+    # (manifest and classic vcpkg modes), not from the temporary
+    # "packages/" staging directory inside $ENV{VCPKG_ROOT}.
+    set(LUAJIT_PACKAGE_DIR "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
     if(VCPKG_TARGET_TRIPLET MATCHES "static")
         add_library(luajit STATIC IMPORTED)
         set_target_properties(
             luajit
             PROPERTIES
                 IMPORTED_LOCATION
-                "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}/lib/libluajit-5.1.a"
+                "${LUAJIT_PACKAGE_DIR}/lib/libluajit-5.1.a"
                 INTERFACE_INCLUDE_DIRECTORIES
-                "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}/include/"
+                "${LUAJIT_PACKAGE_DIR}/include/"
         )
     else()
-        set(LUAJIT_PACKAGE_DIR "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}")
-
-        if(EXISTS "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}/include/luajit-2.1")
-            set(LUAJIT_INCLUDE_DIR "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}/include/luajit-2.1")
+        if(EXISTS "${LUAJIT_PACKAGE_DIR}/include/luajit-2.1")
+            set(LUAJIT_INCLUDE_DIR "${LUAJIT_PACKAGE_DIR}/include/luajit-2.1")
         else()
-            set(LUAJIT_INCLUDE_DIR "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}/include/luajit")
+            set(LUAJIT_INCLUDE_DIR "${LUAJIT_PACKAGE_DIR}/include/luajit")
         endif()
 
         add_library(luajit SHARED IMPORTED)
@@ -51,9 +53,9 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
             luajit
             PROPERTIES
                 IMPORTED_LOCATION
-                "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}/bin/lua51.dll"
+                "${LUAJIT_PACKAGE_DIR}/bin/lua51.dll"
                 IMPORTED_IMPLIB
-                "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}/lib/lua51.lib"
+                "${LUAJIT_PACKAGE_DIR}/lib/lua51.lib"
                 INTERFACE_INCLUDE_DIRECTORIES "${LUAJIT_INCLUDE_DIR}"
         )
     endif()
