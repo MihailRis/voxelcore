@@ -27,9 +27,7 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     find_package(vorbis REQUIRED)
-    # _VCPKG_INSTALLED_DIR is set by the vcpkg toolchain and points to the
-    # installed tree of the active triplet: <build>/vcpkg_installed/<triplet>
-    # in manifest mode, <vcpkg root>/installed/<triplet> in classic mode.
+    
     set(LUAJIT_PACKAGE_DIR "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
     if(VCPKG_TARGET_TRIPLET MATCHES "static")
         add_library(luajit STATIC IMPORTED)
