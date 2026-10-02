@@ -7,6 +7,7 @@
 #include "engine/Engine.hpp"
 #include "EnginePaths.hpp"
 #include "graphics/core/Shader.hpp"
+#include "graphics/render/MaterialShaders.hpp"
 #include "graphics/render/ModelsGenerator.hpp"
 #include "graphics/ui/GUI.hpp"
 #include "logic/scripting/scripting.hpp"
@@ -63,6 +64,9 @@ void AssetsManagement::loadAssets(Content* content) {
     loader.addDefaults(content);
 
     try {
+        material_shaders::build_headers(
+            *Shader::preprocessor, paths.resPaths, content
+        );
         // no need
         // correct log messages order is more useful
         // todo: before setting to true, check if GLSLExtension thread safe 

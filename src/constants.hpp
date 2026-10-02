@@ -58,6 +58,8 @@ inline constexpr blockid_t BLOCK_VOID = std::numeric_limits<blockid_t>::max();
 inline constexpr itemid_t ITEM_VOID = std::numeric_limits<itemid_t>::max();
 /// @brief max number of block definitions possible
 inline constexpr blockid_t MAX_BLOCKS = BLOCK_VOID;
+/// @brief max number of material shaders (7 bits in chunk vertex)
+inline constexpr int MAX_BLOCK_MATERIAL_SHADERS = 127;
 
 /// @brief calculates a 1D array index from 3D array indices
 inline constexpr uint vox_index(uint x, uint y, uint z, uint w=CHUNK_W, uint d=CHUNK_D) {

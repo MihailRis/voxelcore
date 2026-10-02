@@ -54,8 +54,11 @@ void BlocksRenderer::vertex(
             static_cast<uint8_t>(normal.x * 127 + 128),
             static_cast<uint8_t>(normal.y * 127 + 128),
             static_cast<uint8_t>(normal.z * 127 + 128),
-            static_cast<uint8_t>(emission * 255)
-        }
+        },
+        static_cast<uint8_t>(
+            (emission > 0.5f ? VERTEX_EMISSION_BIT : 0) |
+            (materialShader & VERTEX_MATERIAL_MASK)
+        )
     };
 }
 
@@ -513,6 +516,7 @@ void BlocksRenderer::render(
         if (def.translucent) {
             continue;
         }
+        materialShader = def.rt.materialShader;
         const UVRegion texfaces[6] {
             cache.getRegion(id, variantId, 0, densePass),
             cache.getRegion(id, variantId, 1, densePass),
@@ -584,6 +588,7 @@ SortingMeshData BlocksRenderer::renderTranslucent(
         if (!def.translucent) {
             continue;
         }
+        materialShader = def.rt.materialShader;
         const UVRegion texfaces[6] {
             cache.getRegion(id, variantId, 0, densePass),
             cache.getRegion(id, variantId, 1, densePass),

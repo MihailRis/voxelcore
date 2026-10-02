@@ -5,18 +5,28 @@
 #include "maths/aabb.hpp"
 #include "util/Buffer.hpp"
 
+#include <cstddef>
 #include <vector>
 #include <array>
 #include <memory>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 
+/// @brief ChunkVertex::flags bit: vertex is not affected by lighting
+inline constexpr uint8_t VERTEX_EMISSION_BIT = 0x80;
+/// @brief ChunkVertex::flags mask: material shader index
+inline constexpr uint8_t VERTEX_MATERIAL_MASK = 0x7F;
+static_assert(VERTEX_MATERIAL_MASK == MAX_BLOCK_MATERIAL_SHADERS);
+
 /// @brief Chunk mesh vertex format
 struct ChunkVertex {
     glm::vec3 position;
     glm::vec2 uv;
     std::array<uint8_t, 4> color;
-    std::array<uint8_t, 4> normal;
+    std::array<uint8_t, 3> normal;
+    /// @brief emission flag and material shader index, fourth component
+    /// of the normal attribute (see VERTEX_EMISSION_BIT, VERTEX_MATERIAL_MASK)
+    uint8_t flags;
 
     static constexpr VertexAttribute ATTRIBUTES[] = {
         {VertexAttribute::Type::FLOAT, false, 3},
@@ -25,6 +35,11 @@ struct ChunkVertex {
         {VertexAttribute::Type::UNSIGNED_BYTE, true, 4},
         {{}, 0}};
 };
+// normal and flags are passed as one 4-components vertex attribute
+static_assert(sizeof(ChunkVertex) == 28);
+static_assert(
+    offsetof(ChunkVertex, flags) == offsetof(ChunkVertex, normal) + 3
+);
 
 template<typename VertexStructure>
 class Mesh;

@@ -15,8 +15,12 @@ uniform bool u_alphaClip;
 uniform bool u_debugLights;
 uniform bool u_debugNormals;
 
+#include <__materials_fragment__>
+
 void main() {
-    vec4 texColor = texture(u_texture0, a_texCoord);
+    vec4 texColor = apply_material_fragment(
+        a_material, texture(u_texture0, a_texCoord)
+    );
     float alpha = texColor.a;
     if (u_alphaClip) {
         if (alpha < 0.2f)

@@ -113,8 +113,8 @@ private:
             static_cast<uint8_t>(normal.r * 127 + 128),
             static_cast<uint8_t>(normal.g * 127 + 128),
             static_cast<uint8_t>(normal.b * 127 + 128),
-            255
         };
+        vert.flags = VERTEX_EMISSION_BIT;
         vert.color = {
             0, 0, 0, static_cast<uint8_t>((coord.y / 8.0f * 0.25f + 0.75f) * 255)
         };

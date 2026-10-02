@@ -41,7 +41,7 @@ void main() {
     a_fog = calc_fog(length(viewmodel * vec4(pos3d * FOG_POS_SCALE, 0.0)) / 256.0);
 #endif
 
-    a_emission = v_normal.w;
+    a_emission = unpack_emission(v_normal.w);
 
     vec4 viewmodelpos = u_view * a_modelpos;
     a_position = viewmodelpos.xyz;

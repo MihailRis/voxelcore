@@ -14,11 +14,15 @@ out vec4 a_torchLight;
 
 uniform float u_dayTime;
 
+#include <__materials_vertex__>
+
 void main() {
+    a_material = unpack_material(v_normal.w);
+    a_realnormal = v_normal.xyz * 2.0 - 1.0;
     a_modelpos = u_model * vec4(v_position, 1.0f);
+    a_modelpos.xyz = apply_material_vertex(a_material, a_modelpos.xyz);
     vec3 pos3d = a_modelpos.xyz - u_cameraPos;
 
-    a_realnormal = v_normal.xyz * 2.0 - 1.0;
     a_normal = calc_screen_normal(a_realnormal);
 
     a_torchLight = vec4(calc_torch_light(
@@ -33,7 +37,7 @@ void main() {
     mat4 viewmodel = u_view * u_model;
     a_distance = length(viewmodel * vec4(pos3d, 0.0));
     a_fog = calc_fog(length(viewmodel * vec4(pos3d * FOG_POS_SCALE, 0.0)) / 256.0);
-    a_emission = v_normal.w;
+    a_emission = unpack_emission(v_normal.w);
 
     vec4 viewmodelpos = u_view * a_modelpos;
     a_position = viewmodelpos.xyz;

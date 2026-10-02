@@ -89,6 +89,7 @@ Don't be intimidated by the following text, as a minimal pack only requires `pac
     - `textures/` - Textures
     - `shaders/` - Shaders
         - `effects/` - Post-processing effects
+        - `materials/` - Block material shaders
     - `sounds/` - Sounds and Music
     - `texts/` - Localization files
 - GUI:

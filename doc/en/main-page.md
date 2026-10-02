@@ -7,6 +7,7 @@
 
 - [Assets preloading](assets-preload.md)
 - [Audio](audio.md)
+- [Block materials](block-materials.md)
 - [Block models](block-models.md)
 - [Block properties](block-properties.md)
 - [Console](console.md)

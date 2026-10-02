@@ -166,6 +166,13 @@ struct BlockMaterial : Serializable {
     std::string breakSound;
     std::string hitSound;
     float soundAbsorption = 0.5f;
+    /// @brief material shader name (shaders/materials/<name>), may be empty
+    std::string shader;
+
+    struct {
+        /// @brief material shader index (0 - no shader)
+        uint8_t shaderId = 0;
+    } rt {};
 
     dv::value toTable() const; // for compatibility
     dv::value serialize() const override;
@@ -321,6 +328,9 @@ public:
         itemid_t pickingItem = 0;
 
         blockid_t surfaceReplacement = 0;
+
+        /// @brief block material shader index (see BlockMaterial::rt.shaderId)
+        uint8_t materialShader = 0;
 
         std::set<int> tags;
 

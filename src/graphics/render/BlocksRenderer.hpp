@@ -56,6 +56,8 @@ private:
     bool cancelled = false;
     bool densePass = false;
     bool denseRender = false;
+    /// @brief material shader index of the block being rendered
+    uint8_t materialShader = 0;
     AABB meshAABB {};
     const Chunk* chunk = nullptr;
     const VoxelsRenderVolume* voxelsBuffer = nullptr;

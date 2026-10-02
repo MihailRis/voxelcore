@@ -1,9 +1,13 @@
-in vec2 a_texCoord;
+#include <world_fragment_header>
 
 uniform sampler2D u_texture0;
 
+#include <__materials_fragment__>
+
 void main() {
-    vec4 tex_color = texture(u_texture0, a_texCoord);
+    vec4 tex_color = apply_material_fragment(
+        a_material, texture(u_texture0, a_texCoord)
+    );
     if (tex_color.a < 0.5) {
         discard;
     }

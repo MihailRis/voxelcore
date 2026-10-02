@@ -1,5 +1,11 @@
 #include "ContentBuilder.hpp"
 
+#include <set>
+#include <stdexcept>
+#include <unordered_map>
+
+#include "constants.hpp"
+
 ContentBuilder::~ContentBuilder() = default;
 
 void ContentBuilder::add(std::unique_ptr<ContentPackRuntime> pack) {
@@ -13,7 +19,48 @@ BlockMaterial& ContentBuilder::createBlockMaterial(const std::string& id) {
     return material;
 }
 
+/// @brief Assign indices to the material shaders (materials using the same
+/// shader share its index)
+static void index_material_shaders(
+    const UptrsMap<std::string, BlockMaterial>& blockMaterials
+) {
+    std::set<std::string> shaders;
+    for (const auto& [name, material] : blockMaterials) {
+        if (!material->shader.empty()) {
+            shaders.insert(material->shader);
+        }
+    }
+    if (shaders.size() > MAX_BLOCK_MATERIAL_SHADERS) {
+        throw std::runtime_error(
+            "too many material shaders (max " +
+            std::to_string(MAX_BLOCK_MATERIAL_SHADERS) + ")"
+        );
+    }
+    std::unordered_map<std::string, uint8_t> indices;
+    for (const auto& shader : shaders) {
+        indices[shader] = indices.size() + 1;
+    }
+    for (const auto& [name, material] : blockMaterials) {
+        if (!material->shader.empty()) {
+            material->rt.shaderId = indices.at(material->shader);
+        }
+    }
+}
+
+static uint8_t material_shader_id(
+    const UptrsMap<std::string, BlockMaterial>& blockMaterials,
+    const std::string& material
+) {
+    const auto& found = blockMaterials.find(material);
+    if (found == blockMaterials.end()) {
+        return 0;
+    }
+    return found->second->rt.shaderId;
+}
+
 std::unique_ptr<Content> ContentBuilder::build() {
+    index_material_shaders(blockMaterials);
+
     std::vector<Block*> blockDefsIndices;
     auto groups = std::make_unique<DrawGroups>();
     for (const std::string& name : blocks.names) {
@@ -50,6 +97,7 @@ std::unique_ptr<Content> ContentBuilder::build() {
         if (def.material.empty()) {
             defaults.at("block-material").get(def.material);
         }
+        def.rt.materialShader = material_shader_id(blockMaterials, def.material);
 
         if (def.rotatable) {
             for (uint i = 0; i < BlockRotProfile::MAX_COUNT; i++) {

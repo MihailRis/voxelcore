@@ -11,6 +11,7 @@ in vec3 a_realnormal;
 in vec3 a_skyLight;
 in vec4 a_modelpos;
 in float a_emission;
+flat in int a_material;
 
 #include <world_uniforms>
 

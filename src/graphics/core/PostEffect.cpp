@@ -20,27 +20,22 @@ PostEffect::PostEffect(
     : advanced(advanced), shader(std::move(shader)), params(std::move(params)) {
 }
 
-static void apply_uniform_value(
-    const PostEffect::Param& param,
-    Shader& shader,
-    const std::string& name
-) {
-    using Type = PostEffect::Param::Type;
-    switch (param.type) {
+void PostEffect::Param::apply(Shader& shader, const std::string& name) const {
+    switch (type) {
         case Type::INT:
-            shader.uniform1i(name, std::get<int>(param.value));
+            shader.uniform1i(name, std::get<int>(value));
             break;
         case Type::FLOAT:
-            shader.uniform1f(name, std::get<float>(param.value));
+            shader.uniform1f(name, std::get<float>(value));
             break;
         case Type::VEC2:
-            shader.uniform2f(name, std::get<glm::vec2>(param.value));
+            shader.uniform2f(name, std::get<glm::vec2>(value));
             break;
         case Type::VEC3:
-            shader.uniform3f(name, std::get<glm::vec3>(param.value));
+            shader.uniform3f(name, std::get<glm::vec3>(value));
             break;
         case Type::VEC4:
-            shader.uniform4f(name, std::get<glm::vec4>(param.value));
+            shader.uniform4f(name, std::get<glm::vec4>(value));
             break;
         default:
             assert(false);
@@ -93,7 +88,7 @@ Shader& PostEffect::use() {
             }
             apply_uniform_array(param, *shader, name, found->second);
         } else {
-            apply_uniform_value(param, *shader, name);
+            param.apply(*shader, name);
         }
         param.dirty = false;
     }
@@ -119,30 +114,49 @@ static void set_value(PostEffect::Param::Value& dst, const dv::value& value) {
     dst = vec;
 }
 
+void PostEffect::Param::set(const dv::value& src) {
+    switch (type) {
+        case Type::INT:
+            value = static_cast<int>(src.asInteger());
+            break;
+        case Type::FLOAT:
+            value = static_cast<float>(src.asNumber());
+            break;
+        case Type::VEC2:
+            set_value<2>(value, src);
+            break;
+        case Type::VEC3:
+            set_value<3>(value, src);
+            break;
+        case Type::VEC4:
+            set_value<4>(value, src);
+            break;
+    }
+    dirty = true;
+}
+
+dv::value PostEffect::Param::get() const {
+    switch (type) {
+        case Type::INT:
+            return std::get<int>(value);
+        case Type::FLOAT:
+            return std::get<float>(value);
+        case Type::VEC2:
+            return dv::to_value(std::get<glm::vec2>(value));
+        case Type::VEC3:
+            return dv::to_value(std::get<glm::vec3>(value));
+        case Type::VEC4:
+            return dv::to_value(std::get<glm::vec4>(value));
+    }
+    return nullptr;
+}
+
 void PostEffect::setParam(const std::string& name, const dv::value& value) {
     const auto& found = params.find(name);
     if (found == params.end()) {
         return;
     }
-    auto& param = found->second;
-    switch (param.type) {
-        case Param::Type::INT:
-            param.value = static_cast<int>(value.asInteger());
-            break;
-        case Param::Type::FLOAT:
-            param.value = static_cast<float>(value.asNumber());
-            break;
-        case Param::Type::VEC2:
-            set_value<2>(param.value, value);
-            break;
-        case Param::Type::VEC3:
-            set_value<3>(param.value, value);
-            break;
-        case Param::Type::VEC4:
-            set_value<4>(param.value, value);
-            break;
-    }
-    param.dirty = true;
+    found->second.set(value);
 }
 
 void PostEffect::setArray(const std::string& name, std::vector<ubyte>&& values) {

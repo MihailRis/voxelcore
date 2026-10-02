@@ -11,6 +11,7 @@
 - [Движок генерации мира](world-generator.md)
 - [Консоль](console.md)
 - [Контент‐паки](content-packs.md)
+- [Материалы блоков](block-materials.md)
 - [Модели блоков](block-models.md)
 - [Предзагрузка ассетов](assets-preload.md)
 - [Рекомендации по использованию движка](engine-use-recommendations.md)

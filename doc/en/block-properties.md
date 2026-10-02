@@ -81,7 +81,7 @@ until the block is destroyed or the camera moves away a certain distance.
 ### Material - *material*
 
 Defines the name of the block's material in the format `pack:material_name`, which affects the selection of block interaction sounds.
-Material definitions are located in /block_materials.
+Material definitions are located in /block_materials (see [block materials](block-materials.md)).
 
 ## Variants
 

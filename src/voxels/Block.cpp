@@ -25,7 +25,8 @@ dv::value BlockMaterial::serialize() const {
         {"place-sound", placeSound},
         {"break-sound", breakSound},
         {"hit-sound", hitSound},
-        {"sound-absorption", soundAbsorption}
+        {"sound-absorption", soundAbsorption},
+        {"shader", shader}
     });
 }
 
@@ -36,6 +37,7 @@ void BlockMaterial::deserialize(const dv::value& src) {
     src.at("break-sound").get(breakSound);
     src.at("hit-sound").get(hitSound);
     src.at("sound-absorption").get(soundAbsorption);
+    src.at("shader").get(shader);
 }
 
 CoordSystem::CoordSystem(glm::ivec3 axisX, glm::ivec3 axisY, glm::ivec3 axisZ)

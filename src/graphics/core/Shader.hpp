@@ -32,6 +32,10 @@ public:
     Shader(uint id, Source&& vertexSource, Source&& fragmentSource);
     ~Shader();
 
+    uint getId() const {
+        return id;
+    }
+
     void use();
     void uniformMatrix(const std::string&, const glm::mat4& matrix);
     void uniformMatrix(const std::string&, const glm::mat3& matrix);

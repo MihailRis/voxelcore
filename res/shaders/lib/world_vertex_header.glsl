@@ -11,6 +11,7 @@ out vec3 a_realnormal;
 out vec3 a_skyLight;
 out vec4 a_modelpos;
 out float a_emission;
+flat out int a_material;
 
 #include <world_uniforms>
 

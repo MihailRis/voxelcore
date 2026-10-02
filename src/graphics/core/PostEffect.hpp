@@ -36,6 +36,15 @@ public:
 
         Param();
         Param(Type type, Value defValue, bool array);
+
+        /// @brief Upload current value to the shader uniform (non-array only)
+        void apply(Shader& shader, const std::string& name) const;
+
+        /// @brief Set value from a number or a vector (list) value
+        void set(const dv::value& value);
+
+        /// @brief Current value as a number or a vector (list) value
+        dv::value get() const;
     };
 
     PostEffect(

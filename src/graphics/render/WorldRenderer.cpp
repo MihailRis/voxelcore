@@ -35,6 +35,7 @@
 #include "graphics/core/Shadows.hpp"
 #include "graphics/core/Cubemap.hpp"
 #include "graphics/core/Texture.hpp"
+#include "graphics/render/MaterialShaders.hpp"
 #include "items/Inventory.hpp"
 #include "items/ItemDef.hpp"
 #include "items/ItemStack.hpp"
@@ -200,6 +201,7 @@ void WorldRenderer::setupWorldShader(
 
     shader.uniform1f("u_timer", timer);
     shader.uniform1f("u_gamma", settings.graphics.gamma.get());
+    material_shaders::setup_shader(shader);
     shader.uniform1f("u_fogFactor", fogFactor);
     shader.uniform1f("u_fogCurve", settings.graphics.fogCurve.get());
     shader.uniform1i("u_debugLights", lightsDebug);
