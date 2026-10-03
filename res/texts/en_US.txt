@@ -18,7 +18,9 @@ devtools.output=Output
 
 # Tooltips
 audio.acoustic-effects.tooltip=Acoustic effects may not be supported by your system
+audio.volume-contrast.tooltip=Lower value - loud sounds are lowered to the level of quiet ones (night mode)
 audio.recording-enabled.tooltip=Enables audio recording features
+display.gui-scale.tooltip=GUI size: Auto or 0.5-4. In auto mode the menu is reduced to fit the window
 graphics.enable-fog.tooltip=Enables fog
 graphics.gamma.tooltip=Lighting brightness curve
 graphics.backlight.tooltip=Backlight to prevent total darkness
