@@ -88,13 +88,41 @@ void GUI::onAssetsLoad(Assets* assets) {
     assets->store(rootDocument, "core:root");
 }
 
+/// @brief Minimal virtual window size used to choose the automatic scale
+static constexpr glm::uvec2 AUTO_SCALE_MIN_SIZE {640, 480};
+
+int GUI::calcScale(const glm::uvec2& viewport) const {
+    int value = engine.getSettings().display.guiScale.get();
+    if (value > 0) {
+        return value;
+    }
+    int result = 1;
+    while (result < 4 &&
+           viewport.x / (result + 1) >= AUTO_SCALE_MIN_SIZE.x &&
+           viewport.y / (result + 1) >= AUTO_SCALE_MIN_SIZE.y) {
+        result++;
+    }
+    return result;
+}
+
+int GUI::getScale() const {
+    return scale;
+}
+
+CursorState GUI::getCursor() const {
+    auto cursor = input.getCursor();
+    cursor.pos /= static_cast<float>(scale);
+    cursor.delta /= static_cast<float>(scale);
+    return cursor;
+}
+
 void GUI::resetTooltip() {
     tooltipTimer = 0.0f;
     tooltip->setVisible(false);
 }
 
 void GUI::updateTooltip(float delta) {
-    const auto& cursor = input.getCursor();
+    const auto cursor = getCursor();
     if (hover == nullptr || !hover->isInside(cursor.pos)) {
         return resetTooltip();
     }
@@ -229,7 +257,7 @@ void GUI::actFocused() {
         focus->keyPressed(key);
     }
 
-    const auto& cursor = input.getCursor();
+    const auto cursor = getCursor();
     if (!cursor.locked) {
         if (input.clicked(Mousecode::BUTTON_1) &&
             (input.jclicked(Mousecode::BUTTON_1) || cursor.delta.x ||
@@ -242,7 +270,8 @@ void GUI::actFocused() {
 }
 
 void GUI::act(float delta, const glm::uvec2& vp) {
-    container->setSize(vp);
+    scale = calcScale(vp);
+    container->setSize(glm::vec2(vp) / static_cast<float>(scale));
     for (auto& pair : frames) {
         pair.second->act(delta);
     }
@@ -250,7 +279,7 @@ void GUI::act(float delta, const glm::uvec2& vp) {
 
     updateTooltip(delta);
 
-    const auto& cursor = input.getCursor();
+    const auto cursor = getCursor();
     if (!cursor.locked && activeFrame) {
         actMouse(*activeFrame, delta, cursor);
     } else {
@@ -278,8 +307,11 @@ void GUI::postAct() {
 
 void GUI::draw(const DrawContext& pctx, Assets& assets) {
     auto ctx = pctx.sub(batch2D.get());
+    ctx.setUiScale(static_cast<float>(scale));
 
-    auto& viewport = ctx.getViewport();
+    // viewport in UI units
+    const glm::vec2 viewport =
+        glm::vec2(ctx.getViewport()) / static_cast<float>(scale);
 
     auto& page = menu->getCurrent();
     if (page.panel) {
@@ -289,9 +321,9 @@ void GUI::draw(const DrawContext& pctx, Assets& assets) {
             panel->cropToContent();
         }
     }
-    menu->setPos((glm::vec2(viewport) - menu->getSize()) / 2.0f);
+    menu->setPos((viewport - menu->getSize()) / 2.0f);
     uicamera->setFov(viewport.y);
-    uicamera->setAspectRatio(viewport.x / static_cast<float>(viewport.y));
+    uicamera->setAspectRatio(viewport.x / viewport.y);
 
     auto uishader = assets.get<Shader>("ui");
     uishader->use();

@@ -1,6 +1,7 @@
-function create_trackbar_setting(id, name, step, postfix)
+function create_trackbar_setting(id, name, step, postfix, tooltip)
     local info = app.get_setting_info(id)
     postfix = postfix or ""
+    tooltip = tooltip or ""
     document.root:add(gui.template("track_setting", {
         id=id,
         name=gui.str(name, "settings"),
@@ -8,7 +9,8 @@ function create_trackbar_setting(id, name, step, postfix)
         min=info.min,
         max=info.max,
         step=step,
-        postfix=postfix
+        postfix=postfix,
+        tooltip=gui.str(tooltip, "settings")
     }))
     update_trackbar_label(app.get_setting(id), id, name, postfix)
 end
@@ -78,6 +80,7 @@ function on_open()
     create_trackbar_setting("audio.volume-ui", "UI Sounds", 0.01)
     create_trackbar_setting("audio.volume-ambient", "Ambient", 0.01)
     create_trackbar_setting("audio.volume-music", "Music", 0.01)
+    create_trackbar_setting("audio.volume-contrast", "Volume Contrast", 0.01, "", "audio.volume-contrast.tooltip")
 
     document.root:add("<label context='settings'>@Microphone</label>")
     document.root:add("<select id='input_device_select' "..

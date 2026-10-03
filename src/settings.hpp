@@ -17,6 +17,9 @@ struct AudioSettings {
     NumberSetting volumeUI {1.0f, 0.0f, 1.0f, setting_format::percent};
     NumberSetting volumeAmbient {1.0f, 0.0f, 1.0f, setting_format::percent};
     NumberSetting volumeMusic {1.0f, 0.0f, 1.0f, setting_format::percent};
+    /// @brief Volume contrast: 100% - sounds are played as is,
+    /// 0% - loud sounds are lowered to the level of quiet ones ("night mode")
+    NumberSetting volumeContrast {1.0f, 0.0f, 1.0f, setting_format::percent};
 
     StringSetting inputDevice {""};
 
@@ -38,6 +41,8 @@ struct DisplaySettings {
     FlagSetting limitFpsIconified {false};
     /// @brief Adaptive framerate in menu (experimental)
     FlagSetting adaptiveFpsInMenu {false};
+    /// @brief GUI scale factor (0 - auto, 1..4 - fixed integer scale)
+    IntegerSetting guiScale {0, 0, 4};
 };
 
 struct ChunksSettings {

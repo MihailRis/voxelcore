@@ -1,5 +1,6 @@
 #include "audio.hpp"
 
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 #include <utility>
@@ -25,6 +26,64 @@ namespace {
     util::ObjectsKeeper objects_keeper {};
     std::unique_ptr<InputDevice> input_device = nullptr;
     static bool input_enabled = false;
+
+    /// @brief Volume contrast setting value (1.0 - no compression)
+    float volume_contrast = 1.0f;
+    /// @brief RMS level (0..1) that louder sounds are lowered to
+    /// when contrast is 0
+    constexpr float REFERENCE_RMS = 0.1f;
+
+    struct LoudnessEntry {
+        std::weak_ptr<PCM> pcm;
+        float rms;
+    };
+    std::unordered_map<const Sound*, LoudnessEntry> loudness_cache;
+}
+
+/// @brief Calculate root mean square level of PCM data
+/// @return level in range [0.0, 1.0]
+static float calc_rms(const PCM& pcm) {
+    double sum = 0.0;
+    size_t count = 0;
+    if (pcm.bitsPerSample == 16) {
+        count = pcm.data.size() / sizeof(int16_t);
+        auto samples = reinterpret_cast<const int16_t*>(pcm.data.data());
+        for (size_t i = 0; i < count; i++) {
+            double value = samples[i] / 32768.0;
+            sum += value * value;
+        }
+    } else {
+        count = pcm.data.size();
+        for (size_t i = 0; i < count; i++) {
+            double value = (static_cast<uint8_t>(pcm.data[i]) - 128) / 128.0;
+            sum += value * value;
+        }
+    }
+    return count ? static_cast<float>(std::sqrt(sum / count)) : 0.0f;
+}
+
+/// @brief Get volume multiplier for a sound according to volume contrast
+/// setting. Loud sounds are lowered, quiet ones are never amplified
+static float get_contrast_gain(const Sound* sound) {
+    if (volume_contrast >= 1.0f) {
+        return 1.0f;
+    }
+    auto pcm = sound->getPCM();
+    if (pcm == nullptr) {
+        return 1.0f;
+    }
+    float rms;
+    auto found = loudness_cache.find(sound);
+    if (found != loudness_cache.end() && found->second.pcm.lock() == pcm) {
+        rms = found->second.rms;
+    } else {
+        rms = calc_rms(*pcm);
+        loudness_cache[sound] = {pcm, rms};
+    }
+    if (rms <= REFERENCE_RMS) {
+        return 1.0f;
+    }
+    return std::pow(REFERENCE_RMS / rms, 1.0f - volume_contrast);
 }
 
 Channel::Channel(std::string name, bool effects)
@@ -196,6 +255,9 @@ void audio::initialize(
             audio::get_channel(channel.name)->setVolume(value * value);
         }, true));
     }
+    objects_keeper.keepAlive(settings.volumeContrast.observe([](auto value) {
+        volume_contrast = value;
+    }, true));
     objects_keeper.keepAlive(settings.acousticEffects.observe([=](bool value) {
         if (value) return;
         backend->setAcoustics(audio::Acoustics {});
@@ -395,7 +457,7 @@ speakerid_t audio::play(
     speakerid_t id = nextId++;
     speakers.try_emplace(id, std::move(speaker_ptr));
     speaker->setPosition(position);
-    speaker->setVolume(volume);
+    speaker->setVolume(volume * get_contrast_gain(sound));
     speaker->setPitch(pitch);
     speaker->setLoop(loop);
     speaker->setRelative(relative);

@@ -157,8 +157,12 @@ void DrawContext::setBlendMode(BlendMode mode) {
     set_blend_mode(mode);
 }
 
+void DrawContext::setUiScale(float scale) {
+    uiScale = scale;
+}
+
 void DrawContext::setScissors(const glm::vec4& area) {
-    window.pushScissor(area);
+    window.pushScissor(area * uiScale);
     scissorsCount++;
 }
 

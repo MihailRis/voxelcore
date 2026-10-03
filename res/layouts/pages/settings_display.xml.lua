@@ -9,6 +9,14 @@ tostring_overrides["display.framerate"] = function(x)
     end
 end
 
+tostring_overrides["display.gui-scale"] = function(x)
+    if x == 0 then
+        return gui.str("Auto")
+    else
+        return tostring(x)
+    end
+end
+
 function create_trackbar_setting(id, name, step, postfix, tooltip, changeonrelease)
     local info = app.get_setting_info(id)
     postfix = postfix or ""
@@ -57,6 +65,7 @@ end
 function on_open()
     create_trackbar_setting("camera.fov", "FOV", 1, "°")
     create_trackbar_setting("display.framerate", "Framerate", 1, "", "", true)
+    create_trackbar_setting("display.gui-scale", "GUI Scale", 1, "", "display.gui-scale.tooltip", true)
 
     document.root:add(string.format(
         "<select context='settings' onselect='function(opt) app.set_setting(\"display.window-mode\", tonumber(opt)) end' selected='%s'>"..

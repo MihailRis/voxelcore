@@ -86,11 +86,17 @@ namespace gui {
         std::unordered_map<std::string, std::shared_ptr<Frame>> frames;
         vec2supplier cursorLocator;
 
+        /// @brief Current GUI scale (UI units -> window pixels)
+        int scale = 1;
+
         float tooltipTimer = 0.0f;
         float doubleClickTimer = 0.0f;
         float doubleClickDelay = 0.5f;
         bool doubleClicked = false;
         bool debug = false;
+
+        int calcScale(const glm::uvec2& viewport) const;
+        CursorState getScaledCursor() const;
 
         void actMouse(Frame& frame, float delta, const CursorState& cursor);
         void actFocused();
@@ -124,6 +130,12 @@ namespace gui {
         void draw(const DrawContext& pctx, Assets& assets);
 
         void postAct();
+
+        /// @brief Get current GUI scale: window pixels per one UI unit
+        int getScale() const;
+
+        /// @brief Get cursor state in UI coordinates
+        CursorState getCursor() const;
 
         /// @brief Add element to the main container
         /// @param node UI element
