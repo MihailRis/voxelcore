@@ -15,6 +15,7 @@
 #include "elements/Menu.hpp"
 #include "elements/ModelViewer.hpp"
 #include "elements/Panel.hpp"
+#include "elements/ProgressBar.hpp"
 #include "elements/SelectBox.hpp"
 #include "elements/SplitBox.hpp"
 #include "elements/TextBox.hpp"
@@ -725,6 +726,39 @@ static std::shared_ptr<UINode> read_track_bar(
     return bar;
 }
 
+static std::shared_ptr<UINode> read_progress_bar(
+    const UiXmlReader& reader,
+    const xml::xmlelement& element
+) {
+    double minv = element.attr("min", "0.0").asFloat();
+    double maxv = element.attr("max", "100.0").asFloat();
+    double def = element.attr("value", "0.0").asFloat();
+    auto bar = std::make_shared<ProgressBar>(reader.getGUI(), minv, maxv, def);
+    read_uinode(reader, element, *bar);
+    if (element.has("font")) {
+        bar->setFontName(element.attr("font").getText());
+    }
+    if (element.has("bg-color")) {
+        bar->setBgColor(element.attr("bg-color").asColor());
+    }
+    if (element.has("text-color")) {
+        bar->setTextColor(element.attr("text-color").asColor());
+    }
+    if (element.has("smooth")) {
+        bar->setSmooth(element.attr("smooth").asBool());
+    }
+    if (element.has("smooth-speed")) {
+        bar->setSmoothSpeed(element.attr("smooth-speed").asFloat());
+    }
+    if (element.has("orientation")) {
+        auto& oname = element.attr("orientation").getText();
+        if (oname == "vertical") {
+            bar->setOrientation(Orientation::VERTICAL);
+        }
+    }
+    return bar;
+}
+
 static std::shared_ptr<UINode> read_input_bind_box(
     UiXmlReader& reader, const xml::xmlelement& element
 ) {
@@ -910,6 +944,7 @@ UiXmlReader::UiXmlReader(gui::GUI& gui, const scriptenv& env)
     add("select", read_select);
     add("textbox", read_text_box);
     add("pagebox", read_page_box);
+    add("progressbar", read_progress_bar);
     add("splitbox", read_split_box);
     add("checkbox", read_check_box);
     add("trackbar", read_track_bar);
