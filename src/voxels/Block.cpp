@@ -129,13 +129,6 @@ Block::Block(const std::string& name)
 
 Block::~Block() = default;
 
-Block::Block(std::string name, const std::string& texture)
-    : name(std::move(name)) {
-    for (int i = 0; i < defaults.textureFaces.size(); i++) {
-        defaults.textureFaces[i] = TEXTURE_NOTFOUND;
-    }
-}
-
 void Block::cloneTo(Block& dst) {
     dst.caption = caption;
     dst.defaults = defaults;
@@ -143,7 +136,7 @@ void Block::cloneTo(Block& dst) {
         dst.variants = std::make_unique<Variants>(*variants);
     }
     dst.material = material;
-    std::copy(&emission[0], &emission[3], dst.emission);
+    std::copy(&emission[0], &emission[4], dst.emission);
     dst.size = size;
     dst.lightPassing = lightPassing;
     dst.skyLightPassing = skyLightPassing;
@@ -165,7 +158,7 @@ void Block::cloneTo(Block& dst) {
     dst.tickInterval = tickInterval;
     dst.overlayTexture = overlayTexture;
     dst.translucent = translucent;
-    dst.explictlySolid = explictlySolid;
+    dst.explicitlySolid = explicitlySolid;
     dst.tags = tags;
     if (dataStruct) {
         dst.dataStruct = std::make_unique<data::StructLayout>(*dataStruct);
@@ -173,11 +166,4 @@ void Block::cloneTo(Block& dst) {
     if (particles) {
         dst.particles = std::make_unique<ParticlesPreset>(*particles);
     }
-}
-
-static std::set<std::string, std::less<>> RESERVED_BLOCK_FIELDS {
-};
-
-bool Block::isReservedBlockField(std::string_view view) {
-    return RESERVED_BLOCK_FIELDS.find(view) != RESERVED_BLOCK_FIELDS.end();
 }
