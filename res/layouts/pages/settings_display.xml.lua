@@ -10,57 +10,24 @@ tostring_overrides["display.framerate"] = function(x)
 end
 
 tostring_overrides["display.gui-scale"] = function(x)
+    -- scale is limited by the window size, show what is really applied
+    local effective = gui.get_max_scale()
+    if x > 0 then
+        effective = math.min(x, effective)
+    end
     if x == 0 then
-        return gui.str("Auto")
-    else
-        return tostring(x)
+        return string.format("%s (%d)", gui.str("Auto"), effective)
+    elseif effective < x then
+        return string.format("%d (%s %d)", x, gui.str("Effective"), effective)
     end
+    return tostring(x)
 end
 
-function create_trackbar_setting(id, name, step, postfix, tooltip, changeonrelease)
-    local info = app.get_setting_info(id)
-    postfix = postfix or ""
-    tooltip = tooltip or ""
-    changeonrelease = changeonrelease or ""
-    document.root:add(gui.template("track_setting", {
-        id=id,
-        name=gui.str(name, "settings"),
-        value=app.get_setting(id),
-        min=info.min,
-        max=info.max,
-        step=step,
-        postfix=postfix,
-        tooltip=tooltip,
-        changeonrelease=changeonrelease
-    }))
-    update_trackbar_label(app.get_setting(id), id, name, postfix)
-end
-
-function update_trackbar_label(x, id, name, postfix)
-    local str
-    local func = tostring_overrides[id]
-    if func then
-        str = func(x)
-    else
-        str = app.str_setting(id)
-    end
-    -- updating label
-    document[id..".L"].text = string.format(
-        "%s: %s%s",
-        gui.str(name, "settings"),
-        str,
-        postfix
-    )
-end
-
-function create_checkbox(id, name, tooltip)
-    tooltip = tooltip or ''
-    document.root:add(string.format(
-        "<checkbox consumer='function(x) app.set_setting(\"%s\", x) end' checked='%s' tooltip='%s'>%s</checkbox>",
-        id, app.str_setting(id), gui.str(tooltip, "settings"), gui.str(name, "settings")
-    ))
-end
-
+local settings = require "core:settings_common".new(document, {tostring_overrides=tostring_overrides})
+-- templates call these functions by name, so they must be global
+create_trackbar_setting = settings.create_trackbar_setting
+update_trackbar_label = settings.update_trackbar_label
+create_checkbox = settings.create_checkbox
 
 function on_open()
     create_trackbar_setting("camera.fov", "FOV", 1, "°")

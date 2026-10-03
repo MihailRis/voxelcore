@@ -95,6 +95,7 @@ namespace gui {
         bool doubleClicked = false;
         bool debug = false;
 
+        static int calcMaxScale(const glm::uvec2& viewport);
         int calcScale(const glm::uvec2& viewport) const;
         CursorState getScaledCursor() const;
 
@@ -133,6 +134,9 @@ namespace gui {
 
         /// @brief Get current GUI scale: window pixels per one UI unit
         int getScale() const;
+
+        /// @brief Get maximal GUI scale that fits the current window size
+        int getMaxScale() const;
 
         /// @brief Get cursor state in UI coordinates
         CursorState getCursor() const;

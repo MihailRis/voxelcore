@@ -93,13 +93,18 @@ void GUI::onAssetsLoad(Assets* assets) {
 static constexpr glm::uvec2 MIN_UI_SIZE {640, 480};
 static constexpr int MAX_SCALE = 4;
 
-int GUI::calcScale(const glm::uvec2& viewport) const {
+int GUI::calcMaxScale(const glm::uvec2& viewport) {
     int maxFit = 1;
     while (maxFit < MAX_SCALE &&
            viewport.x / (maxFit + 1) >= MIN_UI_SIZE.x &&
            viewport.y / (maxFit + 1) >= MIN_UI_SIZE.y) {
         maxFit++;
     }
+    return maxFit;
+}
+
+int GUI::calcScale(const glm::uvec2& viewport) const {
+    int maxFit = calcMaxScale(viewport);
     int value = engine.getSettings().display.guiScale.get();
     if (value <= 0) {
         return maxFit; // auto
@@ -109,6 +114,10 @@ int GUI::calcScale(const glm::uvec2& viewport) const {
 
 int GUI::getScale() const {
     return scale;
+}
+
+int GUI::getMaxScale() const {
+    return calcMaxScale(engine.getWindow().getSize());
 }
 
 CursorState GUI::getCursor() const {
