@@ -87,7 +87,7 @@ namespace gui {
         vec2supplier cursorLocator;
 
         /// @brief Current GUI scale (UI units -> window pixels)
-        int scale = 1;
+        float scale = 1.0f;
 
         float tooltipTimer = 0.0f;
         float doubleClickTimer = 0.0f;
@@ -96,8 +96,7 @@ namespace gui {
         bool debug = false;
 
         static int calcMaxScale(const glm::uvec2& viewport);
-        int calcScale(const glm::uvec2& viewport) const;
-        CursorState getScaledCursor() const;
+        float calcScale(const glm::uvec2& viewport) const;
 
         void actMouse(Frame& frame, float delta, const CursorState& cursor);
         void actFocused();
@@ -133,9 +132,9 @@ namespace gui {
         void postAct();
 
         /// @brief Get current GUI scale: window pixels per one UI unit
-        int getScale() const;
+        float getScale() const;
 
-        /// @brief Get maximal GUI scale that fits the current window size
+        /// @brief Get GUI scale used in auto mode (fits the current window size)
         int getMaxScale() const;
 
         /// @brief Get cursor state in UI coordinates

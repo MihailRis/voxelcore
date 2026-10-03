@@ -10,20 +10,18 @@ tostring_overrides["display.framerate"] = function(x)
 end
 
 tostring_overrides["display.gui-scale"] = function(x)
-    -- scale is limited by the window size, show what is really applied
-    local effective = gui.get_max_scale()
-    if x > 0 then
-        effective = math.min(x, effective)
-    end
     if x == 0 then
-        return string.format("%s (%d)", gui.str("Auto"), effective)
-    elseif effective < x then
-        return string.format("%d (%s %d)", x, gui.str("Effective"), effective)
+        return string.format("%s (%d)", gui.str("Auto"), gui.get_max_scale())
+    end
+    local effective = gui.get_scale()
+    if effective ~= x then
+        -- menu is limited by window size
+        return string.format("%s (%s %s)", tostring(x), gui.str("Effective"), tostring(effective))
     end
     return tostring(x)
 end
 
-local settings = require "core:settings_common".new(document, {tostring_overrides=tostring_overrides})
+local settings = require "core:settings_common".new(document, {app=app, tostring_overrides=tostring_overrides})
 -- templates call these functions by name, so they must be global
 create_trackbar_setting = settings.create_trackbar_setting
 update_trackbar_label = settings.update_trackbar_label
@@ -32,7 +30,7 @@ create_checkbox = settings.create_checkbox
 function on_open()
     create_trackbar_setting("camera.fov", "FOV", 1, "°")
     create_trackbar_setting("display.framerate", "Framerate", 1, "", "", true)
-    create_trackbar_setting("display.gui-scale", "GUI Scale", 1, "", "display.gui-scale.tooltip", true)
+    create_trackbar_setting("display.gui-scale", "GUI Scale", 0.5, "", "display.gui-scale.tooltip", true)
 
     document.root:add(string.format(
         "<select context='settings' onselect='function(opt) app.set_setting(\"display.window-mode\", tonumber(opt)) end' selected='%s'>"..

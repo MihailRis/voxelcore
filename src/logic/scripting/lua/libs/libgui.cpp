@@ -1068,7 +1068,7 @@ static int l_gui_getviewport(lua::State* L) {
 }
 
 static int l_gui_get_scale(lua::State* L) {
-    return lua::pushinteger(L, engine->getGUI().getScale());
+    return lua::pushnumber(L, engine->getGUI().getScale());
 }
 
 static int l_gui_get_max_scale(lua::State* L) {

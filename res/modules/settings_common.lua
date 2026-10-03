@@ -3,6 +3,7 @@
 -- Usage in a page script:
 --
 --   local settings = require "core:settings_common".new(document, {
+--       app = app,
 --       tostring_overrides = {["display.framerate"] = function(x) ... end}
 --   })
 --   -- templates call these functions by name, so they must be global
@@ -15,9 +16,11 @@ local settings_common = {}
 --- Create helpers bound to the page document.
 --- @param document the page document
 --- @param options table (optional) with fields:
+---   app: the page's `app` library (not visible inside modules)
 ---   tostring_overrides: {[setting_id] = function(value) -> string}
 function settings_common.new(document, options)
     options = options or {}
+    local app = options.app
     local tostring_overrides = options.tostring_overrides or {}
     local this = {}
 

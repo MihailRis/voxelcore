@@ -1,6 +1,7 @@
 #include "GUI.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
 #include "assets/Assets.hpp"
@@ -103,16 +104,28 @@ int GUI::calcMaxScale(const glm::uvec2& viewport) {
     return maxFit;
 }
 
-int GUI::calcScale(const glm::uvec2& viewport) const {
-    int maxFit = calcMaxScale(viewport);
-    int value = engine.getSettings().display.guiScale.get();
-    if (value <= 0) {
-        return maxFit; // auto
+float GUI::calcScale(const glm::uvec2& viewport) const {
+    float value = engine.getSettings().display.guiScale.get();
+    float result = value <= 0.0f
+        ? static_cast<float>(calcMaxScale(viewport)) // auto
+        : value;
+
+    // while a menu page is open, it must fit the window
+    auto& page = menu->getCurrent();
+    if (page.panel) {
+        auto size = page.panel->getSize();
+        if (size.x > 0.0f && size.y > 0.0f) {
+            float fit = std::min(viewport.x / size.x, viewport.y / size.y);
+            fit = std::floor(fit * 2.0f) / 2.0f; // step 0.5
+            result = std::min(result, std::max(fit, 0.5f));
+        }
     }
-    return std::min(value, maxFit);
+    // keep UI size at least 1 unit
+    float limit = static_cast<float>(std::min(viewport.x, viewport.y));
+    return std::max(0.5f, std::min(result, std::max(limit, 0.5f)));
 }
 
-int GUI::getScale() const {
+float GUI::getScale() const {
     return scale;
 }
 
@@ -122,8 +135,8 @@ int GUI::getMaxScale() const {
 
 CursorState GUI::getCursor() const {
     auto cursor = input.getCursor();
-    cursor.pos /= static_cast<float>(scale);
-    cursor.delta /= static_cast<float>(scale);
+    cursor.pos /= scale;
+    cursor.delta /= scale;
     return cursor;
 }
 
@@ -282,7 +295,7 @@ void GUI::actFocused() {
 
 void GUI::act(float delta, const glm::uvec2& vp) {
     scale = calcScale(vp);
-    container->setSize(glm::vec2(vp) / static_cast<float>(scale));
+    container->setSize(glm::vec2(vp) / scale);
     for (auto& pair : frames) {
         pair.second->act(delta);
     }
@@ -318,11 +331,11 @@ void GUI::postAct() {
 
 void GUI::draw(const DrawContext& pctx, Assets& assets) {
     auto ctx = pctx.sub(batch2D.get());
-    ctx.setUiScale(static_cast<float>(scale));
+    ctx.setUiScale(scale);
 
     // viewport in UI units
     const glm::vec2 viewport =
-        glm::vec2(ctx.getViewport()) / static_cast<float>(scale);
+        glm::vec2(ctx.getViewport()) / scale;
 
     auto& page = menu->getCurrent();
     if (page.panel) {
@@ -341,6 +354,9 @@ void GUI::draw(const DrawContext& pctx, Assets& assets) {
     uishader->uniformMatrix("u_projview", uicamera->getProjView());
 
     batch2D->begin();
+    // fractional scale puts quad edges at pixel centers, which makes
+    // atlas sampling bleed into neighbour glyphs
+    batch2D->setPixelSnap(scale != std::floor(scale) ? scale : 0.0f);
     for (auto& [outputTexture, frame] : frames) {
         frame->updateOutput(assets);
         frame->draw(ctx, assets);
@@ -382,6 +398,7 @@ void GUI::draw(const DrawContext& pctx, Assets& assets) {
         batch2D->setColor(0, 255, 0);
         batch2D->lineRect(pos.x, pos.y, size.x-1, size.y-1);
     }
+    batch2D->setPixelSnap(0.0f);
 }
 
 std::shared_ptr<UINode> GUI::getFocused() const {

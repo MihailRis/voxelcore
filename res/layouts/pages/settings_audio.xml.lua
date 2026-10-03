@@ -1,4 +1,4 @@
-local settings = require "core:settings_common".new(document, {})
+local settings = require "core:settings_common".new(document, {app=app})
 -- templates call these functions by name, so they must be global
 create_trackbar_setting = settings.create_trackbar_setting
 update_trackbar_label = settings.update_trackbar_label

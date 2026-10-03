@@ -16,11 +16,11 @@ gui.str(text: str, context: str) -> str
 -- Returns size of the main container (window).
 gui.get_viewport() -> {int, int}
 
--- Returns current GUI scale: window pixels per one UI unit (1..4).
--- Set by the display.gui-scale setting and limited by window size.
-gui.get_scale() -> int
+-- Returns current GUI scale: window pixels per one UI unit (0.5..4).
+-- Set by the display.gui-scale setting (auto mode fits the window size).
+gui.get_scale() -> number
 
--- Returns maximal GUI scale that fits the current window size.
+-- Returns GUI scale used in auto mode (fits the current window size).
 gui.get_max_scale() -> int
 
 -- Returns cursor position in UI units (unlike input.get_mouse_pos,
