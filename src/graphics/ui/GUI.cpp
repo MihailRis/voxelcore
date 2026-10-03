@@ -110,9 +110,10 @@ float GUI::calcScale(const glm::uvec2& viewport) const {
         ? static_cast<float>(calcMaxScale(viewport)) // auto
         : value;
 
-    // while a menu page is open, it must fit the window
+    // explicitly set scale is applied as is; in auto mode an open menu page
+    // must fit the window
     auto& page = menu->getCurrent();
-    if (page.panel) {
+    if (value <= 0.0f && page.panel) {
         auto size = page.panel->getSize();
         if (size.x > 0.0f && size.y > 0.0f) {
             float fit = std::min(viewport.x / size.x, viewport.y / size.y);

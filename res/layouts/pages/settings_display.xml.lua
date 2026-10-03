@@ -11,12 +11,8 @@ end
 
 tostring_overrides["display.gui-scale"] = function(x)
     if x == 0 then
-        return string.format("%s (%d)", gui.str("Auto"), gui.get_max_scale())
-    end
-    local effective = gui.get_scale()
-    if effective ~= x then
-        -- menu is limited by window size
-        return string.format("%s (%s %s)", tostring(x), gui.str("Effective"), tostring(effective))
+        -- the scale chosen automatically for the current window
+        return string.format("%s (%s)", gui.str("Auto"), tostring(gui.get_scale()))
     end
     return tostring(x)
 end

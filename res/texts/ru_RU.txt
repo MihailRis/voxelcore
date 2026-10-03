@@ -13,7 +13,6 @@ Description=Описание
 Converting world...=Выполняется конвертация мира...
 Unlimited=Неограниченно
 Auto=Авто
-Effective=действует
 Chat=Чат
 Console=Консоль
 Log=Лог
