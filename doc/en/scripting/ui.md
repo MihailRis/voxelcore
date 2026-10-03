@@ -84,21 +84,24 @@ Common methods:
 
 Properties:
 
-| Name        | Type   | Read | Write | Description                                                                          |
-| ----------- | ------ | ---- | ----- | ------------------------------------------------------------------------------------ |
-| text        | string | yes  | yes   | entered text or placeholder                                                          |
-| placeholder | string | yes  | yes   | placeholder (used if nothing has been entered)                                       |
-| hint        | string | yes  | yes   | text to display when nothing is entered                                              |
-| caret       | int    | yes  | yes   | carriage position. `textbox.caret = -1` will set the position to the end of the text |
-| editable    | bool   | yes  | yes   | text mutability                                                                      |
-| edited      | bool   | yes  | yes\* | is text edited since the last set / edited status reset                              |
-| multiline   | bool   | yes  | yes   | multiline support                                                                    |
-| lineNumbers | bool   | yes  | yes   | display line numbers                                                                 |
-| textWrap    | bool   | yes  | yes   | automatic text wrapping (only with multiline: "true")                                |
-| valid       | bool   | yes  | no    | is the entered text correct                                                          |
-| textColor   | vec4   | yes  | yes   | text color                                                                           |
-| syntax      | string | yes  | yes   | syntax highlighting ("lua" - Lua)                                                    |
-| markup      | string | yes  | yes   | text markup language ("md" - Markdown)                                               |
+| Name              | Type   | Read | Write | Description                                                                          |
+| ----------------- | ------ | ---- | ----- | ------------------------------------------------------------------------------------ |
+| text              | string | yes  | yes   | entered text or placeholder                                                          |
+| placeholder       | string | yes  | yes   | placeholder (used if nothing has been entered)                                       |
+| hint              | string | yes  | yes   | text to display when nothing is entered                                              |
+| caret             | int    | yes  | yes   | carriage position. `textbox.caret = -1` will set the position to the end of the text |
+| editable          | bool   | yes  | yes   | text mutability                                                                      |
+| edited            | bool   | yes  | yes\* | is text edited since the last set / edited status reset                              |
+| multiline         | bool   | yes  | yes   | multiline support                                                                    |
+| lineNumbers       | bool   | yes  | yes   | display line numbers                                                                 |
+| textWrap          | bool   | yes  | yes   | automatic text wrapping (only with multiline: "true")                                |
+| valid             | bool   | yes  | no    | is the entered text correct                                                          |
+| textColor         | vec4   | yes  | yes   | text color                                                                           |
+| syntax            | string | yes  | yes   | syntax highlighting ("lua" - Lua)                                                    |
+| markup            | string | yes  | yes   | text markup language ("md" - Markdown)                                               |
+| selection         | ivec2  | yes  | yes   | selection anchor and caret; see below                                                |
+| externalRendering | bool   | yes  | yes   | external text rendering (default: false)                                             |
+| textLayout        | table  | yes  | no    | snapshot of visible text layout; see below                                           |
 
 \* - false only
 
@@ -109,6 +112,59 @@ Methods:
 | paste(text: str)          | inserts the specified text at the caret position                 |
 | lineAt(pos: int) -> int   | determines the line number by position in the text               |
 | linePos(line: int) -> int | determines the position of the beginning of the line in the text |
+
+### Selection and external rendering
+
+- `selection` (read/write): `{anchor, caret}`, preserving direction. Indices
+  are zero-based native caret character units, not UTF-8 byte offsets. Setters
+  require finite integers, clamp to the text length and reveal the caret,
+  including immediately after replacing text. Setting selection does not
+  edit text or reset undo history.
+- `externalRendering` (read/write boolean, default `false`): hides native text,
+  caret, selection and current-line highlight. Input, hit testing, layout,
+  scrolling, background, line numbers and scrollbar remain native. Setting it
+  back to `false` restores native rendering without replacing the textbox.
+  Markup and external rendering cannot be combined: either setter rejects it.
+- `textLayout` (read-only table): a snapshot of the current visible layout.
+  `ready=false` means the font is unavailable or markup is active. Otherwise:
+  - `text`: the value of `textbox.text`, including `placeholder` when input is empty;
+    `font`: font name.
+  - `lineHeight`: row pitch; `textHeight`: height to use for a label displaying a row.
+  - `caretRect`: `{x,y,cellWidth,rowHeight}` at the moving selection endpoint;
+    at end-of-line the cell width is the space advance. This is geometry,
+    independent of focus, editability and blink phase.
+  - `selectionRects`: `{x, y, width, height}` rectangles for visible selected rows,
+    including selected newline cells.
+  - `lines`: visible rows `{start, text, pos={x,y}, advances={...}}`;
+    `start` is a native caret index, text excludes the trailing newline,
+    `advances` contains the native width of each character. Empty input may
+    expose the hint as display rows; it does not replace `text` in the snapshot.
+
+Coordinates are relative to the textbox, include scrolling and alignment,
+and may extend outside its bounds. External painters must clip to the field.
+Snapshots are independent Lua tables; modifying them does not modify the box.
+Read them again after input, resizing or scrolling. Syntax colors are not
+exported; the external painter supplies its own colors. Indexing and text input
+follow the existing textbox behavior.
+
+```lua
+local field = document.input
+field.text = "abcdef"
+field.selection = {5, 2}
+local anchor, caret = unpack(field.selection)
+
+field.externalRendering = true
+local layout = field.textLayout
+if layout.ready then
+    for _, line in ipairs(layout.lines) do
+        print(line.start, line.text, line.pos[1], line.pos[2])
+    end
+end
+```
+
+In this example the caret is at position 2 and the selection anchor is at
+position 5. A negative selection index is clamped to zero; unlike `caret`,
+it does not address characters from the end of the text.
 
 ## Slider (trackbar)
 
