@@ -82,6 +82,19 @@ void SplitBox::doubleClick(int x, int y) {
     refresh();
 }
 
+std::shared_ptr<UINode> SplitBox::getAt(const glm::vec2& pos) {
+    auto hover = Container::getAt(pos);
+    if (hover.get() != this) {
+        return hover;
+    }
+    for (const auto& node : nodes) {
+        if (node->isVisible() && node->isInside(pos)) {
+            return nullptr;
+        }
+    }
+    return hover;
+}
+
 void SplitBox::fullRefresh() {
     refresh();
     reposition();

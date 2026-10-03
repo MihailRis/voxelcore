@@ -11,6 +11,7 @@ namespace gui {
         virtual void refresh() override;
         virtual void fullRefresh() override;
         virtual void doubleClick(int x, int y) override;
+        virtual std::shared_ptr<UINode> getAt(const glm::vec2& pos) override;
     private:
         float splitPos;
     };
