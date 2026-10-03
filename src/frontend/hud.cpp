@@ -370,7 +370,7 @@ void Hud::update(bool visible) {
         element.getNode()->setVisible(visible);
     }
 
-    const auto& windowSize = engine.getWindow().getSize();
+    const auto windowSize = gui.getContainer()->getSize();
     glm::vec2 caSize = contentAccessPanel->getSize();
     contentAccessPanel->setVisible(inventoryView != nullptr && showContentPanel);
     contentAccessPanel->setSize(glm::vec2(caSize.x, windowSize.y));
@@ -626,7 +626,8 @@ void Hud::setDebug(bool flag) {
 void Hud::draw(const DrawContext& ctx){
     const auto& viewport = ctx.getViewport();
 
-    updateElementsPosition(viewport);
+    // UI layout is calculated in GUI units (window size / GUI scale)
+    updateElementsPosition(gui.getContainer()->getSize());
 
     uicamera->setFov(viewport.y);
     uicamera->setAspectRatio(viewport.x / static_cast<float>(viewport.y));
@@ -653,7 +654,7 @@ void Hud::draw(const DrawContext& ctx){
     }
 }
 
-void Hud::updateElementsPosition(const glm::uvec2& viewport) {
+void Hud::updateElementsPosition(const glm::vec2& viewport) {
     if (inventoryOpen) {
         float caWidth = inventoryView && showContentPanel
                             ? contentAccess->getSize().x
@@ -698,7 +699,7 @@ void Hud::updateElementsPosition(const glm::uvec2& viewport) {
         }
     }
     if (exchangeSlot != nullptr) {
-        exchangeSlot->setPos(input.getCursor().pos);
+        exchangeSlot->setPos(gui.getCursor().pos);
     }
     hotbarView->setPos(glm::vec2(viewport.x / 2, viewport.y - 65));
     hotbarView->setSelected(player.getChosenSlot());

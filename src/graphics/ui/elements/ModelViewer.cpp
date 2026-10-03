@@ -57,7 +57,7 @@ void ModelViewer::act(float delta) {
         grabbing = true;
     }
     if (grabbing && input.clicked(Mousecode::BUTTON_3)) {
-        auto cursor = input.getCursor();
+        auto cursor = gui.getCursor();
         if (input.pressed(Keycode::LEFT_SHIFT)) {
             center -= camera.right * (cursor.delta.x / size.x) * distance;
             center += camera.up * (cursor.delta.y / size.y) * distance;
