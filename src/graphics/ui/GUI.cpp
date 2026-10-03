@@ -88,21 +88,23 @@ void GUI::onAssetsLoad(Assets* assets) {
     assets->store(rootDocument, "core:root");
 }
 
-/// @brief Minimal virtual window size used to choose the automatic scale
-static constexpr glm::uvec2 AUTO_SCALE_MIN_SIZE {640, 480};
+/// @brief Minimal UI size (in UI units) that GUI scale must keep, so
+/// menus always fit the window. Larger scale values are limited to it
+static constexpr glm::uvec2 MIN_UI_SIZE {640, 480};
+static constexpr int MAX_SCALE = 4;
 
 int GUI::calcScale(const glm::uvec2& viewport) const {
+    int maxFit = 1;
+    while (maxFit < MAX_SCALE &&
+           viewport.x / (maxFit + 1) >= MIN_UI_SIZE.x &&
+           viewport.y / (maxFit + 1) >= MIN_UI_SIZE.y) {
+        maxFit++;
+    }
     int value = engine.getSettings().display.guiScale.get();
-    if (value > 0) {
-        return value;
+    if (value <= 0) {
+        return maxFit; // auto
     }
-    int result = 1;
-    while (result < 4 &&
-           viewport.x / (result + 1) >= AUTO_SCALE_MIN_SIZE.x &&
-           viewport.y / (result + 1) >= AUTO_SCALE_MIN_SIZE.y) {
-        result++;
-    }
-    return result;
+    return std::min(value, maxFit);
 }
 
 int GUI::getScale() const {

@@ -41,7 +41,7 @@ struct DisplaySettings {
     FlagSetting limitFpsIconified {false};
     /// @brief Adaptive framerate in menu (experimental)
     FlagSetting adaptiveFpsInMenu {false};
-    /// @brief GUI scale factor (0 - auto, 1..4 - fixed integer scale)
+    /// @brief GUI scale factor (0 - auto, 1..4 - integer scale limited by window size)
     IntegerSetting guiScale {0, 0, 4};
 };
 
