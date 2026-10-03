@@ -366,10 +366,16 @@ void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
         );
         return;
     }
-    auto indices = *content->getIndices();
+    auto& indices = *content->getIndices();
     if (!layout.itemSource && stack.accepts(grabbed) && layout.placing) {
-        action = InteractionAction::PUT;
-        stack.move(grabbed, indices);
+        auto& def = indices.items.require(stack.getItemId());
+        if (stack.getCount() < def.stackSize) {
+            action = InteractionAction::PUT;
+            stack.move(grabbed, indices);
+        } else {
+            action = InteractionAction::TAKE;
+            std::swap(grabbed, stack);
+        }
     } else {
         actIfCannotPut(stack, grabbed, action);
     }
@@ -386,13 +392,13 @@ void SlotView::performLeftClick(ItemStack& stack, ItemStack& grabbed) {
 
 void SlotView::actIfCannotPut(ItemStack& stack, ItemStack& grabbed, InteractionAction& action) {
     const auto& input = gui.getInput();
-    auto indices = *content->getIndices();
+    auto& indices = *content->getIndices();
     if (layout.itemSource) {
         if (grabbed.isEmpty()) {
             action = InteractionAction::TAKE;
             grabbed.set(stack);
             if (input.pressed(Keycode::LEFT_CONTROL)) {
-                grabbed.maximizeCount(*content->getIndices());
+                grabbed.maximizeCount(indices);
             }
         } else {
             if (grabbed.accepts(stack)) {
@@ -500,6 +506,17 @@ void SlotView::performRightClick(ItemStack& stack, ItemStack& grabbed) {
     );
 }
 
+void SlotView::performMiddleClick(ItemStack& stack, ItemStack& grabbed) {
+    if (layout.itemSource) {
+        scripting::on_access_panel_slot_middle_click(stack.getItemId());
+    } else {
+        scripting::on_slot_middle_click(
+            inventoryId,
+            layout.index
+        );
+    }
+}
+
 void SlotView::clicked(Mousecode button) {
     if (bound == nullptr) return;
     auto exchangeSlot =
@@ -514,6 +531,8 @@ void SlotView::clicked(Mousecode button) {
         performLeftClick(stack, grabbed);
     } else if (button == Mousecode::BUTTON_2) {
         performRightClick(stack, grabbed);
+    } else if (button == Mousecode::BUTTON_3) {
+        performMiddleClick(stack, grabbed);
     }
 
     if (layout.updateFunc) {

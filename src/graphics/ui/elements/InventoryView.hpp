@@ -67,6 +67,7 @@ namespace gui {
 
         void performLeftClick(ItemStack& stack, ItemStack& grabbed);
         void performRightClick(ItemStack& stack, ItemStack& grabbed);
+        void performMiddleClick(ItemStack& stack, ItemStack& grabbed);
 
         void drawItemIcon(
             Batch2D& batch,
