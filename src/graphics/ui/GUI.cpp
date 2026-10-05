@@ -14,7 +14,6 @@
 #include "frontend/UiDocument.hpp"
 #include "frontend/locale.hpp"
 #include "graphics/core/Batch2D.hpp"
-#include "graphics/core/LineBatch.hpp"
 #include "graphics/core/Shader.hpp"
 #include "graphics/core/Font.hpp"
 #include "graphics/core/DrawContext.hpp"
@@ -188,8 +187,8 @@ void GUI::actMouse(Frame& frame, float delta, const CursorState& cursor) {
                 doubleClicked = true;
             } else {
                 pressed->click(cursorPos.x, cursorPos.y);
+                doubleClickTimer = 0.0f;
             }
-            doubleClickTimer = 0.0f;
             if (focus && focus != pressed) {
                 focus->defocus();
             }
@@ -260,7 +259,7 @@ void GUI::act(float delta, const glm::uvec2& vp) {
             hover = nullptr;
         }
     }
-    if (focus) {
+    if (focus && focusedOnStart == focus.get()) {
         actFocused();
     }
     if (focus && !focus->isFocused()) {
@@ -274,6 +273,7 @@ void GUI::postAct() {
         postRunnables.pop();
         callback();
     }
+    focusedOnStart = focus.get();
 }
 
 void GUI::draw(const DrawContext& pctx, Assets& assets) {
@@ -376,6 +376,14 @@ void GUI::setActiveFrame(const std::string& id, vec2supplier cursorLocator) {
 
 std::shared_ptr<gui::Frame> GUI::getActiveFrame() const {
     return activeFrame;
+}
+
+std::shared_ptr<gui::Frame> GUI::getFrame(const std::string& id) {
+    const auto& found = frames.find(id);
+    if (found == frames.end()) {
+        return nullptr;
+    }
+    return found->second;
 }
 
 void GUI::remove(UINode* node) noexcept {

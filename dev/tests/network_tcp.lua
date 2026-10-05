@@ -13,6 +13,7 @@ for i=1,3 do
             print("client-listener started")
             local received_text = ""
             while client:is_alive() and #received_text < #text do
+                client:peek(math.random(0, 100))
                 local received = client:recv(512)
                 if received then
                     received_text = received_text .. utf8.tostring(received)

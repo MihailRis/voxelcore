@@ -14,4 +14,5 @@ void EntityDef::cloneTo(EntityDef& dst) {
     dst.elasticity = elasticity;
     dst.stepHeight = stepHeight;
     dst.save = save;
+    dst.lightingMode = lightingMode;
 }

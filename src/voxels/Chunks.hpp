@@ -24,6 +24,10 @@ class VoxelsVolume;
 
 template <int w, int h, int d> class StaticVoxelsVolume;
 
+namespace blocks_agent {
+    struct RaycastSettings;
+}
+
 /// Player-centred chunks matrix
 class Chunks {
     LevelEvents* events;
@@ -112,8 +116,7 @@ public:
         glm::vec3& end,
         glm::ivec3& norm,
         glm::ivec3& iend,
-        std::set<blockid_t> filter = {},
-        bool includeNonSelectable = false
+        const blocks_agent::RaycastSettings& settings
     ) const;
 
     glm::vec3 rayCastToObstacle(

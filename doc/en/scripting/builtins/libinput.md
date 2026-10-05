@@ -64,6 +64,13 @@ input.get_mouse_delta() --> {int, int}
 Returns cursor movement delta.
 
 ```lua
+input.get_mouse_scroll() --> int
+```
+
+Returns the vertical mouse wheel offset accumulated during the current frame.
+A positive value indicates scrolling up; a negative value indicates scrolling down.
+
+```lua
 input.get_bindings() --> strings array
 ```
 

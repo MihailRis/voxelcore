@@ -13,14 +13,21 @@ SelectBox::SelectBox(
     GUI& gui,
     std::vector<Option>&& options,
     Option selected,
+    Mode mode,
     int contentWidth,
     const glm::vec4& padding
 )
-    : Button(gui, selected.text, padding, nullptr, glm::vec2(contentWidth, -1)),
-      options(std::move(options)) {
-
-    listenAction(UIAction::CLICK, [this](GUI& gui) {
-        auto panel = std::make_shared<Panel>(gui, getSize());
+    : Button(gui, selected.text, padding, nullptr, glm::vec2(-1, -1)),
+      options(std::move(options)), mode(mode) {
+    listenAction(UIAction::CLICK, [this, contentWidth](GUI& gui) {
+        auto panel = std::make_shared<Panel>(
+            gui,
+            getMode() == Mode::BUTTON ? glm::vec2 {contentWidth, contentWidth}
+                                      : getSize(),
+            glm::vec4 {2.0f},
+            0.0f
+        );
+        panel->setColor({});
         panel->setPadding(glm::vec4(0, size.y, 0, 0));
         panel->setPos(calcPos() + glm::vec2(0, 0));
         for (const auto& option : this->options) {
@@ -51,7 +58,9 @@ void SelectBox::listenChange(OnStringChange&& callback) {
 
 void SelectBox::setSelected(const Option& selected) {
     this->selected = selected;
-    this->label->setText(selected.text);
+    if (mode == Mode::SELECT) {
+        this->label->setText(selected.text);
+    }
 }
 
 const SelectBox::Option& SelectBox::getSelected() const {
@@ -66,6 +75,14 @@ void SelectBox::setOptions(std::vector<Option>&& options) {
     this->options = std::move(options);
 }
 
+SelectBox::Mode SelectBox::getMode() const {
+    return mode;
+}
+
+void SelectBox::setMode(SelectBox::Mode mode) {
+    this->mode = mode;
+}
+
 void SelectBox::drawBackground(const DrawContext& pctx, const Assets&) {
     glm::vec2 pos = calcPos();
     auto batch = pctx.getBatch2D();
@@ -73,6 +90,10 @@ void SelectBox::drawBackground(const DrawContext& pctx, const Assets&) {
     batch->setColor(calcColor());
     batch->rect(pos.x, pos.y, size.x, size.y);
     batch->setColor({1.0f, 1.0f, 1.0f, 0.333f});
+    
+    if (mode != Mode::SELECT) {
+        return;
+    }
 
     int paddingRight = padding.w;
     int widthHalf = 8;

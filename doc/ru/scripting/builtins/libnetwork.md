@@ -4,6 +4,39 @@
 
 ## HTTP-Запросы
 
+Существует настраиваемая функция `network.request`, которая позволяет выполнять HTTP-запросы с различными методами (GET, POST, PUT, DELETE и т.д.) и настраивать заголовки, тело запроса, таймаут и другие параметры.
+
+> Для передачи двоичных данных в теле запроса, используйте массив байт (Bytearray) или строку. В `on_response` строку `body` можно преобразовать в массив байт с помощью `Bytearray(response.body)`.
+
+```lua
+network.request(
+    url: string,
+    parameters: {
+        -- Метод запроса (GET, POST, PUT, DELETE и т.д.)
+        method: string,
+        -- Тело запроса в виде строки или массива байт (Bytearray)
+        body: table|string,
+        -- Список дополнительных заголовков запроса
+        headers: table<string>,
+        -- Таймаут в миллисекундах
+        timeout: int,
+        -- Проверять ли SSL-сертификат
+        verify_ssl: boolean,
+        -- Функция, вызываемая при получении ответа
+        on_response: function(response: {
+            -- HTTP-код ответа
+            status: int,
+            -- Тело ответа в виде строки
+            body: string,
+            -- Список заголовков ответа
+            headers: table<string>
+        }),
+    }
+)
+```
+
+### Упрощённые функции для GET и POST запросов
+
 ```lua
 -- Выполняет GET запрос к указанному URL.
 network.get(
@@ -91,6 +124,24 @@ socket:recv_async(
     -- Использовать таблицу вместо Bytearray
     [опционально] usetable: boolean=false
 ) -> nil|table|Bytearray
+
+-- `peek` и `peek_async` являются аналогами методов `recv` и `recv_async`
+-- за тем исключением, что `peek` и `peek_async` не двигают позицию буфера сокета
+-- Это означает, что они не удаляют байты из сокета, а значит байты могут быть прочитаны после
+socket:peek(
+    length: int,
+    [опционально] usetable: boolean=false
+) -> nil|table|Bytearray
+
+socket:peek_async(
+    length: int,
+    [опционально] usetable: boolean=false
+) -> nil|table|Bytearray
+
+-- Оборачивает сокет в io_stream (см. ../io_stream.md)
+socket:as_stream(
+    [опционально] binary_mode: boolean=true
+) -> io_stream
 
 -- Закрывает соединение
 socket:close()

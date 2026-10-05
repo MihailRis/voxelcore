@@ -135,7 +135,7 @@ public:
 
     bool isCurrentCameraBuiltin() const;
 
-    Hitbox* getHitbox();
+    Hitbox* getHitbox() const;
 
     void setSpawnPoint(glm::vec3 point);
     glm::vec3 getSpawnPoint() const;

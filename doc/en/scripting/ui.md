@@ -1,7 +1,7 @@
 # UI properties and methods
 
 UI elements in scripts are accessed through a Document instance
-(*document* variable) by id specified in xml.
+(global *document* variable) by id specified in xml.
 
 Example: print the pos property of an element with id: "worlds-panel" to the console:
 ```lua
@@ -53,7 +53,7 @@ Properties that apply to all elements:
 | contentOffset | vec2    | yes  | *no*  | element content offset                           |
 | cursor        | string  | yes  | yes   | cursor displayed on hover                        |
 | parent        | Element | yes  | *no*  | parent element or nil                            |
-| zIndex        | bool    | yes  | *no*  | z-index value. In panel, it determines the order |
+| zIndex        | int     | yes  | *no*  | z-index value. In panel, it determines the order |
 
 Common element methods:
 

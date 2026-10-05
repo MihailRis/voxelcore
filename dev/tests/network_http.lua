@@ -4,8 +4,8 @@ network.get("https://api.github.com/repos/MihailRis/VoxelEngine-Cpp/releases/lat
     print(json.parse(s).name)
     response_received = true
 end, function (code)
-    print("repond with code", code)
+    print("respond with code", code)
     response_received = true
 end)
 
-app.sleep_until(function () return response_received end, nil, 10)
+app.sleep_until(function () return response_received end, nil, 5)

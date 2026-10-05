@@ -8,6 +8,8 @@ TEST(JSON, EncodeDecode) {
     const int bytesSize = 20;
     const int year = 2019;
     const float score = 3.141592;
+    const double distance = 1.23e45;
+    const double epsilon = 1e-6;
     const bool visible = true;
     dv::objects::Bytes srcBytes(bytesSize);
     for (int i = 0; i < bytesSize; i ++) {
@@ -20,6 +22,8 @@ TEST(JSON, EncodeDecode) {
         object["name"] = name;
         object["year"] = year;
         object["score"] = score;
+        object["distance"] = distance;
+        object["epsilon"] = epsilon;
         object["visible"] = visible;
         object["data"] = srcBytes;
 
@@ -30,6 +34,8 @@ TEST(JSON, EncodeDecode) {
         EXPECT_EQ(object["name"].asString(), name);
         EXPECT_EQ(object["year"].asInteger(), year);
         EXPECT_FLOAT_EQ(object["score"].asNumber(), score);
+        EXPECT_DOUBLE_EQ(object["distance"].asNumber(), distance);
+        EXPECT_DOUBLE_EQ(object["epsilon"].asNumber(), epsilon);
         EXPECT_EQ(object["visible"].asBoolean(), visible);
         auto b64string = object["data"].asString();
 

@@ -8,7 +8,7 @@ The entity object is available in components as a global variable **entity**.
 -- Deletes an entity (the entity may continue to exist until the frame ends, but will not be displayed in that frame)
 entity:despawn()
 
--- Returns entity defintion index (integer ID)
+-- Returns entity definition index (integer ID)
 entity:def_index() -> int
 
 -- Returns entity definition name (string ID)
@@ -17,7 +17,7 @@ entity:def_name() -> str
 -- Returns the name of the entity skeleton
 entity:get_skeleton() -> str
 -- Replaces the entity skeleton
-entity:set_skeleton(name: str)
+entity:set_skeleton(name: str | nil)
 
 -- Returns the unique entity identifier
 entity:get_uid() -> int
@@ -36,7 +36,23 @@ entity:set_enabled(name: str, enable: bool)
 -- At components initialization -1 is also returned,
 -- since the binding occurs after initialization.
 entity:get_player() -> int or nil
+
+-- Checks the 'selectable' property of an entity (raycast opacity)
+body:is_selectable() -> bool
+-- Sets the value of the 'selectable' property of an entity
+body:set_selectable(flag: bool)
 ```
+
+## Custom Components
+
+A component is defined as a script in `{pack}/scripts/components/{name}.lua`.
+The component will be available for use in the entity definition as `{pack}:{name}`.
+Example: `core:scripts/components/pathfinding.lua` -> `core:pathfinding`.
+
+For **each** entity containing a component, a **separate instance** is created with **its own namespace** within the pack namespace.
+Global variables declared in it act as public fields of the component (same for global functions).
+
+Entity components are specified via the ["components" list](../entity-properties.md#components)
 
 ## Built-in components
 
@@ -174,10 +190,14 @@ rig:is_visible([optional] index: int) -> bool
 rig:set_visible([optional] index: int, status: bool)
 
 -- Returns the color of the entity
-rig:get_color() -> vec3
+rig:get_color() -> vec4
+-- Return the color of the bone by index
+rig:get_color(index: int) -> vec4
 
 -- Sets the color of the entity
-rig:set_color(color: vec3)
+rig:set_color(color: vec3 | vec4)
+-- Sets the color of the bone by index
+rig:set_color(color: vec3 | vec4, index: int)
 ```
 
 > [!WARNING]
@@ -264,3 +284,9 @@ function on_used(playerid: int)
 ```
 
 Called when an entity is used (RMB by entity). The player ID is passed as an argument.
+
+```lua
+function on_player_set(playerid: int)
+```
+
+Called when an entity is attached to a player.

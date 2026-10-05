@@ -28,7 +28,8 @@ block.get(x: int, y: int, z: int) -> int
 block.get_states(x: int, y: int, z: int) -> int
 
 -- Set block with given integer ID and state (default - 0) at given position.
-block.set(x: int, y: int, z: int, id: int, states: int)
+-- If noupdate=true is passed, the `on_update` event will not be called for adjacent blocks.
+block.set(x: int, y: int, z: int, id: int, states: int, noupdate: boolean=false)
 
 -- Places a block with a given integer id and state (default - 0) at given position.
 -- on behalf of the player, calling the on_placed event.
@@ -150,7 +151,7 @@ block.raycast(start: vec3, dir: vec3, max_distance: number, [optional] dest: tab
 Casts a ray from the start point in the direction of *dir*. Max_distance specifies the maximum ray length.
 
 Argument `filter` can be used to tell ray what blocks can be skipped(passed through) during ray-casting.
-To use filter `dest` argument must be filled with some value(can be nil), it's done for backwards compatability 
+To use filter `dest` argument must be filled with some value(can be nil), it's done for backwards compatibility 
 
 The `include_non_selectable` argument determines whether blocks that cannot be selected by the cursor will be included.
 Example - `base:water`
@@ -158,6 +159,8 @@ Example - `base:water`
 The function returns a table with the results or nil if the ray does not hit any block.
 
 The result will use the destination table instead of creating a new one if the optional argument specified.
+
+Use `world.raycast(...)` for more detailed configuration.
 
 ## Model and physics
 

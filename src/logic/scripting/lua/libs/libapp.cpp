@@ -20,7 +20,13 @@
 #include "window/Window.hpp"
 #include "world/Level.hpp"
 
+#include <array>
+
 using namespace scripting;
+
+namespace {
+    static std::array<std::unique_ptr<Process>, MAX_SUBPROCESSES> processes;
+}
 
 /// @brief Check if content is loaded
 static int l_is_content_loaded(lua::State* L) {
@@ -84,6 +90,17 @@ static int l_reconfig_packs(lua::State* L) {
         );
     }
     return 0;
+}
+
+/// @brief Get current content packs configuration
+static int l_get_content(lua::State* L) {
+    const auto& configuration = content_control->getContentPacks();
+    lua::createtable(L, configuration.size(), 0);
+    for (int i = 0; i < configuration.size(); i++) {
+        lua::pushlstring(L, configuration[i].id);
+        lua::rawseti(L, i + 1);
+    }
+    return 1;
 }
 
 /// @brief Get content sources list
@@ -337,6 +354,10 @@ static int l_start_debug_instance(lua::State* L) {
     if (!engine->getProject().permissions.has(Permissions::DEBUGGING)) {
         throw std::runtime_error("project has no debugging permission");
     }
+    const auto& params = engine->getCoreParameters();
+    if (params.subProcessDepth >= MAX_SUBPROCESS_DEPTH) {
+        throw std::runtime_error("max subprocess depth exceeded");
+    }
 
     int port = lua::tointeger(L, 1);
     if (port == 0) {
@@ -357,6 +378,8 @@ static int l_start_debug_instance(lua::State* L) {
         "--res", paths.getResourcesFolder().u8string(),
         "--dir", paths.getUserFilesFolder().u8string(),
         "--dbg-server",  "tcp:" + std::to_string(port),
+        "--sub-depth", std::to_string(engine->getCoreParameters()
+            .subProcessDepth + 1),
     };
     if (!projectPath.empty()) {
         args.emplace_back("--project");
@@ -365,9 +388,99 @@ static int l_start_debug_instance(lua::State* L) {
 
     platform::new_engine_instance(
         std::move(args),
-        outputPath.empty() ? "" : io::resolve(std::string(outputPath))
+        outputPath.empty() ? "" : io::resolve(std::string(outputPath)),
+        false
     );
     return lua::pushinteger(L, port);
+}
+
+static int l_start_background_instance(lua::State* L) {
+    if (!engine->getProject().permissions.has(Permissions::SUB_INSTANCES)) {
+        throw std::runtime_error("project has no sub-instances permission");
+    }
+    const auto& params = engine->getCoreParameters();
+    if (params.subProcessDepth >= MAX_SUBPROCESS_DEPTH) {
+        throw std::runtime_error("max subprocess depth exceeded");
+    }
+
+    auto scriptPath = lua::require_lstring(L, 1);
+    io::path outputPath = lua::isstring(L, 2) ? lua::require_lstring(L, 2) : "";
+
+    std::vector<std::pair<std::string, std::string>> projectArgs;
+    if (lua::istable(L, 3)) {
+        lua::pushnil(L);
+        while (lua::next(L, 3)) {
+            lua::pushvalue(L, -2);
+            auto key = lua::tolstring(L, -1);
+            auto value = lua::tolstring(L, -2);
+            projectArgs.emplace_back(key, value);
+            lua::pop(L, 2);
+        }
+        lua::pop(L);
+    }
+
+    const auto& paths = engine->getPaths();
+
+    std::vector<std::string> args {
+        "--headless",
+        "--res", paths.getResourcesFolder().u8string(),
+        "--dir", paths.getUserFilesFolder().u8string(),
+        "--script", io::resolve(scriptPath).u8string(),
+        "--sub-depth", std::to_string(engine->getCoreParameters()
+            .subProcessDepth + 1),
+        "--log", io::resolve(outputPath).u8string(),
+    };
+    args.emplace_back("--project");
+    args.emplace_back(io::resolve(engine->getProject().path).u8string());
+
+    if (!projectArgs.empty()) {
+        args.emplace_back("--");
+        for (const auto& [key, value] : projectArgs) {
+            if (key.empty()) {
+                throw std::runtime_error("empty project argument name passed");
+            }
+            args.emplace_back("--" + key);
+            args.emplace_back(value);
+        }
+    }
+
+    int handle = -1;
+    for (int i = 0; i < ::processes.size(); i++) {
+        if (!::processes[i] || !::processes[i]->isActive()) {
+            handle = i;
+            break;
+        }
+    }
+    if (handle == -1) {
+        throw std::runtime_error("sub-processes limit exceeded");
+    }
+    ::processes[handle] =
+        platform::new_engine_instance(std::move(args), "", true);
+
+    return lua::pushinteger(L, handle);
+}
+
+static int l_is_instance_alive(lua::State* L) {
+    int handle = lua::tointeger(L, 1);
+    if (handle < 0 || handle >= ::processes.size()) {
+        throw std::runtime_error("invalid process handle");
+    }
+    auto& process = ::processes[handle];
+    return lua::pushboolean(L, process && process->isActive());
+}
+
+static int l_terminate_instance(lua::State* L) {
+    int handle = lua::tointeger(L, 1);
+    if (handle < 0 || handle >= ::processes.size()) {
+        throw std::runtime_error("invalid process handle");
+    }
+    auto& process = ::processes[handle];
+    if (process == nullptr) {
+        return lua::pushboolean(L, false);
+    }
+    bool active = process->isActive();
+    process.reset();
+    return lua::pushboolean(L, active);
 }
 
 const luaL_Reg applib[] = {
@@ -376,6 +489,7 @@ const luaL_Reg applib[] = {
     {"load_content", lua::wrap<l_load_content>},
     {"reset_content", lua::wrap<l_reset_content>},
     {"reconfig_packs", lua::wrap<l_reconfig_packs>},
+    {"get_content", lua::wrap<l_get_content>},
     {"get_content_sources", lua::wrap<l_get_content_sources>},
     {"set_content_sources", lua::wrap<l_set_content_sources>},
     {"reset_content_sources", lua::wrap<l_reset_content_sources>},
@@ -402,5 +516,8 @@ const luaL_Reg applib[] = {
     {"get_version", lua::wrap<l_get_version>},
     {"create_memory_device", lua::wrap<l_create_memory_device>},
     {"start_debug_instance", lua::wrap<l_start_debug_instance>},
+    {"start_background_instance", lua::wrap<l_start_background_instance>},
+    {"is_instance_alive", lua::wrap<l_is_instance_alive>},
+    {"terminate_instance", lua::wrap<l_terminate_instance>},
     {nullptr, nullptr}
 };

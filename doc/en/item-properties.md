@@ -60,12 +60,17 @@ Property used via [inventory.use](scripting/builtins/libinventory.md).
 
 Property status is displayed in the inventory interface. Display method is defined via `uses-display`.
 
-### Display of uses - `uses-display`
+### Display of remaining uses count - `uses-display`
 
 - `none` - display disabled
 - `number` - number
 - `relation` - current value to initial value (x/y)
 - `vbar` - vertical scale (used by default)
+
+### *script-name*
+
+Defines the name of the script containing the item's event handlers. By default, equals to the item's string id (name).
+Allows you to reuse a single script for multiple items.
 
 ## Tags
 

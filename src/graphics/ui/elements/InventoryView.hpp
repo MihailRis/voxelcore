@@ -51,7 +51,7 @@ namespace gui {
         );
     };
 
-    class SlotView : public gui::UINode {
+    class SlotView final : public gui::UINode {
         struct {
             ItemStack stack {};
             std::wstring countStr;
@@ -89,14 +89,14 @@ namespace gui {
     public:
         SlotView(GUI& gui, SlotLayout layout);
 
-        virtual void draw(const DrawContext& pctx, const Assets& assets) override;
+        void draw(const DrawContext& pctx, const Assets& assets) override;
 
         void setHighlighted(bool flag);
         bool isHighlighted() const;
 
-        virtual void clicked(Mousecode) override;
-        virtual void onFocus() override;
-        virtual const std::wstring& getTooltip() const override;
+        void clicked(Mousecode) override;
+        void onFocus() override;
+        const std::wstring& getTooltip() const override;
 
         void bind(
             int64_t inventoryid,
@@ -123,6 +123,8 @@ namespace gui {
             SHARE = 2,
             UNDEFINED,
         };
+    private:
+        void actIfCannotPut(ItemStack& stack, ItemStack& grabbed, InteractionAction& action);
     };
 
     class InventoryView final : public gui::Container {

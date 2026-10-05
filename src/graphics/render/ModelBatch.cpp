@@ -61,8 +61,8 @@ void ModelBatch::draw(
     const model::Mesh& mesh,
     const glm::mat4& matrix,
     const glm::mat3& rotation,
-    glm::vec3 tint,
-    const texture_names_map* varTextures,
+    const glm::vec4& tint,
+    const TextureNamesMap* varTextures,
     bool backlight
 ) {
     setTexture(mesh.texture, varTextures);
@@ -72,7 +72,7 @@ void ModelBatch::draw(
     glm::vec4 lights(1, 1, 1, 0);
     if (mesh.shading) {
         glm::vec3 gpos = matrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
-        gpos += lightsOffset;
+        gpos += lightsOffset + localLightsOffset;
         lights = MainBatch::sampleLight(gpos, chunks, backlight);
     }
     for (size_t i = 0; i < vcount / 3; i++) {
@@ -97,14 +97,21 @@ void ModelBatch::draw(
     }
 }
 
-void ModelBatch::draw(glm::mat4 matrix,
-                      glm::vec3 tint,
-                      const model::Model* model,
-                      const texture_names_map* varTextures) {
+void ModelBatch::draw(
+    const glm::mat4& matrix,
+    const glm::vec4& tint,
+    const glm::vec3& lightSampleOffset,
+    const model::Model* model,
+    const TextureNamesMap* varTextures
+) {
     for (const auto& mesh : model->meshes) {
-        entries.push_back({
-            matrix, extract_rotation(matrix), tint, &mesh, varTextures
-        });
+        entries.push_back(DrawEntry {
+            matrix,
+            extract_rotation(matrix),
+            tint,
+            lightSampleOffset,
+            &mesh,
+            varTextures});
     }
 }
 
@@ -116,6 +123,7 @@ void ModelBatch::render() {
     );
     bool backlight = settings.graphics.backlight.get();
     for (auto& entry : entries) {
+        localLightsOffset = entry.lightSampleOffset;
         draw(
             *entry.mesh,
             entry.matrix,
@@ -124,6 +132,7 @@ void ModelBatch::render() {
             entry.varTextures,
             backlight
         );
+        localLightsOffset = {};
     }
     batch->flush();
     entries.clear();
@@ -134,7 +143,7 @@ void ModelBatch::setLightsOffset(const glm::vec3& offset) {
 }
 
 void ModelBatch::setTexture(const std::string& name,
-                            const texture_names_map* varTextures) {
+                            const TextureNamesMap* varTextures) {
     if (varTextures && !name.empty() && name.at(0) == '$') {
         const auto& found = varTextures->find(name);
         if (found == varTextures->end()) {

@@ -208,6 +208,14 @@ namespace {
 class Parser : BasicParser<char> {
     std::unique_ptr<Document> document;
 
+    void processEscapes(std::string& text) {
+        util::replaceAll(text, "&quot;", "\"");
+        util::replaceAll(text, "&apos;", "'");
+        util::replaceAll(text, "&lt;", "<");
+        util::replaceAll(text, "&gt;", ">");
+        util::replaceAll(text, "&amp;", "&");
+    }
+
     std::unique_ptr<Node> parseOpenTag() {
         std::string tag = parseXMLName();
         auto node = std::make_unique<Node>(tag);
@@ -230,6 +238,7 @@ class Parser : BasicParser<char> {
                 }
                 skip(1);
                 attrtext = parseString(quote);
+                processEscapes(attrtext);
             }
             node->set(attrname, attrtext);
         }
@@ -241,11 +250,7 @@ class Parser : BasicParser<char> {
         if (peek() != '<') {
             auto element = std::make_unique<Node>("#");
             auto text = parseText();
-            util::replaceAll(text, "&quot;", "\"");
-            util::replaceAll(text, "&apos;", "'");
-            util::replaceAll(text, "&lt;", "<");
-            util::replaceAll(text, "&gt;", ">");
-            util::replaceAll(text, "&amp;", "&");
+            processEscapes(text);
             element->set("#", text);
             return element;
         }
@@ -385,10 +390,22 @@ public:
         }
         if (c == '(') {
             nextChar();
-            // TODO: replace with array parsing after moving to dv::value's
-            std::string value = std::string(readUntil(')'));
+            int depth = 1;
+            size_t start = pos;
+            while (hasNext()) {
+                char c = nextChar();
+                if (c == '(') {
+                    depth++;
+                } else if (c == ')') {
+                    depth--;
+                    if (depth == 0) {
+                        goBack(1);
+                        break;
+                    }
+                }
+            }
             expect(')');
-            return value;
+            return std::string(source.substr(start, pos - start - 1));
         }
         return std::string(readUntilWhitespace());
     }
@@ -526,5 +543,13 @@ std::string xml::stringify(
 
     stringifyElement(ss, *document.getRoot(), nice, indentStr, 0);
 
+    return ss.str();
+}
+
+std::string xml::stringify(
+    const Node& element, bool nice, const std::string& indentStr
+) {
+    std::stringstream ss;
+    stringifyElement(ss, element, nice, indentStr, 0);
     return ss.str();
 }

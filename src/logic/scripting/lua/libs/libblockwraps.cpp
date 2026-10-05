@@ -10,7 +10,11 @@ static int l_wrap(lua::State* L) {
     auto position = lua::tovec3(L, 1);
     std::string texture = lua::require_string(L, 2);
     float emission = lua::isnumber(L, 3) ? lua::tonumber(L, 3) : 1.0f;
-    glm::vec3 tint = lua::istable(L, 4) ? lua::tovec3(L, 4) : glm::vec3(1.0f);
+    glm::vec4 tint =
+        lua::istable(L, 4)
+            ? (lua::objlen(L, 4) > 3 ? lua::tovec4(L, 4)
+                                     : glm::vec4(lua::tovec3(L, 4), 1.0f))
+            : glm::vec4(1.0f);
 
     return lua::pushinteger(
         L,
@@ -72,9 +76,12 @@ static int l_set_tints(lua::State* L) {
     if (auto wrapper = renderer->blockWraps->get(lua::tointeger(L, 1))) {
         for (int i = 0; i < wrapper->textureFaces.size(); i++) {
             if (lua::isnil(L, 2 + i)) {
-                wrapper->tints[i] = glm::vec3(1.0f);
+                wrapper->tints[i] = glm::vec4(1.0f);
             } else {
-                wrapper->tints[i] = lua::tovec3(L, 2 + i);
+                wrapper->tints[i] =
+                    lua::objlen(L, 2 + i) > 3
+                        ? lua::tovec4(L, 2 + i)
+                        : glm::vec4(lua::tovec3(L, 2 + i), 1.0f);
             }
         }
     }

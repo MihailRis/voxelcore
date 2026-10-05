@@ -37,6 +37,16 @@ assets.parse_model(
     skeleton_name: string
 )
 
+-- Parses and loads animation
+assets.parse_animation(
+    -- Animation file format (vca)
+    format: string,
+    -- Animation file content
+    content: string,
+    -- Animation name after loading
+    name: string
+)
+
 -- Creates a Canvas from a loaded texture.
 assets.to_canvas(
     -- The name of the loaded texture.

@@ -97,12 +97,24 @@ function lib.write(handle, bytearray)
     end
 end
 
-function lib.seek(handle, mode, offset)
-    error("cannot seek the named pipe")
-end
-
 function lib.flush(handle)
     C.FlushFileBuffers(handle)
+end
+
+function lib.available(handle)
+    if handle == nil or handle == INVALID_HANDLE_VALUE then
+        return 0
+    end
+
+    local bytes_available = FFI.new("DWORD[1]")
+
+    local success = C.PeekNamedPipe(handle, nil, 0, nil, bytes_available, nil)
+
+    if success == 0 then
+        return 0
+    end
+
+    return tonumber(bytes_available[0])
 end
 
 function lib.is_alive(handle)

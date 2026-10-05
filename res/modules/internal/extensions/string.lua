@@ -125,3 +125,18 @@ end
 function string.ends_with(str, endStr)
     return endStr == "" or string.sub(str, -string.len(endStr)) == endStr
 end
+
+function string.url_encode(str)
+    str = string.gsub(str, "([^%w%-%.%_%~])", function(c)
+        return string.format("%%%02X", string.byte(c))
+    end)
+    return str
+end
+
+function string.url_decode(str)
+    str = string.gsub(str, "+", " ")
+    str = string.gsub(str, "%%(%x%x)", function(hex)
+        return string.char(tonumber(hex, 16))
+    end)
+    return str
+end

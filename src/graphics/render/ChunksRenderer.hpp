@@ -1,15 +1,16 @@
 #pragma once
 
+#define GLM_ENABLE_EXPERIMENTAL
+
+#include "util/ThreadPool.hpp"
+#include "commons.hpp"
+
 #include <memory>
 #include <vector>
 #include <unordered_map>
 
 #include <glm/glm.hpp>
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/hash.hpp>
-
-#include "util/ThreadPool.hpp"
-#include "commons.hpp"
 
 template<typename VertexStructure> class Mesh;
 class Chunk;
@@ -44,22 +45,6 @@ struct RendererJob {
 };
 
 class ChunksRenderer {
-    const Chunks& chunks;
-    const Assets& assets;
-    const Frustum& frustum;
-    const EngineSettings& settings;
-
-    std::unique_ptr<BlocksRenderer> renderer;
-    std::unordered_map<glm::ivec2, ChunkMesh> meshes;
-    std::unordered_map<glm::ivec2, bool> inwork;
-    std::vector<ChunksSortEntry> indices;
-    util::ThreadPool<RendererJob, RendererResult> threadPool;
-    const Mesh<ChunkVertex>* retrieveChunk(
-        size_t index, const Camera& camera, bool culling
-    );
-    std::shared_ptr<VoxelsRenderVolume> prepareVoxelsVolume(const Chunk& chunk);
-
-    size_t enqueuedInFrame = 0;
 public:
     ChunksRenderer(
         const Level& level,
@@ -69,17 +54,10 @@ public:
         const ContentGfxCache& cache, 
         const EngineSettings& settings
     );
-    virtual ~ChunksRenderer();
+    ~ChunksRenderer();
 
-    const ChunkMesh* render(
-        const std::shared_ptr<Chunk>& chunk, bool important, bool lowPriority
-    );
     void unload(const Chunk* chunk);
     void clear();
-
-    const ChunkMesh* getOrRender(
-        const std::shared_ptr<Chunk>& chunk, bool important, bool lowPriority
-    );
 
     void drawShadowsPass(
         const Camera& camera, Shader& shader, const Camera& playerCamera
@@ -92,4 +70,25 @@ public:
     void update();
 
     static size_t visibleChunks;
+
+private:
+    const Chunks& chunks;
+    const Assets& assets;
+    const Frustum& frustum;
+    const EngineSettings& settings;
+
+    std::unique_ptr<BlocksRenderer> renderer;
+    std::unordered_map<glm::ivec2, ChunkMesh> meshes;
+    std::unordered_map<glm::ivec2, bool> inwork;
+    std::vector<ChunksSortEntry> indices;
+    util::ThreadPool<RendererJob, RendererResult> threadPool;
+    std::vector<glm::ivec2> meshBuildQueue;
+
+    size_t enqueuedInFrame = 0;
+
+    std::shared_ptr<VoxelsRenderVolume> prepareVoxelsVolume(const Chunk& chunk);
+
+    void render(const std::shared_ptr<Chunk>& chunk, bool lowPriority);
+
+    void renderBlocking(const std::shared_ptr<Chunk>& chunk);
 };

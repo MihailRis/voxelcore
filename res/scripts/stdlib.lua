@@ -1,4 +1,5 @@
 local __app = __vc_app
+local internals = __vc_internals
 local enable_experimental = __app.get_setting("debug.enable-experimental")
 
 ------------------------------------------------
@@ -45,7 +46,7 @@ local function complete_app_lib(app)
     app.tick = __app_tick
 
     local function call_in_app_script_co(func, ...)
-        if __vc_is_post_runnable_context() then
+        if internals.is_post_runnable_context() then
             func(...)
             return
         end
@@ -127,6 +128,10 @@ require "core:internal/extensions/inventory"
 asserts = require "core:internal/asserts"
 events = require "core:internal/events"
 
+if test then
+    require "core:internal/test"
+end
+
 function pack.unload(prefix)
     events.remove_by_prefix(prefix)
 end
@@ -136,7 +141,20 @@ local __vc_named_coroutines = {}
 local __vc_next_coroutine = 1
 
 function __vc_start_coroutine(chunk)
-    local co = coroutine.create(chunk)
+    local co = coroutine.create(function()
+        local _, err = xpcall(chunk, function(msg)
+            local traceback = debug.get_traceback(0)
+            local s = string.format("%s:", msg)
+            for i=1,#traceback - 2 do
+                local frame = traceback[i]
+                s = s .. "\n\t"..tb_frame_tostring(frame)
+            end
+            return s
+        end)
+        if err then
+            error(err)
+        end
+    end)
     local id = __vc_next_coroutine
     __vc_next_coroutine = __vc_next_coroutine + 1
     __vc_coroutines[id] = co
@@ -191,7 +209,7 @@ function start_coroutine(chunk, name)
     __vc_named_coroutines[name] = co
 end
 
-function __vc_update_coroutines()
+function internals.update_coroutines()
     local dead = {}
     for name, co in pairs(__vc_named_coroutines) do
         local success, err = coroutine.resume(co)
@@ -312,6 +330,12 @@ entities.get_all = function(uids)
         return stdcomp.get_all(uids)
     end
 end
+world.raycast = entities.__world_raycast
+entities.__world_raycast = nil
+
+animation = require "core:animation"
+require "core:internal/animation_codegen"
+require "core:internal/formats/vca"
 
 __vc_scripts_registry = require "core:internal/scripts_registry"
 
@@ -332,6 +356,10 @@ else
     os.pid = ffi.C.getpid()
 end
 
+require("core:io_stream").wrap_bytearray = require "core:internal/stream_providers/bytearray"
+
+network.__as_stream = require "core:internal/stream_providers/socket"
+
 math.randomseed(time.uptime() * 1536227939)
 
 rules = require "core:internal/rules"
@@ -343,6 +371,7 @@ core.get_core_token = audio.input.__get_core_token
 
 require "core:internal/console"
 require "core:internal/deprecated"
+require "core:internal/internal_events"
 
 
 ------------------------------------------
@@ -369,7 +398,7 @@ end
 
 ffi = nil
 __vc_app = nil
+__vc_internals = nil
 __vc_lock_internal_modules()
 __vc_lock_internal_modules = nil
-__vc_update_coroutines = nil
 __VC_SCRIPT_NAME = ""

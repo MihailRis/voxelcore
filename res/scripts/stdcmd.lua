@@ -140,7 +140,7 @@ console.add_command(
         for y=y1,y2 do
             for z=z1,z2 do
                 for x=x1,x2 do
-                    block.set(x, y, z, id)
+                    block.set(x, y, z, id, 0, true)
                 end
             end
         end

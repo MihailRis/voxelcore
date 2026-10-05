@@ -9,9 +9,9 @@ public:
     GBuffer(uint width, uint height);
     ~GBuffer() override;
 
-    void bind() override;
+    void bind() const override;
     void bindSSAO() const;
-    void unbind() override;
+    void unbind() const override;
 
     void bindBuffers() const;
     void bindSSAOBuffer() const;

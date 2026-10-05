@@ -21,7 +21,7 @@ input.get_bindings() -> table<string>
 input.get_binding_text(bindname: string) -> string
 
 -- Проверяет активность привязки.
-input.is_active(bindname: string) -> string
+input.is_active(bindname: string) -> boolean
 
 -- Включает/выключает привязку до выхода из мира.
 input.set_enabled(bindname: string, flag: boolean)
@@ -34,6 +34,10 @@ input.get_mouse_pos() -> {number, number}
 
 -- Возращает дельту позиции курсора.
 input.get_mouse_delta() -> {number, number}
+
+-- Возвращает вертикальное смещение колеса мыши, накопленное за текущий кадр.
+-- Положительное значение соответствует прокрутке вверх, отрицательное - вниз.
+input.get_mouse_scroll() -> number
 ```
 
 ## Создание обработчиков

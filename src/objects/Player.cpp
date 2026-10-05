@@ -1,26 +1,27 @@
 #include "Player.hpp"
 
-#include <algorithm>
 #define GLM_ENABLE_EXPERIMENTAL
+
+#include "animation/rigging.hpp"
+#include "content/ContentReport.hpp"
+#include "data/dv_util.hpp"
+#include "debug/Logger.hpp"
+#include "Entities.hpp"
+#include "Entity.hpp"
+#include "items/Inventory.hpp"
+#include "physics/Hitbox.hpp"
+#include "physics/PhysicsSolver.hpp"
+#include "util/stringutil.hpp"
+#include "voxels/Chunks.hpp"
+#include "window/Camera.hpp"
+#include "world/generator/GeneratorDef.hpp"
+#include "world/Level.hpp"
+#include "world/World.hpp"
+
+#include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <utility>
-
-#include "content/ContentReport.hpp"
-#include "items/Inventory.hpp"
-#include "Entities.hpp"
-#include "Entity.hpp"
-#include "rigging.hpp"
-#include "physics/Hitbox.hpp"
-#include "physics/PhysicsSolver.hpp"
-#include "voxels/Chunks.hpp"
-#include "window/Camera.hpp"
-#include "world/Level.hpp"
-#include "world/World.hpp"
-#include "world/generator/GeneratorDef.hpp"
-#include "data/dv_util.hpp"
-#include "debug/Logger.hpp"
-#include "util/stringutil.hpp"
 
 static debug::Logger logger("player");
 
@@ -81,7 +82,7 @@ void Player::updateEntity() {
     }
 }
 
-Hitbox* Player::getHitbox() {
+Hitbox* Player::getHitbox() const {
     if (auto entity = level.entities->get(eid)) {
         return &entity->getRigidbody().hitbox;
     }
@@ -127,7 +128,7 @@ void Player::teleport(glm::vec3 position) {
 void Player::attemptToChooseSpawnpoint() {
     // looks bad to be here tbh
     const auto& generatorDef =
-        level.content.generators.require(level.getWorld()->getGenerator());
+        level.content.generators.require(level.environment.generator);
 
     int minHeight = generatorDef.playerMinSpawnHeight;
     int maxHeight = generatorDef.playerMaxSpawnHeight;

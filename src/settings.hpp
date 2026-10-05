@@ -18,7 +18,7 @@ struct AudioSettings {
     NumberSetting volumeAmbient {1.0f, 0.0f, 1.0f, setting_format::percent};
     NumberSetting volumeMusic {1.0f, 0.0f, 1.0f, setting_format::percent};
 
-    StringSetting inputDevice {"auto"};
+    StringSetting inputDevice {""};
 
     FlagSetting acousticEffects {true};
 };
@@ -63,6 +63,8 @@ struct CameraSettings {
 };
 
 struct GraphicsSettings {
+    /// @brief Enable fog
+    FlagSetting enableFog {true};
     /// @brief Fog opacity is calculated as `pow(depth*k, fogCurve)` where k depends on chunksLoadDistance.
     /// 1.0 is linear, 2.0 is quadratic
     NumberSetting fogCurve {1.0f, 1.0f, 6.0f};

@@ -4,6 +4,39 @@ A library for working with the network.
 
 ## HTTP requests
 
+There is a configurable function `network.request` that allows performing HTTP requests with various methods (GET, POST, PUT, DELETE, etc.) and configuring headers, request body, timeout, and other parameters.
+
+> To pass binary data in the request body, use a byte array (Bytearray) or a string. In `on_response`, the `body` string can be converted to a byte array using `Bytearray(response.body)`.
+
+```lua
+network.request(
+    url: string,
+    parameters: {
+        -- Request method (GET, POST, PUT, DELETE, etc.)
+        method: string,
+        -- Request body as a string or Bytearray
+        body: table|string,
+        -- List of additional request headers
+        headers: table<string>,
+        -- Timeout in milliseconds
+        timeout: int,
+        -- Whether to verify the SSL certificate
+        verify_ssl: boolean,
+        -- Function called when a response is received
+        on_response: function(response: {
+            -- HTTP response status code
+            status: int,
+            -- Response body as a string
+            body: string,
+            -- List of response headers
+            headers: table<string>
+        }),
+    }
+)
+```
+
+### Simplified functions for GET and POST requests
+
 ```lua
 -- Performs a GET request to the specified URL.
 network.get(
@@ -90,6 +123,19 @@ socket:recv_async(
     length: int,
     -- Use table instead of Bytearray
     [optional] usetable: bool=false
+) -> nil|table|Bytearray
+
+-- `peek` and `peek_async` are analogous to the `recv` and `recv_async` methods
+-- with the exception that `peek` and `peek_async` do not advance the socket buffer position
+-- This means they do not remove bytes from the socket, so the bytes can be received after
+socket:peek(
+    length: int,
+    [optional] usetable: boolean=false
+) -> nil|table|Bytearray
+
+socket:peek_async(
+    length: int,
+    [optional] usetable: boolean=false
 ) -> nil|table|Bytearray
 
 -- Closes the connection

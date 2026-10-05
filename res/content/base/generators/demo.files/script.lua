@@ -86,12 +86,27 @@ function generate_heightmap(x, y, w, h, s, inputs)
 
     local rivermap = Heightmap(w, h)
     rivermap.noiseSeed = SEED
-    rivermap:noise({x+21, y+12}, 0.1*s, 4)
-    rivermap:abs()
-    rivermap:mul(2.0)
-    rivermap:pow(0.15)
-    rivermap:max(0.5)
-    map:mul(rivermap)
+    rivermap:noise({ x + 21, y + 12 }, 0.1 * s, 4)
+    rivermap:pow(4)
+    rivermap:mul(3500)
+    rivermap:add(1)
+    rivermap:pow(-1)
+    rivermap:mul(-1)
+    rivermap:add(1)
+
+    local rivermap_bottom = Heightmap(w, h)
+    rivermap_bottom:add(0.23)
+    rivermap_bottom:noise({ x, y }, 2 * s, 4, 0.005)
+
+    map:sub(rivermap_bottom)
+
+    local map_multiplied = Heightmap(w, h)
+    map_multiplied:add(map)
+    map_multiplied:mul(rivermap)
+
+    map:min(map_multiplied)
+
+    map:add(rivermap_bottom)
 
     local desertmap = Heightmap(w, h)
     desertmap.noiseSeed = SEED

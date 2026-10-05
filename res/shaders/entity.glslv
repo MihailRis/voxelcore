@@ -2,7 +2,7 @@
 
 layout (location = 0) in vec3 v_position;
 layout (location = 1) in vec2 v_texCoord;
-layout (location = 2) in vec3 v_color;
+layout (location = 2) in vec4 v_color;
 layout (location = 3) in vec4 v_light;
 layout (location = 4) in vec4 v_normal;
 
@@ -29,8 +29,8 @@ void main() {
 
     a_dir = a_modelpos.xyz - u_cameraPos;
     vec3 skyLightColor = pick_sky_color(u_skybox, u_dayTime, u_minSkyLight);
-    a_color.rgb = max(a_color.rgb, skyLightColor.rgb * v_light.a) * v_color;
-    a_color.a = u_opacity;
+    a_color.rgb = max(a_color.rgb, skyLightColor.rgb * v_light.a) * v_color.rgb;
+    a_color.a = u_opacity * v_color.a;
 
     mat4 viewmodel = u_view * u_model;
     a_distance = length(viewmodel * vec4(pos3d, 0.0));

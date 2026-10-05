@@ -110,6 +110,7 @@ static int l_noise(lua::State* L) {
         if (gettop(L) > 6) {
             shiftMapY = touserdata<LuaHeightmap>(L, 7);
         }
+        bool normalizedNoise = heightmap->normalizedNoise;
         noise->noise_type = noise_type;
         for (uint y = 0; y < h; y++) {
             for (uint x = 0; x < w; x++) {
@@ -126,8 +127,13 @@ static int l_noise(lua::State* L) {
                         v += shiftMapY->getValues()[i];
                     }
 
-                    value += fnlGetNoise2D(noise, u, v) /
-                            static_cast<float>(1 << c) * multiplier;
+                    float noiseValue = fnlGetNoise2D(noise, u, v);
+                    float t = 1.0f / static_cast<float>(1 << c) * multiplier;
+                    if (normalizedNoise) {
+                        value = value * (1.0f - t) + noiseValue * t;
+                    } else {
+                        value += noiseValue * t;
+                    }
                     heights[i] = value;
                 }
             }
@@ -264,6 +270,12 @@ static std::unordered_map<std::string, lua_CFunction> methods {
     {"min", lua::wrap<l_binop_func<util::min>>},
     {"max", lua::wrap<l_binop_func<util::max>>},
     {"abs", lua::wrap<l_unaryop_func<util::abs>>},
+    {"floor", lua::wrap<l_unaryop_func<util::floor>>},
+    {"round", lua::wrap<l_unaryop_func<util::round>>},
+    {"ceil", lua::wrap<l_unaryop_func<util::ceil>>},
+    {"sin", lua::wrap<l_unaryop_func<util::sin>>},
+    {"cos", lua::wrap<l_unaryop_func<util::cos>>},
+    {"tan", lua::wrap<l_unaryop_func<util::tan>>},
     {"resize", lua::wrap<l_resize>},
     {"crop", lua::wrap<l_crop>},
     {"at", lua::wrap<l_at>},
@@ -311,6 +323,8 @@ static int l_meta_newindex(lua::State* L) {
         auto fieldname = tostring(L, 2);
         if (!std::strcmp(fieldname, "noiseSeed")) {
             map->setSeed(tointeger(L, 3));
+        } else if (!std::strcmp(fieldname, "normalNoise")) {
+            map->normalizedNoise = toboolean(L, 3);
         }
     }
     return 0;

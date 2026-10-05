@@ -154,7 +154,7 @@ Returns position of the selected block or nil
 player.get_selected_entity(playerid: int) -> int
 ```
 
-Returns unique indentifier of the entity selected by player
+Returns unique identifier of the entity selected by player
 
 ```lua
 player.get_entity(playerid: int) -> int

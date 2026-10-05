@@ -39,6 +39,8 @@ Examples:
 - `position-func` - position supplier for an element (two numbers), called on every parent container size update or on element adding on a container. May be called before *on_hud_open*
 - `size-func` - element size provider (two numbers), called when the size of the container in which the element is located changes, or when an element is added to the container. Can be called before on_hud_open is called.
 - `onclick` - lua function called when an element is clicked.
+- `onrightclick` - lua function called when the right mouse button is pressed on an element.
+- `onmiddleclick` - lua function called when the middle mouse button is pressed on an element.
 - `ondoubleclick` - lua function called when you double click on an element.
 - `onfocus` - lua function called when focusing on an element.
 - `ondefocus` - lua function called when the element loses focus.
@@ -192,6 +194,9 @@ Example of list description:
 - `width` - minimum content width. Default: 100.
 - `selected` - initially selected value. Default: "".
 - `onselect` - function to which the user-selected value is passed
+- `mode` - behaviour / display mode:
+    - `select` - default mode.
+    - `button` - button mode: the text is not replaced with the selected option; the element rendered as a regular button.
 
 ## *bindbox*
 

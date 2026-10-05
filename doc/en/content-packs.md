@@ -12,7 +12,7 @@ Content-pack folder must contain file **package.json** with following contents:
 {
 	"id": "pack_id",
 	"title": "pack name will be displayed in the content menu",
-	"version": "content-pack version - major.minor",
+	"version": "content-pack version - major.minor.[patch])",
 	"creator": "content-pack creator",
 	"description": "short description",
 	"dependencies": [
@@ -26,6 +26,7 @@ Dependency levels are indicated by prefixes in the name:
 - '!' - required dependency
 - '?' - optional dependency
 - '~' - weak dependency
+
 If prefix is not specified, '!' level will be used.
 
 Example: '~randutil' - weak dependency 'randutil'.

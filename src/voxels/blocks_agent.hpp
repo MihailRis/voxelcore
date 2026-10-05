@@ -412,6 +412,12 @@ inline void set_rotation(
     }
 }
 
+struct RaycastSettings {
+    const std::set<blockid_t>* filter = nullptr;
+    bool blocksFilterExcludeMode = true;
+    bool includeNonSelectable = false;
+};
+
 /// @brief Cast ray to a selectable block with filter based on id.
 /// @param chunks chunks matrix
 /// @param start ray start position
@@ -431,8 +437,7 @@ voxel* raycast(
     glm::vec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
-    std::set<blockid_t> filter,
-    bool includeNonSelectable
+    const RaycastSettings& settings
 );
 
 /// @brief Cast ray to a selectable block with filter based on id.
@@ -454,8 +459,7 @@ voxel* raycast(
     glm::vec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
-    std::set<blockid_t> filter,
-    bool includeNonSelectable
+    const RaycastSettings& settings
 );
 
 void get_voxels(

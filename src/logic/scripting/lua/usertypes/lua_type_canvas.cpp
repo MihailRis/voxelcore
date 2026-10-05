@@ -81,16 +81,17 @@ union RGBA {
     uint8_t arr[4];
     uint32_t rgba;
 };
+static_assert(sizeof(RGBA) == 4);
 
-static RGBA* get_at(const ImageData& data, uint index) {
-    if (index >= data.getWidth() * data.getHeight()) {
-        return nullptr;
-    }
+static RGBA* get_at(const ImageData& data, size_t index) {
     return reinterpret_cast<RGBA*>(data.getData() + index * sizeof(RGBA));
 }
 
 static RGBA* get_at(const ImageData& data, uint x, uint y) {
-    return get_at(data, y * data.getWidth() + x);
+    if (x >= data.getWidth() || y >= data.getHeight()) {
+        return nullptr;
+    }
+    return get_at(data, static_cast<size_t>(y) * data.getWidth() + x);
 }
 
 static RGBA* get_at(State* L, uint x, uint y) {
@@ -160,17 +161,13 @@ static LuaCanvas& require_canvas(State* L, int idx) {
 static int l_clear(State* L) {
     auto& canvas = require_canvas(L, 1);
     auto& image = canvas.getData();
-    ubyte* data = image.getData();
-    RGBA rgba {};
+    size_t pixelscount = image.getWidth() * image.getHeight();
+    uint32_t* data = reinterpret_cast<uint32_t*>(image.getData());
+
     if (gettop(L) == 1) {
-        std::fill(data, data + image.getDataSize(), 0);
-        return 0;
-    }
-    rgba = get_rgba(L, 2);
-    size_t pixels = image.getWidth() * image.getHeight();
-    const size_t channels = 4;
-    for (size_t i = 0; i < pixels * channels; i++) {
-        data[i] = rgba.arr[i % channels];
+        std::fill(data, data + pixelscount, 0);
+    } else {
+        std::fill(data, data + pixelscount, get_rgba(L, 2).rgba);
     }
     return 0;
 }

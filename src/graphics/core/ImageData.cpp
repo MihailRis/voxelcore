@@ -1,11 +1,15 @@
 #include "ImageData.hpp"
 
+#include "debug/Logger.hpp"
+
 #include <glm/glm.hpp>
 #include <assert.h>
 #include <stdexcept>
 #include <cstring>
 #include <cmath>
 #include <algorithm>
+
+static debug::Logger logger("image-data");
 
 ImageData::ImageData(ImageFormat format, uint width, uint height) 
     : format(format), width(width), height(height) {
@@ -106,47 +110,83 @@ std::unique_ptr<ImageData> ImageData::cropped(int x, int y, int width, int heigh
     return subImage;
 }
 
-static bool clip_line(int& x1, int& y1, int& x2, int& y2, int width, int height) {
-    const int left = 0;
-    const int right = width;
-    const int bottom = 0;
-    const int top = height;
+static bool clip_line(
+    int& x0, int& y0, int& x1, int& y1, int width, int height
+) {
+    if (width <= 0 || height <= 0) {
+        return false;
+    }
+    constexpr int INSIDE = 0;
+    constexpr int LEFT = 1;
+    constexpr int RIGHT = 2;
+    constexpr int BOTTOM = 4;
+    constexpr int TOP = 8;
 
-    int dx = x2 - x1;
-    int dy = y2 - y1;
+    const int xmin = 0;
+    const int ymin = 0;
+    const int xmax = width - 1;
+    const int ymax = height - 1;
 
-    float t0 = 0.0f;
-    float t1 = 1.0f;
+    auto outcode = [&](int x, int y) {
+        int code = INSIDE;
 
-    auto clip = [](int p, int q, float& t0, float& t1) {
-        if (p == 0) {
-            return q >= 0;
-        }
-        float t = static_cast<float>(q) / p;
-        if (p < 0) {
-            if (t > t1) return false;
-            if (t > t0) t0 = t;
-        } else {
-            if (t < t0) return false;
-            if (t < t1) t1 = t;
-        }
-        return true;
+        if (x < xmin)
+            code |= LEFT;
+        else if (x > xmax)
+            code |= RIGHT;
+
+        if (y < ymin)
+            code |= BOTTOM;
+        else if (y > ymax)
+            code |= TOP;
+
+        return code;
     };
 
-    if (!clip(-dx, x1 - left, t0, t1)) return false;
-    if (!clip( dx, right - x1, t0, t1)) return false;
-    if (!clip(-dy, y1 - bottom, t0, t1)) return false;
-    if (!clip( dy, top - y1, t0, t1)) return false;
+    int c0 = outcode(x0, y0);
+    int c1 = outcode(x1, y1);
 
-    if (t1 < 1.0f) {
-        x2 = x1 + static_cast<int>(std::round(t1 * dx));
-        y2 = y1 + static_cast<int>(std::round(t1 * dy));
+    while (true) {
+        if (!(c0 | c1)) {
+            return true;
+        }
+        if (c0 & c1) {
+            return false;
+        }
+
+        const int out = c0 ? c0 : c1;
+
+        double x = 0.0;
+        double y = 0.0;
+
+        if (out & TOP) {
+            y = ymax;
+            x = x0 + (x1 - x0) * static_cast<double>(ymax - y0) / (y1 - y0);
+        } else if (out & BOTTOM) {
+            y = ymin;
+            x = x0 + (x1 - x0) * static_cast<double>(ymin - y0) / (y1 - y0);
+        } else if (out & RIGHT) {
+            x = xmax;
+            y = y0 + (y1 - y0) * static_cast<double>(xmax - x0) / (x1 - x0);
+        } else { // LEFT
+            x = xmin;
+            y = y0 + (y1 - y0) * static_cast<double>(xmin - x0) / (x1 - x0);
+        }
+
+        if (out == c0) {
+            x0 = std::clamp(static_cast<int>(std::lround(x)), xmin, xmax);
+            y0 = std::clamp(static_cast<int>(std::lround(y)), ymin, ymax);
+            c0 = outcode(x0, y0);
+        } else {
+            x1 = std::clamp(static_cast<int>(std::lround(x)), xmin, xmax);
+            y1 = std::clamp(static_cast<int>(std::lround(y)), ymin, ymax);
+            c1 = outcode(x1, y1);
+        }
     }
-    if (t0 > 0.0f) {
-        x1 = x1 + static_cast<int>(std::round(t0 * dx));
-        y1 = y1 + static_cast<int>(std::round(t0 * dy));
-    }
-    return true;
+}
+
+static bool is_point_outside(int x, int y, int width, int height) {
+    return x < 0 || y < 0 || x >= width || y >= height;
 }
 
 template<uint channels>
@@ -155,10 +195,23 @@ static void draw_line(ImageData& image, int x1, int y1, int x2, int y2, const gl
     uint width = image.getWidth();
     uint height = image.getHeight();
 
+    glm::ivec4 init {x1, y1, x2, y2};
+
     if ((x1 < 0 || x1 >= width || x2 < 0 || x2 >= width ||
         y1 < 0 || y1 >= height || y2 < 0 || y2 >= height) &&
         !clip_line(x1, y1, x2, y2, width, height)) {
         return;
+    }
+    // spam info for bug report
+    if (is_point_outside(x1, y1, width, height) || is_point_outside(x2, y2, width, height)) {
+        logger.warning() << "clip_line fault: [" << init.x << ", " << init.y
+                         << "] - [" << init.z << ", " << init.w << "] --> ["
+                         << x1 << ", " << y1 << "] - [" << x2 << ", " << y2
+                         << "]";
+        x1 = glm::clamp(x1, 0, static_cast<int>(width) - 1);
+        y1 = glm::clamp(y1, 0, static_cast<int>(height) - 1);
+        x2 = glm::clamp(x2, 0, static_cast<int>(width) - 1);
+        y2 = glm::clamp(y2, 0, static_cast<int>(height) - 1);
     }
     
     int dx = std::abs(x2 - x1);

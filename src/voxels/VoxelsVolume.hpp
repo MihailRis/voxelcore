@@ -66,7 +66,7 @@ public:
         return lights.get();
     }
 
-    inline blockid_t pickBlockId(int bx, int by, int bz) const {
+    blockid_t pickBlockId(int bx, int by, int bz) const {
         if (bx < x || by < y || bz < z || bx >= x + w || by >= y + h ||
             bz >= z + d) {
             return BLOCK_VOID;
@@ -75,7 +75,7 @@ public:
     }
 
     
-    inline voxel pickBlock(int bx, int by, int bz) const {
+    voxel pickBlock(int bx, int by, int bz) const {
         if (bx < x || by < y || bz < z || bx >= x + w || by >= y + h ||
             bz >= z + d) {
             return {BLOCK_VOID, {}};
@@ -83,7 +83,7 @@ public:
         return voxels[vox_index(bx - x, by - y, bz - z, w, d)];
     }
 
-    inline light_t pickLight(int bx, int by, int bz) const {
+    light_t pickLight(int bx, int by, int bz) const {
         if (bx < x || by < y || bz < z || bx >= x + w || by >= y + h ||
             bz >= z + d) {
             return 0;
@@ -103,10 +103,10 @@ private:
 template <int w, int h, int d>
 class StaticVoxelsVolume {
 public:
-    static inline constexpr size_t size = w * h * d;
-    static inline constexpr int width = w;
-    static inline constexpr int height = h;
-    static inline constexpr int depth = d;
+    static constexpr size_t size = w * h * d;
+    static constexpr int width = w;
+    static constexpr int height = h;
+    static constexpr int depth = d;
 
     StaticVoxelsVolume()
      : StaticVoxelsVolume(0, 0, 0) {}
@@ -142,7 +142,7 @@ public:
         return lights;
     }
 
-    inline blockid_t pickBlockId(uint bx, uint by, uint bz) const {
+    blockid_t pickBlockId(uint bx, uint by, uint bz) const {
         bx -= x;
         by -= y;
         bz -= z;
@@ -153,7 +153,7 @@ public:
     }
 
     
-    inline const voxel& pickBlock(uint bx, uint by, uint bz) const {
+    const voxel& pickBlock(uint bx, uint by, uint bz) const {
         bx -= x;
         by -= y;
         bz -= z;
@@ -164,7 +164,7 @@ public:
         return voxels[vox_index(bx, by, bz, w, d)];
     }
 
-    inline light_t pickLight(uint bx, uint by, uint bz) const {
+    light_t pickLight(uint bx, uint by, uint bz) const {
         bx -= x;
         by -= y;
         bz -= z;

@@ -58,6 +58,7 @@ namespace gui {
         FOCUS,
         DEFOCUS,
         RIGHT_CLICK,
+        MIDDLE_CLICK,
         MOUSE_OVER,
         MOUSE_OUT,
         MOUSE_ENTER,
@@ -175,6 +176,7 @@ namespace gui {
         void setMouseOver(bool flag);
 
         virtual void setParent(UINode* node);
+        bool hasParent() const;
         UINode* getParent() const;
         std::shared_ptr<UINode> getParentShared() const;
 
@@ -289,7 +291,7 @@ namespace gui {
 
         virtual void setGravity(Gravity gravity);
 
-        bool isSubnodeOf(const UINode* node);
+        bool isDescendantOf(const UINode* node);
 
         /// @brief collect all nodes having id
         static void getIndices(

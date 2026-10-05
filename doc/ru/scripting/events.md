@@ -34,7 +34,7 @@ function on_broken(x, y, z, playerid)
 function on_replaced(x, y, z, playerid)
 ```
 
-Вызывается после замены блока игроком
+Вызывается перед заменой блока игроком
 
 ```lua
 function on_interact(x, y, z, playerid) -> bool

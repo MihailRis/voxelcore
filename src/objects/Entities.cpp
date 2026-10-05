@@ -1,6 +1,7 @@
 #define VC_ENABLE_REFLECTION
 #include "Entities.hpp"
 
+#include "animation/rigging.hpp"
 #include "assets/Assets.hpp"
 #include "content/Content.hpp"
 #include "data/dv_util.hpp"
@@ -17,7 +18,6 @@
 #include "maths/rays.hpp"
 #include "maths/util.hpp"
 #include "physics/PhysicsSolver.hpp"
-#include "rigging.hpp"
 #include "world/Level.hpp"
 
 #include <entt/entity/registry.hpp>
@@ -59,7 +59,11 @@ entityid_t Entities::spawn(
     if (assets) {
         skeleton = assets->get<rigging::SkeletonConfig>(def.skeletonName);
         if (skeleton == nullptr) {
-            throw std::runtime_error("skeleton " + def.skeletonName + " not found");
+            if (def.skeletonName == def.name) {
+                logger.warning() << "skeleton " + def.skeletonName + " not found";
+            } else {
+                throw std::runtime_error("skeleton " + def.skeletonName + " not found");
+            }
         }
     }
     entityid_t id;
@@ -100,7 +104,9 @@ entityid_t Entities::spawn(
 
     auto& scripting = registry->emplace<ScriptComponents>(entity);
     if (assets) {
-        registry->emplace<rigging::Skeleton>(entity, skeleton->instance());
+        registry->emplace<rigging::Skeleton>(
+            entity, skeleton ? skeleton->instance() : rigging::Skeleton(nullptr)
+        );
     }
 
     for (auto& instance : def.components) {
@@ -166,8 +172,7 @@ std::optional<Entities::RaycastResult> Entities::rayCast(
     glm::vec3 start,
     glm::vec3 dir,
     float maxDistance,
-    entityid_t ignore,
-    bool solidOnly
+    const RaycastSettings& settings
 ) {
     Ray ray(start, dir);
     auto view = registry->view<EntityId, Transform, Rigidbody>();
@@ -176,10 +181,19 @@ std::optional<Entities::RaycastResult> Entities::rayCast(
     glm::ivec3 foundNormal;
 
     for (auto [entity, eid, transform, body] : view.each()) {
-        if (eid.uid == ignore || !body.enabled || (solidOnly && !eid.def.solid)) {
+        const auto& hitbox = body.hitbox;
+        if (eid.uid == settings.ignoredUid || !body.enabled ||
+            (settings.solidEntitiesOnly && !eid.def.solid) ||
+            (!hitbox.selectable && !settings.includeNonSelectable)) {
             continue;
         }
-        auto& hitbox = body.hitbox;
+        if (settings.entitiesFilter) {
+            bool matches = settings.entitiesFilter->find(eid.def.rt.id) !=
+                           settings.entitiesFilter->end();
+            if (matches == settings.entityFilterExcludeMode) {
+                continue;
+            }
+        }
         glm::ivec3 normal;
         double distance;
         if (ray.intersectAABB(
@@ -287,14 +301,13 @@ void Entities::preparePhysics(float delta) {
     auto& physics = *level.physics;
     auto& hitboxes = physics.getHitboxesWriteable();
     auto& solidHitboxes = physics.getSolidHitboxesWriteable();
+    auto& sensors = physics.getSensorsWriteable();
+    sensors.clear();
 
     if (int parts = sensorsTickClock.update(delta)) {
         for (int i = 0; i < parts; i++) {
             auto part = sensorsTickClock.convertPart(i);
             auto allParts = sensorsTickClock.getParts();
-
-            auto& sensors = physics.getSensorsWriteable();
-            sensors.clear();
 
             auto view = registry->view<EntityId, Transform, Rigidbody>();
             for (auto [entity, eid, transform, rigidbody] : view.each()) {
@@ -322,6 +335,7 @@ void Entities::preparePhysics(float delta) {
                             ? rigidbody.mass
                             : std::numeric_limits<float>::infinity();
         rigidbody.hitbox.elasticity = rigidbody.elasticity;
+        rigidbody.hitbox.selectable = rigidbody.selectable;
         hitboxes.emplace_back(&rigidbody.hitbox);
         if (!eid.def.solid) {
             continue;
@@ -468,6 +482,7 @@ void Entities::render(
         if (eid.uid == fpsEntity) {
             continue;
         }
+        const auto& def = eid.def;
         const auto& pos = transform.pos;
         const auto& size = transform.size;
         if (frustum && !frustum->isBoxVisible(pos - size, pos + size)) {
@@ -477,17 +492,24 @@ void Entities::render(
         const auto& rigConfig = skeleton.config;
         if (rigConfig) {
             rigConfig->render(
-                assets, batch, skeleton, transform.rot, pos, size
+                assets,
+                batch,
+                skeleton,
+                def.lightingMode,
+                transform.rot,
+                pos,
+                size
             );
         }
     }
 }
 
 bool Entities::hasBlockingInside(AABB aabb) {
+    constexpr float eps = 0.05f;
     auto view = registry->view<EntityId, Rigidbody>();
     for (auto [entity, eid, body] : view.each()) {
         AABB bodyAABB(body.hitbox.getAABB());
-        bodyAABB.scale({1, 0.95f, 1});
+        bodyAABB.scale(glm::vec3(1.0f - eps));
         if (eid.def.blocking && aabb.intersects(bodyAABB)) {
             return true;
         }

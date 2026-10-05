@@ -37,16 +37,22 @@ void Syntax::deserialize(const dv::value& src) {
     std::string multilineCommentEnd;
     std::string multilineStringStart;
     std::string multilineStringEnd;
+    std::string identifierStartChars;
+    std::string identifierPartChars;
     src.at("line-comment").get(lineComment);
     src.at("multiline-comment-start").get(multilineCommentStart);
     src.at("multiline-comment-end").get(multilineCommentEnd);
     src.at("multiline-string-start").get(multilineStringStart);
     src.at("multiline-string-end").get(multilineStringEnd);
+    src.at("identifier-start-chars").get(identifierStartChars);
+    src.at("identifier-part-chars").get(identifierPartChars);
     this->lineComment = util::str2wstr_utf8(lineComment);
     this->multilineCommentStart = util::str2wstr_utf8(multilineCommentStart);
     this->multilineCommentEnd = util::str2wstr_utf8(multilineCommentEnd);
     this->multilineStringStart = util::str2wstr_utf8(multilineStringStart);
     this->multilineStringEnd = util::str2wstr_utf8(multilineStringEnd);
+    this->identifierStarts = util::str2wstr_utf8(identifierStartChars);
+    this->identifierParts = util::str2wstr_utf8(identifierPartChars);
 
     if (src.has("extensions")) {
         const auto& extsList = src["extensions"];
@@ -77,6 +83,8 @@ inline bool is_lua_operator_start(int c) {
         || c == '.';
 }
 
+#include <iostream>
+
 class Tokenizer : BasicParser<wchar_t> {
     const Syntax& syntax;
     std::vector<Token> tokens;
@@ -87,13 +95,28 @@ public:
         : BasicParser(file, source), syntax(syntax) {
     }
 
-    std::wstring parseLuaName() {
-        char c = peek();
-        if (!is_identifier_start(c)) {
+
+    bool isIdentifierStart(wchar_t c) {
+        if (!syntax.identifierStarts.empty()) {
+            return syntax.identifierStarts.find(c) != std::wstring::npos;
+        }
+        return is_common_identifier_start(c);
+    }
+
+    bool isIdentifierPart(wchar_t c) {
+        if (!syntax.identifierParts.empty()) {
+            return syntax.identifierParts.find(c) != std::wstring::npos;
+        }
+        return is_common_identifier_part(c);
+    }
+
+    std::wstring parseIdentifier() {
+        wchar_t c = peek();
+        if (!isIdentifierStart(c)) {
             throw error("identifier expected");
         }
         int start = pos;
-        while (hasNext() && is_minimal_identifier_part(source[pos])) {
+        while (hasNext() && isIdentifierPart(source[pos])) {
             pos++;
         }
         return std::wstring(source.substr(start, pos - start));
@@ -167,7 +190,7 @@ public:
             wchar_t c = peek();
             auto start = currentLocation();
             if (is_common_identifier_start(c)) {
-                auto name = parseLuaName();
+                auto name = parseIdentifier();
                 TokenTag tag =
                     (syntax.keywords.find(name) == syntax.keywords.end()
                          ? TokenTag::NAME

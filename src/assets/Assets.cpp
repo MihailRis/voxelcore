@@ -1,6 +1,8 @@
 #include "Assets.hpp"
+#include "AssetsLoader.hpp"
+#include "io/path.hpp"
 
-Assets::Assets(util::ObjectsKeeper* vault) : vault(vault) {
+Assets::Assets(util::ObjectsKeeper* vault) : vault(vault), assetsLoadInfo(std::make_unique<AssetsLoadInfo>()) {
 }
 
 Assets::~Assets() {

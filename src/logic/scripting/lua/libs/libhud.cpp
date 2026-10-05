@@ -149,6 +149,15 @@ static int l_get_second_inventory(lua::State* L) {
     }
 }
 
+static int l_get_exchange_inventory(lua::State* L) {
+    auto inventory = hud->getExchangeInventory();
+    if (inventory == nullptr) {
+        return lua::pushinteger(L, 0);
+    } else {
+        return lua::pushinteger(L, inventory->getId());
+    }
+}
+
 static int l_get_player(lua::State* L) {
     auto player = hud->getPlayer();
     return lua::pushinteger(L, player->getId());
@@ -216,6 +225,7 @@ const luaL_Reg hudlib[] = {
     {"show_overlay", wrap_hud<l_show_overlay>},
     {"get_block_inventory", wrap_hud<l_get_block_inventory>},
     {"get_second_inventory", wrap_hud<l_get_second_inventory>},
+    {"get_exchange_inventory", wrap_hud<l_get_exchange_inventory>},
     {"close", wrap_hud<l_close>},
     {"pause", wrap_hud<l_pause>},
     {"resume", wrap_hud<l_resume>},

@@ -37,6 +37,11 @@ static inline const std::string STDCOMP = "stdcomp";
         lua::setfield(L, name);
         lua::pop(L);
     }
+    if (lua::getfield(L, "ordered_components")) {
+        lua::pushenv(L, id);
+        lua::rawseti(L, lua::objlen(L, -2) + 1);
+        lua::pop(L);
+    }
     lua::pop(L);
 
     return std::shared_ptr<int>(new int(id), [=](int* id) { //-V508
@@ -71,6 +76,7 @@ static void init_component_events(
     funcsset.on_aim_off = lua::hasfield(L, "on_aim_off");
     funcsset.on_attacked = lua::hasfield(L, "on_attacked");
     funcsset.on_used = lua::hasfield(L, "on_used");
+    funcsset.on_player_set = lua::hasfield(L, "on_player_set");
     lua::pop(L);
 }
 
@@ -147,7 +153,12 @@ void scripting::on_entity_spawn(
         lua::call(L, 1);
     }
     for (auto& component : components) {
-        create_component(L, -1, *component, args, saved);
+        try {
+            create_component(L, -1, *component, args, saved);
+        } catch (const std::runtime_error& err) {
+            logger.error() << "could not to initialize user component "
+                           << component->name << ": " << err.what();
+        }
     }
 
     for (auto& [packid, pack] : content->getPacks()) {
@@ -165,6 +176,9 @@ static void process_entity_callback(
     const std::string& name,
     std::function<int(lua::State*)> args
 ) {
+    if (env == nullptr) {
+        return;
+    }
     auto L = lua::get_main_state();
     lua::pushenv(L, *env);
     if (lua::hasfield(L, "__disabled")) {
@@ -235,6 +249,15 @@ void scripting::on_entity_fall(const Entity& entity) {
 void scripting::on_entity_save(const Entity& entity) {
     process_entity_callback(
         entity, "on_save", &EntityFuncsSet::on_save, nullptr
+    );
+}
+
+void scripting::on_entity_player_set(const Entity& entity, int64_t pid) {
+    process_entity_callback(
+        entity,
+        "on_player_set",
+        &EntityFuncsSet::on_player_set,
+        [pid](auto L) { return lua::pushinteger(L, pid); }
     );
 }
 

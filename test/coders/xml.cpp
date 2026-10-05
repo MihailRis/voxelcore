@@ -22,3 +22,9 @@ TEST(XML, VCM) {
         throw err;
     }
 }
+
+TEST(XML, TWO_WAYS) {
+    auto src = "<test><sub>test</sub></test>";
+    auto document = xml::parse("<test>", src);
+    ASSERT_EQ(src, xml::stringify(*document->getRoot(), false));
+}

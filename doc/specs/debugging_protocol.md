@@ -1,4 +1,4 @@
-# VC-DBG protocol v1
+# VC-DBG protocol v1.1
 
 ## Notes
 
@@ -79,7 +79,7 @@ Configuring connection. Disconnect-action is action that debugged instance must 
 
 - `frame` - Call stack frame index (indexing from most recent call)
 - `local` - Local variable index (based on `paused` event stack trace)
-- `path` - Requsted value path segments. Example: `['a', 'b', 5]` is `local_variable.a.b[5]`
+- `path` - Requested value path segments. Example: `['a', 'b', 5]` is `local_variable.a.b[5]`
 
 Responds with:
 
@@ -113,6 +113,15 @@ Then `value` is:
         "type": "table",
         "short": "{...}"
     }
+}
+```
+
+### File hot-reload signal
+
+```json
+{
+    "type": "hot-reload",
+    "file": "string"
 }
 ```
 

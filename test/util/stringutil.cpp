@@ -68,6 +68,14 @@ TEST(stringutil, base64_urlsafe) {
     }
 }
 
+TEST(stringutil, parse_double) {
+    EXPECT_DOUBLE_EQ(util::parse_double("53.125"), 53.125);
+    EXPECT_DOUBLE_EQ(util::parse_double("-0.25"), -0.25);
+    EXPECT_DOUBLE_EQ(util::parse_double("  +12.5"), 12.5);
+    EXPECT_DOUBLE_EQ(util::parse_double("xx1.75yy", 2, 4), 1.75);
+    EXPECT_THROW(util::parse_double("not-a-number"), std::runtime_error);
+}
+
 class StringParser : BasicParser<char> {
 public:
     StringParser(std::string_view source) : BasicParser("<string>", source) {}

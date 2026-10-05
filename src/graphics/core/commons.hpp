@@ -59,6 +59,8 @@ namespace advanced_pipeline {
     inline constexpr int TARGET_SSAO = 5;
     inline constexpr int TARGET_SHADOWS0 = 6;
     inline constexpr int TARGET_SHADOWS1 = 7;
+    
+    inline constexpr int TARGETS_COUNT = 8;
 }
 
 VC_ENUM_METADATA(CursorShape)
@@ -85,6 +87,6 @@ class Bindable {
 public:
     virtual ~Bindable() = default;
 
-    virtual void bind() = 0;
-    virtual void unbind() = 0;
+    virtual void bind() const = 0;
+    virtual void unbind() const = 0;
 };

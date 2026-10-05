@@ -1,12 +1,11 @@
 #pragma once
 
-#include <memory>
+#include "animation/rigging.hpp"
+#include "graphics/commons/Model.hpp"
+
 #include <string>
 #include <optional>
 #include <unordered_map>
-
-#include "graphics/commons/Model.hpp"
-#include "objects/rigging.hpp"
 
 namespace rigging {
     class SkeletonConfig;

@@ -1,16 +1,16 @@
 #include "ContentControl.hpp"
 
-#include "io/io.hpp"
-#include "engine/EnginePaths.hpp"
+#include "animation/rigging.hpp"
 #include "Content.hpp"
-#include "ContentPack.hpp"
 #include "ContentBuilder.hpp"
 #include "ContentLoader.hpp"
-#include "PacksManager.hpp"
-#include "objects/rigging.hpp"
-#include "devtools/Project.hpp"
-#include "logic/scripting/scripting.hpp"
+#include "ContentPack.hpp"
 #include "core_defs.hpp"
+#include "devtools/Project.hpp"
+#include "engine/EnginePaths.hpp"
+#include "io/io.hpp"
+#include "logic/scripting/scripting.hpp"
+#include "PacksManager.hpp"
 
 static void load_configs(Input* input, const io::path& root) {
     auto configFolder = root / "config";

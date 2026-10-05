@@ -160,7 +160,7 @@ void ParticlesRenderer::renderParticle(
         -camera.front,
         preset.size * scale,
         light,
-        glm::vec3(1.0f),
+        glm::vec4(1.0f),
         particle.region,
         preset.lighting ? 0.0f : 1.0f
     );

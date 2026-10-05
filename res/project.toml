@@ -3,5 +3,6 @@ name = "default"
 base_packs = ["base"]
 permissions = [
     "network",
-    "record-audio"
+    "record-audio",
+    "sub-instances",
 ]

@@ -20,7 +20,7 @@ public:
     /// @param linesShader Shader used for rendering lines
     /// @param showChunkBorders Whether to show chunk borders
     void render(
-        DrawContext& ctx,
+        const DrawContext& ctx,
         const Camera& camera,
         LineBatch& linesBatch,
         Shader& linesShader,

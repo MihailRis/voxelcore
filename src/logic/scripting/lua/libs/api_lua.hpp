@@ -25,6 +25,7 @@ extern const luaL_Reg byteutillib[];
 extern const luaL_Reg cameralib[];
 extern const luaL_Reg consolelib[];
 extern const luaL_Reg corelib[];
+extern const luaL_Reg cryptolib[];
 extern const luaL_Reg entitylib[];
 extern const luaL_Reg filelib[];
 extern const luaL_Reg generationlib[];
@@ -44,6 +45,7 @@ extern const luaL_Reg posteffectslib[]; // gfx.posteffects
 extern const luaL_Reg quatlib[];
 extern const luaL_Reg randomlib[];
 extern const luaL_Reg compressionlib[];
+extern const luaL_Reg testlib[];
 extern const luaL_Reg text3dlib[]; // gfx.text3d
 extern const luaL_Reg timelib[];
 extern const luaL_Reg tomllib[];
@@ -53,6 +55,7 @@ extern const luaL_Reg vec3lib[];  // vecn.cpp
 extern const luaL_Reg vec4lib[];  // vecn.cpp
 extern const luaL_Reg weatherlib[]; // gfx.weather
 extern const luaL_Reg worldlib[];
+extern const luaL_Reg xmllib[];
 extern const luaL_Reg yamllib[];
 
 // Components
@@ -91,3 +94,4 @@ namespace lua {
 }
 
 void initialize_libs_extends(lua::State* L);
+void initialize_cryptolib(lua::State* L);

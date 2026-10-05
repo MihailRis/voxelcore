@@ -3,6 +3,7 @@
 #include "engine/Engine.hpp"
 #include "network/Network.hpp"
 #include "devtools/Project.hpp"
+#include "util/stringutil.hpp"
 
 #include <variant>
 #include <utility>
@@ -27,7 +28,7 @@ struct ResponseEventDto {
     int status;
     bool binary;
     int requestId;
-    std::vector<char> bytes;
+    network::HttpResponse response;
 };
 
 enum NetworkDatagramSide {
@@ -85,74 +86,55 @@ static std::vector<std::string> read_headers(lua::State* L, int index) {
 
 static int request_id = 1;
 
-static int perform_get(lua::State* L, network::Network& network, bool binary) {
-    std::string url(lua::require_lstring(L, 1));
-    auto headers = read_headers(L, 2);
+static int l_request(lua::State* L, network::Network& network) {
+    network::HttpRequest request {};
+    request.url = lua::require_lstring(L, 1);
 
-    int currentRequestId = request_id++;
-
-    network.get(
-        url,
-        [currentRequestId, binary](std::vector<char> bytes) {
-            push_event(NetworkEvent(
-                RESPONSE,
-                ResponseEventDto {
-                    200, binary, currentRequestId, std::move(bytes)}
-            ));
-        },
-        [currentRequestId, binary](int code, std::vector<char> bytes) {
-            push_event(NetworkEvent(
-                RESPONSE,
-                ResponseEventDto {
-                    code, binary, currentRequestId, std::move(bytes)}
-            ));
-        },
-        std::move(headers)
-    );
-    return lua::pushinteger(L, currentRequestId);
-}
-
-static int l_get(lua::State* L, network::Network& network) {
-    return perform_get(L, network, false);
-}
-
-static int l_get_binary(lua::State* L, network::Network& network) {
-    return perform_get(L, network, true);
-}
-
-static int l_post(lua::State* L, network::Network& network) {
-    std::string url(lua::require_lstring(L, 1));
-    auto data = lua::tovalue(L, 2);
-
-    std::string string;
-    if (data.isString()) {
-        string = data.asString();
-    } else {
-        string = json::stringify(data, false);
+    if (!lua::istable(L, 2)) {
+        throw std::runtime_error("table expected as argument #2");
+    }
+    if (lua::getfield(L, "method", 2)) {
+        request.method = lua::require_string(L, -1);
+        lua::pop(L);
+    }
+    if (lua::getfield(L, "headers", 2)) {
+        request.headers = read_headers(L, -1);
+        lua::pop(L);
+    }
+    if (lua::getfield(L, "body", 2)) {
+        if (lua::type(L, -1) == LUA_TCDATA) {
+            request.body = lua::bytearray_as_string(L, -1);
+        } else {
+            request.body = lua::require_lstring(L, -1);
+        }
+        lua::pop(L);
+    }
+    if (lua::getfield(L, "follow_location", 2)) {
+        request.followLocation = lua::toboolean(L, -1);
+        lua::pop(L);
+    }
+    if (lua::getfield(L, "timeout_ms", 2)) {
+        request.timeoutMs = lua::tointeger(L, -1);
+        lua::pop(L);
+    }
+    if (lua::getfield(L, "verify_ssl", 2)) {
+        request.verifySSL = lua::toboolean(L, -1);
+        lua::pop(L);
     }
 
-    auto headers = read_headers(L, 3);
     int currentRequestId = request_id++;
+    request.onResponse = [currentRequestId](network::HttpResponse response) {
+        push_event(NetworkEvent(
+            RESPONSE,
+            ResponseEventDto {
+                response.status,
+                false,
+                currentRequestId,
+                std::move(response)}
+        ));
+    };
 
-    network.post(
-        url,
-        string,
-        [currentRequestId](std::vector<char> bytes) {
-            push_event(NetworkEvent(
-                RESPONSE,
-                ResponseEventDto {
-                    200, false, currentRequestId, std::move(bytes)}
-            ));
-        },
-        [currentRequestId](int code, std::vector<char> bytes) {
-            push_event(NetworkEvent(
-                RESPONSE,
-                ResponseEventDto {
-                    code, false, currentRequestId, std::move(bytes)}
-            ));
-        },
-        std::move(headers)
-    );
+    network.request(std::move(request));
     return lua::pushinteger(L, currentRequestId);
 }
 
@@ -237,7 +219,7 @@ static int l_udp_server_send_to(lua::State* L, network::Network& network) {
     return 0;
 }
 
-static int l_recv(lua::State* L, network::Network& network) {
+static int read(lua::State* L, network::Network& network, int (*fn)(network::TcpConnection*, char*, int)) {
     u64id_t id = lua::tointeger(L, 1);
     int length = lua::tointeger(L, 2);
 
@@ -248,11 +230,12 @@ static int l_recv(lua::State* L, network::Network& network) {
     }
 
     auto tcpConnection = dynamic_cast<network::TcpConnection*>(connection);
+    auto tcp = dynamic_cast<network::TcpConnection*>(connection);
 
     length = glm::min(length, tcpConnection->available());
     util::Buffer<char> buffer(length);
-    
-    int size = tcpConnection->recv(buffer.data(), length);
+
+    int size = fn(tcp, buffer.data(), length);
     if (size == -1) {
         return 0;
     }
@@ -266,6 +249,18 @@ static int l_recv(lua::State* L, network::Network& network) {
     } else {
         return lua::create_bytearray(L, buffer.data(), size);
     }
+}
+
+static int l_recv(lua::State* L, network::Network& network) {
+    return read(L, network, [](auto* tcp, char* buf, int len) {
+        return tcp->recv(buf, len);
+    });
+}
+
+static int l_peek(lua::State* L, network::Network& network) {
+    return read(L, network, [](auto* tcp, char* buf, int len) {
+        return tcp->peek(buf, len);
+    });
 }
 
 static int l_available(lua::State* L, network::Network& network) {
@@ -506,11 +501,31 @@ static int l_pull_events(lua::State* L) {
                 lua::pushinteger(L, dto.requestId);
                 lua::rawseti(L, 3);
 
+                lua::createtable(L, 0, 2);
+                lua::pushinteger(L, dto.response.status);
+                lua::setfield(L, "status");
+                
                 if (dto.binary) {
-                    lua::create_bytearray(L, dto.bytes.data(), dto.bytes.size());
+                    lua::create_bytearray(
+                        L, dto.response.body.data(), dto.response.body.size()
+                    );
                 } else {
-                    lua::pushlstring(L, std::string_view(dto.bytes.data(), dto.bytes.size()));
+                    lua::pushlstring(
+                        L,
+                        std::string_view(
+                            dto.response.body.data(), dto.response.body.size()
+                        )
+                    );
                 }
+                lua::setfield(L, "body");
+
+                lua::createtable(L, dto.response.headers.size(), 0);
+                for (int i = 0; i < dto.response.headers.size(); i++) {
+                    lua::pushlstring(L, dto.response.headers[i]);
+                    lua::rawseti(L, i + 1);
+                }
+                lua::setfield(L, "headers");
+
                 lua::rawseti(L, 4);
                 break;
             }
@@ -549,9 +564,7 @@ int wrap(lua_State* L) {
 }
 
 const luaL_Reg networklib[] = {
-    {"__get", wrap<l_get>},
-    {"__get_binary", wrap<l_get_binary>},
-    {"__post", wrap<l_post>},
+    {"__request", wrap<l_request>},
     {"get_total_upload", wrap<l_get_total_upload>},
     {"get_total_download", wrap<l_get_total_download>},
     {"find_free_port", wrap<l_find_free_port>},
@@ -566,6 +579,7 @@ const luaL_Reg networklib[] = {
     {"__close", wrap<l_close>},
     {"__send", wrap<l_send>},
     {"__recv", wrap<l_recv>},
+    {"__peek", wrap<l_peek>},
     {"__available", wrap<l_available>},
     {"__is_alive", wrap<l_is_alive>},
     {"__is_connected", wrap<l_is_connected>},

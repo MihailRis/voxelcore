@@ -173,8 +173,12 @@ bool io::write_binary_json(
 }
 
 dv::value io::read_json(const path& filename) {
-    std::string text = io::read_string(filename);
-    return json::parse(filename.string(), text);
+    auto text = io::read_string(filename);
+    try {
+        return json::parse(filename.string(), text);
+    } catch (const parsing_error& err) {
+        throw err.toRuntimeError();
+    }
 }
 
 dv::value io::read_binary_json(const path& file) {
@@ -184,7 +188,12 @@ dv::value io::read_binary_json(const path& file) {
 }
 
 dv::value io::read_toml(const path& file) {
-    return toml::parse(file.string(), io::read_string(file));
+    auto text = io::read_string(file);
+    try {
+        return toml::parse(file.string(), text);
+    } catch (const parsing_error& err) {
+        throw err.toRuntimeError();
+    }
 }
 
 std::vector<std::string> io::read_list(const io::path& filename) {

@@ -93,6 +93,8 @@ class Hud : public util::ObjectsKeeper {
     std::shared_ptr<gui::UINode> debugPanel;
     /// @brief Overlay used in pause mode
     std::shared_ptr<gui::UINode> darkOverlay;
+    /// @brief Overlay used in inventory
+    std::shared_ptr<gui::UINode> inventoryDropArea;
     /// @brief Inventories interaction agent (grabbed item)
     std::shared_ptr<gui::SlotView> exchangeSlot;
     /// @brief Exchange slot inventory (1 slot only)
@@ -117,7 +119,7 @@ class Hud : public util::ObjectsKeeper {
     /// @brief Allow actual pause
     bool allowPause = true;
     bool debug = false;
-    /// @brief UI element will be dynamicly positioned near to inventory or in screen center
+    /// @brief UI element will be dynamically positioned near to inventory or in screen center
     std::shared_ptr<gui::UINode> secondUI;
 
     std::shared_ptr<gui::UINode> debugMinimap;
@@ -206,6 +208,8 @@ public:
     std::shared_ptr<Inventory> getBlockInventory();
 
     std::shared_ptr<Inventory> getSecondInventory();
+
+    std::shared_ptr<Inventory> getExchangeInventory();
 
     bool isContentAccess() const;
 

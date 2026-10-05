@@ -18,6 +18,7 @@ endif()
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(CURL REQUIRED)
+find_package(OpenSSL 3.0 REQUIRED COMPONENTS Crypto)
 find_package(glfw3 REQUIRED)
 find_package(Freetype REQUIRED)
 if(NOT APPLE)
@@ -26,27 +27,34 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     find_package(vorbis REQUIRED)
+    
+    set(LUAJIT_PACKAGE_DIR "${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}")
     if(VCPKG_TARGET_TRIPLET MATCHES "static")
         add_library(luajit STATIC IMPORTED)
         set_target_properties(
             luajit
             PROPERTIES
                 IMPORTED_LOCATION
-                "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}/lib/libluajit-5.1.a"
+                "${LUAJIT_PACKAGE_DIR}/lib/libluajit-5.1.a"
                 INTERFACE_INCLUDE_DIRECTORIES
-                "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}/include/"
+                "${LUAJIT_PACKAGE_DIR}/include/"
         )
     else()
+        if(EXISTS "${LUAJIT_PACKAGE_DIR}/include/luajit-2.1")
+            set(LUAJIT_INCLUDE_DIR "${LUAJIT_PACKAGE_DIR}/include/luajit-2.1")
+        else()
+            set(LUAJIT_INCLUDE_DIR "${LUAJIT_PACKAGE_DIR}/include/luajit")
+        endif()
+
         add_library(luajit SHARED IMPORTED)
         set_target_properties(
             luajit
             PROPERTIES
                 IMPORTED_LOCATION
-                "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}/bin/lua51.dll"
+                "${LUAJIT_PACKAGE_DIR}/bin/lua51.dll"
                 IMPORTED_IMPLIB
-                "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}/lib/lua51.lib"
-                INTERFACE_INCLUDE_DIRECTORIES
-                "$ENV{VCPKG_ROOT}/packages/luajit_${VCPKG_TARGET_TRIPLET}/include/luajit"
+                "${LUAJIT_PACKAGE_DIR}/lib/lua51.lib"
+                INTERFACE_INCLUDE_DIRECTORIES "${LUAJIT_INCLUDE_DIR}"
         )
     endif()
 
@@ -72,12 +80,13 @@ target_link_libraries(
             ZLIB::ZLIB
             PNG::PNG
             CURL::libcurl
+            OpenSSL::Crypto
             OpenAL::OpenAL
             Vorbis::vorbis
             Vorbis::vorbisfile
-            luajit::luajit
             Freetype::Freetype
-    PUBLIC glm::glm # Need public for src/delegates.hpp, which including to
+    PUBLIC luajit::luajit
+           glm::glm # Need public for src/delegates.hpp, which including to
                     # main.cpp
 )
 

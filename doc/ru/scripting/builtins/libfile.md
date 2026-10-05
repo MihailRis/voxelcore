@@ -78,6 +78,9 @@ file.stem(путь: string) -> string
 
 -- Извлекает расширение из пути. Пример: `world:data/base/config.toml` -> `toml`.
 file.ext(путь: string) -> string
+
+-- Возвращает путь без расширения. Пример: `world:data/base/config.toml` -> `world:data/base/config`.
+file.remove_ext(путь: string) -> string
 ```
 
 ## Директории

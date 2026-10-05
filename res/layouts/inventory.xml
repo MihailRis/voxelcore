@@ -1,4 +1,4 @@
 <inventory>
-    <slots-grid pos="0, 164" rows="1" count="10" sharefunc="inventory_share_func"/>
-    <slots-grid rows="3" start-index="10" count="30" sharefunc="inventory_share_func"/>
+    <slots-grid pos="0, 164" rows="1" count="10" sharefunc="share_func"/>
+    <slots-grid rows="3" start-index="10" count="30" sharefunc="share_func"/>
 </inventory>

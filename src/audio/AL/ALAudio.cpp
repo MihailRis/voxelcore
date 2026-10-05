@@ -5,6 +5,7 @@
 
 #include "debug/Logger.hpp"
 #include "alutil.hpp"
+#include "util/stringutil.hpp"
 #include "../MemoryPCMStream.hpp"
 
 static debug::Logger logger("al-audio");
@@ -99,6 +100,8 @@ ALInputDevice::ALInputDevice(
 
     if (deviceName) {
         deviceSpecifier = std::string(deviceName);
+        logger.info() << "created input device with specifier "
+                      << util::quote(deviceSpecifier);
     } else {
         logger.warning() << "could not retrieve input device specifier";
     }

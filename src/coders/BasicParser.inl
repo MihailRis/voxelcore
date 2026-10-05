@@ -22,9 +22,26 @@ namespace {
     }
 
     inline double power(double base, int64_t power) {
+        if (power == 0) {
+            return 1.0;
+        }
+
+        uint64_t exp;
+        if (power < 0) {
+            base = 1.0 / base;
+            exp = static_cast<uint64_t>(-(power + 1)) + 1;
+        } else {
+            exp = static_cast<uint64_t>(power);
+        }
+
         double result = 1.0;
-        for (int64_t i = 0; i < power; i++) {
-            result *= base;
+
+        while (exp > 0) {
+            if (exp & 1)
+                result *= base;
+
+            base *= base;
+            exp >>= 1;
         }
         return result;
     }

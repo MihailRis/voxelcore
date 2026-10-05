@@ -109,7 +109,7 @@ void WorldConverter::createBlockFieldsConvertTasks() {
                     REGION_LAYER_BLOCKS_DATA,
                     ConvertTaskType::CONVERT_BLOCKS_DATA
                 );
-                break;
+                return;
             default:
                 break;
         }
@@ -189,7 +189,7 @@ void WorldConverter::upgradeRegion(
 }
 
 void WorldConverter::convertVoxels(const io::path& file, int x, int z) const {
-    logger.info() << "converting voxels region " << x << "_" << z;
+    logger.info() << "converting voxels in region " << x << "_" << z;
     wfile->getRegions().processRegion(x, z, REGION_LAYER_VOXELS,
     [=](std::unique_ptr<ubyte[]> data, uint32_t*) {
         Chunk::convert(data.get(), report.get());
@@ -198,7 +198,7 @@ void WorldConverter::convertVoxels(const io::path& file, int x, int z) const {
 }
 
 void WorldConverter::convertInventories(const io::path& file, int x, int z) const {
-    logger.info() << "converting inventories region " << x << "_" << z;
+    logger.info() << "converting inventories in region " << x << "_" << z;
     wfile->getRegions().processInventories(x, z, [=](Inventory* inventory) {
         inventory->convert(report.get());
     });
@@ -212,7 +212,7 @@ void WorldConverter::convertPlayer(const io::path& file) const {
 }
 
 void WorldConverter::convertBlocksData(int x, int z, const ContentReport& report) const {
-    logger.info() << "converting blocks data";
+    logger.info() << "converting blocks data in region " << x << "_" << z;
     wfile->getRegions().processBlocksData(x, z, 
     [=](BlocksMetadata* heap, std::unique_ptr<ubyte[]> voxelsData) {
         Chunk chunk(0, 0);

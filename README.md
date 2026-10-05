@@ -3,7 +3,7 @@
 ## Latest release
 
 - [Download](https://github.com/MihailRis/VoxelCore/releases/latest) | [Скачать](https://github.com/MihailRis/VoxelCore/releases/latest)
-- [Documentation](https://github.com/MihailRis/VoxelCore/blob/release-0.31/doc/en/main-page.md) | [Документация](https://github.com/MihailRis/VoxelCore/blob/release-0.31/doc/ru/main-page.md)
+- [Documentation](https://github.com/MihailRis/VoxelCore/blob/release-0.32/doc/en/main-page.md) | [Документация](https://github.com/MihailRis/VoxelCore/blob/release-0.32/doc/ru/main-page.md)
 
 ---
 
@@ -18,7 +18,7 @@ Installing last version that supports C++17.
 ```sh
 git clone --branch v3.16.0 https://github.com/skypjack/entt.git
 cd entt
-mkdir build && cd build
+mkdir -p build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release -DENTT_INSTALL=ON ..
 sudo make install
 ```
@@ -55,22 +55,8 @@ sudo dnf install glfw-devel glew-devel glm-devel libpng-devel libvorbis-devel op
 
 #### Arch based distros
 
-If you use X11:
-
 ```sh
-sudo pacman -S glfw-x11 glew glm libpng libvorbis openal luajit libcurl freetype2
-```
-
-If you use Wayland:
-
-```sh
-sudo pacman -S glfw-wayland glew glm libpng libvorbis openal luajit libcurl freetype2
-```
-
-And install EnTT:
-
-```sh
-yay -S entt
+sudo pacman -S glfw glew glm libpng libvorbis openal luajit curl freetype2
 ```
 
 ### Building engine with CMake
@@ -151,6 +137,26 @@ cmake --build --preset default-vs-msvc-windows
 
 > [!NOTE]
 > Make sure your `CMakeUserPresets.json` (if used) contains the correct `VCPKG_ROOT` path.
+
+---
+### Building with CLion (MinGW / Ninja)
+
+> [!NOTE]
+> Requirements: **vcpkg**, **Git**, and **CLion** (bundled with CMake, Ninja and MinGW toolchain).
+
+> [!WARNING]
+> Avoid installing tools in paths with spaces (e.g. `Program Files`).
+> This may break MinGW builds (especially `windres`).
+
+Install **vcpkg** manually as described in the Visual Studio section.
+
+
+#### Configure CLion
+Open the project in CLion and configure CMake profile:
+```text
+Settings → Build, Execution, Deployment → CMake
+```
+Reload CMake project and build the engine.
 
 ---
 

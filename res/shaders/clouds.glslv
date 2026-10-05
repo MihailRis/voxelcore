@@ -22,7 +22,7 @@ void main() {
 
     vec3 pos3d = a_modelpos.xyz - u_cameraPos;
 
-    a_realnormal = v_normal.xyz * 2.0 - 1.0;
+    a_realnormal = vec3(0.0, 1.0, 0.0);
     a_normal = calc_screen_normal(a_realnormal);
 
     a_torchLight = vec4(calc_torch_light(

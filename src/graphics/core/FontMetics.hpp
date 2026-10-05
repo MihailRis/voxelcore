@@ -9,8 +9,8 @@ class Font;
 struct FontMetrics {
     std::optional<std::weak_ptr<Font>> font;
 
-    int lineHeight;
-    int yoffset;
+    int lineHeight = 0;
+    int yoffset = 0;
     int _glyphInterval = 8;
 
     ~FontMetrics();

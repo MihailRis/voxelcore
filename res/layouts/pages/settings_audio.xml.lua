@@ -31,6 +31,14 @@ function update_checkbox_setting(id, value)
     document.input_device_select.enabled = recording_enabled
     document.input_volume_inner.enabled = recording_enabled
     document.input_volume_outer.enabled = recording_enabled
+
+    local selectbox = document.input_device_select
+    local info = audio.input.get_input_info()
+    if info then
+        selectbox.value = info.device_specifier
+    else
+        selectbox.value = app.get_setting("audio.input-device")
+    end
 end
 
 function create_checkbox(id, name, tooltip)
@@ -84,6 +92,7 @@ function on_open()
         table.insert(devices, {value=name, text=name})
     end
     selectbox.options = devices
+
     local info = audio.input.get_input_info()
     if info then
         selectbox.value = info.device_specifier

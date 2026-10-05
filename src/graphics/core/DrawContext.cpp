@@ -74,6 +74,18 @@ DrawContext::~DrawContext() {
     if (lineWidth != parent->lineWidth) {
         glLineWidth(parent->lineWidth);
     }
+
+    for (int i = 0; i < textures.size(); i++) {
+        auto texture = parent->textures[i];
+        if (textures[i] != texture) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            if (texture == nullptr) {
+                glBindTexture(GL_TEXTURE_2D, 0);
+            } else {
+                texture->bind();
+            }
+        }
+    }
 }
 
 const glm::uvec2& DrawContext::getViewport() const {
@@ -153,4 +165,14 @@ void DrawContext::setScissors(const glm::vec4& area) {
 void DrawContext::setLineWidth(float width) {
     lineWidth = width;
     glLineWidth(width);
+}
+
+void DrawContext::useTexture(int target, const Bindable* texture) {
+    glActiveTexture(GL_TEXTURE0 + target);
+    if (texture == nullptr) {
+        glBindTexture(GL_TEXTURE_2D, 0);
+    } else {
+        texture->bind();
+    }
+    textures.at(target) = texture;
 }

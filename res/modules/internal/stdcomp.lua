@@ -39,6 +39,8 @@ local Rigidbody = {__index={
     set_mass=function(self, v) return __rigidbody.set_mass(self.eid, v) end,
     set_elasticity=function(self, v) return __rigidbody.set_elasticity(self.eid, v) end,
     get_ground_vel=function(self) return __rigidbody.get_ground_vel(self.eid) end,
+    is_selectable=function (self) return __rigidbody.is_selectable(self.eid) end,
+    set_selectable=function (self, b) return __rigidbody.set_selectable(self.eid, b) end,
 }}
 
 local function new_Rigidbody(eid)
@@ -48,15 +50,16 @@ end
 local Skeleton = {__index={
     get_model=function(self, i) return __skeleton.get_model(self.eid, i) end,
     set_model=function(self, i, s) return __skeleton.set_model(self.eid, i, s) end,
-    get_matrix=function(self, i) return __skeleton.get_matrix(self.eid, i) end,
+    get_matrix=function(self, i, ...) return __skeleton.get_matrix(self.eid, i, ...) end,
     set_matrix=function(self, i, m) return __skeleton.set_matrix(self.eid, i, m) end,
+    reset_pose=function(self) return __skeleton.reset_pose(self.eid) end,
     get_texture=function(self, s) return __skeleton.get_texture(self.eid, s) end,
     set_texture=function(self, s, s2) return __skeleton.set_texture(self.eid, s, s2) end,
     index=function(self, s) return __skeleton.index(self.eid, s) end,
     is_visible=function(self, i) return __skeleton.is_visible(self.eid, i) end,
     set_visible=function(self, i, b) return __skeleton.set_visible(self.eid, i, b) end,
-    get_color=function(self) return __skeleton.get_color(self.eid) end,
-    set_color=function(self, color) return __skeleton.set_color(self.eid, color) end,
+    get_color=function(self, ...) return __skeleton.get_color(self.eid, ...) end,
+    set_color=function(self, color, ...) return __skeleton.set_color(self.eid, color, ...) end,
     set_interpolated=function(self, b) return __skeleton.set_interpolated(self.eid, b) end,
 }}
 
@@ -84,7 +87,7 @@ local Entity = {__index={
     def_name=function(self) return entities.def_name(entities.get_def(self.eid)) end,
     get_player=function(self) return entities.get_player(self.eid) end,
     set_enabled=function(self, name, flag)
-        local comp = self.components[name] 
+        local comp = self.components[name]
         if comp then
             if flag then
                 if comp.__disabled and comp.on_enable then
@@ -110,6 +113,7 @@ return {
         entity.rigidbody = new_Rigidbody(eid)
         entity.skeleton = new_Skeleton(eid)
         entity.components = {}
+        entity.ordered_components = {}
         entities[eid] = entity;
         return entity
     end,
@@ -120,6 +124,7 @@ return {
         local entity = entities[eid]
         if entity then
             entity.components = nil
+            entity.ordered_components = nil
             entities[eid] = nil;
         end
     end,
@@ -128,10 +133,10 @@ return {
             if uid % parts ~= part then
                 goto continue
             end
-            for _, component in pairs(entity.components) do
-                local callback = component.on_update
+            for _, component in ipairs(entity.ordered_components) do
+                local callback = rawget(component, "on_update")
                 if not component.__disabled and callback then
-                    local result, err = pcall(callback, tps)
+                    local _, err = pcall(callback, tps)
                     if err then
                         debug.error(err)
                     end
@@ -142,8 +147,8 @@ return {
     end,
     physics_update = function(delta)
         for uid, entity in pairs(entities) do
-            for _, component in pairs(entity.components) do
-                local callback = component.on_physics_update
+            for _, component in ipairs(entity.ordered_components) do
+                local callback = rawget(component, "on_physics_update")
                 if not component.__disabled and callback then
                     local result, err = pcall(callback, delta)
                     if err then
@@ -155,10 +160,10 @@ return {
     end,
     render = function(delta)
         for _,entity in pairs(entities) do
-            for _, component in pairs(entity.components) do
-                local callback = component.on_render
+            for _, component in ipairs(entity.ordered_components) do
+                local callback = rawget(component, "on_render")
                 if not component.__disabled and callback then
-                    local result, err = pcall(callback, delta)
+                    local _, err = pcall(callback, delta)
                     if err then
                         debug.error(err)
                     end

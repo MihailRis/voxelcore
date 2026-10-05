@@ -6,12 +6,13 @@ class Time {
     uint64_t frame = 0;
     double lastTime = 0.0;
     double delta = 0.0;
+    double timeMultiplier = 1.0;
 public:
     Time() {}
 
     void update(double currentTime) {
         frame++;
-        delta = currentTime - lastTime;
+        delta = (currentTime - lastTime) * timeMultiplier;
         lastTime = currentTime;
     }
 

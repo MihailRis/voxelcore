@@ -69,7 +69,7 @@ public:
             return 0;
         }
         if (in.fail()) {
-            logger.error() << "Wav::load_pcm: I/O error ocurred";
+            logger.error() << "Wav::load_pcm: I/O error occurred";
             return -1;
         }
         return in.gcount();

@@ -89,8 +89,13 @@ template<> void ContentUnitLoader<EntityDef>::loadUnit(
     root.at("skeleton-name").get(def.skeletonName);
     root.at("material").get(def.material);
     root.at("blocking").get(def.blocking);
+    root.at("selectable").get(def.selectable);
     root.at("solid").get(def.solid);
     root.at("mass").get(def.mass);
     root.at("elasticity").get(def.elasticity);
     root.at("step-height").get(def.stepHeight);
+    
+    std::string lightingModeName;
+    root.at("lighting-mode").get(lightingModeName);
+    ModelLightingModeMeta.getItem(lightingModeName, def.lightingMode);
 }

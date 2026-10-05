@@ -7,9 +7,11 @@
 #include <iostream>
 #include <stdexcept>
 
+using namespace std::literals;
 static debug::Logger logger("main");
 
 static void sigterm_handler(int signum) {
+    logger.info() << (signum == SIGTERM ? "SIGTERM" : "SIGINT") << " received";
     Engine::getInstance().quit();
 }
 
@@ -25,13 +27,24 @@ int main(int argc, char** argv) {
         if (!parse_cmdline(argc, argv, coreParameters)) {
             return EXIT_SUCCESS;
         }
+        logger.debug() << "sub-process depth: "
+                       << coreParameters.subProcessDepth;
     } catch (const std::runtime_error& err) {
         std::cerr << err.what() << std::endl;
         return EXIT_FAILURE;
     }
     std::signal(SIGTERM, sigterm_handler);
-    
-    debug::Logger::init(coreParameters.userFolder.string() + "/latest.log");
+#ifdef NDEBUG
+    std::signal(SIGINT, sigterm_handler);
+#endif
+    std::filesystem::path logFile = coreParameters.logFile;
+    if (logFile.empty()) {
+        logFile = coreParameters.userFolder.string() + "/latest"s +
+                  (coreParameters.subProcessDepth > 0
+                       ? ".sub" + std::to_string(coreParameters.subProcessDepth)
+                       : "") + ".log"s;
+    }
+    debug::Logger::init(logFile.u8string());
     platform::configure_encoding();
 
     auto& engine = Engine::getInstance();

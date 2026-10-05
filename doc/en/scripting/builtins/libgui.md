@@ -61,6 +61,12 @@ gui.set_active_frame(
     -- Used for custom projection (e.g., in 3D)
     [optional] cursorLocator: function() -> number, number
 )
+
+-- Creates a screenshot of a frame as a Canvas object if the frame ID is specified, or the entire window if nil.
+gui.screenshot(
+    -- ID of the frame created via gui.create_frame
+    [optional] frameId: str
+) -> Canvas | nil
 ```
 
 ## Markup
@@ -139,7 +145,7 @@ gui.confirm(
 ## Documents and templates
 
 ```lua
--- Loads a UI document with its script, returns the name of the document if successfully loaded.
+-- Loads a UI document with its script. Returns document environment table
 gui.load_document(
     -- Path to the xml file of the page. Example: `core:layouts/pages/main.xml`
     path: str,
@@ -147,7 +153,7 @@ gui.load_document(
     name: str
     -- Table of parameters passed to the on_open event
     args: table
-) -> str
+) -> table
 
 -- Loads and processes layout template from file
 gui.template(

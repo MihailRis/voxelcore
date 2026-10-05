@@ -2,12 +2,18 @@
 
 #include "world/Level.hpp"
 #include "world/World.hpp"
+#include "world/Weather.hpp"
 
 using namespace scripting;
 
 static Weather& require_weather() {
     if (level == nullptr) {
         throw std::runtime_error("world is not open");
+    }
+    if (renderer == nullptr) {
+        throw std::runtime_error(
+            "world frontend is not initialized yet (wait for on_hud_open event)"
+        );
     }
     return renderer->getWeather();
 }

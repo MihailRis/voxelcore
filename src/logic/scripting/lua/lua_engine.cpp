@@ -19,6 +19,7 @@ namespace {
     debug::Logger logger("lua-state");
     lua::State* main_thread = nullptr;
     bool headless_mode = false;
+    bool test_mode = false;
     const std::unordered_map<std::string, std::string>* project_args;
 }
 
@@ -52,6 +53,8 @@ static void create_libs(State* L, StateType stateType) {
     openlib(L, "bjson", bjsonlib);
     openlib(L, "block", blocklib);
     openlib(L, "byteutil", byteutillib);
+    openlib(L, "crypto", cryptolib);
+    initialize_cryptolib(L);
     openlib(L, "file", filelib);
     openlib(L, "generation", generationlib);
     openlib(L, "item", itemlib);
@@ -66,15 +69,21 @@ static void create_libs(State* L, StateType stateType) {
     openlib(L, "vec2", vec2lib);
     openlib(L, "vec3", vec3lib);
     openlib(L, "vec4", vec4lib);
+    openlib(L, "xml", xmllib);
     openlib(L, "yaml", yamllib);
 
     openlib(L, "__vc_app", applib);
-    lua::getglobal(L, "__vc_app");
-    lua::setregistry(L, "app");
+    getglobal(L, "__vc_app");
+    setregistry(L, "app");
+
+    createtable(L, 0, 0);
+    pushvalue(L, -1);
+    setglobal(L, "__vc_internals");
+    setregistry(L, lua::INTERNALS_TABLE);
 
     if (stateType == StateType::SCRIPT) {
-        lua::getregistry(L, "app");
-        lua::setglobal(L, "app");
+        getregistry(L, "app");
+        setglobal(L, "app");
     }
     if (stateType == StateType::BASE || stateType == StateType::SCRIPT) {
         openlib(L, "assets", assetslib);
@@ -97,6 +106,10 @@ static void create_libs(State* L, StateType stateType) {
         openlib(L, "__skeleton", skeletonlib);
         openlib(L, "__rigidbody", rigidbodylib);
         openlib(L, "__transform", transformlib);
+    }
+
+    if (::test_mode) {
+        openlib(L, "test", testlib);
     }
 
     addfunc(L, "print", lua::wrap<l_print>);
@@ -191,6 +204,7 @@ void lua::initialize(const EnginePaths& paths, const CoreParameters& params) {
     logger.info() << LUAJIT_VERSION;
 
     headless_mode = params.headless;
+    test_mode = params.testMode;
     project_args = &params.projectArgs;
     main_thread = create_state(
         paths, params.headless ? StateType::SCRIPT : StateType::BASE

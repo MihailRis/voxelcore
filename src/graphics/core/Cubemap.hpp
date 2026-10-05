@@ -9,4 +9,5 @@ public:
 
     virtual void bind() const override;
     virtual void unbind() const override;
+    virtual void reload(const ubyte* data, uint w, uint h) override;
 };

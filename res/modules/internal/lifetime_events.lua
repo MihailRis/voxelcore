@@ -1,5 +1,6 @@
-local __app = __vc_app
+local app = __vc_app
 local __rules = rules
+local internals = __vc_internals
 
 local function configure_SSAO()
     -- Temporary using slot to configure built-in SSAO effect
@@ -32,10 +33,10 @@ local function configure_SSAO()
     end
     events.on("core:setting.graphics.ssao.set", update_ssao_quality)
 
-    update_ssao_quality(__app.get_setting("graphics.ssao"))
+    update_ssao_quality(app.get_setting("graphics.ssao"))
 end
 
-local function __vc_on_hud_open()
+function internals.on_hud_open()
     local _hud_is_content_access = hud._is_content_access
     local _hud_set_content_access = hud._set_content_access
     local _hud_set_debug_cheats = hud._set_debug_cheats
@@ -130,7 +131,8 @@ local function ScheduleGroup()
 end
 
 local RULES_FILE = "world:rules.toml"
-local function __vc_on_world_open()
+
+function internals.on_world_open()
     time.schedules.world = ScheduleGroup()
 
     if not file.exists(RULES_FILE) then
@@ -142,15 +144,15 @@ local function __vc_on_world_open()
     end
 end
 
-local function __vc_on_world_tick(tps)
+function internals.on_world_tick(tps)
     time.schedules.world:tick(1.0 / tps)
 end
 
-local function __vc_process_before_quit()
-    block.__process_register_events()
+function internals.process_before_quit()
+    internals.process_block_register_events()
 end
 
-local function __vc_on_world_save()
+function internals.on_world_save()
     local rule_values = {}
     for name, rule in pairs(__rules.rules) do
         rule_values[name] = rule.value
@@ -165,7 +167,8 @@ file.__close_all_descriptors = nil
 gui_util.__reset_local = nil
 stdcomp.reset = nil
 
-local function __vc_on_world_quit()
+function internals.on_world_quit()
+    internals.stop_animation_actions()
     __rules.clear()
     __gui_util_reset_local()
     __stdcomp_reset()
@@ -175,8 +178,6 @@ end
 local __post_runnables = {}
 local fn_audio_reset_fetch_buffer = audio.__reset_fetch_buffer
 audio.__reset_fetch_buffer = nil
-
-local __vc_update_coroutines = _G.__vc_update_coroutines
 
 local function __process_post_runnables()
     if #__post_runnables > 0 then
@@ -189,41 +190,38 @@ local function __process_post_runnables()
         __post_runnables = {}
     end
 
-    __vc_update_coroutines()
+    internals.update_coroutines()
 
     fn_audio_reset_fetch_buffer()
     debug.pull_events()
     network.__process_events()
     if not hud or not hud.is_paused() then
-        block.__process_register_events()
-        block.__perform_ticks(time.delta())
+        internals.process_block_register_events()
+        internals.tick_updating_blocks(time.delta())
     end
 end
 
-local __vc__is_post_runnable = false
+local is_post_runnable = false
 
-function __vc__process_post_runnables()
-    __vc__is_post_runnable = true
+function internals.process_post_runnables()
+    is_post_runnable = true
     local success, err = pcall(__process_post_runnables)
     if not success then
         debug.error("an error ocurred while processing post-runnables: ".. err)
     end
-    __vc__is_post_runnable = false
+    is_post_runnable = false
+end
+
+function internals.is_post_runnable_context()
+    return is_post_runnable
 end
 
 function time.post_runnable(runnable)
     table.insert(__post_runnables, runnable)
 end
 
-return {
-    __vc_on_hud_open = __vc_on_hud_open,
-    __vc_on_world_open = __vc_on_world_open,
-    __vc_on_world_tick = __vc_on_world_tick,
-    __vc_process_before_quit = __vc_process_before_quit,
-    __vc_on_world_save = __vc_on_world_save,
-    __vc_on_world_quit = __vc_on_world_quit,
-    __vc__process_post_runnables = __vc__process_post_runnables,
-    __vc_is_post_runnable_context = function()
-        return __vc__is_post_runnable
-    end
-}
+function internals.on_render()
+    internals.on_animation_frame()
+end
+
+return {}

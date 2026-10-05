@@ -25,9 +25,9 @@ const uint MIN_SURROUNDING = 9;
 ChunksController::ChunksController(Level& level)
     : level(level),
       generator(std::make_unique<WorldGenerator>(
-          level.content.generators.require(level.getWorld()->getGenerator()),
+          level.content.generators.require(level.environment.generator),
           level.content,
-          level.getWorld()->getSeed()
+          level.getWorld().getSeed()
       )) {}
 
 ChunksController::~ChunksController() = default;

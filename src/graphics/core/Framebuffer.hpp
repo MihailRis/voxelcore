@@ -6,24 +6,26 @@
 #include <memory>
 
 class Texture;
+class ImageData;
 
 class Framebuffer : public Bindable {
     uint fbo;
     uint depth;
     uint width;
     uint height;
-    uint format;
     std::shared_ptr<Texture> texture;
 public:
     Framebuffer(uint fbo, uint depth, std::unique_ptr<Texture> texture);
     Framebuffer(uint width, uint height, bool alpha=false);
     ~Framebuffer();
 
+    void setTexture(std::unique_ptr<Texture> texture);
+
     /// @brief Use framebuffer
-    void bind() override;
+    void bind() const override;
 
     /// @brief Stop using framebuffer
-    void unbind() override;
+    void unbind() const override;
 
     /// @brief Update framebuffer texture size
     /// @param width new width
@@ -34,6 +36,8 @@ public:
     Texture* getTexture() const;
 
     std::shared_ptr<Texture> getSharedTexture() const;
+
+    std::unique_ptr<ImageData> readData() const;
 
     /// @brief Get framebuffer width
     uint getWidth() const;

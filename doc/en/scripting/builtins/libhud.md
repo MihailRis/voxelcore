@@ -57,6 +57,10 @@ hud.get_block_inventory() -> int
 -- Gives the ID of the second open inventory (block, virtual inventory...) or 0.
 hud.get_second_inventory() -> int
 
+-- Get the inventory ID of exchange item (grabbed item in inventory) or 0. 
+-- It has only one slot - 0
+hud.get_exchange_inventory() -> int
+
 -- Gives the ID of the player that the UI is bound to.
 hud.get_player() -> int
 

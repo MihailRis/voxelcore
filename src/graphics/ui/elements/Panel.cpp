@@ -39,12 +39,25 @@ glm::vec2 Panel::getContentSize() const {
 }
 
 void Panel::cropToContent() {
+    int maxInt = std::numeric_limits<int>::max();
+    bool isHorizontal = orientation == Orientation::HORIZONTAL;
+    
+    int minLengthX = isHorizontal ? minLength : 0;
+    int maxLengthX = isHorizontal ? maxLength : maxInt;
+
+    int minLengthY = isHorizontal ? 0 : minLength;
+    int maxLengthY = isHorizontal ? maxInt : maxLength;
+
     if (maxLength > 0.0f) {
         setSize(glm::vec2(
-            getSize().x, glm::max(minLength, glm::min(maxLength, actualLength))
+            glm::max(minLengthX, glm::min(maxLengthX, actualLengthX)),
+            glm::max(minLengthY, glm::min(maxLengthY, actualLengthY))
         ));
     } else {
-        setSize(glm::vec2(getSize().x, glm::max(minLength, actualLength)));
+        setSize(glm::vec2(
+            glm::max(minLengthX, actualLengthX),
+            glm::max(minLengthY, actualLengthY)
+        ));
     }
 }
 
@@ -74,9 +87,10 @@ void Panel::refresh() {
     glm::vec2 size = getSize();
     if (orientation == Orientation::VERTICAL) {
         float maxw = size.x;
-        for (auto& node : nodes) {
+        for (size_t i = 0; i < nodes.size(); i++) {
+            const auto& node = nodes[i];
             const glm::vec4 margin = node->getMargin();
-            y += margin.y;
+            y += margin.y + (i > 0 ? interval : 0);
 
             float ex = x + margin.x;
             node->setPos(glm::vec2(ex, y));
@@ -90,24 +104,34 @@ void Panel::refresh() {
             }
             node->refresh();
             glm::vec2 nodeSize = node->getSize();
-            y += nodeSize.y + margin.w + interval;
+            y += nodeSize.y + margin.w;
             maxw = fmax(maxw, ex + nodeSize.x + margin.z + padding.z);
         }
-        actualLength = y + padding.w;
+        actualLengthX = size.x;
+        actualLengthY = y + padding.w;
     } else {
         float maxh = size.y;
-        for (auto& node : nodes) {
-            glm::vec2 nodesize = node->getSize();
+        for (size_t i = 0; i < nodes.size(); i++) {
+            const auto& node = nodes[i];
             const glm::vec4 margin = node->getMargin();
-            x += margin.x;
-            node->setPos(glm::vec2(x, y + margin.y));
-            x += nodesize.x + margin.z + interval;
+            x += margin.x + (i > 0 ? interval : 0);
 
-            node->refresh();
-            maxh = fmax(
-                maxh, y + margin.y + node->getSize().y + margin.w + padding.w
+            float ey = y + margin.y;
+            node->setPos(glm::vec2(x, ey));
+
+            int height = glm::floor(
+                size.y - padding.y - padding.w - margin.y - margin.w
             );
+            if (node->isResizing()) {
+                node->setMaxSize({node->getMaxSize().x, height});
+                node->setSize(glm::vec2(node->getSize().x, height));
+            }
+            node->refresh();
+            glm::vec2 nodesize = node->getSize();
+            x += nodesize.x + margin.z;
+            maxh = fmax(maxh, ey + nodesize.y + margin.w + padding.w);
         }
-        actualLength = size.y;
+        actualLengthY = size.y;
+        actualLengthX = x + padding.z;
     }
 }

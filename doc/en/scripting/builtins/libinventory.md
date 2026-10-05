@@ -162,7 +162,19 @@ inventory.get_all_data(
     invid: int,
     -- slot index
     slot: int,
-) -> table
+) -> table | nil
+
+-- Sets the values ​​of all local item properties.
+inventory.set_all_data(
+    -- inventory id
+    invid: int,
+    -- slot index
+    slot: int,
+    -- property:value table
+    fields: table,
+    -- clear other property values
+    [optional] clear: boolean = false
+)
 ```
 
 ```lua
@@ -174,7 +186,7 @@ inventory.clone(invid: int) -> int
 
 -- Move an item from slotA of invA to slotB of invB. 
 -- invA may be the same as invB.
--- If slotB will be chosen automaticly if argument is not specified.
+-- If slotB will be chosen automatically if argument is not specified.
 -- The move may be incomplete if the available slot has no enough stack space.
 inventory.move(invA: int, slotA: int, invB: int, slotB: int)
 

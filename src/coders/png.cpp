@@ -49,9 +49,9 @@ static util::Buffer<ubyte> write_to_memory(uint width, uint height, const ubyte*
     png_write_info(png_ptr, info_ptr);
 
     auto row = std::make_unique<png_byte[]>(pixsize * width);
-    for (uint y = 0; y < height; y++) {
-        for (uint x = 0; x < width; x++) {
-            for (uint i = 0; i < pixsize; i++) {
+    for (int y = height-1; y >= 0; y--) {
+        for (int x = 0; x < width; x++) {
+            for (int i = 0; i < pixsize; i++) {
                 row[x * pixsize + i] =
                     (png_byte)data[(y * width + x) * pixsize + i];
             }

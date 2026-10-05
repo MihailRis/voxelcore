@@ -72,6 +72,7 @@ namespace gui {
         std::shared_ptr<UINode> hover;
         std::shared_ptr<UINode> pressed;
         std::shared_ptr<UINode> focus;
+        const UINode* focusedOnStart = nullptr;
         std::shared_ptr<UINode> tooltip;
         std::shared_ptr<UiDocument> rootDocument;
         std::unique_ptr<FontStylesScheme> syntaxColorScheme;
@@ -135,6 +136,8 @@ namespace gui {
         );
 
         std::shared_ptr<Frame> getActiveFrame() const;
+
+        std::shared_ptr<Frame> getFrame(const std::string& id);
 
         /// @brief Remove node from the main container
         void remove(UINode* node) noexcept;

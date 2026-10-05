@@ -51,27 +51,8 @@ Network::Network(std::unique_ptr<Requests> requests)
 
 Network::~Network() = default;
 
-void Network::get(
-    const std::string& url,
-    OnResponse onResponse,
-    OnReject onReject,
-    std::vector<std::string> headers,
-    long maxSize
-) {
-    requests->get(url, onResponse, onReject, std::move(headers), maxSize);
-}
-
-void Network::post(
-    const std::string& url,
-    const std::string& fieldsData,
-    OnResponse onResponse,
-    OnReject onReject,
-    std::vector<std::string> headers,
-    long maxSize
-) {
-    requests->post(
-        url, fieldsData, onResponse, onReject, std::move(headers), maxSize
-    );
+void Network::request(HttpRequest request) {
+    requests->request(std::move(request));
 }
 
 Connection* Network::getConnection(u64id_t id, bool includePrivate) {

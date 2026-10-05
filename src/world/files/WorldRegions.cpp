@@ -323,7 +323,7 @@ void WorldRegions::processBlocksData(int x, int z, const BlockDataProc& func) {
             try {
                 func(&blocksData, std::move(voxData));
             } catch (const std::exception& err) {
-                logger.error() << "an error ocurred while processing blocks "
+                logger.error() << "an error occurred while processing blocks "
                     "data in chunk (" << gx << ", " << gz << "): " << err.what();
                 blocksData = {};
             }

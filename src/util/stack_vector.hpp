@@ -1,9 +1,13 @@
 #pragma once
 
+#include <cassert>
+#include <cstddef>
+#include <initializer_list>
 #include <stdexcept>
+#include <utility>
 
 namespace util {
-    template<typename T, int capacity>
+    template<typename T, std::size_t capacity>
     class stack_vector {
         struct buffer {
             alignas(alignof(T)) char data[sizeof(T) * capacity];
@@ -16,18 +20,19 @@ namespace util {
             }
         };
     public:
+        using size_type = std::size_t;
         stack_vector() : size_(0) {}
 
         stack_vector(const stack_vector<T, capacity>& other)
             : size_(other.size_) {
-            for (int i = 0; i < size_; ++i) {
+            for (size_type i = 0; i < size_; ++i) {
                 new (&data_.ptr()[i]) T(other.data_.ptr()[i]);
             }
         }
 
         stack_vector(stack_vector<T, capacity>&& other) noexcept
             : size_(other.size_) {
-            for (int i = 0; i < size_; ++i) {
+            for (size_type i = 0; i < size_; ++i) {
                 new (&data_.ptr()[i]) T(std::move(other.data_.ptr()[i]));
             }
             other.size_ = 0;
@@ -48,62 +53,85 @@ namespace util {
         }
 
         void push_back(const T& value) {
-            if (size_ < capacity) {
-                auto data = reinterpret_cast<char*>(data_.ptr() + (size_++));
-                new (data) T(value);
-            } else {
+            if (size_ >= capacity) {
                 throw std::overflow_error("stack vector capacity exceeded");
             }
+
+            void* p = data_.data + size_ * sizeof(T);
+            ::new (p) T(value);
+
+            ++size_;
         }
 
         void push_back(T&& value) {
-            if (size_ < capacity) {
-                auto data = reinterpret_cast<char*>(data_.ptr() + (size_++));
-                new (data) T(std::move(value));
-            } else {
+            if (size_ >= capacity) {
                 throw std::overflow_error("stack vector capacity exceeded");
             }
+
+            void* p = data_.data + size_ * sizeof(T);
+            ::new (p) T(std::move(value));
+
+            ++size_;
         }
 
-        void pop_back() {
+        void pop_back() noexcept {
+            assert(!empty() && "pop_back() called on empty stack_vector");
             if (size_ > 0) {
                 data_.ptr()[size_ - 1].~T();
                 --size_;
-            } else {
-                throw std::underflow_error("stack vector is empty");
-            }
+            } 
         }
 
-        void clear() {
-            for (int i = 0; i < size_; ++i) {
+        void clear() noexcept {
+            for (size_type i = 0; i < size_; ++i) {
                 data_.ptr()[i].~T();
             }
             size_ = 0;
         }
 
-        T& operator[](int index) {
+        T& operator[](size_type index) {
             return data_.ptr()[index];
         }
         
-        const T& operator[](int index) const {
+        const T& operator[](size_type index) const {
             return data_.ptr()[index];
         }
 
-        T& at(int index) {
-            if (index < 0 || index >= size_) {
+        T& at(size_type index) {
+            if (index >= size_) {
                 throw std::out_of_range("index out of range");
             }
             return data_.ptr()[index];
         }
 
-        const T& at(int index) const {
-            if (index < 0 || index >= size_) {
+        const T& at(size_type index) const {
+            if (index >= size_) {
                 throw std::out_of_range("index out of range");
             }
             return data_.ptr()[index];
         }
 
-        int size() const { 
+        T& front() {
+            assert(!empty() && "front() called on empty stack_vector");
+            return data_.ptr()[0];
+        }
+
+        T& back() {
+            assert(!empty() && "back() called on empty stack_vector");
+            return data_.ptr()[size_ - 1];
+        }
+
+        const T& front() const {
+            assert(!empty() && "front() called on empty stack_vector");
+            return data_.ptr()[0];
+        }
+
+        const T& back() const {
+            assert(!empty() && "back() called on empty stack_vector");
+            return data_.ptr()[size_ - 1];
+        }
+
+        size_type size() const { 
             return size_;
         }
 
@@ -132,6 +160,6 @@ namespace util {
         }
     private:
         buffer data_;
-        int size_;
+        size_type size_;
     };
 }

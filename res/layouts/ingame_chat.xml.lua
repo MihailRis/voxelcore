@@ -19,7 +19,7 @@ local function update_line(line, uptime)
     end
 end
 
-events.on("core:chat", function(message)
+local core_chat_handler = events.on("core:chat", function(message)
     while #lines >= max_lines do
         document[lines[1][1]]:destruct()
         table.remove(lines, 1)
@@ -36,7 +36,7 @@ end)
 function on_open()
     if not initialized then
         initialized = true
-        
+
         document.root:setInterval(1/animation_fps * 1000, function ()
             local uptime = time.uptime()
             for _, line in ipairs(lines) do
@@ -51,4 +51,8 @@ function on_open()
             end
         end)
     end
+end
+
+function on_destroy()
+    events.remove("core:chat", core_chat_handler)
 end

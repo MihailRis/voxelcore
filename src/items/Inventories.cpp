@@ -12,7 +12,7 @@ Inventories::Inventories(Level& level) : level(level) {
 Inventories::~Inventories() = default;
 
 std::shared_ptr<Inventory> Inventories::create(size_t size) {
-    int64_t id = level.getWorld()->getNextInventoryId();
+    int64_t id = level.getWorld().getNextInventoryId();
     auto inv = std::make_shared<Inventory>(id, size);
     store(inv);
     return inv;
@@ -52,7 +52,7 @@ std::shared_ptr<Inventory> Inventories::clone(int64_t id) {
     auto original = get(id);
     if (original == nullptr) return nullptr;
     auto clone = std::make_shared<Inventory>(*original);
-    clone->setId(level.getWorld()->getNextInventoryId());
+    clone->setId(level.getWorld().getNextInventoryId());
     store(clone);
     return clone;
 }

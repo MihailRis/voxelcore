@@ -17,7 +17,7 @@ entity:def_name() -> str
 -- Возращает имя скелета сущности
 entity:get_skeleton() -> str
 -- Заменяет скелет сущности
-entity:set_skeleton(name: str)
+entity:set_skeleton(name: str | nil)
 
 -- Возращает уникальный идентификатор сущности
 entity:get_uid() -> int
@@ -134,6 +134,11 @@ body:set_elasticity(elasticity: number)
 
 -- Возвращает скорость поверхности, на которой находится тело, либо {0,0,0}
 body:get_ground_vel() -> vec3
+
+-- Проверяет свойство 'selectable' у сущности (непрозрачность для лучей)
+body:is_selectable() -> bool
+-- Устанавливает значение свойство 'selectable' у сущности
+body:set_selectable(flag: bool)
 ```
 
 ### Skeleton
@@ -174,11 +179,26 @@ rig:is_visible([optional] index: int) -> bool
 rig:set_visible([optional] index: int, status: bool)
 
 -- Возвращает цвет сущности
-rig:get_color() -> vec3
+rig:get_color() -> vec4
+-- Возвращает цвет кости по индексу
+rig:get_color(index: int) -> vec4
 
 -- Устанавливает цвет сущности
-rig:set_color(color: vec3)
+rig:set_color(color: vec3 | vec4)
+-- Устанавливает цвет кости по индексу
+rig:set_color(color: vec3 | vec4, index: int)
 ```
+
+## Пользовательские компоненты
+
+Компонент описывается в виде скрипта `{пак}/scripts/components/{имя}.lua`.
+Компонент будет доступен для использования в описании сущности как `{пак}:{имя}`.
+Пример: `core:scripts/components/pathfinding.lua` -> `core:pathfinding`.
+
+Для **каждой** сущности, содержащей компонент, создаётся **отдельный экземпляр** со **своим пространством имен** внутри пространства имён пака.
+Глобальные переменные, объявляемые в нём, играют роль публичных полей компонента (как и глобальные функции).
+
+Компоненты сущности указываются через [список "components"](../entity-properties.md#cписок-компонентов---components)
 
 > [!WARNING]
 > При выходе сущности за пределы зоны прогрузки она удаляется, вызывая события.
@@ -265,3 +285,8 @@ function on_used(playerid: int)
 
 Вызывается при использовании сущности (ПКМ по сущности). ID игрока передается в качестве аргумента.
 
+```lua
+function on_player_set(playerid: int)
+```
+
+Вызывается при прикреплении сущности к игроку.

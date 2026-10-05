@@ -1,5 +1,10 @@
 #pragma once
 
+#include "util/stringutil.hpp"
+#include "util/ObjectsKeeper.hpp"
+#include "graphics/core/TextureAnimation.hpp"
+#include "io/fwd.hpp"
+
 #include <functional>
 #include <memory>
 #include <optional>
@@ -11,13 +16,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "util/stringutil.hpp"
-#include "util/ObjectsKeeper.hpp"
-#include "graphics/core/TextureAnimation.hpp"
-
 class Assets;
+struct AssetsLoadInfo;
+class AssetsLoader;
 
 enum class AssetType {
+    ANIMATION,
     TEXTURE,
     SHADER,
     FONT,
@@ -31,12 +35,10 @@ enum class AssetType {
 
 namespace assetload {
     /// @brief final work to do in the main thread
-    using postfunc = std::function<void(Assets*)>;
-
-    using setupfunc = std::function<void(const Assets*)>;
+    using postfunc = std::function<void(Assets&)>;
 
     template <class T>
-    void assets_setup(const Assets*);
+    void assets_setup(const Assets&);
 
     class error : public std::runtime_error {
         AssetType type;
@@ -62,16 +64,13 @@ namespace assetload {
             return reason;
         }
     };
+
 }
 
 class Assets {
-    util::ObjectsKeeper* vault;
-    std::vector<TextureAnimation> animations;
-
-    using assets_map = std::unordered_map<std::string, std::shared_ptr<void>>;
-    std::unordered_map<std::type_index, assets_map> assets;
-    std::vector<assetload::setupfunc> setupFuncs;
 public:
+    using assets_map = std::unordered_map<std::string, std::shared_ptr<void>>;
+
     Assets(util::ObjectsKeeper* vault);
     Assets(const Assets&) = delete;
     ~Assets();
@@ -143,20 +142,20 @@ public:
         return &mapIter->second;
     }
 
-    void setup() {
-        for (auto& setupFunc : setupFuncs) {
-            setupFunc(this);
-        }
+    AssetsLoadInfo& getLoadInfo() const {
+        return *assetsLoadInfo;
     }
+private:
+    util::ObjectsKeeper* vault;
+    std::vector<TextureAnimation> animations;
 
-    void addSetupFunc(assetload::setupfunc setupfunc) {
-        setupFuncs.push_back(setupfunc);
-    }
+    std::unordered_map<std::type_index, assets_map> assets;
+    std::unique_ptr<AssetsLoadInfo> assetsLoadInfo;
 };
 
 template <class T>
-void assetload::assets_setup(const Assets* assets) {
-    if (auto mapPtr = assets->getMap<T>()) {
+void assetload::assets_setup(const Assets& assets) {
+    if (auto mapPtr = assets.getMap<T>()) {
         for (const auto& entry : **mapPtr) {
             static_cast<T*>(entry.second.get())->setup();
         }

@@ -57,3 +57,7 @@ std::string parsing_error::errorLog() const {
     ss << "^";
     return ss.str();
 }
+
+std::runtime_error parsing_error::toRuntimeError() const {
+    return std::runtime_error("parsing error: " + errorLog());
+}

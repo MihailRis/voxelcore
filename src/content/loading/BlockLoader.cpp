@@ -53,6 +53,9 @@ static void load_variant(
         }
     } else if (root.has("texture-faces")) {
         const auto& texarr = root["texture-faces"];
+        if (texarr.length() < 6) {
+            throw std::runtime_error("texture-faces requires 6 elements");
+        }
         for (uint i = 0; i < 6; i++) {
             variant.textureFaces[i] = texarr[i].asString();
         }
@@ -148,6 +151,8 @@ template<> void ContentUnitLoader<Block>::loadUnit(
         def.rotations = BlockRotProfile::PANE;
     } else if (profile == BlockRotProfile::STAIRS_NAME) {
         def.rotations = BlockRotProfile::STAIRS;
+    } else if (profile == BlockRotProfile::LADDER_NAME) {
+        def.rotations = BlockRotProfile::LADDER;
     } else if (profile != "none") {
         logger.error() << "unknown rotation profile " << profile;
         def.rotatable = false;

@@ -1,4 +1,4 @@
-local rules = {nexid = 1, rules = {}}
+local rules = {nextid = 1, rules = {}}
 
 function rules.get_rule(name)
     local rule = rules.rules[name]
@@ -27,13 +27,13 @@ end
 
 function rules.reset(name)
     local rule = rules.get_rule(name)
-    rules.set(rule.default)
+    rules.set(name, rule.default)
 end
 
 function rules.listen(name, handler)
     local rule = rules.get_rule(name)
-    local id = rules.nexid
-    rules.nextid = rules.nexid + 1
+    local id = rules.nextid
+    rules.nextid = rules.nextid + 1
     rule.listeners[utf8.encode(id)] = handler
     return id
 end

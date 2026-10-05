@@ -17,7 +17,7 @@
                             color="#FFFFFF80" size="16" pos="4,6"
                             hover-color="#1080FF"></image>
                     <panel orientation="horizontal" gravity="top-right" 
-                            size="76,24" padding="8" interval="8" color="0">
+                            size="76,24" padding="8,6,8,2" interval="8" color="0">
                         <image id="saveIcon" src="gui/save" tooltip="@Save" 
                             enabled="false" interactive="true" 
                             hover-color="#1080FF"
@@ -31,6 +31,12 @@
                             hover-color="#1080FF"
                             onclick="run_current_file()"
                             color="#FFFFFF80" size="16"></image>
+                        <!-- TODO: remove after 0.32-->
+                        <image src="gui/item" size="16"
+                            enabled="true" interactive="true"
+                            hover-color="#1080FF"
+                            tooltip="Fix old VCM regions (0.31 bug)"
+                            onclick="fix_vcm_regions()"></image>
                     </panel>
                     <label id="title" pos="26,8"></label>
                 </container>

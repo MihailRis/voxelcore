@@ -8,6 +8,7 @@ namespace gui {
         virtual ~BasePanel() = default;
 
         virtual void setOrientation(Orientation orientation) {
+            this->mainScrollDir = orientation;
             this->orientation = orientation;
             refresh();
         }

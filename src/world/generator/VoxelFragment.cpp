@@ -219,7 +219,8 @@ std::unique_ptr<VoxelFragment> VoxelFragment::rotated(const Content& content) co
                                     | ((voxel.state.segment & 0b100) >> 2);
                 auto& def = content.blocks.require(blockNames[voxel.id]);
                 if (def.rotations.name == BlockRotProfile::PANE_NAME ||
-                      def.rotations.name == BlockRotProfile::PIPE_NAME) {
+                      def.rotations.name == BlockRotProfile::PIPE_NAME ||
+                      def.rotations.name == BlockRotProfile::LADDER_NAME) {
                     if (voxel.state.rotation < 4) {
                         voxel.state.rotation = (voxel.state.rotation + 3) & 0b11;
                     }

@@ -1,14 +1,17 @@
 #include "Mainloop.hpp"
 
-#include "Engine.hpp"
 #include "debug/Logger.hpp"
+#include "devtools/AppScriptsControl.hpp"
 #include "devtools/Project.hpp"
-#include "frontend/screens/MenuScreen.hpp"
+#include "Engine.hpp"
 #include "frontend/screens/LevelScreen.hpp"
+#include "frontend/screens/MenuScreen.hpp"
+#include "graphics/ui/elements/Container.hpp"
+#include "graphics/ui/GUI.hpp"
+#include "io/path.hpp"
+#include "logic/scripting/scripting.hpp"
 #include "window/Window.hpp"
 #include "world/Level.hpp"
-#include "graphics/ui/GUI.hpp"
-#include "graphics/ui/elements/Container.hpp"
 
 static debug::Logger logger("mainloop");
 
@@ -19,6 +22,7 @@ void Mainloop::run() {
     auto& time = engine.getTime();
     auto& window = engine.getWindow();
     auto& settings = engine.getSettings();
+    const auto& coreParams = engine.getCoreParameters();
 
     engine.setLevelConsumer([this](auto level, int64_t localPlayer) {
         if (level == nullptr) {
@@ -35,9 +39,11 @@ void Mainloop::run() {
 
     logger.info() << "starting menu screen";
     engine.setScreen(std::make_shared<MenuScreen>(engine));
+
+    auto& appScripts = engine.getAppScripts();
     
     logger.info() << "main loop started";
-    while (!window.isShouldClose()){
+    while (!window.isShouldClose() && !engine.isQuitSignal()) {
         time.update(window.time());
         engine.applicationTick();
         engine.updateFrontend();
@@ -50,6 +56,10 @@ void Mainloop::run() {
             settings.display.adaptiveFpsInMenu.get() &&
             dynamic_cast<const MenuScreen*>(engine.getScreen().get()) != nullptr
         );
+        if (coreParams.testMode && appScripts.isFinished()) {
+            logger.info() << "test finished";
+            engine.quit();
+        }
     }
     logger.info() << "main loop stopped";
 }

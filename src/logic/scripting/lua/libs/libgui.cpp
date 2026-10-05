@@ -25,6 +25,7 @@
 #include "items/Inventories.hpp"
 #include "util/stringutil.hpp"
 #include "world/Level.hpp"
+#include "window/Window.hpp"
 #include "../usertypes/lua_type_canvas.hpp"
 
 using namespace gui;
@@ -164,6 +165,13 @@ static int l_container_set_interval(lua::State* L) {
 static int l_move_into(lua::State* L) {
     auto node = get_document_node(L, 1);
     auto dest = get_document_node(L, 2);
+    if (dest.node == nullptr) {
+        return 0;
+    }
+    if (dest.node->isDescendantOf(node.node.get())) {
+        luaL_error(L, "unable to move element to its descendant");
+        return 0;
+    }
     UINode::moveInto(
         node.node, std::dynamic_pointer_cast<Container>(dest.node)
     );
@@ -420,15 +428,19 @@ static int p_get_data(UINode* node, lua::State* L) {
     return 0;
 }
 
-static const std::string& request_node_id(const DocumentNode& docnode) {
-    std::string id = docnode.node->getId();
+static const std::string& request_node_id(UiDocument& document, UINode& node) {
+    const std::string& id = node.getId();
     if (id.empty()) {
-        id = "#" + std::to_string(
-            reinterpret_cast<std::ptrdiff_t>(docnode.node.get()));
+        node.setId( "#" + std::to_string(
+            reinterpret_cast<std::ptrdiff_t>(&node)));
+        document.pushIndices(node.shared_from_this());
+        return node.getId();
     }
-    docnode.node->setId(std::move(id));
-    docnode.document->pushIndices(docnode.node);
-    return docnode.node->getId();
+    return id;
+}
+
+static const std::string& request_node_id(const DocumentNode& docnode) {
+    return request_node_id(*docnode.document, *docnode.node);
 }
 
 /// @brief Push UI-document node object to stack
@@ -443,15 +455,14 @@ static int push_document_node(lua::State* L, const std::string& id) {
 
 static int p_get_parent(UINode* node, lua::State* L) {
     auto parent = node->getParent();
-    if (!parent) {
+    if (parent == nullptr) {
         return 0;
     }
     auto docname = lua::require_string(L, 1);
     auto element = lua::require_string(L, 2);
     auto docnode = get_document_node_impl(L, docname, element);
 
-    const auto& id = request_node_id(docnode);
-
+    const auto& id = request_node_id(*docnode.document, *parent);
     return push_document_node(L, id);
 }
 
@@ -1124,6 +1135,7 @@ static int l_gui_load_document(lua::State* L) {
     }
 
     auto env = scripting::create_doc_environment(parentEnv, alias);
+    auto envId = *env;
     // namespace extension
     if (lua::istable(L, 4)) {
         if (lua::get_from(L, "table", "extend")) {
@@ -1144,8 +1156,8 @@ static int l_gui_load_document(lua::State* L) {
     auto document = documentPtr.get();
     engine->requireAssets().store(std::move(documentPtr), alias);
 
-    scripting::on_ui_open(document, {args});
-    return 0;
+    scripting::on_ui_open(*document, {args});
+    return lua::pushenv(L, envId);
 }
 
 static int l_set_syntax_styles(lua::State* L) {
@@ -1214,7 +1226,26 @@ static int l_get_active_frame(lua::State* L) {
     return lua::pushstring(L, frame->getId());
 }
 
+static int l_screenshot(lua::State* L) {
+    if (engine->isHeadless()) {
+        return 0;
+    }
+    std::unique_ptr<ImageData> image;
+    if (lua::isstring(L, 1)) {
+        auto& gui = engine->getGUI();
+        auto frame = gui.getFrame(lua::require_string(L, 1));
+        if (frame == nullptr) {
+            return 0;
+        }
+        image = frame->takeScreenshot();
+    } else {
+        image = engine->getWindow().takeScreenshot();
+    }
+    return lua::newuserdata<lua::LuaCanvas>(L, nullptr, std::move(image));
+}
+
 const luaL_Reg guilib[] = {
+    {"screenshot", lua::wrap<l_screenshot>},
     {"get_viewport", lua::wrap<l_gui_getviewport>},
     {"getattr", lua::wrap<l_gui_getattr>},
     {"setattr", lua::wrap<l_gui_setattr>},

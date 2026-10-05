@@ -69,6 +69,12 @@ gui.set_active_frame(
     -- Используется для пользовательской проекции (например в 3D)
     [опционально] cursorLocator: function() -> number, number
 )
+
+-- Создаёт снимок фрейма в виде объекта Canvas если указан id фрейма, или всего окна, в случае nil.
+gui.screenshot(
+    -- id фрейма, созданного через gui.create_frame
+    [опционально] frameId: str
+) -> Canvas | nil
 ```
 
 ## Разметка
@@ -140,12 +146,12 @@ gui.confirm(
 ## Документы и шаблоны
 
 ```lua
--- Загружает UI документ и его скрипт. Возвращает имя документа.
+-- Загружает UI документ и его скрипт. Возвращает пространство имён документа
 gui.load_document(
     path: string,  -- путь к xml файлу, например: core:layouts/pages/main.xml
     name: string,  -- id документа, например: core:pages/main
     args: table -- параметры для события on_open
-) -> string
+) -> table
 
 -- Обрабатывает xml шаблон макета из файла
 gui.template(

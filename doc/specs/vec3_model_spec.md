@@ -16,7 +16,7 @@ enum AttributeType:uint8 {
 sizeof(AttributeType) == 1;
 
 struct VertexAttribute {
-    AttributeType type; // data type is infered from attribute type
+    AttributeType type; // data type is inferred from attribute type
     uint8 flags;
     uint32 size;
     float data[]; // if compressed, first 4 bytes of compressed data is decompressed size

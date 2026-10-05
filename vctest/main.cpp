@@ -16,7 +16,8 @@ struct Config {
     fs::path directory;
     fs::path resDir {"res"};
     fs::path workingDir {"."};
-    std::string memchecker = "valgrind";
+    std::string memchecker = "";
+    std::string debugger = "";
     bool outputAlways = false;
 };
 
@@ -30,6 +31,7 @@ static bool perform_keyword(
         std::cout << "  --tests <path>, -d <path>       = tests directory path\n";
         std::cout << "  --res <path>, -r <path>         = 'res' directory path\n";
         std::cout << "  --user <path>, -u <path>        = user directory path\n";
+        std::cout << "  --debugger <command>            = debugger with run command\n";
         std::cout << "  --memchecker <path>             = path to valgrind\n";
         std::cout << "  --output-always                 = always show tests output\n";
         std::cout << std::endl;
@@ -44,6 +46,8 @@ static bool perform_keyword(
         config.workingDir = fs::path(reader.next());
     } else if (keyword == "--output-always") {
         config.outputAlways = true;
+    } else if (keyword == "--debugger") {
+        config.debugger = reader.next();
     } else if (keyword == "--memchecker") {
         config.memchecker = reader.next();
     } else {
@@ -172,7 +176,7 @@ static std::string fix_path(std::string s) {
     return s;
 }
 
-static bool run_test(const Config& config, const fs::path& path, bool memcheck = false) {
+static bool run_test(const Config& config, const fs::path& path, bool debugRun = false) {
     using std::chrono::duration_cast;
     using std::chrono::high_resolution_clock;
     using std::chrono::milliseconds;
@@ -182,9 +186,16 @@ static bool run_test(const Config& config, const fs::path& path, bool memcheck =
 
     auto name = path.stem();
     std::stringstream ss;
-    if (memcheck) {
-        ss << config.memchecker << " --log-file="
-           << fix_path(memcheckLogFile.string()) << " ";
+    if (debugRun) {
+        if (!config.memchecker.empty()) {
+            ss << config.memchecker;
+            ss << " --log-file=" << fix_path(memcheckLogFile.string());
+            ss << " ";
+        }
+        if (!config.debugger.empty()) {
+            ss << config.debugger;
+            ss << " ";
+        }
     }
     ss << fs::canonical(config.executable) << " --headless";
     ss << " --test " << fix_path(path.string());
@@ -203,7 +214,7 @@ static bool run_test(const Config& config, const fs::path& path, bool memcheck =
             .count();
 
     if (code) {
-        if (memcheck) {
+        if (debugRun) {
             // valgrind-specific output
             display_segfault_valgrind(memcheckLogFile, name, std::cerr);
             fs::remove(memcheckLogFile);
