@@ -19,24 +19,22 @@ float calc_shadow(
     float bias
 ) {
     float step = 1.0 / float(u_shadowsRes);
-    vec4 mpos = shadowMatrix * vec4(modelPos.xyz + normalOffset, 1.0);
+    vec4 mpos = shadowMatrix * vec4(modelPos.xyz + normalOffset * 2.0, 1.0);
     vec3 projCoords = mpos.xyz / mpos.w;
     projCoords = projCoords * 0.5 + 0.5;
     projCoords.z -= 0.00001 / u_shadowsRes + bias;
 
     float shadow = 0.0;
-    if (dot(realnormal, u_sunDir) < 0.0) {
-        // 3x3 kernel
-        for (int y = -1; y <= 1; y++) {
-            for (int x = -1; x <= 1; x++) {
-                vec3 offset = vec3(x, y, -(abs(x) + abs(y)) * 0.8) * step * 1.0 * u_shadowsSoftness;
-                shadow += texture(shadowsMap, projCoords + offset);
-            }
+    // 3x3 kernel
+    for (int y = -1; y <= 1; y++) {
+        for (int x = -1; x <= 1; x++) {
+            vec3 offset = vec3(x, y, -(abs(x) + abs(y)) * 0.1) * step * 1.0 * u_shadowsSoftness;
+            shadow += texture(shadowsMap, projCoords + offset);
         }
-        shadow /= 9.0;
-    } else {
-        shadow = 0.0;
     }
+    shadow /= 9.0;
+
+    shadow *= max(0.0, -dot(realnormal, u_sunDir));
     return shadow;
 }
 
