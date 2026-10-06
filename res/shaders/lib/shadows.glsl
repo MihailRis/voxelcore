@@ -34,7 +34,7 @@ float calc_shadow(
     }
     shadow /= 9.0;
 
-    shadow *= max(0.0, -dot(realnormal, u_sunDir));
+    shadow *= max(0.0, sqrt(-dot(realnormal, u_sunDir)));
     return shadow;
 }
 
