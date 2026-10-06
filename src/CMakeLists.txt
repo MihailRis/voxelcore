@@ -14,6 +14,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     find_package(OpenAL CONFIG REQUIRED)
 else()
     find_package(OpenAL REQUIRED)
+    if(NOT TARGET OpenAL::OpenAL)
+        add_library(OpenAL::OpenAL UNKNOWN IMPORTED)
+        set_target_properties(OpenAL::OpenAL PROPERTIES
+            IMPORTED_LOCATION "${OPENAL_LIBRARY}"
+            INTERFACE_INCLUDE_DIRECTORIES "${OPENAL_INCLUDE_DIR}"
+        )
+    endif()
 endif()
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
