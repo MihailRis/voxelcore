@@ -162,13 +162,18 @@ local function codegen_line(raw_track, lineset, line, index, keysets)
     end
 end
 
-local function codegen_track(raw_track, lineset, keysets, use_tsf)
+local function codegen_track(raw_track, lineset, keysets, use_tsf, target_type)
+    if lineset.target_type ~= target_type then
+        return ""
+    end
+
     local lines = lineset.lines
     local code = ""
     local has_tsf = false
     local translation = {false, false, false}
     local rotation = {false, false, false}
     local scale = {false, false, false}
+
     for i, line in ipairs(lines) do
         code = code .. string.format("\n   local l%d = ", i)
             .. codegen_line(raw_track, lineset, line, i, keysets)
@@ -189,7 +194,11 @@ local function codegen_track(raw_track, lineset, keysets, use_tsf)
                 lineset.target_name:escape(), i)
         elseif line.channel == animation.CH_CONTROL then
             if lineset.flag == "visible" then
-                code = code .. string.format("\n   target:set_visible(bone_index, l%d)", i)
+                if target_type == "bone" then
+                    code = code .. string.format("\n   target:set_visible(bone_index, l%d)", i)
+                else
+                    code = code .. string.format("\n   target:set_visible(l%d)", i)
+                end
             end
         end
     end
@@ -233,7 +242,7 @@ local function codegen_rig_target(raw_track, context)
         if lineset.target_type ~= "bone" and lineset.target_type ~= "texture" then
             goto continue
         end
-        local lineset_code = codegen_track(raw_track, lineset, context.keysets, true)
+        local lineset_code = codegen_track(raw_track, lineset, context.keysets, true, "bone")
 
         code = code .. string.format("\n  local bone_index = target:index(%s)", string.escape(bone))
         if context.has_tsf then
@@ -251,16 +260,18 @@ local function codegen_rig_target(raw_track, context)
 end
 
 local function codegen_object_target(raw_track, context)
-    local code = "\n if target.set_pos then\n"
-    code = code .. "  local dst = mat4.idt()\n"
+    local code = "  local dst = mat4.idt()\n"
     local lineset = raw_track.linesets[""]
     if not lineset then
         return ""
     end
     local lineset_code = codegen_track(raw_track, lineset, context.keysets, true)
     code = code .. "\n  do" .. lineset_code .. "\n  end\n"
-    .. "  set_matrix(target, dst)\n"
-    return code .. " end"
+
+    if context.has_tsf then
+        code = code .. "  set_matrix(target, dst)\n"
+    end
+    return code
 end
 
 local function codegen_camera_target(raw_track, context)
@@ -270,7 +281,7 @@ local function codegen_camera_target(raw_track, context)
     if not lineset then
         return ""
     end
-    local lineset_code = codegen_track(raw_track, lineset, context.keysets, false)
+    local lineset_code = codegen_track(raw_track, lineset, context.keysets, false, "camera")
     code = code .. "\n  do" .. lineset_code .. "\n  end\n"
     .. "  target:set_zoom(zoom)\n"
     return code .. " end"

@@ -88,6 +88,8 @@ local function parse_directive(node, raw_track)
     local target_type = nil
     if node.bone then
         target_type = "bone"
+    elseif node.zoom then
+        target_type = "camera"
     elseif tag == "texture" then
         target_type = "texture"
     end
