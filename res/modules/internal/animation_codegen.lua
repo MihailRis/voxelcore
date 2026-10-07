@@ -136,6 +136,32 @@ local is_multiplier = {
     [animation.CH_ZOOM] = true,
 }
 
+local function codegen_line(raw_track, lineset, line, index, keysets)
+    if line.expression then
+        return "(" .. process_expression(line.expression,
+            is_multiplier[line.channel] and "mul" or "add") .. ")"
+    elseif line.keys then
+        local target_keysets = keysets[lineset.target_name]
+        if not target_keysets then
+            target_keysets = {}
+            keysets[lineset.target_name] = target_keysets
+        end
+        target_keysets[index] = line.keys
+
+        if line.curve_func then
+            local valueat = string.format("curves[%s]", string.escape(line.curve_func))
+            return string.format("value_at_custom(keysets['%s'][%d], t * %s %% %s, %s)",
+                lineset.target_name, index, raw_track.fps, line.period, valueat)
+        elseif line.channel == animation.CH_TEXTURE then
+            return string.format("string_at(keysets['%s'][%d], t * %s %% %s)",
+                lineset.target_name, index, raw_track.fps, line.period)
+        else
+            return string.format("value_at(keysets['%s'][%d], t * %s %% %s, %s)",
+                lineset.target_name, index, raw_track.fps, line.period, line.interp)
+        end
+    end
+end
+
 local function codegen_track(raw_track, lineset, keysets, use_tsf)
     local lines = lineset.lines
     local code = ""
@@ -144,34 +170,8 @@ local function codegen_track(raw_track, lineset, keysets, use_tsf)
     local rotation = {false, false, false}
     local scale = {false, false, false}
     for i, line in ipairs(lines) do
-        if line.expression then
-            code = code .. "\n   local l" .. i .. " = (" ..
-                process_expression(line.expression,
-                is_multiplier[line.channel] and "mul" or "add") .. ")"
-        elseif line.keys then
-            local target_keysets = keysets[lineset.target_name]
-            if not target_keysets then
-                target_keysets = {}
-                keysets[lineset.target_name] = target_keysets
-            end
-            target_keysets[i] = line.keys
-
-            if line.curve_func then
-                local valueat = string.format("curves[%s]", string.escape(line.curve_func))
-
-                code = code .. string.format(
-                "\n   local l%d = value_at_custom(keysets['%s'][%d], t * %s %% %s, %s)",
-                i, lineset.target_name, i, raw_track.fps, line.period, valueat)
-            elseif line.channel == animation.CH_TEXTURE then
-                code = code .. string.format(
-                    "\n   local l%d = string_at(keysets['%s'][%d], t * %s %% %s)",
-                    i, lineset.target_name, i, raw_track.fps, line.period)
-            else
-                code = code .. string.format(
-                    "\n   local l%d = value_at(keysets['%s'][%d], t * %s %% %s, %s)",
-                    i, lineset.target_name, i, raw_track.fps, line.period, line.interp)
-            end
-        end
+        code = code .. string.format("\n  local l%d = ", i)
+            .. codegen_line(raw_track, lineset, line, i, keysets)
 
         if line.channel == animation.CH_TRANSLATE then
             translation[line.axis] = i
@@ -185,7 +185,8 @@ local function codegen_track(raw_track, lineset, keysets, use_tsf)
         elseif line.channel == animation.CH_ZOOM then
             code = code .. "\n   zoom = l" .. i
         elseif line.channel == animation.CH_TEXTURE then
-            code = code .. string.format("\n   target:set_texture(%s, %s)", lineset.target_name:escape(), "l"..i)
+            code = code .. string.format("\n   target:set_texture(%s, %s)",
+                lineset.target_name:escape(), "l"..i)
         end
     end
 
@@ -270,11 +271,25 @@ local function codegen_camera_target(raw_track, context)
 end
 
 
+local function has_transform_directive(raw_track)
+    for _, lineset in pairs(raw_track.linesets) do
+        for _, line in ipairs(lineset.lines) do
+            if line.channel == animation.CH_TRANSLATE or
+                line.channel == animation.CH_ROTATE or
+                line.channel == animation.CH_SCALE then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 function internals.compile_animation_track(raw_track, track_name)
     local code = ""
     local context = {
         keysets = {},
         curves = {},
+        has_tsf = has_transform_directive(raw_track),
     }
     for name, curve in pairs(raw_track.curves) do
         context.curves[name] = load(string.format(
@@ -283,12 +298,14 @@ function internals.compile_animation_track(raw_track, track_name)
         ), "<curve>", "t", env)()
     end
 
-    code = code .. codegen_rig_target(raw_track, context)
-    code = code .. codegen_object_target(raw_track, context)
+    if context.has_tsf then
+        code = code .. codegen_rig_target(raw_track, context)
+        code = code .. codegen_object_target(raw_track, context)
+    end
     code = code .. codegen_camera_target(raw_track, context)
 
     local src = "return function(target, t, intensity, m)\n"
-        .. "m = m or 1\n intensity = intensity or 1.0\n"
+        .. " m = m or 1\n intensity = intensity or 1.0\n"
         .. code .. "\nend"
 
     if animation.TRACE_CODEGEN then
