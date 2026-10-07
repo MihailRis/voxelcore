@@ -22,7 +22,14 @@ find_package(OpenSSL 3.0 REQUIRED COMPONENTS Crypto)
 find_package(glfw3 REQUIRED)
 find_package(Freetype REQUIRED)
 if(NOT APPLE)
-    find_package(EnTT REQUIRED)
+    include(FetchContent)
+    FetchContent_Declare(
+        EnTT
+        GIT_REPOSITORY https://github.com/skypjack/entt.git
+        GIT_TAG        v3.16.0
+    )
+    FetchContent_MakeAvailable(EnTT)
+    target_link_libraries(VoxelEngineSrc PRIVATE EnTT::EnTT)
 endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
