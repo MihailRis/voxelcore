@@ -15,7 +15,7 @@ local exclude_patters = {
 }
 
 --  TODO: replace with actual expression -> lua translator
-local function process_expression(src, memoised, mode)
+local function process_expression(src, mode)
     if mode == 'mul' then
         src = string.format("(%s) * intensity + (1.0 - intensity)", src)
     elseif mode == "add" then
@@ -30,7 +30,6 @@ local function process_expression(src, memoised, mode)
     for i, pattern in ipairs(patterns) do
         local pattern_safe = string.pattern_safe(pattern.pattern)
         if src:find(pattern_safe) then
-            memoised[pattern.name] = pattern.pattern
             src = src:gsub(pattern_safe, pattern.name)
         end
     end
@@ -137,7 +136,7 @@ local is_multiplier = {
     [animation.CH_ZOOM] = true,
 }
 
-local function codegen_track(raw_track, lineset, memoised, keysets, use_tsf)
+local function codegen_track(raw_track, lineset, keysets, use_tsf)
     local lines = lineset.lines
     local code = ""
     local has_tsf = false
@@ -147,7 +146,7 @@ local function codegen_track(raw_track, lineset, memoised, keysets, use_tsf)
     for i, line in ipairs(lines) do
         if line.expression then
             code = code .. "\n   local l" .. i .. " = (" ..
-                process_expression(line.expression, memoised,
+                process_expression(line.expression,
                 is_multiplier[line.channel] and "mul" or "add") .. ")"
         elseif line.keys then
             local target_keysets = keysets[lineset.target_name]
@@ -229,8 +228,7 @@ local function codegen_rig_target(raw_track, context)
         if lineset.target_type ~= "bone" and lineset.target_type ~= "texture" then
             goto continue
         end
-        local lineset_code = codegen_track(
-            raw_track, lineset, context.memoised, context.keysets, true)
+        local lineset_code = codegen_track(raw_track, lineset, context.keysets, true)
 
         code = code
             .. string.format("\n  local bone_index = target:index(%s)"
@@ -252,8 +250,7 @@ local function codegen_object_target(raw_track, context)
     if not lineset then
         return ""
     end
-    local lineset_code = codegen_track(
-        raw_track, lineset, context.memoised, context.keysets, true)
+    local lineset_code = codegen_track(raw_track, lineset, context.keysets, true)
     code = code .. "\n  do" .. lineset_code .. "\n  end\n"
     .. "  set_matrix(target, dst)\n"
     return code .. " end"
@@ -266,8 +263,7 @@ local function codegen_camera_target(raw_track, context)
     if not lineset then
         return ""
     end
-    local lineset_code = codegen_track(
-        raw_track, lineset, context.memoised, context.keysets, false)
+    local lineset_code = codegen_track(raw_track, lineset, context.keysets, false)
     code = code .. "\n  do" .. lineset_code .. "\n  end\n"
     .. "  target:set_zoom(zoom)\n"
     return code .. " end"
@@ -277,14 +273,13 @@ end
 function internals.compile_animation_track(raw_track, track_name)
     local code = ""
     local context = {
-        memoised = {},
         keysets = {},
         curves = {},
     }
     for name, curve in pairs(raw_track.curves) do
         context.curves[name] = load(string.format(
             "return function(kl, kr, t) return %s end",
-            process_expression(curve.func, context.memoised, "curve")
+            process_expression(curve.func, "curve")
         ), "<curve>", "t", env)()
     end
 
@@ -292,17 +287,8 @@ function internals.compile_animation_track(raw_track, track_name)
     code = code .. codegen_object_target(raw_track, context)
     code = code .. codegen_camera_target(raw_track, context)
 
-    local memoised_code = ""
-    for name, expression in pairs(context.memoised) do
-        memoised_code = memoised_code .. "\n local " .. name .. " = "
-            .. expression
-    end
-
-    if #memoised_code > 0 then
-        code = memoised_code .. "\n" .. code
-    end
-
-    local src = "return function(target, t, intensity, m)\n m = m or 1\n intensity = intensity or 1.0\n"
+    local src = "return function(target, t, intensity, m)\n"
+        .. "m = m or 1\n intensity = intensity or 1.0\n"
         .. code .. "\nend"
 
     if animation.TRACE_CODEGEN then
