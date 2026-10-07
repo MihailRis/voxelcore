@@ -8,6 +8,7 @@ local action_to_channel = {
     scale = animation.CH_SCALE,
     zoom = animation.CH_ZOOM,
     texture = animation.CH_TEXTURE,
+    control = animation.CH_CONTROL,
 }
 
 local curve_to_interp = {
@@ -62,6 +63,17 @@ local function parse_simple_frames(line, node)
     end
 end
 
+local function parse_boolean_frames(line, node)
+    line.keys = {}
+    for j, key_node in ipairs(node) do
+        local keyframe = {
+            frame = tonumber(key_node.frame),
+            value = key_node.value == "on",
+        }
+        table.insert(line.keys, keyframe)
+    end
+end
+
 local function parse_directive(node, raw_track)
     local linesets = raw_track.linesets
     local tag = node['#']
@@ -85,7 +97,8 @@ local function parse_directive(node, raw_track)
         lineset = {
             lines = {},
             target_type = target_type,
-            target_name = target_name
+            target_name = target_name,
+            flag = node.flag,
         }
         linesets[target_name] = lineset
     end
@@ -103,6 +116,8 @@ local function parse_directive(node, raw_track)
         line.expression = node.func
     elseif node.curve then
         parse_curve(line, node)
+    elseif node.flag then
+        parse_boolean_frames(line, node)
     else
         parse_simple_frames(line, node)
     end

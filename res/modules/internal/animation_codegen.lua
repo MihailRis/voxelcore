@@ -75,7 +75,7 @@ local env = {
             return keys[left].value
         end
         left = keys[left]
-        if interp == INT_CONST then
+        if not interp or interp == INT_CONST then
             return left.value
         end
         right = keys[right]
@@ -170,7 +170,7 @@ local function codegen_track(raw_track, lineset, keysets, use_tsf)
     local rotation = {false, false, false}
     local scale = {false, false, false}
     for i, line in ipairs(lines) do
-        code = code .. string.format("\n  local l%d = ", i)
+        code = code .. string.format("\n   local l%d = ", i)
             .. codegen_line(raw_track, lineset, line, i, keysets)
 
         if line.channel == animation.CH_TRANSLATE then
@@ -185,8 +185,12 @@ local function codegen_track(raw_track, lineset, keysets, use_tsf)
         elseif line.channel == animation.CH_ZOOM then
             code = code .. "\n   zoom = l" .. i
         elseif line.channel == animation.CH_TEXTURE then
-            code = code .. string.format("\n   target:set_texture(%s, %s)",
-                lineset.target_name:escape(), "l"..i)
+            code = code .. string.format("\n   target:set_texture(%s, l%d)",
+                lineset.target_name:escape(), i)
+        elseif line.channel == animation.CH_CONTROL then
+            if lineset.flag == "visible" then
+                code = code .. string.format("\n   target:set_visible(bone_index, l%d)", i)
+            end
         end
     end
 
@@ -231,11 +235,13 @@ local function codegen_rig_target(raw_track, context)
         end
         local lineset_code = codegen_track(raw_track, lineset, context.keysets, true)
 
+        code = code .. string.format("\n  local bone_index = target:index(%s)", string.escape(bone))
+        if context.has_tsf then
+            code = code .. "\n  local dst = target:get_matrix(bone_index)"
+        end
         code = code
-            .. string.format("\n  local bone_index = target:index(%s)"
-            .. "\n  local dst = target:get_matrix(bone_index)", string.escape(bone))
             .. "\n  do" .. lineset_code .. "\n  end\n"
-        if lineset.target_type == "bone" then
+        if lineset.target_type == "bone" and context.has_tsf then
             code = code ..
                 "  target:set_matrix(bone_index, dst)\n"
         end
@@ -298,10 +304,8 @@ function internals.compile_animation_track(raw_track, track_name)
         ), "<curve>", "t", env)()
     end
 
-    if context.has_tsf then
-        code = code .. codegen_rig_target(raw_track, context)
-        code = code .. codegen_object_target(raw_track, context)
-    end
+    code = code .. codegen_rig_target(raw_track, context)
+    code = code .. codegen_object_target(raw_track, context)
     code = code .. codegen_camera_target(raw_track, context)
 
     local src = "return function(target, t, intensity, m)\n"
