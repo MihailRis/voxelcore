@@ -15,8 +15,29 @@
 #include "xdg-decoration-unstable-v1-client-protocol.h"
 #include "xdg-shell-client-protocol.h"
 
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
+#include <wayland-egl.h>
+
+#include <algorithm>
+#include <chrono>
+#include <cmath>
+#include <cstring>
+#include <memory>
+#include <optional>
+#include <poll.h>
+#include <stack>
 #include <string>
+#include <thread>
+#include <tuple>
 #include <vector>
+
+const wl_registry_listener& registry_listener();
+const wl_data_device_listener& data_device_listener();
+const xdg_surface_listener& surface_listener();
+const xdg_toplevel_listener& toplevel_listener();
+
+GLuint compile_program(const char* vertexSource, const char* fragmentSource);
 
 extern debug::Logger waylandLogger;
 
