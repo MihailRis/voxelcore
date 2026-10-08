@@ -28,7 +28,7 @@ Two kinds of curve definitions are currently available, each producing a value `
 - `@scale` - scales an object/bone (multiplier)
 - `@zoom` - camera zoom (multiplier)
 - `@texture` - change of a dynamically assigned texture (see [skeleton:set_texture](scripting/ecs.md#skeleton))
-- `@control` - changing flag values, such as visibility
+- `@show` - visibility of a bone or the entire skeleton/object (if no bone is specified)
 
 ## Metadata
 
@@ -97,17 +97,17 @@ If you do not wish to limit the animation duration via `configure` but want to l
 }
 ```
 
-Example of using the `control` directive:
+Example of using flag directives like `show`:
 
 ```vcd
 # Specific bone
-@control bone head flag visible period 20 {
+@show bone head period 20 {
     @key frame 0 value on
     @key frame 10 value off
 }
 
 # Entire skeleton
-@control flag visible period 30 {
+@show period 30 {
     @key frame 0 value on
     @key frame 10 value off
 }

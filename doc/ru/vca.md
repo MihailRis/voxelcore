@@ -28,7 +28,7 @@ VCA файл состоит из набора директив, порядок �
 - `@scale` - масштабирование объекта/кости (множитель)
 - `@zoom` - масштаб камеры (множитель)
 - `@texture` - смена динамически-назначаемой текстуры (см. [skeleton:set_texture](scripting/ecs.md#skeleton))
-- `@control` - изменение значений флагов, таких как видимость
+- `@show` - видимость кости или всего скелета / объекта (если не указана кость)
 
 ## Мета-информация
 
@@ -97,17 +97,17 @@ VCA файл состоит из набора директив, порядок �
 }
 ```
 
-Пример использования директивы `control`:
+Пример использования директив-флагов, таких как `show`:
 
 ```vcd
 # Конкретная кость
-@control bone head flag visible period 20 {
+@show bone head period 20 {
     @key frame 0 value on
     @key frame 10 value off
 }
 
 # Весь скелет
-@control flag visible period 30 {
+@show period 30 {
     @key frame 0 value on
     @key frame 10 value off
 }
