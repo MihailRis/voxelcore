@@ -44,10 +44,13 @@ static int l_add_callback(lua::State* L) {
     auto& input = engine->getInput();
 
     if (pos != std::string::npos) {
-        std::string prefix = bindname.substr(0, pos);
+        auto prefix = std::string_view(bindname).substr(0, pos);
         if (prefix == "key") {
             auto key = input_util::keycode_from(bindname.substr(pos + 1));
             handler = input.addKeyCallback(key, actual_callback);
+        } else if (prefix == "mouse") {
+            auto mouse = input_util::mousecode_from(bindname.substr(pos + 1));
+            handler = input.addMouseCallback(mouse, actual_callback);
         }
     }
 
