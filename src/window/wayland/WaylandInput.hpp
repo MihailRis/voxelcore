@@ -6,6 +6,7 @@
 
 #include "window/Window.hpp"
 
+#include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
 
@@ -20,39 +21,49 @@ public:
     void pollEvents(bool waitForRefresh) override;
 
     const char* getClipboardText() const override {
+        return clipboard.c_str();
+    }
+
+    void requestClipboardText() {
         if (state.dataDevice == nullptr || selection == nullptr) {
-            return clipboard.c_str();
+            return;
         }
         const char* mime = pickMime();
         if (mime == nullptr) {
-            return clipboard.c_str();
+            clipboard.clear();
+            return;
         }
         int fds[2];
         if (pipe(fds) == -1) {
-            return clipboard.c_str();
+            return;
         }
+        if (clipboardFd >= 0) {
+            close(clipboardFd);
+        }
+        clipboard.clear();
+        clipboardFd = fds[0];
+        fcntl(clipboardFd, F_SETFL, O_NONBLOCK);
         wl_data_offer_receive(selection, mime, fds[1]);
         close(fds[1]);
-        wl_display_flush(state.display);
-
-        clipboard.clear();
-        char buffer[4096];
-        auto deadline = std::chrono::steady_clock::now() +
-                        std::chrono::milliseconds(500);
-        while (std::chrono::steady_clock::now() < deadline) {
-            pollfd descriptor {fds[0], POLLIN, 0};
-            if (poll(&descriptor, 1, 50) <= 0) {
-                wl_display_dispatch_pending(state.display);
-                continue;
-            }
-            ssize_t length = read(fds[0], buffer, sizeof(buffer));
-            if (length <= 0) {
-                break;
-            }
-            clipboard.append(buffer, length);
+        if (state.display) {
+            wl_display_flush(state.display);
         }
-        close(fds[0]);
-        return clipboard.c_str();
+    }
+
+    void updateClipboard() {
+        if (clipboardFd < 0) {
+            return;
+        }
+        char buffer[4096];
+        const ssize_t length = read(clipboardFd, buffer, sizeof(buffer));
+        if (length > 0) {
+            clipboard.append(buffer, length);
+            return;
+        }
+        if (length == 0) {
+            close(clipboardFd);
+            clipboardFd = -1;
+        }
     }
 
     void setClipboardText(const char* text) override {
@@ -67,6 +78,11 @@ public:
         wl_data_source_offer(source, "text/plain");
         wl_data_source_offer(source, "UTF8_STRING");
         sourceText = text ? text : "";
+        clipboard = sourceText;
+        if (clipboardFd >= 0) {
+            close(clipboardFd);
+            clipboardFd = -1;
+        }
         wl_data_device_set_selection(state.dataDevice, source, state.inputSerial);
         wl_display_flush(state.display);
     }
@@ -177,7 +193,8 @@ public:
     wl_data_offer* selection = nullptr;
     std::vector<std::string> selectionMimes;
     std::vector<std::string> pendingMimes;
-    mutable std::string clipboard;
+    std::string clipboard;
+    int clipboardFd = -1;
     std::string sourceText;
 private:
     static uint32_t shapeId(CursorShape shape) {

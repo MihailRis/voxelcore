@@ -268,6 +268,7 @@ void data_device_selection(void*, wl_data_device*, wl_data_offer* offer) {
     input->selection = offer;
     input->selectionMimes = std::move(input->pendingMimes);
     input->pendingMimes.clear();
+    input->requestClipboardText();
 }
 
 void registry_global(

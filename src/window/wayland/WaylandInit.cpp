@@ -212,6 +212,7 @@ void on_display_error() {
 }
 
 void WaylandInput::pollEvents(bool waitForRefresh) {
+    updateClipboard();
     beginFrame();
     dispatch(waitForRefresh);
     if (window) {
