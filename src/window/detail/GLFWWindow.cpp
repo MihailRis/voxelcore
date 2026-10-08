@@ -1,4 +1,6 @@
 #include "window/Window.hpp"
+#include "window/detail/BaseInput.hpp"
+#include "window/detail/WindowBackends.hpp"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -18,8 +20,41 @@
 
 static debug::Logger logger("window");
 
+static const char* get_platform_name() {
+#if GLFW_VERSION_MAJOR > 3 || (GLFW_VERSION_MAJOR == 3 && GLFW_VERSION_MINOR >= 4)
+    switch (glfwGetPlatform()) {
+        case GLFW_PLATFORM_WIN32: return "Win32";
+        case GLFW_PLATFORM_COCOA: return "Cocoa";
+        case GLFW_PLATFORM_WAYLAND: return "Wayland (GLFW)";
+        case GLFW_PLATFORM_X11: return "X11";
+        case GLFW_PLATFORM_NULL: return "Null";
+    }
+#endif
+    return "unknown";
+}
+
 static std::unordered_set<std::string> supported_gl_extensions;
 static void window_size_callback(GLFWwindow* window, int width, int height);
+
+static GLFWmonitor* get_window_monitor(GLFWwindow* window) {
+    int x = 0, y = 0, width = 0, height = 0;
+    glfwGetWindowPos(window, &x, &y);
+    glfwGetWindowSize(window, &width, &height);
+    x += width / 2;
+    y += height / 2;
+    int count = 0;
+    GLFWmonitor** monitors = glfwGetMonitors(&count);
+    for (int i = 0; i < count; i++) {
+        int monitorX = 0, monitorY = 0;
+        glfwGetMonitorPos(monitors[i], &monitorX, &monitorY);
+        const GLFWvidmode* mode = glfwGetVideoMode(monitors[i]);
+        if (mode && x >= monitorX && x < monitorX + mode->width &&
+            y >= monitorY && y < monitorY + mode->height) {
+            return monitors[i];
+        }
+    }
+    return glfwGetPrimaryMonitor();
+}
 
 static void init_gl_extensions_list() {
     GLint numExtensions = 0;
@@ -85,21 +120,6 @@ static void GLAPIENTRY gl_message_callback(
 #endif
 
 static bool initialize_gl(int width, int height) {
-    glewExperimental = GL_TRUE;
-
-    GLenum glewErr = glewInit();
-    if (glewErr != GLEW_OK) {
-        if (glewErr == GLEW_ERROR_NO_GLX_DISPLAY) {
-            // see issue #240
-            logger.warning()
-                << "glewInit() returned GLEW_ERROR_NO_GLX_DISPLAY; ignored";
-        } else {
-            logger.error() << "failed to initialize GLEW:\n"
-                           << glewGetErrorString(glewErr);
-            return true;
-        }
-    }
-
 #ifndef __APPLE__
     glEnable(GL_DEBUG_OUTPUT);
     glDebugMessageCallback(gl_message_callback, nullptr);
@@ -163,136 +183,7 @@ static void glfw_error_callback(int error, const char* description) {
     }
 }
 
-inline constexpr short KEYS_BUFFER_SIZE = 1036;
-inline constexpr short MOUSE_KEYS_OFFSET = 1024;
-
 static GLFWcursor* standard_cursors[static_cast<int>(CursorShape::LAST) + 1] = {};
-
-class BaseInput : public Input {
-public:
-    std::vector<uint> codepoints;
-    int scroll = 0;
-
-    void onKeyCallback(int key, bool pressed) {
-        bool prevPressed = keys[key];
-        keys[key] = pressed;
-        frames[key] = currentFrame;
-        if (pressed && !prevPressed) {
-            const auto& callbacks = keyCallbacks.find(static_cast<Keycode>(key));
-            if (callbacks != keyCallbacks.end()) {
-                callbacks->second.notify();
-            }
-        }
-        if (pressed && key < MOUSE_KEYS_OFFSET) {
-            pressedKeys.push_back(static_cast<Keycode>(key));
-        }
-    }
-
-    void onMouseCallback(int button, bool pressed) {
-        int key = button + MOUSE_KEYS_OFFSET;
-        onKeyCallback(key, pressed);
-    }
-
-    bool isCursorLocked() const override {
-        return cursorLocked;
-    }
-
-    void setCursorPosition(double xpos, double ypos) {
-        if (cursorDrag) {
-            delta.x += xpos - cursor.x;
-            delta.y += ypos - cursor.y;
-        } else {
-            cursorDrag = true;
-        }
-        cursor.x = xpos;
-        cursor.y = ypos;
-    }
-
-    Bindings& getBindings() override {
-        return bindings;
-    }
-
-    const Bindings& getBindings() const override {
-        return bindings;
-    }
-
-    ObserverHandler addKeyCallback(Keycode key, InputCallback callback) override {
-        return keyCallbacks[key].add(std::move(callback));
-    }
-
-    ObserverHandler addMouseCallback(Mousecode button, InputCallback callback) override {
-        return addKeyCallback(
-            static_cast<Keycode>(MOUSE_KEYS_OFFSET + static_cast<int>(button)),
-            std::move(callback)
-        );
-    }
-
-    const std::vector<Keycode>& getPressedKeys() const override {
-        return pressedKeys;
-    }
-
-    const std::vector<uint>& getCodepoints() const override {
-        return codepoints;
-    }
-
-    CursorState getCursor() const override {
-        return {isCursorLocked(), cursor, delta};
-    }
-
-    int getScroll() override {
-        return scroll;
-    }
-
-    bool pressed(Keycode key) const override {
-        int keycode = static_cast<int>(key);
-        if (keycode < 0 || keycode >= KEYS_BUFFER_SIZE) {
-            return false;
-        }
-        return keys[keycode];
-    }
-    bool jpressed(Keycode keycode) const override {
-        return pressed(keycode) &&
-               frames[static_cast<int>(keycode)] == currentFrame;
-    }
-
-    bool clicked(Mousecode code) const override {
-        return pressed(
-            static_cast<Keycode>(MOUSE_KEYS_OFFSET + static_cast<int>(code))
-        );
-    }
-    bool jclicked(Mousecode code) const override {
-        return clicked(code) &&
-               frames[static_cast<int>(code) + MOUSE_KEYS_OFFSET] ==
-                   currentFrame;
-    }
-
-    void simulateKey(Keycode key, bool pressed) override {
-        onKeyCallback(static_cast<int>(key), pressed);
-    }
-
-    void simulateClick(int button, bool pressed) override {
-        onMouseCallback(static_cast<int>(button), pressed);
-    }
-
-    void simulateCursorPos(double xpos, double ypos) override {
-        setCursorPosition(xpos, ypos);
-    }
-    
-    void simulateCodepoint(uint codepoint) override {
-        codepoints.push_back(codepoint);
-    }
-protected:
-    uint currentFrame = 0;
-    uint frames[KEYS_BUFFER_SIZE] {};
-    std::vector<Keycode> pressedKeys;
-    Bindings bindings;
-    bool keys[KEYS_BUFFER_SIZE] {};
-    std::unordered_map<Keycode, util::HandlersList<>> keyCallbacks;
-    bool cursorLocked = false;
-    bool cursorDrag = false;
-    glm::vec2 delta {};
-    glm::vec2 cursor {};
-};
 
 class GLFWInput : public BaseInput {
 public:
@@ -301,48 +192,14 @@ public:
     }
 
     void pollEvents(bool waitForRefresh) override {
-        delta.x = 0.0f;
-        delta.y = 0.0f;
-        scroll = 0;
-        currentFrame++;
-        codepoints.clear();
-        pressedKeys.clear();
+        beginFrame();
         if (waitForRefresh) {
             glfwWaitEventsTimeout(0.5);
         } else {
             glfwPollEvents();
         }
 
-        for (auto& [_, binding] : bindings.getAll()) {
-            if (!binding.enabled) {
-                binding.state = false;
-                continue;
-            }
-            binding.justChanged = false;
-    
-            bool newstate = false;
-            switch (binding.type) {
-                case InputType::KEYBOARD:
-                    newstate = pressed(static_cast<Keycode>(binding.code));
-                    break;
-                case InputType::MOUSE:
-                    newstate = clicked(static_cast<Mousecode>(binding.code));
-                    break;
-            }
-    
-            if (newstate) {
-                if (!binding.state) {
-                    binding.state = true;
-                    binding.justChanged = true;
-                    binding.onactived.notify();
-                }
-            } else {
-                if (binding.state) {
-                    binding.state = false;
-                    binding.justChanged = true;
-                }
-            }
-        }
+        updateBindings();
     }
 
     const char* getClipboardText() const override {
@@ -455,7 +312,7 @@ public:
 
     void setMode(WindowMode mode) override {
         Window::mode = mode;
-        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+        GLFWmonitor* monitor = get_window_monitor(window);
         const GLFWvidmode* glfwMode = glfwGetVideoMode(monitor);
     
         if (input.isCursorLocked()){
@@ -505,6 +362,10 @@ public:
 
     void setTitle(const std::string& title) override {
         glfwSetWindowTitle(window, title.c_str());
+    }
+
+    bool isIconSupported() const override {
+        return true;
     }
 
     void setIcon(const ImageData* image) override {
@@ -709,7 +570,7 @@ static void setup_callbacks(GLFWwindow* window) {
 std::tuple<
     std::unique_ptr<Window>, 
     std::unique_ptr<Input>
-> Window::initialize(DisplaySettings* settings, std::string title) {
+> glfw_window_initialize(DisplaySettings* settings, std::string title) {
     int width = settings->width.get();
     int height = settings->height.get();
 
@@ -718,6 +579,7 @@ std::tuple<
         logger.error() << "failed to initialize GLFW";
         return {nullptr, nullptr};
     }
+    logger.info() << "windowing platform: " << get_platform_name();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -782,7 +644,6 @@ std::tuple<
     setup_callbacks(window);
     
     glfwSwapInterval(1);
-    input_util::initialize();
     create_standard_cursors();
 
     glm::vec2 scale;

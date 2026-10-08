@@ -32,6 +32,10 @@ public:
     virtual bool isShouldClose() const = 0;
     virtual void setShouldClose(bool flag) = 0;
 
+    virtual bool isFrameRequired() const {
+        return true;
+    }
+
     virtual void setCursor(CursorShape shape) = 0;
     virtual void setMode(WindowMode mode) = 0;
     virtual WindowMode getMode() const = 0;
@@ -39,6 +43,9 @@ public:
     virtual void focus() = 0;
 
     virtual void setTitle(const std::string& title) = 0;
+
+    virtual bool isIconSupported() const = 0;
+
     virtual void setIcon(const ImageData* image) = 0;
 
     virtual void pushScissor(glm::vec4 area) = 0;

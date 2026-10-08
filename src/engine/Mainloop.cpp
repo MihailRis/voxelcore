@@ -48,7 +48,7 @@ void Mainloop::run() {
         engine.applicationTick();
         engine.updateFrontend();
 
-        if (!window.isIconified()) {
+        if (!window.isIconified() && window.isFrameRequired()) {
             engine.renderFrame();
         }
         engine.postUpdate();

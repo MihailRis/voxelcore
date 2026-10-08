@@ -70,6 +70,67 @@ else()
     add_library(luajit::luajit ALIAS PkgConfig::luajit)
 endif()
 
+option(VOXELENGINE_WAYLAND "Build the native Wayland window backend" ON)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND VOXELENGINE_WAYLAND)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(wayland-client IMPORTED_TARGET wayland-client)
+    pkg_check_modules(xkbcommon IMPORTED_TARGET xkbcommon)
+    pkg_check_modules(egl IMPORTED_TARGET egl)
+    find_library(WAYLAND_EGL_LIBRARY NAMES wayland-egl libwayland-egl.so.1)
+    find_program(WAYLAND_SCANNER wayland-scanner)
+
+    if(NOT wayland-client_FOUND OR NOT xkbcommon_FOUND OR NOT egl_FOUND
+       OR NOT WAYLAND_EGL_LIBRARY OR NOT WAYLAND_SCANNER)
+        message(STATUS "Wayland backend is off: dependencies are not found")
+    else()
+        set(WAYLAND_PROTOCOLS ${CMAKE_CURRENT_SOURCE_DIR}/window/wayland/protocols)
+        set(WAYLAND_GENERATED ${CMAKE_CURRENT_BINARY_DIR}/wayland-protocols)
+        file(MAKE_DIRECTORY ${WAYLAND_GENERATED})
+        set(WAYLAND_SOURCES)
+
+        function(voxel_wayland_protocol XML NAME)
+            add_custom_command(
+                OUTPUT ${WAYLAND_GENERATED}/${NAME}-client-protocol.h
+                       ${WAYLAND_GENERATED}/${NAME}-protocol.c
+                COMMAND ${WAYLAND_SCANNER} client-header
+                        ${WAYLAND_PROTOCOLS}/${XML}
+                        ${WAYLAND_GENERATED}/${NAME}-client-protocol.h
+                COMMAND ${WAYLAND_SCANNER} private-code
+                        ${WAYLAND_PROTOCOLS}/${XML}
+                        ${WAYLAND_GENERATED}/${NAME}-protocol.c
+                DEPENDS ${WAYLAND_PROTOCOLS}/${XML}
+                VERBATIM)
+            set(WAYLAND_SOURCES ${WAYLAND_SOURCES}
+                                ${WAYLAND_GENERATED}/${NAME}-protocol.c
+                PARENT_SCOPE)
+        endfunction()
+
+        voxel_wayland_protocol(xdg-shell.xml xdg-shell)
+        voxel_wayland_protocol(cursor-shape-v1.xml cursor-shape-v1)
+        voxel_wayland_protocol(idle-inhibit-unstable-v1.xml
+                               idle-inhibit-unstable-v1)
+        voxel_wayland_protocol(pointer-constraints-unstable-v1.xml
+                               pointer-constraints-unstable-v1)
+        voxel_wayland_protocol(relative-pointer-unstable-v1.xml
+                               relative-pointer-unstable-v1)
+        voxel_wayland_protocol(xdg-decoration-unstable-v1.xml
+                               xdg-decoration-unstable-v1)
+        # tablet is referenced by cursor-shape-v1
+        voxel_wayland_protocol(tablet-unstable-v2.xml tablet-unstable-v2)
+
+        target_sources(VoxelEngineSrc PRIVATE ${WAYLAND_SOURCES})
+        target_include_directories(VoxelEngineSrc PUBLIC ${WAYLAND_GENERATED})
+        target_compile_definitions(VoxelEngineSrc PUBLIC VOXELENGINE_WAYLAND=1)
+        target_link_libraries(
+            VoxelEngineSrc
+            PRIVATE PkgConfig::wayland-client
+                    PkgConfig::xkbcommon
+                    PkgConfig::egl
+                    ${WAYLAND_EGL_LIBRARY})
+        message(STATUS "Wayland backend is on")
+    endif()
+endif()
+
 target_include_directories(VoxelEngineSrc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(
