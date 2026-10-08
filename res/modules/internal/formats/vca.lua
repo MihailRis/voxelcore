@@ -9,6 +9,7 @@ local action_to_channel = {
     zoom = animation.CH_ZOOM,
     texture = animation.CH_TEXTURE,
     show = animation.CH_SHOW,
+    model = animation.CH_MODEL,
 }
 
 local curve_to_interp = {
