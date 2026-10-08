@@ -216,8 +216,15 @@ public:
         return bindings;
     }
 
-    ObserverHandler addKeyCallback(Keycode key, KeyCallback callback) override {
+    ObserverHandler addKeyCallback(Keycode key, InputCallback callback) override {
         return keyCallbacks[key].add(std::move(callback));
+    }
+
+    ObserverHandler addMouseCallback(Mousecode button, InputCallback callback) override {
+        return addKeyCallback(
+            static_cast<Keycode>(MOUSE_KEYS_OFFSET + static_cast<int>(button)),
+            std::move(callback)
+        );
     }
 
     const std::vector<Keycode>& getPressedKeys() const override {
