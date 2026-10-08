@@ -207,11 +207,16 @@ local function codegen_track(raw_track, lineset, keysets, use_tsf, target_type)
     end
 
     if color[1] or color[2] or color[3] or color[4] then
-        code = code .. "\n   target:set_color({" ..
+        local color_vector = "{" ..
             (color[1] and ("l" .. color[1]) or '1').. ", " ..
             (color[2] and ("l" .. color[2]) or '1').. ", " ..
             (color[3] and ("l" .. color[3]) or '1').. ", " ..
-            (color[4] and ("l" .. color[4]) or '1').. "})"
+            (color[4] and ("l" .. color[4]) or '1').. "}"
+        if target_type == "bone" then
+            code = code .. "\n   target:set_color(" .. color_vector .. ", bone_index)"
+        else
+            code = code .. "\n   target:set_color(" .. color_vector .. ")"
+        end
     end
 
     if not has_tsf or not use_tsf then
