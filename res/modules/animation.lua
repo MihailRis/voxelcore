@@ -47,6 +47,7 @@ local M = {
     CH_TEXTURE = 5,
     CH_SHOW = 6,
     CH_MODEL = 7,
+    CH_COLOR = 8,
 
     INT_CONST = 1,
     INT_LINEAR = 2,

@@ -173,6 +173,7 @@ local function codegen_track(raw_track, lineset, keysets, use_tsf, target_type)
     local translation = {false, false, false}
     local rotation = {false, false, false}
     local scale = {false, false, false}
+    local color = {false, false, false, false}
 
     for i, line in ipairs(lines) do
         code = code .. string.format("\n   local l%d = ", i)
@@ -200,7 +201,17 @@ local function codegen_track(raw_track, lineset, keysets, use_tsf, target_type)
             else
                 code = code .. string.format("\n   target:set_visible(l%d)", i)
             end
+        elseif line.channel == animation.CH_COLOR then
+            color[line.axis] = i
         end
+    end
+
+    if color[1] or color[2] or color[3] or color[4] then
+        code = code .. "\n   target:set_color({" ..
+            (color[1] and ("l" .. color[1]) or '1').. ", " ..
+            (color[2] and ("l" .. color[2]) or '1').. ", " ..
+            (color[3] and ("l" .. color[3]) or '1').. ", " ..
+            (color[4] and ("l" .. color[4]) or '1').. "})"
     end
 
     if not has_tsf or not use_tsf then

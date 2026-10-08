@@ -10,6 +10,7 @@ local action_to_channel = {
     texture = animation.CH_TEXTURE,
     show = animation.CH_SHOW,
     model = animation.CH_MODEL,
+    color = animation.CH_COLOR,
 }
 
 local curve_to_interp = {
@@ -115,7 +116,7 @@ local function parse_directive(node, raw_track)
         error("unknown directive " .. tag:escape())
     end
     local line = {
-        axis = node.by and ("xyz"):find(node.by) or "",
+        axis = node.by and (("xyz"):find(node.by) or ("rgba"):find(node.by)) or "",
         channel = channel,
         period = node.period or animation.MAX_FRAMES
     }
