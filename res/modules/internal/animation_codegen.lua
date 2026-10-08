@@ -192,13 +192,11 @@ local function codegen_track(raw_track, lineset, keysets, use_tsf, target_type)
         elseif line.channel == animation.CH_TEXTURE then
             code = code .. string.format("\n   target:set_texture(%s, l%d)",
                 lineset.target_name:escape(), i)
-        elseif line.channel == animation.CH_CONTROL then
-            if lineset.flag == "visible" then
-                if target_type == "bone" then
-                    code = code .. string.format("\n   target:set_visible(bone_index, l%d)", i)
-                else
-                    code = code .. string.format("\n   target:set_visible(l%d)", i)
-                end
+        elseif line.channel == animation.CH_SHOW then
+            if target_type == "bone" then
+                code = code .. string.format("\n   target:set_visible(bone_index, l%d)", i)
+            else
+                code = code .. string.format("\n   target:set_visible(l%d)", i)
             end
         end
     end
