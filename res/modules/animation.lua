@@ -39,12 +39,15 @@ local function bezier_interpolation(k0, k1, t)
     return bezier(k0.value, k0.ry + k0.value, k1.ly + k1.value, k1.value, u)
 end
 
-local this = {
+local M = {
     CH_TRANSLATE = 1,
     CH_ROTATE = 2,
     CH_SCALE = 3,
     CH_ZOOM = 4,
     CH_TEXTURE = 5,
+    CH_SHOW = 6,
+    CH_MODEL = 7,
+    CH_COLOR = 8,
 
     INT_CONST = 1,
     INT_LINEAR = 2,
@@ -53,7 +56,7 @@ local this = {
     MAX_DURATION = 1e9,
     MAX_FRAMES = 1e9,
 
-    TRACE_CODEGEN = false,
+    TRACE_CODEGEN = true,
 
     maths = {
         bezier_interpolation = bezier_interpolation
@@ -67,14 +70,14 @@ function internals.store_animation(name, track)
     loaded_tracks[name] = track
 end
 
-function this.get_track(identifier)
+function M.get_track(identifier)
     return loaded_tracks[identifier]
 end
 
 local running_actions = {}
 local playing_tracks = {}
 
-function this.action(func)
+function M.action(func)
     table.insert(running_actions, coroutine.create(func))
 end
 
@@ -98,7 +101,7 @@ local PlayingTrack = {
     }
 }
 
-function this.play(name, target)
+function M.play(name, target)
     if target and target.reset_pose then
         target:reset_pose()
     end
@@ -156,4 +159,4 @@ function internals.restore_animation_backup()
     loaded_tracks, backup_tracks = backup_tracks, {}
 end
 
-return this
+return M
