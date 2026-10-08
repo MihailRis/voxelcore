@@ -1,0 +1,332 @@
+#pragma once
+
+#include "window/wayland/WaylandCommon.hpp"
+
+#include "window/detail/BaseInput.hpp"
+
+#include "window/Window.hpp"
+
+#include <poll.h>
+#include <unistd.h>
+
+#include <chrono>
+#include <optional>
+#include <string>
+#include <thread>
+#include <vector>
+
+class WaylandInput : public BaseInput {
+public:
+    void pollEvents(bool waitForRefresh) override;
+
+    const char* getClipboardText() const override {
+        if (state.dataDevice == nullptr || selection == nullptr) {
+            return clipboard.c_str();
+        }
+        const char* mime = pickMime();
+        if (mime == nullptr) {
+            return clipboard.c_str();
+        }
+        int fds[2];
+        if (pipe(fds) == -1) {
+            return clipboard.c_str();
+        }
+        wl_data_offer_receive(selection, mime, fds[1]);
+        close(fds[1]);
+        wl_display_flush(state.display);
+
+        clipboard.clear();
+        char buffer[4096];
+        auto deadline = std::chrono::steady_clock::now() +
+                        std::chrono::milliseconds(500);
+        while (std::chrono::steady_clock::now() < deadline) {
+            pollfd descriptor {fds[0], POLLIN, 0};
+            if (poll(&descriptor, 1, 50) <= 0) {
+                wl_display_dispatch_pending(state.display);
+                continue;
+            }
+            ssize_t length = read(fds[0], buffer, sizeof(buffer));
+            if (length <= 0) {
+                break;
+            }
+            clipboard.append(buffer, length);
+        }
+        close(fds[0]);
+        return clipboard.c_str();
+    }
+
+    void setClipboardText(const char* text) override {
+        if (state.dataDeviceManager == nullptr || state.dataDevice == nullptr) {
+            return;
+        }
+        auto* source = wl_data_device_manager_create_data_source(
+            state.dataDeviceManager
+        );
+        wl_data_source_add_listener(source, &sourceListener(), nullptr);
+        wl_data_source_offer(source, "text/plain;charset=utf-8");
+        wl_data_source_offer(source, "text/plain");
+        wl_data_source_offer(source, "UTF8_STRING");
+        sourceText = text ? text : "";
+        wl_data_device_set_selection(state.dataDevice, source, state.inputSerial);
+        wl_display_flush(state.display);
+    }
+
+    void toggleCursor() override {
+        cursorDrag = false;
+        if (cursorLocked) {
+            if (state.lockedPointer) {
+                zwp_locked_pointer_v1_destroy(state.lockedPointer);
+                state.lockedPointer = nullptr;
+            }
+            if (state.relativePointer) {
+                zwp_relative_pointer_v1_destroy(state.relativePointer);
+                state.relativePointer = nullptr;
+            }
+            cursorLocked = false;
+            applyCursor();
+            return;
+        }
+        if (state.pointerConstraints && state.pointer && state.surface) {
+            state.lockedPointer = zwp_pointer_constraints_v1_lock_pointer(
+                state.pointerConstraints,
+                state.surface,
+                state.pointer,
+                nullptr,
+                ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_PERSISTENT
+            );
+        }
+        if (state.relativePointerManager && state.pointer) {
+            state.relativePointer =
+                zwp_relative_pointer_manager_v1_get_relative_pointer(
+                    state.relativePointerManager, state.pointer
+                );
+            zwp_relative_pointer_v1_add_listener(
+                state.relativePointer, &relativePointerListener(), nullptr
+            );
+        }
+        if (state.pointer && state.entered) {
+            wl_pointer_set_cursor(
+                state.pointer, state.pointerSerial, nullptr, 0, 0
+            );
+        }
+        cursorLocked = true;
+    }
+
+    void setCursorShape(CursorShape shape) {
+        if (cursor == shape) {
+            return;
+        }
+        cursor = shape;
+        applyCursor();
+    }
+
+    void applyCursor() {
+        if (cursorLocked || !state.entered || !state.cursorShapeDevice) {
+            return;
+        }
+        wp_cursor_shape_device_v1_set_shape(
+            state.cursorShapeDevice, state.pointerSerial,
+            shapeId(overrideCursor ? *overrideCursor : cursor)
+        );
+    }
+
+    void setOverrideCursor(std::optional<CursorShape> shape) {
+        if (overrideCursor == shape) {
+            return;
+        }
+        overrideCursor = shape;
+        applyCursor();
+    }
+
+    void onRelativeMotion(double dx, double dy) {
+        delta.x += dx;
+        delta.y += dy;
+    }
+
+    void onKey(uint32_t key, bool pressed) {
+        if (state.xkbState == nullptr || state.xkbKeymap == nullptr) {
+            return;
+        }
+        xkb_keycode_t code = key + 8;
+        const xkb_keysym_t* syms = nullptr;
+        if (xkb_keymap_key_get_syms_by_level(
+                state.xkbKeymap, code, 0, 0, &syms
+            ) > 0) {
+            int keycode = keycode_from_keysym(syms[0]);
+            if (keycode != 0) {
+                onKeyCallback(keycode, pressed);
+            }
+            if (pressed) {
+                repeatKeycode = code;
+                repeatTime = now();
+                lastRepeat = repeatTime;
+            } else if (code == repeatKeycode) {
+                repeatKeycode = 0;
+            }
+        }
+        if (pressed) {
+            appendCodepoints(code);
+        }
+        xkb_state_update_key(
+            state.xkbState, code, pressed ? XKB_KEY_DOWN : XKB_KEY_UP
+        );
+    }
+
+    void refreshWindow();
+
+    wl_data_offer* selection = nullptr;
+    std::vector<std::string> selectionMimes;
+    std::vector<std::string> pendingMimes;
+    mutable std::string clipboard;
+    std::string sourceText;
+private:
+    static uint32_t shapeId(CursorShape shape) {
+        switch (shape) {
+            case CursorShape::ARROW:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT;
+            case CursorShape::TEXT:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_TEXT;
+            case CursorShape::CROSSHAIR:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CROSSHAIR;
+            case CursorShape::POINTER:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER;
+            case CursorShape::EW_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_EW_RESIZE;
+            case CursorShape::NS_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NS_RESIZE;
+            case CursorShape::NWSE_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NWSE_RESIZE;
+            case CursorShape::NESW_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NESW_RESIZE;
+            case CursorShape::ALL_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ALL_RESIZE;
+            case CursorShape::NOT_ALLOWED:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NOT_ALLOWED;
+        }
+        return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT;
+    }
+
+    static void dispatch(bool block) {
+        dispatch_events(block ? 500 : 0);
+    }
+
+    static double now() {
+        return std::chrono::duration<double>(
+                   std::chrono::steady_clock::now().time_since_epoch()
+        ).count();
+    }
+
+    void appendCodepoints(xkb_keycode_t code) {
+        char buffer[64];
+        int length = xkb_state_key_get_utf8(
+            state.xkbState, code, buffer, sizeof(buffer)
+        );
+        if (length <= 0) {
+            return;
+        }
+        const auto* bytes = reinterpret_cast<const ubyte*>(buffer);
+        uint codepoint = 0;
+        for (int i = 0; i < length; i++) {
+            if ((bytes[i] & 0xC0) == 0x80) {
+                codepoint = (codepoint << 6) | (bytes[i] & 0x3F);
+                continue;
+            }
+            if (codepoint != 0) {
+                codepoints.push_back(codepoint);
+            }
+            codepoint = (bytes[i] & 0x80) ? (bytes[i] & 0x1F) : bytes[i];
+        }
+        if (codepoint != 0) {
+            codepoints.push_back(codepoint);
+        }
+    }
+
+    void updateRepeat() {
+        if (repeatKeycode == 0 || !state.xkbState) {
+            return;
+        }
+        int keycode = 0;
+        const xkb_keysym_t* syms = nullptr;
+        if (xkb_keymap_key_get_syms_by_level(
+                state.xkbKeymap, repeatKeycode, 0, 0, &syms
+            ) > 0) {
+            keycode = keycode_from_keysym(syms[0]);
+        }
+        if (keycode == 0 || !pressed(static_cast<Keycode>(keycode))) {
+            return;
+        }
+        double time = now();
+        if (time - repeatTime < state.repeatDelay / 1000.0) {
+            return;
+        }
+        double interval = 1.0 / std::max<uint32_t>(state.repeatRate, 1);
+        if (time - lastRepeat < interval) {
+            return;
+        }
+        lastRepeat = time;
+        onKeyCallback(keycode, true);
+        appendCodepoints(repeatKeycode);
+    }
+
+    const char* pickMime() const {
+        for (const auto& mime : selectionMimes) {
+            if (mime == "text/plain;charset=utf-8" || mime == "text/plain" ||
+                mime == "UTF8_STRING") {
+                return mime.c_str();
+            }
+        }
+        return nullptr;
+    }
+
+    static const wl_data_source_listener& sourceListener() {
+        static wl_data_source_listener listener {};
+        static bool initialized = false;
+        if (!initialized) {
+            initialized = true;
+            listener.send = [] (
+                void*, wl_data_source*, const char*, int32_t fd
+            ) {
+                if (input) {
+                    const std::string& text = input->sourceText;
+                    if (!text.empty() && write(fd, text.data(), text.size()) < 0) {
+                        waylandLogger.warning() << "could not write to the clipboard";
+                    }
+                }
+                close(fd);
+            };
+            listener.cancelled = [] (void*, wl_data_source* source) {
+                wl_data_source_destroy(source);
+            };
+            listener.target = ignore_event<>;
+            listener.dnd_drop_performed = ignore_event<>;
+            listener.dnd_finished = ignore_event<>;
+            listener.action = ignore_event<>;
+        }
+        return listener;
+    }
+
+    static const zwp_relative_pointer_v1_listener& relativePointerListener() {
+        static zwp_relative_pointer_v1_listener listener {};
+        static bool initialized = false;
+        if (!initialized) {
+            initialized = true;
+            listener.relative_motion = [] (
+                void*, zwp_relative_pointer_v1*, uint32_t, uint32_t,
+                wl_fixed_t dx, wl_fixed_t dy, wl_fixed_t, wl_fixed_t
+            ) {
+                if (input) {
+                    input->onRelativeMotion(
+                        wl_fixed_to_double(dx), wl_fixed_to_double(dy)
+                    );
+                }
+            };
+        }
+        return listener;
+    }
+
+    CursorShape cursor = CursorShape::ARROW;
+    std::optional<CursorShape> overrideCursor;
+    xkb_keycode_t repeatKeycode = 0;
+    double repeatTime = 0.0;
+    double lastRepeat = 0.0;
+};

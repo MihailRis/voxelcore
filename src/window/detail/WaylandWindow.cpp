@@ -1,3 +1,6 @@
+#include "window/wayland/WaylandCommon.hpp"
+#include "window/wayland/WaylandInput.hpp"
+
 #include "window/Window.hpp"
 #include "window/detail/BaseInput.hpp"
 #include "window/detail/WindowBackends.hpp"
@@ -38,58 +41,6 @@
 #include <poll.h>
 #include <sys/mman.h>
 #include <unistd.h>
-
-static debug::Logger logger("window");
-
-struct WaylandState {
-    wl_display* display = nullptr;
-    wl_registry* registry = nullptr;
-    wl_compositor* compositor = nullptr;
-    wl_surface* surface = nullptr;
-    xdg_wm_base* wmBase = nullptr;
-    xdg_surface* xdgSurface = nullptr;
-    xdg_toplevel* toplevel = nullptr;
-    zxdg_toplevel_decoration_v1* decoration = nullptr;
-    wl_seat* seat = nullptr;
-    wl_pointer* pointer = nullptr;
-    wl_keyboard* keyboard = nullptr;
-    wl_data_device_manager* dataDeviceManager = nullptr;
-    wl_data_device* dataDevice = nullptr;
-    wp_cursor_shape_manager_v1* cursorShapeManager = nullptr;
-    wp_cursor_shape_device_v1* cursorShapeDevice = nullptr;
-    zwp_pointer_constraints_v1* pointerConstraints = nullptr;
-    zwp_relative_pointer_manager_v1* relativePointerManager = nullptr;
-    zwp_relative_pointer_v1* relativePointer = nullptr;
-    zwp_locked_pointer_v1* lockedPointer = nullptr;
-    zwp_idle_inhibit_manager_v1* idleInhibitManager = nullptr;
-    zwp_idle_inhibitor_v1* idleInhibitor = nullptr;
-    zxdg_decoration_manager_v1* decorationManager = nullptr;
-    xkb_context* xkbContext = nullptr;
-    xkb_keymap* xkbKeymap = nullptr;
-    xkb_state* xkbState = nullptr;
-    uint32_t pointerSerial = 0;
-    uint32_t inputSerial = 0;
-    uint32_t repeatRate = 25;
-    uint32_t repeatDelay = 400;
-    bool entered = false;
-};
-
-static WaylandState state;
-
-class WaylandInput;
-class WaylandWindow;
-
-static WaylandInput* input = nullptr;
-static WaylandWindow* window = nullptr;
-
-template <typename... Args>
-static void ignore_event(Args...) {
-}
-
-static bool decorations_enabled() {
-    const char* value = getenv("VOXEL_DECORATIONS");
-    return value == nullptr || strcmp(value, "none") != 0;
-}
 
 static constexpr int BAR_HEIGHT = 30;
 static constexpr int BAR_BUTTON = 30;
@@ -339,425 +290,6 @@ static void push_quad(
     target.insert(target.end(), vertices, vertices + 48);
 }
 
-static bool serverDecorations = false;
-
-static void zxdg_decoration_configure(
-    void*, zxdg_toplevel_decoration_v1*, uint32_t mode
-);
-
-static void on_display_error();
-
-static int keycode_from_keysym(xkb_keysym_t sym) {
-    switch (sym) {
-        case XKB_KEY_Escape: return GLFW_KEY_ESCAPE;
-        case XKB_KEY_Return: return GLFW_KEY_ENTER;
-        case XKB_KEY_Tab: return GLFW_KEY_TAB;
-        case XKB_KEY_BackSpace: return GLFW_KEY_BACKSPACE;
-        case XKB_KEY_Insert: return GLFW_KEY_INSERT;
-        case XKB_KEY_Delete: return GLFW_KEY_DELETE;
-        case XKB_KEY_Left: return GLFW_KEY_LEFT;
-        case XKB_KEY_Right: return GLFW_KEY_RIGHT;
-        case XKB_KEY_Up: return GLFW_KEY_UP;
-        case XKB_KEY_Down: return GLFW_KEY_DOWN;
-        case XKB_KEY_Page_Up: return GLFW_KEY_PAGE_UP;
-        case XKB_KEY_Page_Down: return GLFW_KEY_PAGE_DOWN;
-        case XKB_KEY_Home: return GLFW_KEY_HOME;
-        case XKB_KEY_End: return GLFW_KEY_END;
-        case XKB_KEY_Caps_Lock: return GLFW_KEY_CAPS_LOCK;
-        case XKB_KEY_Scroll_Lock: return GLFW_KEY_SCROLL_LOCK;
-        case XKB_KEY_Num_Lock: return GLFW_KEY_NUM_LOCK;
-        case XKB_KEY_Print: return GLFW_KEY_PRINT_SCREEN;
-        case XKB_KEY_Pause: return GLFW_KEY_PAUSE;
-        case XKB_KEY_Menu: return GLFW_KEY_MENU;
-        case XKB_KEY_Shift_L: return GLFW_KEY_LEFT_SHIFT;
-        case XKB_KEY_Control_L: return GLFW_KEY_LEFT_CONTROL;
-        case XKB_KEY_Alt_L: return GLFW_KEY_LEFT_ALT;
-        case XKB_KEY_Super_L: return GLFW_KEY_LEFT_SUPER;
-        case XKB_KEY_Shift_R: return GLFW_KEY_RIGHT_SHIFT;
-        case XKB_KEY_Control_R: return GLFW_KEY_RIGHT_CONTROL;
-        case XKB_KEY_Alt_R: return GLFW_KEY_RIGHT_ALT;
-        case XKB_KEY_Super_R: return GLFW_KEY_RIGHT_SUPER;
-        case XKB_KEY_space: return GLFW_KEY_SPACE;
-        case XKB_KEY_apostrophe: return GLFW_KEY_APOSTROPHE;
-        case XKB_KEY_comma: return GLFW_KEY_COMMA;
-        case XKB_KEY_minus: return GLFW_KEY_MINUS;
-        case XKB_KEY_period: return GLFW_KEY_PERIOD;
-        case XKB_KEY_slash: return GLFW_KEY_SLASH;
-        case XKB_KEY_semicolon: return GLFW_KEY_SEMICOLON;
-        case XKB_KEY_equal: return GLFW_KEY_EQUAL;
-        case XKB_KEY_bracketleft: return GLFW_KEY_LEFT_BRACKET;
-        case XKB_KEY_backslash: return GLFW_KEY_BACKSLASH;
-        case XKB_KEY_bracketright: return GLFW_KEY_RIGHT_BRACKET;
-        case XKB_KEY_grave: return GLFW_KEY_GRAVE_ACCENT;
-        case XKB_KEY_KP_0: return GLFW_KEY_KP_0;
-        case XKB_KEY_KP_1: return GLFW_KEY_KP_1;
-        case XKB_KEY_KP_2: return GLFW_KEY_KP_2;
-        case XKB_KEY_KP_3: return GLFW_KEY_KP_3;
-        case XKB_KEY_KP_4: return GLFW_KEY_KP_4;
-        case XKB_KEY_KP_5: return GLFW_KEY_KP_5;
-        case XKB_KEY_KP_6: return GLFW_KEY_KP_6;
-        case XKB_KEY_KP_7: return GLFW_KEY_KP_7;
-        case XKB_KEY_KP_8: return GLFW_KEY_KP_8;
-        case XKB_KEY_KP_9: return GLFW_KEY_KP_9;
-        case XKB_KEY_KP_Decimal: return GLFW_KEY_KP_DECIMAL;
-        case XKB_KEY_KP_Divide: return GLFW_KEY_KP_DIVIDE;
-        case XKB_KEY_KP_Multiply: return GLFW_KEY_KP_MULTIPLY;
-        case XKB_KEY_KP_Subtract: return GLFW_KEY_KP_SUBTRACT;
-        case XKB_KEY_KP_Add: return GLFW_KEY_KP_ADD;
-        case XKB_KEY_KP_Enter: return GLFW_KEY_KP_ENTER;
-        case XKB_KEY_KP_Equal: return GLFW_KEY_KP_EQUAL;
-    }
-    if (sym >= XKB_KEY_a && sym <= XKB_KEY_z) {
-        return GLFW_KEY_A + (sym - XKB_KEY_a);
-    }
-    if (sym >= XKB_KEY_A && sym <= XKB_KEY_Z) {
-        return GLFW_KEY_A + (sym - XKB_KEY_A);
-    }
-    if (sym >= XKB_KEY_0 && sym <= XKB_KEY_9) {
-        return GLFW_KEY_0 + (sym - XKB_KEY_0);
-    }
-    if (sym >= XKB_KEY_F1 && sym <= XKB_KEY_F12) {
-        return GLFW_KEY_F1 + (sym - XKB_KEY_F1);
-    }
-    return 0;
-}
-
-static void dispatch_events(int timeoutMs) {
-    wl_display_flush(state.display);
-    while (wl_display_prepare_read(state.display) != 0) {
-        wl_display_dispatch_pending(state.display);
-        wl_display_flush(state.display);
-    }
-    pollfd descriptor {wl_display_get_fd(state.display), POLLIN, 0};
-    if (poll(&descriptor, 1, timeoutMs) > 0) {
-        if (wl_display_read_events(state.display) == -1) {
-            wl_display_cancel_read(state.display);
-        }
-    } else {
-        wl_display_cancel_read(state.display);
-    }
-    wl_display_dispatch_pending(state.display);
-    if (wl_display_get_error(state.display) != 0) {
-        on_display_error();
-    }
-}
-
-class WaylandInput : public BaseInput {
-public:
-    void pollEvents(bool waitForRefresh) override;
-
-    const char* getClipboardText() const override {
-        if (state.dataDevice == nullptr || selection == nullptr) {
-            return clipboard.c_str();
-        }
-        const char* mime = pickMime();
-        if (mime == nullptr) {
-            return clipboard.c_str();
-        }
-        int fds[2];
-        if (pipe(fds) == -1) {
-            return clipboard.c_str();
-        }
-        wl_data_offer_receive(selection, mime, fds[1]);
-        close(fds[1]);
-        wl_display_flush(state.display);
-
-        clipboard.clear();
-        char buffer[4096];
-        auto deadline = std::chrono::steady_clock::now() +
-                        std::chrono::milliseconds(500);
-        while (std::chrono::steady_clock::now() < deadline) {
-            pollfd descriptor {fds[0], POLLIN, 0};
-            if (poll(&descriptor, 1, 50) <= 0) {
-                wl_display_dispatch_pending(state.display);
-                continue;
-            }
-            ssize_t length = read(fds[0], buffer, sizeof(buffer));
-            if (length <= 0) {
-                break;
-            }
-            clipboard.append(buffer, length);
-        }
-        close(fds[0]);
-        return clipboard.c_str();
-    }
-
-    void setClipboardText(const char* text) override {
-        if (state.dataDeviceManager == nullptr || state.dataDevice == nullptr) {
-            return;
-        }
-        auto* source = wl_data_device_manager_create_data_source(
-            state.dataDeviceManager
-        );
-        wl_data_source_add_listener(source, &sourceListener(), nullptr);
-        wl_data_source_offer(source, "text/plain;charset=utf-8");
-        wl_data_source_offer(source, "text/plain");
-        wl_data_source_offer(source, "UTF8_STRING");
-        sourceText = text ? text : "";
-        wl_data_device_set_selection(state.dataDevice, source, state.inputSerial);
-        wl_display_flush(state.display);
-    }
-
-    void toggleCursor() override {
-        cursorDrag = false;
-        if (cursorLocked) {
-            if (state.lockedPointer) {
-                zwp_locked_pointer_v1_destroy(state.lockedPointer);
-                state.lockedPointer = nullptr;
-            }
-            if (state.relativePointer) {
-                zwp_relative_pointer_v1_destroy(state.relativePointer);
-                state.relativePointer = nullptr;
-            }
-            cursorLocked = false;
-            applyCursor();
-            return;
-        }
-        if (state.pointerConstraints && state.pointer && state.surface) {
-            state.lockedPointer = zwp_pointer_constraints_v1_lock_pointer(
-                state.pointerConstraints,
-                state.surface,
-                state.pointer,
-                nullptr,
-                ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_PERSISTENT
-            );
-        }
-        if (state.relativePointerManager && state.pointer) {
-            state.relativePointer =
-                zwp_relative_pointer_manager_v1_get_relative_pointer(
-                    state.relativePointerManager, state.pointer
-                );
-            zwp_relative_pointer_v1_add_listener(
-                state.relativePointer, &relativePointerListener(), nullptr
-            );
-        }
-        if (state.pointer && state.entered) {
-            wl_pointer_set_cursor(
-                state.pointer, state.pointerSerial, nullptr, 0, 0
-            );
-        }
-        cursorLocked = true;
-    }
-
-    void setCursorShape(CursorShape shape) {
-        if (cursor == shape) {
-            return;
-        }
-        cursor = shape;
-        applyCursor();
-    }
-
-    void applyCursor() {
-        if (cursorLocked || !state.entered || !state.cursorShapeDevice) {
-            return;
-        }
-        wp_cursor_shape_device_v1_set_shape(
-            state.cursorShapeDevice, state.pointerSerial,
-            shapeId(overrideCursor ? *overrideCursor : cursor)
-        );
-    }
-
-    void setOverrideCursor(std::optional<CursorShape> shape) {
-        if (overrideCursor == shape) {
-            return;
-        }
-        overrideCursor = shape;
-        applyCursor();
-    }
-
-    void onRelativeMotion(double dx, double dy) {
-        delta.x += dx;
-        delta.y += dy;
-    }
-
-    void onKey(uint32_t key, bool pressed) {
-        if (state.xkbState == nullptr || state.xkbKeymap == nullptr) {
-            return;
-        }
-        xkb_keycode_t code = key + 8;
-        const xkb_keysym_t* syms = nullptr;
-        if (xkb_keymap_key_get_syms_by_level(
-                state.xkbKeymap, code, 0, 0, &syms
-            ) > 0) {
-            int keycode = keycode_from_keysym(syms[0]);
-            if (keycode != 0) {
-                onKeyCallback(keycode, pressed);
-            }
-            if (pressed) {
-                repeatKeycode = code;
-                repeatTime = now();
-                lastRepeat = repeatTime;
-            } else if (code == repeatKeycode) {
-                repeatKeycode = 0;
-            }
-        }
-        if (pressed) {
-            appendCodepoints(code);
-        }
-        xkb_state_update_key(
-            state.xkbState, code, pressed ? XKB_KEY_DOWN : XKB_KEY_UP
-        );
-    }
-
-    void refreshWindow();
-
-    wl_data_offer* selection = nullptr;
-    std::vector<std::string> selectionMimes;
-    std::vector<std::string> pendingMimes;
-    mutable std::string clipboard;
-    std::string sourceText;
-private:
-    static uint32_t shapeId(CursorShape shape) {
-        switch (shape) {
-            case CursorShape::ARROW:
-                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT;
-            case CursorShape::TEXT:
-                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_TEXT;
-            case CursorShape::CROSSHAIR:
-                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_CROSSHAIR;
-            case CursorShape::POINTER:
-                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_POINTER;
-            case CursorShape::EW_RESIZE:
-                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_EW_RESIZE;
-            case CursorShape::NS_RESIZE:
-                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NS_RESIZE;
-            case CursorShape::NWSE_RESIZE:
-                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NWSE_RESIZE;
-            case CursorShape::NESW_RESIZE:
-                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NESW_RESIZE;
-            case CursorShape::ALL_RESIZE:
-                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ALL_RESIZE;
-            case CursorShape::NOT_ALLOWED:
-                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NOT_ALLOWED;
-        }
-        return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_DEFAULT;
-    }
-
-    static void dispatch(bool block) {
-        dispatch_events(block ? 500 : 0);
-    }
-
-    static double now() {
-        return std::chrono::duration<double>(
-                   std::chrono::steady_clock::now().time_since_epoch()
-        ).count();
-    }
-
-    void appendCodepoints(xkb_keycode_t code) {
-        char buffer[64];
-        int length = xkb_state_key_get_utf8(
-            state.xkbState, code, buffer, sizeof(buffer)
-        );
-        if (length <= 0) {
-            return;
-        }
-        const auto* bytes = reinterpret_cast<const ubyte*>(buffer);
-        uint codepoint = 0;
-        for (int i = 0; i < length; i++) {
-            if ((bytes[i] & 0xC0) == 0x80) {
-                codepoint = (codepoint << 6) | (bytes[i] & 0x3F);
-                continue;
-            }
-            if (codepoint != 0) {
-                codepoints.push_back(codepoint);
-            }
-            codepoint = (bytes[i] & 0x80) ? (bytes[i] & 0x1F) : bytes[i];
-        }
-        if (codepoint != 0) {
-            codepoints.push_back(codepoint);
-        }
-    }
-
-    void updateRepeat() {
-        if (repeatKeycode == 0 || !state.xkbState) {
-            return;
-        }
-        int keycode = 0;
-        const xkb_keysym_t* syms = nullptr;
-        if (xkb_keymap_key_get_syms_by_level(
-                state.xkbKeymap, repeatKeycode, 0, 0, &syms
-            ) > 0) {
-            keycode = keycode_from_keysym(syms[0]);
-        }
-        if (keycode == 0 || !pressed(static_cast<Keycode>(keycode))) {
-            return;
-        }
-        double time = now();
-        if (time - repeatTime < state.repeatDelay / 1000.0) {
-            return;
-        }
-        double interval = 1.0 / std::max<uint32_t>(state.repeatRate, 1);
-        if (time - lastRepeat < interval) {
-            return;
-        }
-        lastRepeat = time;
-        onKeyCallback(keycode, true);
-        appendCodepoints(repeatKeycode);
-    }
-
-    const char* pickMime() const {
-        for (const auto& mime : selectionMimes) {
-            if (mime == "text/plain;charset=utf-8" || mime == "text/plain" ||
-                mime == "UTF8_STRING") {
-                return mime.c_str();
-            }
-        }
-        return nullptr;
-    }
-
-    static const wl_data_source_listener& sourceListener() {
-        static wl_data_source_listener listener {};
-        static bool initialized = false;
-        if (!initialized) {
-            initialized = true;
-            listener.send = [] (
-                void*, wl_data_source*, const char*, int32_t fd
-            ) {
-                if (input) {
-                    const std::string& text = input->sourceText;
-                    if (!text.empty() && write(fd, text.data(), text.size()) < 0) {
-                        logger.warning() << "could not write to the clipboard";
-                    }
-                }
-                close(fd);
-            };
-            listener.cancelled = [] (void*, wl_data_source* source) {
-                wl_data_source_destroy(source);
-            };
-            listener.target = ignore_event<>;
-            listener.dnd_drop_performed = ignore_event<>;
-            listener.dnd_finished = ignore_event<>;
-            listener.action = ignore_event<>;
-        }
-        return listener;
-    }
-
-    static const zwp_relative_pointer_v1_listener& relativePointerListener() {
-        static zwp_relative_pointer_v1_listener listener {};
-        static bool initialized = false;
-        if (!initialized) {
-            initialized = true;
-            listener.relative_motion = [] (
-                void*, zwp_relative_pointer_v1*, uint32_t, uint32_t,
-                wl_fixed_t dx, wl_fixed_t dy, wl_fixed_t, wl_fixed_t
-            ) {
-                if (input) {
-                    input->onRelativeMotion(
-                        wl_fixed_to_double(dx), wl_fixed_to_double(dy)
-                    );
-                }
-            };
-        }
-        return listener;
-    }
-
-    CursorShape cursor = CursorShape::ARROW;
-    std::optional<CursorShape> overrideCursor;
-    xkb_keycode_t repeatKeycode = 0;
-    double repeatTime = 0.0;
-    double lastRepeat = 0.0;
-};
-
 class WaylandWindow : public Window {
 public:
     WaylandInput& input;
@@ -987,7 +519,7 @@ public:
     void focus() override {
         if (!focusWarning) {
             focusWarning = true;
-            logger.warning() << "raising windows is not allowed on Wayland";
+            waylandLogger.warning() << "raising windows is not allowed on Wayland";
         }
     }
 
@@ -1121,7 +653,7 @@ public:
 
     void popScissor() override {
         if (scissorStack.empty()) {
-            logger.warning() << "extra Window::popScissor call";
+            waylandLogger.warning() << "extra Window::popScissor call";
             return;
         }
         glm::vec4 area = scissorStack.top();
@@ -1689,7 +1221,7 @@ public:
         if (current - lastSummary < 1.0) {
             return;
         }
-        logger.info() << "loop " << loopCount << "/s (max gap "
+        waylandLogger.info() << "loop " << loopCount << "/s (max gap "
                       << loopGapMax * 1000.0 << " ms), presents "
                       << summaryFrames << "/s (max gap "
                       << summaryMax * 1000.0 << " ms), resizing "
@@ -1710,7 +1242,7 @@ public:
             resizeTimeSum = 0.0;
             resizeTimeMax = 0.0;
             if (resizeLogging) {
-                logger.info() << "resize started";
+                waylandLogger.info() << "resize started";
             }
             setShouldRefresh();
         }
@@ -1724,7 +1256,7 @@ public:
                 double average = resizePresents > 0
                                      ? resizeTimeSum / resizePresents
                                      : 0.0;
-                logger.info()
+                waylandLogger.info()
                     << "resize finished, presented " << resizePresents
                     << ", avg " << average * 1000.0 << " ms, max "
                     << resizeTimeMax * 1000.0 << " ms";
@@ -1847,29 +1379,6 @@ private:
     glm::vec4 scissorArea {};
 };
 
-void WaylandInput::pollEvents(bool waitForRefresh) {
-    beginFrame();
-    dispatch(waitForRefresh);
-    if (window) {
-        window->paceFrame();
-    }
-    updateRepeat();
-    updateBindings();
-}
-
-static void on_display_error() {
-    logger.error() << "the Wayland connection was lost";
-    if (window) {
-        window->setShouldClose(true);
-    }
-}
-
-void WaylandInput::refreshWindow() {
-    if (window) {
-        window->setShouldRefresh();
-    }
-}
-
 static void pointer_enter(
     void*, wl_pointer*, uint32_t serial, wl_surface* surface, wl_fixed_t sx,
     wl_fixed_t sy
@@ -1969,7 +1478,7 @@ static void keyboard_keymap(
     );
     munmap(data, size);
     if (keymap == nullptr) {
-        logger.error() << "could not parse the keyboard keymap";
+        waylandLogger.error() << "could not parse the keyboard keymap";
         return;
     }
     if (state.xkbState) {
@@ -2215,7 +1724,7 @@ static void registry_global(
 static void registry_global_remove(void*, wl_registry*, uint32_t) {
 }
 
-static void zxdg_decoration_configure(
+void zxdg_decoration_configure(
     void*, zxdg_toplevel_decoration_v1*, uint32_t mode
 ) {
     serverDecorations = mode == ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE;
@@ -2224,11 +1733,12 @@ static void zxdg_decoration_configure(
     }
 }
 
+
 std::tuple<std::unique_ptr<Window>, std::unique_ptr<Input>>
 wayland_window_initialize(DisplaySettings* settings, std::string title) {
     state.display = wl_display_connect(nullptr);
     if (state.display == nullptr) {
-        logger.error() << "could not connect to the Wayland display";
+        waylandLogger.error() << "could not connect to the Wayland display";
         return {nullptr, nullptr};
     }
     static const wl_registry_listener registryListener = [] {
@@ -2241,7 +1751,7 @@ wayland_window_initialize(DisplaySettings* settings, std::string title) {
     wl_registry_add_listener(state.registry, &registryListener, nullptr);
     wl_display_roundtrip(state.display);
     if (state.compositor == nullptr || state.wmBase == nullptr) {
-        logger.error() << "the compositor does not provide xdg-shell";
+        waylandLogger.error() << "the compositor does not provide xdg-shell";
         wl_display_disconnect(state.display);
         state.display = nullptr;
         return {nullptr, nullptr};
@@ -2320,7 +1830,7 @@ wayland_window_initialize(DisplaySettings* settings, std::string title) {
 
     while (!window->configured) {
         if (wl_display_dispatch(state.display) == -1) {
-            logger.error() << "the Wayland connection was lost";
+            waylandLogger.error() << "the Wayland connection was lost";
             return {nullptr, nullptr};
         }
     }
@@ -2330,7 +1840,7 @@ wayland_window_initialize(DisplaySettings* settings, std::string title) {
     );
     if (window->eglDisplay == EGL_NO_DISPLAY ||
         eglInitialize(window->eglDisplay, nullptr, nullptr) == EGL_FALSE) {
-        logger.error() << "could not initialize EGL";
+        waylandLogger.error() << "could not initialize EGL";
         return {nullptr, nullptr};
     }
     eglBindAPI(EGL_OPENGL_API);
@@ -2348,7 +1858,7 @@ wayland_window_initialize(DisplaySettings* settings, std::string title) {
     };
     eglChooseConfig(window->eglDisplay, configAttributes, &config, 1, &configCount);
     if (samples > 0 && configCount == 0) {
-        logger.warning() << "multisampling is not available";
+        waylandLogger.warning() << "multisampling is not available";
         const EGLint fallbackAttributes[] {
             EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
             EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
@@ -2361,7 +1871,7 @@ wayland_window_initialize(DisplaySettings* settings, std::string title) {
         );
     }
     if (configCount == 0) {
-        logger.error() << "no suitable EGL config";
+        waylandLogger.error() << "no suitable EGL config";
         return {nullptr, nullptr};
     }
 
@@ -2386,7 +1896,7 @@ wayland_window_initialize(DisplaySettings* settings, std::string title) {
             window->eglDisplay, window->eglSurface, window->eglSurface,
             window->eglContext
         ) == EGL_FALSE) {
-        logger.error() << "could not create the OpenGL context";
+        waylandLogger.error() << "could not create the OpenGL context";
         return {nullptr, nullptr};
     }
     eglSwapInterval(window->eglDisplay, 0);
@@ -2394,7 +1904,7 @@ wayland_window_initialize(DisplaySettings* settings, std::string title) {
     glewExperimental = GL_TRUE;
     GLenum glewError = glewInit();
     if (glewError != GLEW_OK && glewError != GLEW_ERROR_NO_GLX_DISPLAY) {
-        logger.error() << "failed to initialize GLEW:\n"
+        waylandLogger.error() << "failed to initialize GLEW:\n"
                        << glewGetErrorString(glewError);
         return {nullptr, nullptr};
     }
@@ -2409,13 +1919,36 @@ wayland_window_initialize(DisplaySettings* settings, std::string title) {
     glGetIntegerv(GL_MAX_TEXTURE_SIZE, maxTextureSize);
     if (maxTextureSize[0] > 0) {
         Texture::MAX_RESOLUTION = maxTextureSize[0];
-        logger.info() << "max texture size is " << Texture::MAX_RESOLUTION;
+        waylandLogger.info() << "max texture size is " << Texture::MAX_RESOLUTION;
     }
-    logger.info() << "GL Vendor: "
+    waylandLogger.info() << "GL Vendor: "
                   << reinterpret_cast<const char*>(glGetString(GL_VENDOR));
-    logger.info() << "GL Renderer: "
+    waylandLogger.info() << "GL Renderer: "
                   << reinterpret_cast<const char*>(glGetString(GL_RENDERER));
-    logger.info() << "windowing platform: Wayland (native)";
+    waylandLogger.info() << "windowing platform: Wayland (native)";
 
     return {std::move(windowPtr), std::move(inputPtr)};
+}
+
+void on_display_error() {
+    waylandLogger.error() << "the Wayland connection was lost";
+    if (window) {
+        window->setShouldClose(true);
+    }
+}
+
+void WaylandInput::pollEvents(bool waitForRefresh) {
+    beginFrame();
+    dispatch(waitForRefresh);
+    if (window) {
+        window->paceFrame();
+    }
+    updateRepeat();
+    updateBindings();
+}
+
+void WaylandInput::refreshWindow() {
+    if (window) {
+        window->setShouldRefresh();
+    }
 }
