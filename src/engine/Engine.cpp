@@ -1,4 +1,5 @@
 #include "Engine.hpp"
+#include "WindowBar.hpp"
 
 #ifndef GLEW_STATIC
 #define GLEW_STATIC
@@ -313,6 +314,7 @@ void Engine::renderFrame() {
 
     DrawContext ctx(nullptr, *window, nullptr);
     gui->draw(ctx, *assets->getStorage());
+    draw_window_bar(*this);
 }
 
 void Engine::saveSettings() {

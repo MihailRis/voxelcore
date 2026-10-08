@@ -37,6 +37,17 @@ const wl_data_device_listener& data_device_listener();
 const xdg_surface_listener& surface_listener();
 const xdg_toplevel_listener& toplevel_listener();
 
+struct GlStateGuard {
+    GLint values[16] {};
+    GLint attribs[3][7] {};
+    GLint viewport[4] {};
+    GLint colorMask[4] {};
+    GLboolean flags[6] {};
+    GLboolean attribFlags[3] {};
+    GlStateGuard();
+    ~GlStateGuard();
+};
+
 GLuint compile_program(const char* vertexSource, const char* fragmentSource);
 
 extern debug::Logger waylandLogger;

@@ -360,7 +360,14 @@ public:
         glfwFocusWindow(window);
     }
 
+    std::string title;
+
+    const std::string& getTitle() const override {
+        return title;
+    }
+
     void setTitle(const std::string& title) override {
+        this->title = title;
         glfwSetWindowTitle(window, title.c_str());
     }
 

@@ -6,6 +6,78 @@
 debug::Logger waylandLogger("window");
 
 
+GlStateGuard::GlStateGuard() {
+    glGetIntegerv(GL_CURRENT_PROGRAM, &values[0]);
+    glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &values[1]);
+    glGetIntegerv(GL_ACTIVE_TEXTURE, &values[2]);
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &values[3]);
+    glGetIntegerv(GL_UNPACK_ALIGNMENT, &values[4]);
+    glGetIntegerv(GL_BLEND_SRC_RGB, &values[5]);
+    glGetIntegerv(GL_BLEND_DST_RGB, &values[6]);
+    glGetIntegerv(GL_BLEND_SRC_ALPHA, &values[7]);
+    glGetIntegerv(GL_BLEND_DST_ALPHA, &values[8]);
+    glGetIntegerv(GL_BLEND_EQUATION_RGB, &values[9]);
+    glGetIntegerv(GL_BLEND_EQUATION_ALPHA, &values[10]);
+    glGetIntegerv(GL_ARRAY_BUFFER_BINDING, &values[11]);
+    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &values[12]);
+    glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING, &values[13]);
+    glGetIntegerv(GL_DEPTH_WRITEMASK, &values[14]);
+    glGetIntegerv(GL_VIEWPORT, viewport);
+    glGetIntegerv(GL_COLOR_WRITEMASK, colorMask);
+    for (int i = 0; i < 3; i++) {
+        attribFlags[i] = glIsEnabled(GL_VERTEX_ATTRIB_ARRAY_ENABLED + i);
+        glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_SIZE, &attribs[i][0]);
+        glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_TYPE, &attribs[i][1]);
+        glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_NORMALIZED, &attribs[i][2]);
+        glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_STRIDE, &attribs[i][3]);
+        glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &attribs[i][5]);
+        void* pointer = nullptr;
+        glGetVertexAttribPointerv(i, GL_VERTEX_ATTRIB_ARRAY_POINTER, &pointer);
+        attribs[i][6] = static_cast<GLint>(reinterpret_cast<intptr_t>(pointer));
+    }
+    flags[0] = glIsEnabled(GL_BLEND);
+    flags[1] = glIsEnabled(GL_DEPTH_TEST);
+    flags[2] = glIsEnabled(GL_CULL_FACE);
+    flags[3] = glIsEnabled(GL_SCISSOR_TEST);
+}
+
+GlStateGuard::~GlStateGuard() {
+    glUseProgram(values[0]);
+    glBindVertexArray(values[1]);
+    glActiveTexture(values[2]);
+    glBindTexture(GL_TEXTURE_2D, values[3]);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, values[4]);
+    glBlendFuncSeparate(values[5], values[6], values[7], values[8]);
+    glBlendEquationSeparate(values[9], values[10]);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, values[12]);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, values[13]);
+    glDepthMask(values[14]);
+    glColorMask(colorMask[0], colorMask[1], colorMask[2], colorMask[3]);
+    glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+    const GLenum cap[] {GL_BLEND, GL_DEPTH_TEST, GL_CULL_FACE, GL_SCISSOR_TEST};
+    for (int i = 0; i < 4; i++) {
+        if (flags[i]) {
+            glEnable(cap[i]);
+        } else {
+            glDisable(cap[i]);
+        }
+    }
+    for (int i = 0; i < 3; i++) {
+        glBindBuffer(GL_ARRAY_BUFFER, static_cast<GLuint>(attribs[i][5]));
+        glVertexAttribPointer(
+            i, attribs[i][0], static_cast<GLenum>(attribs[i][1]),
+            attribs[i][2], attribs[i][3],
+            reinterpret_cast<void*>(static_cast<intptr_t>(attribs[i][6]))
+        );
+        if (attribFlags[i]) {
+            glEnableVertexAttribArray(i);
+        } else {
+            glDisableVertexAttribArray(i);
+        }
+    }
+    glBindBuffer(GL_ARRAY_BUFFER, static_cast<GLuint>(values[11]));
+}
+
 GLuint compile_program(const char* vertexSource, const char* fragmentSource) {
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vertexShader, 1, &vertexSource, nullptr);

@@ -123,6 +123,10 @@ namespace gui {
         /// @param assets active assets storage
         void draw(const DrawContext& pctx, Assets& assets);
 
+        Batch2D* getBatch2D() {
+            return batch2D.get();
+        }
+
         void postAct();
 
         /// @brief Add element to the main container

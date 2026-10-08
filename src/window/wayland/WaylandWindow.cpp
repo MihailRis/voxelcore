@@ -43,21 +43,6 @@ WaylandWindow::~WaylandWindow() {
     if (stretchVao) {
         glDeleteVertexArrays(1, &stretchVao);
     }
-    if (barFontTexture) {
-        glDeleteTextures(1, &barFontTexture);
-    }
-    if (barIconTexture) {
-        glDeleteTextures(1, &barIconTexture);
-    }
-    if (barProgram) {
-        glDeleteProgram(barProgram);
-    }
-    if (barVbo) {
-        glDeleteBuffers(1, &barVbo);
-    }
-    if (barVao) {
-        glDeleteVertexArrays(1, &barVao);
-    }
     if (state.dataDevice) {
         wl_data_device_destroy(state.dataDevice);
     }
@@ -109,7 +94,6 @@ void WaylandWindow::swapBuffers() {
     } else {
         cacheContent();
     }
-    drawBar();
     requestFrame();
     eglSwapBuffers(eglDisplay, eglSurface);
     resetScissor();
@@ -363,12 +347,16 @@ void WaylandWindow::resetScissor() {
 
 std::unique_ptr<ImageData> WaylandWindow::takeScreenshot() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    GLint readBuffer = 0;
+    glGetIntegerv(GL_READ_BUFFER, &readBuffer);
+    glReadBuffer(GL_FRONT);
     auto data = std::make_unique<ubyte[]>(size.x * size.y * 3);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(0, 0, size.x, size.y, GL_RGB, GL_UNSIGNED_BYTE, data.get());
     return std::make_unique<ImageData>(
         ImageFormat::RGB888, size.x, size.y, data.release()
     );
+    glReadBuffer(static_cast<GLenum>(readBuffer));
 }
 
 void WaylandWindow::setFramerate(int framerate) {
@@ -445,6 +433,7 @@ void WaylandWindow::resizeCache(int width, int height) {
 }
 
 void WaylandWindow::cacheContent() {
+    GlStateGuard state;
     if (stretchProgram == 0) {
         return;
     }
@@ -460,6 +449,7 @@ void WaylandWindow::cacheContent() {
 }
 
 void WaylandWindow::drawStretched() {
+    GlStateGuard state;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, size.x, size.y);
     glDisable(GL_DEPTH_TEST);

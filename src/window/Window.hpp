@@ -44,6 +44,16 @@ public:
 
     virtual void setTitle(const std::string& title) = 0;
 
+    virtual const std::string& getTitle() const = 0;
+
+    virtual int getDecorationHeight() const {
+        return 0;
+    }
+
+    virtual int getDecorationHoveredButton() const {
+        return -1;
+    }
+
     virtual bool isIconSupported() const = 0;
 
     virtual void setIcon(const ImageData* image) = 0;

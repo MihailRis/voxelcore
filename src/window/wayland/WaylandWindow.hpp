@@ -37,24 +37,10 @@ static inline bool resizeLogging = getenv("VOXEL_LOG_RESIZE") != nullptr;
 bool barEnabled = false;
 bool fullscreen = false;
 std::string title = "VoxelCore";
-std::vector<uint8_t> iconPixels;
-int iconWidth = 0;
-int iconHeight = 0;
 int hoveredButton = -1;
 double lastBarPress = 0.0;
 double pointerX = 0.0;
 double pointerY = 0.0;
-GLuint barProgram = 0;
-GLuint barVao = 0;
-GLuint barVbo = 0;
-GLuint barFontTexture = 0;
-GLuint barIconTexture = 0;
-GLint barViewportLoc = -1;
-GLint barTextureLoc = -1;
-GLint barModeLoc = -1;
-std::vector<float> barRects;
-std::vector<float> barText;
-std::vector<float> barIcons;
 bool frameOnCallback = false;
 double frameInterval = 0.0;
 double nextFrameTime = 0.0;
@@ -111,10 +97,18 @@ glm::vec4 scissorArea {};
     WindowMode getMode() const override;
     void focus() override;
     void setTitle(const std::string& title) override;
+    const std::string& getTitle() const override;
+    int getDecorationHeight() const override;
+    int getDecorationHoveredButton() const override;
+
+    bool isIconSupported() const override {
+        return false;
+    }
+
+    void setIcon(const ImageData*) override {
+    }
     void setFullscreen(bool enabled);
     void setMaximized(bool enabled);
-    bool isIconSupported() const override;
-    void setIcon(const ImageData* image) override;
     void resize(int width, int height);
     void onConfigure(int32_t width, int32_t height, wl_array* states);
     void applyConfigure();
@@ -129,13 +123,7 @@ glm::vec4 scissorArea {};
     void drawStretched();
     void enableOwnDecorations();
     bool barVisible() const;
-    void initBarRenderer();
-    void initBarIconTexture();
-    void barDrawText( float x, float y, const std::vector<uint32_t>& codepoints, int maxChars, const glm::vec4& color );
-    void barDrawBatch(const std::vector<float>& data, int mode, GLuint texture);
-    void barFlush();
-    void drawBar();
-    int barButtonAt(double x, double y) const;
+                            int barButtonAt(double x, double y) const;
     uint32_t barEdgeAt(double x, double y) const;
     static CursorShape edgeCursor(uint32_t edges);
     bool handleBarMotion(double x, double y);
