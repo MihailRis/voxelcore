@@ -52,6 +52,17 @@ namespace network {
         }
     };
 
+    class HttpServer : public Server {
+    public:
+        ~HttpServer() override {}
+        virtual void startListen(HttpRequestCallback handler) = 0;
+        virtual void respond(u64id_t requestId, HttpServerResponse response) = 0;
+
+        [[nodiscard]] TransportType getTransportType() const noexcept override {
+            return TransportType::HTTP;
+        }
+    };
+
     class Network {
         std::unique_ptr<Requests> requests;
 
@@ -90,6 +101,11 @@ namespace network {
 
         u64id_t openTcpServer(int port, ConnectCallback handler);
         u64id_t openUdpServer(int port, const ServerDatagramCallback& handler);
+        u64id_t openHttpServer(
+            int port,
+            HttpRequestCallback handler,
+            long responseTimeoutMs = 60000
+        );
 
         u64id_t addConnection(const std::shared_ptr<Connection>& connection);
 

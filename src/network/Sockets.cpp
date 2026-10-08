@@ -3,10 +3,16 @@
 #pragma comment(lib, "Ws2_32.lib")
 
 #define NOMINMAX
-#include <stdexcept>
+#include <atomic>
+#include <chrono>
+#include <condition_variable>
+#include <cstdlib>
 #include <limits>
 #include <queue>
+#include <stdexcept>
+#include <string_view>
 #include <thread>
+#include <unordered_map>
 
 #ifdef _WIN32
 #include <curl/curl.h>
@@ -695,6 +701,432 @@ public:
     }
 };
 
+class SocketHttpServer;
+
+namespace {
+    constexpr size_t HTTP_MAX_HEADER_SIZE = 32 * 1024;
+    constexpr size_t HTTP_MAX_BODY_SIZE = 16 * 1024 * 1024;
+
+    std::string url_decode(std::string_view s) {
+        std::string result;
+        result.reserve(s.size());
+        for (size_t i = 0; i < s.size(); i++) {
+            if (s[i] == '%' && i + 2 < s.size()) {
+                auto hex = std::string(s.substr(i + 1, 2));
+                char* end = nullptr;
+                long code = std::strtol(hex.c_str(), &end, 16);
+                if (end == hex.c_str() + 2) {
+                    result.push_back(static_cast<char>(code));
+                    i += 2;
+                    continue;
+                }
+            }
+            result.push_back(s[i] == '+' ? ' ' : s[i]);
+        }
+        return result;
+    }
+
+    const char* http_reason_phrase(int status) {
+        switch (status) {
+            case 200: return "OK";
+            case 201: return "Created";
+            case 202: return "Accepted";
+            case 204: return "No Content";
+            case 301: return "Moved Permanently";
+            case 302: return "Found";
+            case 304: return "Not Modified";
+            case 400: return "Bad Request";
+            case 401: return "Unauthorized";
+            case 403: return "Forbidden";
+            case 404: return "Not Found";
+            case 405: return "Method Not Allowed";
+            case 408: return "Request Timeout";
+            case 411: return "Length Required";
+            case 413: return "Payload Too Large";
+            case 431: return "Request Header Fields Too Large";
+            case 500: return "Internal Server Error";
+            case 501: return "Not Implemented";
+            case 503: return "Service Unavailable";
+            default: return "Unknown";
+        }
+    }
+
+    bool http_header_has(
+        const std::vector<std::pair<std::string, std::string>>& headers,
+        const std::string& name
+    ) {
+        auto lname = util::lower_case(name);
+        for (const auto& header : headers) {
+            if (util::lower_case(header.first) == lname) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::string build_http_response(const HttpServerResponse& response) {
+        std::string out;
+        out += "HTTP/1.1 " + std::to_string(response.status) + " " +
+               http_reason_phrase(response.status) + "\r\n";
+        for (const auto& header : response.headers) {
+            out += header.first + ": " + header.second + "\r\n";
+        }
+        if (!http_header_has(response.headers, "Content-Length")) {
+            out += "Content-Length: " + std::to_string(response.body.size()) + "\r\n";
+        }
+        if (!http_header_has(response.headers, "Connection")) {
+            out += "Connection: close\r\n";
+        }
+        out += "\r\n";
+        out += response.body;
+        return out;
+    }
+
+    struct PendingHttpRequest {
+        std::mutex mutex;
+        std::condition_variable cv;
+        bool done = false;
+        HttpServerResponse response;
+    };
+
+    bool http_recv_more(SOCKET descriptor, std::string& buffer) {
+        char chunk[4096];
+        int size = recvsocket(descriptor, chunk, sizeof(chunk));
+        if (size <= 0) {
+            return false;
+        }
+        buffer.append(chunk, size);
+        return true;
+    }
+
+    void http_send_all(SOCKET descriptor, const std::string& data) {
+        size_t sent = 0;
+        while (sent < data.size()) {
+            int len = sendsocket(
+                descriptor, data.data() + sent, data.size() - sent, 0
+            );
+            if (len <= 0) {
+                return;
+            }
+            sent += static_cast<size_t>(len);
+        }
+    }
+
+    void handle_http_client(
+        SOCKET descriptor,
+        sockaddr_in addr,
+        u64id_t serverId,
+        std::shared_ptr<SocketHttpServer> server,
+        HttpRequestCallback handler
+    );
+}
+
+class SocketHttpServer
+    : public HttpServer, public std::enable_shared_from_this<SocketHttpServer> {
+    u64id_t id;
+    SOCKET descriptor;
+    int port;
+    std::atomic<bool> open {true};
+    std::unique_ptr<std::thread> thread = nullptr;
+
+    std::mutex pendingMutex;
+    std::unordered_map<u64id_t, std::shared_ptr<PendingHttpRequest>> pending;
+    u64id_t nextRequestId = 1;
+    long responseTimeoutMs;
+public:
+    SocketHttpServer(u64id_t id, SOCKET descriptor, int port, long responseTimeoutMs)
+    : id(id), descriptor(descriptor), port(port), responseTimeoutMs(responseTimeoutMs) {}
+
+    [[nodiscard]] long getResponseTimeoutMs() const {
+        return responseTimeoutMs;
+    }
+
+    ~SocketHttpServer() {
+        closeSocket();
+    }
+
+    void update() override {}
+
+    void startListen(HttpRequestCallback handler) override {
+        thread = std::make_unique<std::thread>([this, handler]() {
+            while (open) {
+                logger.info() << "listening for http connections";
+                if (listen(descriptor, 16) < 0) {
+                    close();
+                    break;
+                }
+                socklen_t addrlen = sizeof(sockaddr_in);
+                SOCKET clientDescriptor;
+                sockaddr_in address;
+                if ((clientDescriptor = accept(descriptor, (sockaddr*)&address, &addrlen)) == -1) {
+                    close();
+                    break;
+                }
+                logger.info() << "http client connected: " << to_string(address);
+                std::thread(
+                    handle_http_client, clientDescriptor, address, id,
+                    shared_from_this(), handler
+                ).detach();
+            }
+        });
+    }
+
+    u64id_t registerPending(const std::shared_ptr<PendingHttpRequest>& request) {
+        std::lock_guard lock(pendingMutex);
+        u64id_t requestId = nextRequestId++;
+        pending[requestId] = request;
+        return requestId;
+    }
+
+    void unregisterPending(u64id_t requestId) {
+        std::lock_guard lock(pendingMutex);
+        pending.erase(requestId);
+    }
+
+    void respond(u64id_t requestId, HttpServerResponse response) override {
+        std::shared_ptr<PendingHttpRequest> request;
+        {
+            std::lock_guard lock(pendingMutex);
+            auto found = pending.find(requestId);
+            if (found == pending.end()) {
+                return;
+            }
+            request = found->second;
+        }
+        {
+            std::lock_guard lock(request->mutex);
+            request->response = std::move(response);
+            request->done = true;
+        }
+        request->cv.notify_all();
+    }
+
+    void closeSocket() {
+        if (!open) {
+            return;
+        }
+        logger.info() << "closing http server";
+        open = false;
+
+        shutdown(descriptor, 2);
+        closesocket(descriptor);
+        if (thread) {
+            thread->join();
+            thread = nullptr;
+        }
+    }
+
+    void close() override {
+        closeSocket();
+    }
+
+    bool isOpen() override {
+        return open;
+    }
+
+    int getPort() const override {
+        return port;
+    }
+
+    static std::shared_ptr<SocketHttpServer> openServer(
+        u64id_t id,
+        Network* network,
+        int port,
+        HttpRequestCallback handler,
+        long responseTimeoutMs
+    ) {
+        SOCKET descriptor = socket(
+            AF_INET, SOCK_STREAM, 0
+        );
+        if (descriptor == -1) {
+            throw std::runtime_error("Could not create http server socket");
+        }
+        int opt = 1;
+        int flags = SO_REUSEADDR;
+#       if !defined(_WIN32) && !defined(__APPLE__)
+            flags |= SO_REUSEPORT;
+#       endif
+        if (setsockopt(descriptor, SOL_SOCKET, flags, (const char*)&opt, sizeof(opt))) {
+            logger.error() << "setsockopt(SO_REUSEADDR) failed with errno: "
+             << errno << "(" << std::strerror(errno) << ")";
+            closesocket(descriptor);
+            throw std::runtime_error("setsockopt");
+        }
+        sockaddr_in address;
+        address.sin_family = AF_INET;
+        address.sin_addr.s_addr = INADDR_ANY;
+        address.sin_port = htons(port);
+        if (bind(descriptor, (sockaddr*)&address, sizeof(address)) < 0) {
+            closesocket(descriptor);
+            throw std::runtime_error("could not bind port "+std::to_string(port));
+        }
+        socklen_t len = sizeof(address);
+        getsockname(descriptor, (sockaddr*)&address, &len);
+        port = ntohs(address.sin_port);
+        logger.info() << "opened http server at port " << port;
+        auto server = std::make_shared<SocketHttpServer>(
+            id, descriptor, port, responseTimeoutMs
+        );
+        server->startListen(std::move(handler));
+        return server;
+    }
+};
+
+namespace {
+    void handle_http_client(
+        SOCKET descriptor,
+        sockaddr_in addr,
+        u64id_t serverId,
+        std::shared_ptr<SocketHttpServer> server,
+        HttpRequestCallback handler
+    ) {
+        auto finish = [&](HttpServerResponse response) {
+            http_send_all(descriptor, build_http_response(response));
+            shutdown(descriptor, SHUT_RDWR);
+            closesocket(descriptor);
+        };
+
+        std::string buffer;
+        size_t headEnd;
+        while ((headEnd = buffer.find("\r\n\r\n")) == std::string::npos) {
+            if (buffer.size() > HTTP_MAX_HEADER_SIZE) {
+                finish({431, {{"Content-Type", "text/plain"}}, http_reason_phrase(431)});
+                return;
+            }
+            if (!http_recv_more(descriptor, buffer)) {
+                shutdown(descriptor, SHUT_RDWR);
+                closesocket(descriptor);
+                return;
+            }
+        }
+
+        std::string head = buffer.substr(0, headEnd);
+        std::string rest = buffer.substr(headEnd + 4);
+
+        size_t lineEnd = head.find("\r\n");
+        std::string requestLine =
+            head.substr(0, lineEnd == std::string::npos ? head.size() : lineEnd);
+
+        auto tokens = util::split(requestLine, ' ');
+        std::string method = tokens.size() > 0 ? tokens[0] : "";
+        std::string target = tokens.size() > 1 ? tokens[1] : "";
+
+        if (method.empty() || target.empty()) {
+            finish({400, {{"Content-Type", "text/plain"}}, http_reason_phrase(400)});
+            return;
+        }
+
+        std::string path = target;
+        std::string query;
+        if (auto qpos = target.find('?'); qpos != std::string::npos) {
+            path = target.substr(0, qpos);
+            query = target.substr(qpos + 1);
+        }
+        path = url_decode(path);
+
+        std::vector<std::pair<std::string, std::string>> headers;
+        std::string contentLength;
+        std::string transferEncoding;
+
+        size_t pos = lineEnd == std::string::npos ? head.size() : lineEnd + 2;
+        while (pos < head.size()) {
+            size_t next = head.find("\r\n", pos);
+            if (next == std::string::npos) { 
+                next = head.size(); 
+            }
+            std::string line = head.substr(pos, next - pos);
+            pos = next + 2;
+            if (line.empty() || line.find(':') == std::string::npos) {
+                continue;
+            }
+
+            auto [name, value] = util::split_at(line, ':');
+            util::trim(name);
+            util::trim(value);
+
+            auto lname = util::lower_case(name);
+            if (lname == "content-length") {
+                contentLength = value;
+            } else if (lname == "transfer-encoding") {
+                transferEncoding = util::lower_case(value);
+            }
+
+            headers.emplace_back(std::move(name), std::move(value));
+        }
+
+        if (transferEncoding.find("chunked") != std::string::npos) {
+            finish({501, {{"Content-Type", "text/plain"}}, http_reason_phrase(501)});
+            return;
+        }
+
+        size_t bodyLength = 0;
+        if (!contentLength.empty()) {
+            try {
+                bodyLength = std::stoull(contentLength);
+            } catch (...) {
+                finish({400, {{"Content-Type", "text/plain"}}, http_reason_phrase(400)});
+                return;
+            }
+        }
+
+        if (bodyLength > HTTP_MAX_BODY_SIZE) {
+            finish({413, {{"Content-Type", "text/plain"}}, http_reason_phrase(413)});
+            return;
+        }
+
+        while (rest.size() < bodyLength) {
+            if (!http_recv_more(descriptor, rest)) {
+                shutdown(descriptor, SHUT_RDWR);
+                closesocket(descriptor);
+                return;
+            }
+        }
+        std::string body = rest.substr(0, bodyLength);
+
+        auto pending = std::make_shared<PendingHttpRequest>();
+        u64id_t requestId = server->registerPending(pending);
+
+        HttpServerRequest request;
+        request.requestId = requestId;
+        request.method = std::move(method);
+        request.path = std::move(path);
+        request.query = std::move(query);
+        request.headers = std::move(headers);
+        request.body = std::move(body);
+        request.remoteAddr = to_string(addr, false);
+        request.remotePort = ntohs(addr.sin_port);
+
+        handler(serverId, std::move(request));
+
+        HttpServerResponse response;
+        {
+            std::unique_lock lock(pending->mutex);
+            long timeoutMs = server->getResponseTimeoutMs();
+            bool completed;
+            if (timeoutMs > 0) {
+                completed = pending->cv.wait_for(
+                    lock,
+                    std::chrono::milliseconds(timeoutMs),
+                    [&]() { return pending->done; }
+                );
+            } else {
+                pending->cv.wait(lock, [&]() { return pending->done; });
+                completed = true;
+            }
+            if (completed) {
+                response = std::move(pending->response);
+            } else {
+                response.status = 503;
+                response.headers = {{"Content-Type", "text/plain"}};
+                response.body = http_reason_phrase(503);
+            }
+        }
+        server->unregisterPending(requestId);
+
+        finish(std::move(response));
+    }
+}
+
 namespace network {
     std::shared_ptr<TcpConnection> connect_tcp(
         const std::string& address,
@@ -732,6 +1164,18 @@ namespace network {
         const ServerDatagramCallback& handler
     ) {
         return SocketUdpServer::openServer(id, network, port, handler);
+    }
+
+    std::shared_ptr<HttpServer> open_http_server(
+        u64id_t id,
+        Network* network,
+        int port,
+        HttpRequestCallback handler,
+        long responseTimeoutMs
+    ) {
+        return SocketHttpServer::openServer(
+            id, network, port, std::move(handler), responseTimeoutMs
+        );
     }
 
     int find_free_port() {
