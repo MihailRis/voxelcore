@@ -44,7 +44,10 @@ public:
 
     virtual void setTitle(const std::string& title) = 0;
 
-    virtual const std::string& getTitle() const = 0;
+    virtual const std::string& getTitle() const {
+        static const std::string empty;
+        return empty;
+    }
 
     virtual int getDecorationHeight() const {
         return 0;
