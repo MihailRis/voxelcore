@@ -4,6 +4,10 @@ file(GLOB_RECURSE headers ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 file(GLOB_RECURSE sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 list(REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 
+file(GLOB_RECURSE wayland_sources
+     ${CMAKE_CURRENT_SOURCE_DIR}/window/wayland/*.cpp)
+list(REMOVE_ITEM sources ${wayland_sources})
+
 add_library(VoxelEngineSrc STATIC ${sources} ${headers})
 
 find_package(OpenGL REQUIRED)
@@ -118,7 +122,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND VOXELENGINE_WAYLAND)
         # tablet is referenced by cursor-shape-v1
         voxel_wayland_protocol(tablet-unstable-v2.xml tablet-unstable-v2)
 
-        target_sources(VoxelEngineSrc PRIVATE ${WAYLAND_SOURCES})
+        target_sources(
+            VoxelEngineSrc PRIVATE ${WAYLAND_SOURCES} ${wayland_sources})
         target_include_directories(VoxelEngineSrc PUBLIC ${WAYLAND_GENERATED})
         target_compile_definitions(VoxelEngineSrc PUBLIC VOXELENGINE_WAYLAND=1)
         target_link_libraries(
