@@ -28,6 +28,7 @@ Two kinds of curve definitions are currently available, each producing a value `
 - `@scale` - scales an object/bone (multiplier)
 - `@zoom` - camera zoom (multiplier)
 - `@texture` - change of a dynamically assigned texture (see [skeleton:set_texture](scripting/ecs.md#skeleton))
+- `@model` - bone model replacement (see [skeleton:set_model](scripting/ecs.md#skeleton))
 - `@show` - visibility of a bone or the entire skeleton/object (if no bone is specified)
 
 ## Metadata
