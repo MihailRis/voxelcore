@@ -111,22 +111,9 @@ void WaylandWindow::swapBuffers() {
                 1.0 / 30.0
             );
         }
-        if (resizeLogging) {
-            summarySum += interval;
-            summaryMax = std::max(summaryMax, interval);
-        }
-    }
+}
     lastPresent = current;
     nextFrameTime = current + frameInterval;
-    if (resizeLogging) {
-        summaryFrames++;
-    }
-    if (resizing) {
-        const double elapsed = now() - configureTime;
-        resizeTimeSum += elapsed;
-        resizeTimeMax = std::max(resizeTimeMax, elapsed);
-        resizePresents++;
-    }
     lastSwapEnd = now();
     if (framerate > 0 && !resizing) {
         auto elapsed = time() - prevSwap;
@@ -245,7 +232,6 @@ void WaylandWindow::resize(int width, int height) {
     if (size.x != width || size.y != height) {
         markResizing();
     }
-    configureTime = now();
     presentPending = true;
     if (eglWindow) {
         wl_egl_window_resize(eglWindow, width, height, 0, 0);
@@ -496,7 +482,6 @@ void WaylandWindow::paceFrame() {
         }
     }
     updateResizing();
-    logSummary();
     if (resizing) {
         if (!renderPending && now() - lastResize > RESIZE_PAUSE &&
             now() - lastCacheTime > cacheTimeout) {
@@ -520,47 +505,10 @@ void WaylandWindow::paceFrame() {
     frameOnCallback = frameDone;
 }
 
-void WaylandWindow::logSummary() {
-    const double current = now();
-    if (resizeLogging) {
-        if (lastLoop > 0.0) {
-            loopGapMax = std::max(loopGapMax, current - lastLoop);
-        }
-        lastLoop = current;
-        loopCount++;
-    }
-    if (!resizeLogging || lastSummary <= 0.0) {
-        if (resizeLogging) {
-            lastSummary = current;
-        }
-        return;
-    }
-    if (current - lastSummary < 1.0) {
-        return;
-    }
-    waylandLogger.info() << "loop " << loopCount << "/s (max gap "
-                  << loopGapMax * 1000.0 << " ms), presents "
-                  << summaryFrames << "/s (max gap "
-                  << summaryMax * 1000.0 << " ms), resizing "
-                  << (resizing ? "yes" : "no");
-    lastSummary = current;
-    loopCount = 0;
-    loopGapMax = 0.0;
-    summaryFrames = 0;
-    summarySum = 0.0;
-    summaryMax = 0.0;
-}
-
 void WaylandWindow::markResizing() {
     lastResize = now();
     if (!resizing) {
         resizing = true;
-        resizePresents = 0;
-        resizeTimeSum = 0.0;
-        resizeTimeMax = 0.0;
-        if (resizeLogging) {
-            waylandLogger.info() << "resize started";
-        }
         setShouldRefresh();
     }
 }
@@ -569,15 +517,6 @@ void WaylandWindow::updateResizing() {
     if (resizing && now() - lastResize > RESIZE_TIMEOUT) {
         resizing = false;
         renderPending = true;
-        if (resizeLogging) {
-            double average = resizePresents > 0
-                                 ? resizeTimeSum / resizePresents
-                                 : 0.0;
-            waylandLogger.info()
-                << "resize finished, presented " << resizePresents
-                << ", avg " << average * 1000.0 << " ms, max "
-                << resizeTimeMax * 1000.0 << " ms";
-        }
     }
 }
 

@@ -5,16 +5,11 @@
 #include "window/input.hpp"
 
 #include <cstdlib>
-#include <cstring>
 
 static debug::Logger logger("window");
 
 #ifdef VOXELENGINE_WAYLAND
 static bool prefer_wayland() {
-    const char* backend = getenv("VOXEL_WINDOW_BACKEND");
-    if (backend != nullptr) {
-        return strcmp(backend, "wayland") == 0;
-    }
     const char* display = getenv("WAYLAND_DISPLAY");
     if (display != nullptr && *display) {
         return true;
