@@ -603,6 +603,9 @@ std::tuple<
 #endif
     glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
     glfwWindowHint(GLFW_SAMPLES, settings->samples.get());
+    // opaque window: the UI is drawn with alpha and would otherwise
+    // blend with the desktop behind the window
+    glfwWindowHint(GLFW_ALPHA_BITS, 0);
 
     auto window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
     if (window == nullptr) {
