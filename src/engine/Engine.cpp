@@ -1,4 +1,9 @@
+#include <algorithm>
+
+#include <GL/glew.h>
+
 #include "Engine.hpp"
+#include "frontend/screens/MenuScreen.hpp"
 #include "WindowBar.hpp"
 
 #ifndef GLEW_STATIC
@@ -310,9 +315,20 @@ void Engine::renderFrame() {
     if (input->isCursorLocked() != (gui->getActiveFrame() == nullptr)) {
         input->toggleCursor();
     }
+    glViewport(
+        0,
+        0,
+        static_cast<GLsizei>(window->getSize().x),
+        static_cast<GLsizei>(window->getSize().y)
+    );
     screen->draw(time.getDelta());
 
     DrawContext ctx(nullptr, *window, nullptr);
+    gui->setContentInset(
+        dynamic_cast<const MenuScreen*>(screen.get()) != nullptr
+            ? 0
+            : window->getDecorationHeight()
+    );
     gui->draw(ctx, *assets->getStorage());
     draw_window_bar(*this);
 }

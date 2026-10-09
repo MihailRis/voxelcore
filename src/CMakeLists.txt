@@ -82,6 +82,7 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND VOXELENGINE_WAYLAND)
     pkg_check_modules(egl IMPORTED_TARGET egl)
     find_library(WAYLAND_EGL_LIBRARY NAMES wayland-egl libwayland-egl.so.1)
     find_program(WAYLAND_SCANNER wayland-scanner)
+    pkg_check_modules(libsystemd IMPORTED_TARGET libsystemd)
 
     if(NOT wayland-client_FOUND OR NOT xkbcommon_FOUND OR NOT egl_FOUND
        OR NOT WAYLAND_EGL_LIBRARY OR NOT WAYLAND_SCANNER)
@@ -126,6 +127,13 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND VOXELENGINE_WAYLAND)
             VoxelEngineSrc PRIVATE ${WAYLAND_SOURCES} ${wayland_sources})
         target_include_directories(VoxelEngineSrc PUBLIC ${WAYLAND_GENERATED})
         target_compile_definitions(VoxelEngineSrc PUBLIC VOXELENGINE_WAYLAND=1)
+        if(libsystemd_FOUND)
+            target_compile_definitions(VoxelEngineSrc PUBLIC VOXELENGINE_SDBUS=1)
+            target_link_libraries(VoxelEngineSrc PRIVATE PkgConfig::libsystemd)
+            message(STATUS "Wayland backend: sd-bus settings are on")
+        else()
+            message(STATUS "Wayland backend: sd-bus settings are off")
+        endif()
         target_link_libraries(
             VoxelEngineSrc
             PRIVATE PkgConfig::wayland-client

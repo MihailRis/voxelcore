@@ -1,5 +1,9 @@
 #include "window/wayland/WaylandWindow.hpp"
 
+#include <csignal>
+#include <sys/wait.h>
+#include <unistd.h>
+
 #include "settings.hpp"
 #include "graphics/core/Texture.hpp"
 #include "util/platform.hpp"
@@ -7,7 +11,11 @@
 WaylandWindow::WaylandWindow(
     WaylandInput& input, DisplaySettings* settings, int width, int height
 )
-    : Window({width, height}), input(input), settings(settings) {
+    : Window({width, height}),
+      input(input),
+      settings(settings),
+      initialWidth(width),
+      initialHeight(height) {
     scissorArea = glm::vec4(0.0f, 0.0f, size.x, size.y);
 }
 
@@ -184,9 +192,10 @@ void WaylandWindow::setMode(WindowMode mode) {
             break;
         case WindowMode::WINDOWED:
             setFullscreen(false);
-            setMaximized(false);
+            if (maximized) {
+                setMaximized(false);
+            }
             setIdleInhibit(false);
-            resize(settings->width.get(), settings->height.get());
             break;
     }
     wl_surface_commit(state.surface);
@@ -238,6 +247,11 @@ void WaylandWindow::resize(int width, int height) {
     }
     glViewport(0, 0, width, height);
     size = {width, height};
+    if (Window::mode == WindowMode::WINDOWED && !maximized) {
+        settings->width.set(width);
+        settings->height.set(height);
+    }
+    updateBarGeometry();
     scissorArea = glm::vec4(0.0f, 0.0f, size.x, size.y);
 }
 
@@ -264,11 +278,19 @@ void WaylandWindow::onConfigure(int32_t width, int32_t height, wl_array* states)
 }
 
 void WaylandWindow::applyConfigure() {
-    if (pendingWidth > 0 && pendingHeight > 0) {
-        resize(pendingWidth, pendingHeight);
-    }
     maximized = stateMaximized;
     suspended = stateSuspended;
+    if (pendingWidth > 0 && pendingHeight > 0) {
+        if (!configured && Window::mode == WindowMode::WINDOWED && !maximized &&
+            initialWidth > 0 && initialHeight > 0) {
+            pendingWidth = initialWidth;
+            pendingHeight = initialHeight;
+        }
+        resize(pendingWidth, pendingHeight);
+    }
+    if (stateActivated && !activated) {
+        lastLayoutCheck = 0.0;
+    }
     activated = stateActivated;
     configured = true;
     setShouldRefresh();
@@ -339,10 +361,10 @@ std::unique_ptr<ImageData> WaylandWindow::takeScreenshot() {
     auto data = std::make_unique<ubyte[]>(size.x * size.y * 3);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
     glReadPixels(0, 0, size.x, size.y, GL_RGB, GL_UNSIGNED_BYTE, data.get());
+    glReadBuffer(static_cast<GLenum>(readBuffer));
     return std::make_unique<ImageData>(
         ImageFormat::RGB888, size.x, size.y, data.release()
     );
-    glReadBuffer(static_cast<GLenum>(readBuffer));
 }
 
 void WaylandWindow::setFramerate(int framerate) {
@@ -471,6 +493,7 @@ void WaylandWindow::requestFrame() {
 }
 
 void WaylandWindow::paceFrame() {
+    updateButtonLayout();
     frameOnCallback = frameDone;
     if (lastSwapEnd > 0.0) {
         const double cost = now() - lastSwapEnd;

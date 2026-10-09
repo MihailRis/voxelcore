@@ -625,8 +625,9 @@ void Hud::setDebug(bool flag) {
 
 void Hud::draw(const DrawContext& ctx){
     const auto& viewport = ctx.getViewport();
+    uint inset = static_cast<uint>(ctx.getWindow().getDecorationHeight());
 
-    updateElementsPosition(viewport);
+    updateElementsPosition(glm::uvec2(viewport.x, viewport.y - inset));
 
     uicamera->setFov(viewport.y);
     uicamera->setAspectRatio(viewport.x / static_cast<float>(viewport.y));
@@ -698,7 +699,7 @@ void Hud::updateElementsPosition(const glm::uvec2& viewport) {
         }
     }
     if (exchangeSlot != nullptr) {
-        exchangeSlot->setPos(input.getCursor().pos);
+        exchangeSlot->setPos(gui.getCursorPosition());
     }
     hotbarView->setPos(glm::vec2(viewport.x / 2, viewport.y - 65));
     hotbarView->setSelected(player.getChosenSlot());

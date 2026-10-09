@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <string>
+#include <vector>
 
 #include "graphics/core/commons.hpp"
 #include "typedefs.hpp"
@@ -9,6 +11,18 @@
 class ImageData;
 class Input;
 struct DisplaySettings;
+
+enum class DecorationButton {
+    CLOSE,
+    MINIMIZE,
+    MAXIMIZE,
+};
+
+struct DecorationButtonLayout {
+    DecorationButton button;
+    float x;
+    float width;
+};
 
 enum class WindowMode {
     WINDOWED,
@@ -55,6 +69,11 @@ public:
 
     virtual int getDecorationHoveredButton() const {
         return -1;
+    }
+
+    virtual const std::vector<DecorationButtonLayout>& getDecorationButtons() const {
+        static const std::vector<DecorationButtonLayout> empty;
+        return empty;
     }
 
     virtual bool isIconSupported() const = 0;

@@ -123,6 +123,16 @@ namespace gui {
         /// @param assets active assets storage
         void draw(const DrawContext& pctx, Assets& assets);
 
+        int viewportOffset = 0;
+
+        /// @brief Get the cursor position in the main container coordinates
+        glm::vec2 getCursorPosition() const;
+
+        /// @brief Shift the main container down by the given number of pixels
+        void setContentInset(int inset) {
+            viewportOffset = inset;
+        }
+
         Batch2D* getBatch2D() {
             return batch2D.get();
         }

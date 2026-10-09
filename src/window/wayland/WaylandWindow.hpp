@@ -1,6 +1,9 @@
 #pragma once
 
 #include "window/wayland/WaylandCommon.hpp"
+
+#include <algorithm>
+#include "window/wayland/WaylandSettings.hpp"
 #include "window/wayland/WaylandInput.hpp"
 
 #include "graphics/core/ImageData.hpp"
@@ -37,7 +40,25 @@ bool barEnabled = false;
 bool fullscreen = false;
 std::string title = "VoxelCore";
 int hoveredButton = -1;
+bool pointerInBar = false;
+SettingsWatcher settingsWatcher;
+bool layoutRead = false;
+void applyLayoutValue(const std::string& value);
+    std::vector<DecorationButton> leftButtons;
+    std::vector<DecorationButton> rightButtons;
+    std::vector<DecorationButtonLayout> barButtons;
+    double lastLayoutCheck = 0.0;
 double lastBarPress = 0.0;
+double lastBarPressX = 0.0;
+double lastBarPressY = 0.0;
+double barPressX = 0.0;
+double barPressY = 0.0;
+uint32_t barPressSerial = 0;
+bool barPressed = false;
+bool barDragging = false;
+int barPressedButton = -1;
+int initialWidth = 0;
+int initialHeight = 0;
 double pointerX = 0.0;
 double pointerY = 0.0;
 bool frameOnCallback = false;
@@ -89,6 +110,23 @@ glm::vec4 scissorArea {};
     int getDecorationHeight() const override;
     int getDecorationHoveredButton() const override;
 
+
+
+
+    static constexpr int BAR_HEIGHT = 30;
+    static constexpr int BAR_BUTTON = 30;
+    static constexpr int BAR_EDGE = 8;
+
+    int decorationOffset() const {
+        return barVisible() ? BAR_HEIGHT : 0;
+    }
+
+    const std::vector<DecorationButtonLayout>& getDecorationButtons() const override;
+
+    void updateButtonLayout();
+
+    void updateBarGeometry();
+
     bool isIconSupported() const override {
         return false;
     }
@@ -115,7 +153,8 @@ glm::vec4 scissorArea {};
     uint32_t barEdgeAt(double x, double y) const;
     static CursorShape edgeCursor(uint32_t edges);
     bool handleBarMotion(double x, double y);
-    bool handleBarButton(uint32_t serial, bool pressed);
+    bool handleBarButton(uint32_t serial, int button, bool pressed);
+    bool handleBarScroll() const;
     void onPointerLeave();
     void onFrameDone();
     void requestFrame();

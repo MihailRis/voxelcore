@@ -61,7 +61,7 @@ static void pointer_button(
         case 0x117: index = 7; break;
     }
     const bool pressed = buttonState == WL_POINTER_BUTTON_STATE_PRESSED;
-    if (index == 0 && window && window->handleBarButton(serial, pressed)) {
+    if (index >= 0 && window && window->handleBarButton(serial, index, pressed)) {
         return;
     }
     if (index >= 0 && input) {
@@ -74,6 +74,9 @@ static void pointer_axis(
     void*, wl_pointer*, uint32_t, uint32_t axis, wl_fixed_t value
 ) {
     if (input && axis == WL_POINTER_AXIS_VERTICAL_SCROLL) {
+        if (window && window->handleBarScroll()) {
+            return;
+        }
         input->scroll += wl_fixed_to_double(value) > 0 ? -1 : 1;
         input->refreshWindow();
     }
