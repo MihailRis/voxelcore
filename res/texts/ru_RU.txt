@@ -119,10 +119,10 @@ settings.Clouds quality=Качество облаков
 settings.Acoustic effects=Акустические эффекты
 settings.Microphone access=Доступ к микрофону
 settings.Narrow Window Bar=Узкая шапка окна
-settings.Window Shadow=Тень окна
+settings.Simple Window=Простое окно
 settings.Live Window Resize=Живой ресайз окна
 settings.display.compact-window-bar.tooltip=Шапка окна высотой 24 px вместо 48 px
-settings.display.window-shadow.tooltip=Тень вокруг окна и внешняя область для изменения размера (без неё окно рисуется упрощённо)
+settings.display.simple-window.tooltip=Без тени и внешней рамки ресайза
 settings.display.live-resize.tooltip=Перерисовывать содержимое окна при изменении размера (выключено — последний кадр растягивается)
 
 # Управление

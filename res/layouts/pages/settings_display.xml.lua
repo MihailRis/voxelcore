@@ -73,8 +73,8 @@ function on_open()
             "display.compact-window-bar.tooltip"
         )
         create_checkbox(
-            "display.window-shadow", "Window Shadow",
-            "display.window-shadow.tooltip"
+            "display.simple-window", "Simple Window",
+            "display.simple-window.tooltip"
         )
         create_checkbox(
             "display.live-resize", "Live Window Resize",

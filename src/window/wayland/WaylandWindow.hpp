@@ -133,7 +133,7 @@ class WaylandWindow : public Window {
     static constexpr int SHADOW_MARGIN = 10;
     static constexpr int RESIZE_GRAB_EXTRA = 2;
     bool shadowEnabled = false;
-    bool shadowSetting = true;
+    bool simpleWindowSetting = false;
     bool compactBarSetting = false;
     GLuint shadowProgram = 0;
 

@@ -282,7 +282,7 @@ void WaylandWindow::setMaximized(bool enabled) {
 
 int WaylandWindow::marginSize() const {
     if (!barEnabled || !shadowEnabled ||
-        (settings != nullptr && !settings->windowShadow.get())) {
+        (settings != nullptr && settings->simpleWindow.get())) {
         return 0;
     }
     if (fullscreen || maximized || Window::mode != WindowMode::WINDOWED) {
@@ -307,9 +307,9 @@ void WaylandWindow::updateSettings() {
     if (settings == nullptr) {
         return;
     }
-    const bool shadow = settings->windowShadow.get();
-    if (shadow != shadowSetting) {
-        shadowSetting = shadow;
+    const bool simple = settings->simpleWindow.get();
+    if (simple != simpleWindowSetting) {
+        simpleWindowSetting = simple;
         // The surface size depends on whether the frame around the content is
         // drawn at all, so the egl window and the toplevel geometry change.
         resize(size.x, size.y);
@@ -610,18 +610,19 @@ void WaylandWindow::composeFrame() {
     const int margin = marginSize();
     GlStateGuard state;
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    if (margin <= 0) {
-        makeContentOpaque(0, 0, size.x, size.y);
-        return;
-    }
     const auto surface = surfaceSize();
     glViewport(0, 0, surface.x, surface.y);
     glDisable(GL_SCISSOR_TEST);
     glDisable(GL_BLEND);
     glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    // Without the shadow the surface is exactly the content, but it still has
+    // to be painted from the cache: a buffer the driver reallocated after a
+    // resize holds nothing until something is drawn into it.
+    glClearColor(0.0f, 0.0f, 0.0f, margin > 0 ? 0.0f : 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
-    drawShadow();
+    if (margin > 0) {
+        drawShadow();
+    }
     if (stretchProgram == 0 || cacheWidth == 0) {
         glEnable(GL_SCISSOR_TEST);
         glScissor(margin, margin, size.x, size.y);
