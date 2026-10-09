@@ -38,6 +38,12 @@ struct DisplaySettings {
     FlagSetting limitFpsIconified {false};
     /// @brief Adaptive framerate in menu (experimental)
     FlagSetting adaptiveFpsInMenu {false};
+    /// @brief Draw the narrow (24px) window bar instead of the 48px one
+    FlagSetting compactWindowBar {false};
+    /// @brief Draw the window shadow and keep the outer area for resizing
+    FlagSetting windowShadow {true};
+    /// @brief Render the window content every frame while it is resized
+    FlagSetting liveResize {true};
 };
 
 struct ChunksSettings {

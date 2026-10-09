@@ -64,6 +64,8 @@ public:
         return empty;
     }
 
+    virtual const char* getBackendName() const = 0;
+
     virtual int getDecorationHeight() const {
         return 0;
     }

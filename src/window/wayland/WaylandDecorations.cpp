@@ -149,18 +149,22 @@ void WaylandWindow::updateBarGeometry() {
     }
     barButtons.clear();
     const float width = static_cast<float>(size.x);
-    constexpr float pitch = BAR_BUTTON + BAR_GAP;
+    // The narrow bar has no room for the insets of the wide one, so its
+    // controls sit flush against the window edge and each other.
+    const float padding = compactBar() ? 0.0f : BAR_PADDING;
+    const float gap = compactBar() ? 0.0f : BAR_GAP;
+    const float pitch = BAR_BUTTON + gap;
     for (size_t i = 0; i < leftButtons.size(); i++) {
-        const float x = BAR_PADDING + static_cast<float>(i) * pitch;
+        const float x = padding + static_cast<float>(i) * pitch;
         if (x + BAR_BUTTON > width) {
             break;
         }
         barButtons.push_back({leftButtons[i], x, BAR_BUTTON});
     }
     for (size_t i = 0; i < rightButtons.size(); i++) {
-        const float x = width - BAR_PADDING -
+        const float x = width - padding -
                         static_cast<float>(rightButtons.size() - i) * pitch +
-                        BAR_GAP;
+                        gap;
         if (x < 0.0f) {
             break;
         }
@@ -178,7 +182,7 @@ const std::string& WaylandWindow::getTitle() const {
 }
 
 int WaylandWindow::getDecorationHeight() const {
-    return barVisible() ? BAR_HEIGHT : 0;
+    return barVisible() ? barHeight() : 0;
 }
 
 int WaylandWindow::getDecorationHoveredButton() const {
@@ -204,7 +208,7 @@ bool WaylandWindow::barVisible() const {
 }
 
 int WaylandWindow::barButtonAt(double x, double y) const {
-    constexpr int top = (BAR_HEIGHT - BAR_BUTTON) / 2;
+    const int top = (barHeight() - BAR_BUTTON) / 2;
     if (!barVisible() || y < top || y >= top + BAR_BUTTON) {
         return -1;
     }
@@ -221,7 +225,7 @@ uint32_t WaylandWindow::barEdgeAt(double x, double y) const {
     if (barButtonAt(x, y) >= 0) {
         return 0;
     }
-    const bool inBar = barVisible() && y >= 0.0 && y < BAR_HEIGHT;
+    const bool inBar = barVisible() && y >= 0.0 && y < barHeight();
     uint32_t edges = 0;
     if (y < BAR_EDGE) {
         edges |= XDG_TOPLEVEL_RESIZE_EDGE_TOP;
@@ -312,7 +316,8 @@ bool WaylandWindow::handleBarMotion(double x, double y) {
         return true;
     }
     const double contentY = this->contentY(y);
-    const bool inBar = barVisible() && contentY >= 0.0 && contentY < BAR_HEIGHT;
+    const bool inBar =
+        barVisible() && contentY >= 0.0 && contentY < barHeight();
     if (inBar && !pointerInBar) {
         lastLayoutCheck = 0.0;
     }
@@ -334,7 +339,7 @@ bool WaylandWindow::handleBarButton(uint32_t serial, int button, bool pressed) {
     const double x = contentX(pointerX);
     const double y = contentY(pointerY);
     const uint32_t edges = pointerEdges();
-    const bool inBar = barVisible() && y >= 0.0 && y < BAR_HEIGHT;
+    const bool inBar = barVisible() && y >= 0.0 && y < barHeight();
     if (button != 0) {
         return inBar || edges != 0;
     }
@@ -395,7 +400,8 @@ bool WaylandWindow::handleBarButton(uint32_t serial, int button, bool pressed) {
 
 bool WaylandWindow::handleBarScroll() const {
     const double y = contentY(pointerY);
-    return (barVisible() && y >= 0.0 && y < BAR_HEIGHT) || pointerEdges() != 0;
+    return (barVisible() && y >= 0.0 && y < barHeight()) ||
+           pointerEdges() != 0;
 }
 
 void WaylandWindow::onPointerLeave() {

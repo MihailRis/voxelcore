@@ -107,15 +107,22 @@ double WaylandWindow::time() {
 }
 
 void WaylandWindow::swapBuffers() {
+    updateSettings();
     updateResizing();
     if (resizing && !presentPending && !frameDone) {
         resetScissor();
         return;
     }
-    if (resizing) {
+    if (liveResizeEnabled()) {
+        if (frameRendered) {
+            cacheContent();
+        }
+    } else if (resizing) {
+        // While the pointer drags the window border the content is only
+        // redrawn when the engine asked for it, otherwise the last frame is
+        // stretched into the new size.
         if (renderPending) {
             cacheContent();
-            renderPending = false;
         } else if (marginSize() == 0) {
             drawStretched();
         }
@@ -123,6 +130,7 @@ void WaylandWindow::swapBuffers() {
         cacheContent();
     }
     frameRendered = false;
+    renderPending = false;
     composeFrame();
     requestFrame();
     eglSwapBuffers(eglDisplay, eglSurface);
@@ -187,11 +195,18 @@ bool WaylandWindow::isIconified() const {
 }
 
 bool WaylandWindow::isFrameRequired() const {
-    const bool required = !resizing || renderPending;
-    if (required) {
-        frameRendered = true;
+    if (!liveResizeEnabled()) {
+        const bool required = !resizing || renderPending;
+        if (required) {
+            frameRendered = true;
+        }
+        return required;
     }
-    return required;
+    // The engine draws every frame, also while the window is being resized:
+    // resizing only paces the presentation now, it no longer freezes the
+    // content into a stretched copy of the last frame.
+    frameRendered = true;
+    return true;
 }
 
 bool WaylandWindow::isShouldClose() const {
@@ -266,13 +281,46 @@ void WaylandWindow::setMaximized(bool enabled) {
 }
 
 int WaylandWindow::marginSize() const {
-    if (!barEnabled || !shadowEnabled) {
+    if (!barEnabled || !shadowEnabled ||
+        (settings != nullptr && !settings->windowShadow.get())) {
         return 0;
     }
     if (fullscreen || maximized || Window::mode != WindowMode::WINDOWED) {
         return 0;
     }
     return SHADOW_MARGIN;
+}
+
+bool WaylandWindow::compactBar() const {
+    return settings != nullptr && settings->compactWindowBar.get();
+}
+
+int WaylandWindow::barHeight() const {
+    return compactBar() ? BAR_HEIGHT_COMPACT : BAR_HEIGHT;
+}
+
+bool WaylandWindow::liveResizeEnabled() const {
+    return settings == nullptr || settings->liveResize.get();
+}
+
+void WaylandWindow::updateSettings() {
+    if (settings == nullptr) {
+        return;
+    }
+    const bool shadow = settings->windowShadow.get();
+    if (shadow != shadowSetting) {
+        shadowSetting = shadow;
+        // The surface size depends on whether the frame around the content is
+        // drawn at all, so the egl window and the toplevel geometry change.
+        resize(size.x, size.y);
+        setShouldRefresh();
+    }
+    const bool compactBar = settings->compactWindowBar.get();
+    if (compactBar != compactBarSetting) {
+        compactBarSetting = compactBar;
+        updateBarGeometry();
+        setShouldRefresh();
+    }
 }
 
 glm::ivec2 WaylandWindow::surfaceSize() const {

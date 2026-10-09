@@ -114,10 +114,18 @@ class WaylandWindow : public Window {
     void focus() override;
     void setTitle(const std::string& title) override;
     const std::string& getTitle() const override;
+    const char* getBackendName() const override {
+        return "wayland";
+    }
+
+    /// @brief Whether the narrow window bar is selected
+    bool compactBar() const;
+
     int getDecorationHeight() const override;
     int getDecorationHoveredButton() const override;
 
     static constexpr int BAR_HEIGHT = 48;
+    static constexpr int BAR_HEIGHT_COMPACT = 24;
     static constexpr int BAR_BUTTON = 24;
     static constexpr int BAR_PADDING = 12;
     static constexpr int BAR_GAP = 12;
@@ -125,11 +133,22 @@ class WaylandWindow : public Window {
     static constexpr int SHADOW_MARGIN = 10;
     static constexpr int RESIZE_GRAB_EXTRA = 2;
     bool shadowEnabled = false;
+    bool shadowSetting = true;
+    bool compactBarSetting = false;
     GLuint shadowProgram = 0;
 
     GLint shadowUniforms[8] {};
 
     int marginSize() const;
+
+    /// @brief Window bar height, which the display settings may reduce
+    int barHeight() const;
+
+    /// @brief Whether the content is redrawn every frame during a resize
+    bool liveResizeEnabled() const;
+
+    /// @brief Applies the display settings that affect the window frame
+    void updateSettings();
 
     double contentX(double x) const {
         return x - marginSize();

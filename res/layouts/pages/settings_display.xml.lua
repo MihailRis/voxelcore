@@ -66,6 +66,22 @@ function on_open()
         "</select>", app.get_setting("display.window-mode"))
     )
 
+    -- these only affect the window frame the native wayland backend draws
+    if app.get_window_backend() == "wayland" then
+        create_checkbox(
+            "display.compact-window-bar", "Narrow Window Bar",
+            "display.compact-window-bar.tooltip"
+        )
+        create_checkbox(
+            "display.window-shadow", "Window Shadow",
+            "display.window-shadow.tooltip"
+        )
+        create_checkbox(
+            "display.live-resize", "Live Window Resize",
+            "display.live-resize.tooltip"
+        )
+    end
+
     create_checkbox("camera.shaking", "Camera Shaking")
     create_checkbox("camera.inertia", "Camera Inertia")
     create_checkbox("camera.fov-effects", "Camera FOV Effects")

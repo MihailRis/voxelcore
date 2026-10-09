@@ -229,6 +229,11 @@ static int l_open_url(lua::State* L) {
 }
 
 
+/// @brief Name of the windowing backend ("glfw" or "wayland")
+static int l_get_window_backend(lua::State* L) {
+    return lua::pushstring(L, engine->getWindow().getBackendName());
+}
+
 /// @brief Bring application window to focus
 static int l_focus(lua::State* L) {
     engine->getWindow().focus();
@@ -502,6 +507,7 @@ const luaL_Reg applib[] = {
     {"open_folder", lua::wrap<l_open_folder>},
     {"open_url", lua::wrap<l_open_url>},
     /// window
+    {"get_window_backend", lua::wrap<l_get_window_backend>},
     {"focus", lua::wrap<l_focus>},
     {"set_title", lua::wrap<l_set_title>},
     {"quit", lua::wrap<l_quit>},

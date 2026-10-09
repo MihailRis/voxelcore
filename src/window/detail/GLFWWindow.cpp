@@ -384,6 +384,10 @@ public:
 
     std::string title;
 
+    const char* getBackendName() const override {
+        return "glfw";
+    }
+
     const std::string& getTitle() const override {
         return title;
     }
