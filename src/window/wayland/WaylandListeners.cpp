@@ -15,7 +15,9 @@ static void pointer_enter(
         return;
     }
     if (input) {
-        input->setCursorPosition(x, y);
+        input->setCursorPosition(
+            window ? window->contentX(x) : x, window ? window->contentY(y) : y
+        );
         if (state.entered) {
             input->applyCursor();
         }
@@ -39,7 +41,9 @@ static void pointer_motion(
         return;
     }
     if (input) {
-        input->setCursorPosition(x, y);
+        input->setCursorPosition(
+            window ? window->contentX(x) : x, window ? window->contentY(y) : y
+        );
         input->refreshWindow();
     }
 }

@@ -217,6 +217,22 @@ private:
                 return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NESW_RESIZE;
             case CursorShape::ALL_RESIZE:
                 return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_ALL_RESIZE;
+            case CursorShape::N_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_N_RESIZE;
+            case CursorShape::S_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_S_RESIZE;
+            case CursorShape::E_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_E_RESIZE;
+            case CursorShape::W_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_W_RESIZE;
+            case CursorShape::NE_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NE_RESIZE;
+            case CursorShape::NW_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NW_RESIZE;
+            case CursorShape::SE_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_SE_RESIZE;
+            case CursorShape::SW_RESIZE:
+                return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_SW_RESIZE;
             case CursorShape::NOT_ALLOWED:
                 return WP_CURSOR_SHAPE_DEVICE_V1_SHAPE_NOT_ALLOWED;
         }

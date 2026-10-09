@@ -147,16 +147,18 @@ void WaylandWindow::updateButtonLayout() {
 void WaylandWindow::updateBarGeometry() {
     barButtons.clear();
     const float width = static_cast<float>(size.x);
+    constexpr float pitch = BAR_BUTTON + BAR_GAP;
     for (size_t i = 0; i < leftButtons.size(); i++) {
-        const float x = static_cast<float>(i) * BAR_BUTTON;
+        const float x = BAR_PADDING + static_cast<float>(i) * pitch;
         if (x + BAR_BUTTON > width) {
             break;
         }
         barButtons.push_back({leftButtons[i], x, BAR_BUTTON});
     }
     for (size_t i = 0; i < rightButtons.size(); i++) {
-        const float x = width -
-                        static_cast<float>(rightButtons.size() - i) * BAR_BUTTON;
+        const float x = width - BAR_PADDING -
+                        static_cast<float>(rightButtons.size() - i) * pitch +
+                        BAR_GAP;
         if (x < 0.0f) {
             break;
         }
@@ -193,7 +195,8 @@ bool WaylandWindow::barVisible() const {
 }
 
 int WaylandWindow::barButtonAt(double x, double y) const {
-    if (!barVisible() || y < 0.0 || y >= BAR_HEIGHT) {
+    constexpr int top = (BAR_HEIGHT - BAR_BUTTON) / 2;
+    if (!barVisible() || y < top || y >= top + BAR_BUTTON) {
         return -1;
     }
     for (size_t i = 0; i < barButtons.size(); i++) {
@@ -232,19 +235,54 @@ CursorShape WaylandWindow::edgeCursor(uint32_t edges) {
     const bool right = edges & XDG_TOPLEVEL_RESIZE_EDGE_RIGHT;
     const bool top = edges & XDG_TOPLEVEL_RESIZE_EDGE_TOP;
     const bool bottom = edges & XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM;
-    if ((left && top) || (right && bottom)) {
-        return CursorShape::NWSE_RESIZE;
+    if (left && top) {
+        return CursorShape::NW_RESIZE;
     }
-    if ((right && top) || (left && bottom)) {
-        return CursorShape::NESW_RESIZE;
+    if (right && top) {
+        return CursorShape::NE_RESIZE;
     }
-    if (left || right) {
-        return CursorShape::EW_RESIZE;
+    if (left && bottom) {
+        return CursorShape::SW_RESIZE;
     }
-    if (top || bottom) {
-        return CursorShape::NS_RESIZE;
+    if (right && bottom) {
+        return CursorShape::SE_RESIZE;
+    }
+    if (left) {
+        return CursorShape::W_RESIZE;
+    }
+    if (right) {
+        return CursorShape::E_RESIZE;
+    }
+    if (top) {
+        return CursorShape::N_RESIZE;
+    }
+    if (bottom) {
+        return CursorShape::S_RESIZE;
     }
     return CursorShape::ARROW;
+}
+
+uint32_t WaylandWindow::pointerEdges() const {
+    const int margin = marginSize();
+    uint32_t edges = 0;
+    if (margin > 0) {
+        const auto surface = surfaceSize();
+        const int edge = margin + RESIZE_GRAB_EXTRA;
+        if (pointerX < edge) {
+            edges |= XDG_TOPLEVEL_RESIZE_EDGE_LEFT;
+        } else if (pointerX >= surface.x - edge) {
+            edges |= XDG_TOPLEVEL_RESIZE_EDGE_RIGHT;
+        }
+        if (pointerY < edge) {
+            edges |= XDG_TOPLEVEL_RESIZE_EDGE_TOP;
+        } else if (pointerY >= surface.y - edge) {
+            edges |= XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM;
+        }
+    }
+    if (edges == 0 && margin == 0) {
+        edges = barEdgeAt(contentX(pointerX), contentY(pointerY));
+    }
+    return edges;
 }
 
 bool WaylandWindow::handleBarMotion(double x, double y) {
@@ -257,20 +295,22 @@ bool WaylandWindow::handleBarMotion(double x, double y) {
         hoveredButton = -1;
         xdg_toplevel_move(state.toplevel, state.seat, barPressSerial);
     }
-    const uint32_t edges = barEdgeAt(x, y);
+    const uint32_t edges = pointerEdges();
     if (edges != 0) {
         hoveredButton = -1;
         pointerInBar = false;
         input.setOverrideCursor(edgeCursor(edges));
         return true;
     }
-    const bool inBar = barVisible() && y >= 0.0 && y < BAR_HEIGHT;
+    const double contentY = this->contentY(y);
+    const bool inBar = barVisible() && contentY >= 0.0 && contentY < BAR_HEIGHT;
     if (inBar && !pointerInBar) {
         lastLayoutCheck = 0.0;
     }
     pointerInBar = inBar;
     if (inBar) {
-        hoveredButton = barDragging ? -1 : barButtonAt(x, y);
+        hoveredButton =
+            barDragging ? -1 : barButtonAt(contentX(x), contentY);
         input.setOverrideCursor(
             hoveredButton >= 0 ? CursorShape::POINTER : CursorShape::ARROW
         );
@@ -282,9 +322,9 @@ bool WaylandWindow::handleBarMotion(double x, double y) {
 }
 
 bool WaylandWindow::handleBarButton(uint32_t serial, int button, bool pressed) {
-    const double x = pointerX;
-    const double y = pointerY;
-    const uint32_t edges = barEdgeAt(x, y);
+    const double x = contentX(pointerX);
+    const double y = contentY(pointerY);
+    const uint32_t edges = pointerEdges();
     const bool inBar = barVisible() && y >= 0.0 && y < BAR_HEIGHT;
     if (button != 0) {
         return inBar || edges != 0;
@@ -345,8 +385,8 @@ bool WaylandWindow::handleBarButton(uint32_t serial, int button, bool pressed) {
 }
 
 bool WaylandWindow::handleBarScroll() const {
-    return (barVisible() && pointerY >= 0.0 && pointerY < BAR_HEIGHT) ||
-           barEdgeAt(pointerX, pointerY) != 0;
+    const double y = contentY(pointerY);
+    return (barVisible() && y >= 0.0 && y < BAR_HEIGHT) || pointerEdges() != 0;
 }
 
 void WaylandWindow::onPointerLeave() {

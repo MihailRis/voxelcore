@@ -7,6 +7,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "graphics/core/Shader.hpp"
 #include "graphics/core/Font.hpp"
+#include "graphics/core/Texture.hpp"
 #include "graphics/ui/GUI.hpp"
 #include "window/Window.hpp"
 #include "assets/Assets.hpp"
@@ -78,10 +79,19 @@ void draw_window_bar(Engine& engine) {
         titleLength--;
     }
     if (titleLength > 0) {
+        const float textWidth = static_cast<float>(
+            font->calcWidth(title, titleLength)
+        );
+        const float centered = (static_cast<float>(size.x) - textWidth) * 0.5f;
+        const float titleX = std::clamp(
+            centered,
+            titleLeft,
+            std::max(titleLeft, titleRight - textWidth)
+        );
         batch->setColor(glm::vec4(1.0f, 1.0f, 1.0f, 0.85f));
         font->draw(
             *batch, std::wstring_view(title).substr(0, titleLength),
-            static_cast<int>(titleLeft),
+            static_cast<int>(titleX),
             (height - font->getLineHeight()) / 2,
             nullptr, 0
         );
@@ -96,15 +106,34 @@ void draw_window_bar(Engine& engine) {
         const float cy = barHeight * 0.5f;
         const bool isHovered = hovered == static_cast<int>(i);
         if (isHovered) {
-            batch->setColor(
-                item.button == DecorationButton::CLOSE
-                    ? glm::vec4(0.62f, 0.13f, 0.09f, 0.9f)
-                    : glm::vec4(1.0f, 1.0f, 1.0f, 0.16f)
+            batch->setColor(glm::vec4(1.0f, 1.0f, 1.0f, 0.16f));
+            const float button = item.width;
+            batch->rect(
+                item.x, (barHeight - button) * 0.5f, item.width, button
             );
-            batch->rect(x, 0.0f, item.width, barHeight);
         }
         const float ink = isHovered ? 1.0f : 0.8f;
         batch->setColor(glm::vec4(1.0f, 1.0f, 1.0f, ink));
+        const char* iconName =
+            item.button == DecorationButton::CLOSE
+                ? "gui/cross"
+                : item.button == DecorationButton::MINIMIZE
+                      ? "gui/minimize_w"
+                      : window.isMaximized() ? "gui/restore_w"
+                                             : "gui/maximize_w";
+        auto icon = engine.requireAssets().getShared<Texture>(iconName);
+        if (icon != nullptr) {
+            const float iconSize = std::min(
+                16.0f, static_cast<float>(icon->getWidth())
+            );
+            batch->texture(icon.get());
+            batch->rect(
+                cx - iconSize * 0.5f, cy - iconSize * 0.5f, iconSize,
+                iconSize, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, ink
+            );
+            batch->untexture();
+            continue;
+        }
         if (item.button == DecorationButton::CLOSE) {
             for (int step = 0; step < 8; step++) {
                 batch->rect(cx - 5.0f + step, cy - 5.0f + step, thickness, thickness);

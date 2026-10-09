@@ -45,6 +45,9 @@ WaylandWindow::~WaylandWindow() {
     if (stretchProgram) {
         glDeleteProgram(stretchProgram);
     }
+    if (shadowProgram) {
+        glDeleteProgram(shadowProgram);
+    }
     if (stretchVbo) {
         glDeleteBuffers(1, &stretchVbo);
     }
@@ -96,14 +99,21 @@ void WaylandWindow::swapBuffers() {
         if (renderPending) {
             cacheContent();
             renderPending = false;
-        } else {
+        } else if (marginSize() == 0) {
             drawStretched();
         }
-    } else {
+    } else if (frameRendered) {
         cacheContent();
     }
+    frameRendered = false;
+    composeFrame();
     requestFrame();
     eglSwapBuffers(eglDisplay, eglSurface);
+    if (sizeChanged) {
+        sizeChanged = false;
+        composeFrame();
+        eglSwapBuffers(eglDisplay, eglSurface);
+    }
     resetScissor();
     frameDone = false;
     presentPending = false;
@@ -119,7 +129,7 @@ void WaylandWindow::swapBuffers() {
                 1.0 / 30.0
             );
         }
-}
+    }
     lastPresent = current;
     nextFrameTime = current + frameInterval;
     lastSwapEnd = now();
@@ -160,7 +170,11 @@ bool WaylandWindow::isIconified() const {
 }
 
 bool WaylandWindow::isFrameRequired() const {
-    return !resizing || renderPending;
+    const bool required = !resizing || renderPending;
+    if (required) {
+        frameRendered = true;
+    }
+    return required;
 }
 
 bool WaylandWindow::isShouldClose() const {
@@ -234,19 +248,47 @@ void WaylandWindow::setMaximized(bool enabled) {
     }
 }
 
+int WaylandWindow::marginSize() const {
+    if (!barEnabled || !shadowEnabled) {
+        return 0;
+    }
+    if (fullscreen || maximized || Window::mode != WindowMode::WINDOWED) {
+        return 0;
+    }
+    return SHADOW_MARGIN;
+}
+
+glm::ivec2 WaylandWindow::surfaceSize() const {
+    const int margin = marginSize() * 2;
+    return {size.x + margin, size.y + margin};
+}
+
+void WaylandWindow::updateWindowGeometry() {
+    if (state.xdgSurface == nullptr) {
+        return;
+    }
+    const int margin = marginSize();
+    xdg_surface_set_window_geometry(
+        state.xdgSurface, margin, margin, size.x, size.y
+    );
+}
+
 void WaylandWindow::resize(int width, int height) {
     if (width <= 0 || height <= 0) {
         return;
     }
     if (size.x != width || size.y != height) {
         markResizing();
+        sizeChanged = true;
     }
     presentPending = true;
+    size = {width, height};
     if (eglWindow) {
-        wl_egl_window_resize(eglWindow, width, height, 0, 0);
+        const auto surface = surfaceSize();
+        wl_egl_window_resize(eglWindow, surface.x, surface.y, 0, 0);
     }
     glViewport(0, 0, width, height);
-    size = {width, height};
+    updateWindowGeometry();
     if (Window::mode == WindowMode::WINDOWED && !maximized) {
         settings->width.set(width);
         settings->height.set(height);
@@ -281,11 +323,12 @@ void WaylandWindow::applyConfigure() {
     maximized = stateMaximized;
     suspended = stateSuspended;
     if (pendingWidth > 0 && pendingHeight > 0) {
-        if (!configured && Window::mode == WindowMode::WINDOWED && !maximized &&
-            initialWidth > 0 && initialHeight > 0) {
+        if (!initialSizeApplied && Window::mode == WindowMode::WINDOWED &&
+            !maximized && initialWidth > 0 && initialHeight > 0) {
             pendingWidth = initialWidth;
             pendingHeight = initialHeight;
         }
+        initialSizeApplied = true;
         resize(pendingWidth, pendingHeight);
     }
     if (stateActivated && !activated) {
@@ -358,9 +401,18 @@ std::unique_ptr<ImageData> WaylandWindow::takeScreenshot() {
     GLint readBuffer = 0;
     glGetIntegerv(GL_READ_BUFFER, &readBuffer);
     glReadBuffer(GL_FRONT);
+    const int margin = marginSize();
     auto data = std::make_unique<ubyte[]>(size.x * size.y * 3);
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
-    glReadPixels(0, 0, size.x, size.y, GL_RGB, GL_UNSIGNED_BYTE, data.get());
+    glReadPixels(
+        margin,
+        margin,
+        size.x,
+        size.y,
+        GL_RGB,
+        GL_UNSIGNED_BYTE,
+        data.get()
+    );
     glReadBuffer(static_cast<GLenum>(readBuffer));
     return std::make_unique<ImageData>(
         ImageFormat::RGB888, size.x, size.y, data.release()
@@ -414,6 +466,174 @@ void WaylandWindow::initStretchRenderer() {
     glBindVertexArray(0);
     glGenFramebuffers(1, &cacheFbo);
     glGenTextures(1, &cacheTexture);
+}
+
+void WaylandWindow::initShadowRenderer() {
+    if (!shadowEnabled) {
+        return;
+    }
+    static const char* vertexSource =
+        "#version 330 core\n"
+        "layout(location = 0) in vec2 aPos;\n"
+        "out vec2 vUV;\n"
+        "void main() {\n"
+        "    vUV = aPos * 0.5 + 0.5;\n"
+        "    gl_Position = vec4(aPos, 0.0, 1.0);\n"
+        "}\n";
+    static const char* fragmentSource =
+        "#version 330 core\n"
+        "in vec2 vUV;\n"
+        "out vec4 color;\n"
+        "uniform vec2 uSurface;\n"
+        "uniform vec4 uRect;\n"
+        "uniform float uBlur;\n"
+        "uniform float uStrength;\n"
+        "uniform float uOffset;\n"
+        "uniform float uSpread;\n"
+        "uniform float uBorder;\n"
+        "uniform float uRadius;\n"
+        "float erfcApprox(float x) {\n"
+        "    float t = 1.0 / (1.0 + 0.5 * abs(x));\n"
+        "    float tau = t * exp(-x * x - 1.26551223 +\n"
+        "        t * (1.00002368 +\n"
+        "        t * (0.37409196 +\n"
+        "        t * (0.09678418 +\n"
+        "        t * (-0.18628806 +\n"
+        "        t * (0.27886807 +\n"
+        "        t * (-1.13520398 +\n"
+        "        t * (1.48851587 +\n"
+        "        t * (-0.82215223 +\n"
+        "        t * 0.17087277)))))))));\n"
+        "    return x >= 0.0 ? tau : 2.0 - tau;\n"
+        "}\n"
+        "float boxDistance(vec2 p, vec2 center, vec2 halfSize, float radius) {\n"
+        "    vec2 q = abs(p - center) - (halfSize - vec2(radius));\n"
+        "    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;\n"
+        "}\n"
+        "void main() {\n"
+        "    vec2 p = vUV * uSurface;\n"
+        "    vec2 halfSize = uRect.zw * 0.5;\n"
+        "    vec2 center = uRect.xy + halfSize;\n"
+        "    float shadow = boxDistance(\n"
+        "        p, center + vec2(0.0, -uOffset), halfSize + uSpread,\n"
+        "        uRadius + uSpread\n"
+        "    );\n"
+        "    float sigma = max(uBlur * 0.5, 0.001);\n"
+        "    float alpha = uStrength * 0.5 * erfcApprox(shadow / (sigma * 1.41421356));\n"
+        "    float side = boxDistance(p, center, halfSize, uRadius);\n"
+        "    float border = side > 0.0 && side <= 1.0 ? uBorder : 0.0;\n"
+        "    color = vec4(0.0, 0.0, 0.0, max(alpha, border));\n"
+        "}\n";
+    shadowProgram = compile_program(vertexSource, fragmentSource);
+    GLint linked = 0;
+    glGetProgramiv(shadowProgram, GL_LINK_STATUS, &linked);
+    if (shadowProgram == 0 || linked == 0) {
+        char log[1024] = {};
+        glGetProgramInfoLog(shadowProgram, sizeof(log), nullptr, log);
+        for (char* c = log; *c != '\0'; c++) {
+            if (*c == '\n') {
+                *c = ' ';
+            }
+        }
+        waylandLogger.error() << "failed to build the shadow shader: " << log;
+        shadowEnabled = false;
+        return;
+    }
+    const char* names[] {
+        "uSurface", "uRect", "uBlur", "uStrength", "uOffset", "uSpread",
+        "uBorder", "uRadius", nullptr
+    };
+    for (int i = 0; names[i] != nullptr; i++) {
+        shadowUniforms[i] = glGetUniformLocation(shadowProgram, names[i]);
+    }
+
+}
+
+void WaylandWindow::drawShadow() {
+    const int margin = marginSize();
+    if (margin <= 0 || shadowProgram == 0) {
+        return;
+    }
+    const auto surface = surfaceSize();
+    glViewport(0, 0, surface.x, surface.y);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_SCISSOR_TEST);
+    glUseProgram(shadowProgram);
+    glUniform2f(
+        shadowUniforms[0],
+        static_cast<float>(surface.x),
+        static_cast<float>(surface.y)
+    );
+    glUniform4f(
+        shadowUniforms[1],
+        static_cast<float>(margin),
+        static_cast<float>(margin),
+        static_cast<float>(size.x),
+        static_cast<float>(size.y)
+    );
+    glUniform1f(shadowUniforms[2], 7.0f);
+    glUniform1f(shadowUniforms[3], activated ? 0.5f : 0.3f);
+    glUniform1f(shadowUniforms[4], 0.0f);
+    glUniform1f(shadowUniforms[5], 1.0f);
+    glUniform1f(shadowUniforms[6], activated ? 0.1f : 0.05f);
+    glUniform1f(shadowUniforms[7], 0.0f);
+    glBindVertexArray(stretchVao);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glBindVertexArray(0);
+    glUseProgram(0);
+}
+
+void WaylandWindow::makeContentOpaque(int x, int y, int width, int height) {
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_TRUE);
+    glEnable(GL_SCISSOR_TEST);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glScissor(x, y, width, height);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDisable(GL_SCISSOR_TEST);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+}
+
+void WaylandWindow::composeFrame() {
+    const int margin = marginSize();
+    GlStateGuard state;
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    if (margin <= 0) {
+        makeContentOpaque(0, 0, size.x, size.y);
+        return;
+    }
+    const auto surface = surfaceSize();
+    glViewport(0, 0, surface.x, surface.y);
+    glDisable(GL_SCISSOR_TEST);
+    glDisable(GL_BLEND);
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawShadow();
+    if (stretchProgram == 0 || cacheWidth == 0) {
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(margin, margin, size.x, size.y);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+        return;
+    }
+    glViewport(margin, margin, size.x, size.y);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_BLEND);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_SCISSOR_TEST);
+    glUseProgram(stretchProgram);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, cacheTexture);
+    glUniform1i(glGetUniformLocation(stretchProgram, "uTexture"), 0);
+    glBindVertexArray(stretchVao);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glBindVertexArray(0);
+    glUseProgram(0);
+    makeContentOpaque(margin, margin, size.x, size.y);
 }
 
 void WaylandWindow::resizeCache(int width, int height) {

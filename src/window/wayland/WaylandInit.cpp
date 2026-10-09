@@ -120,33 +120,46 @@ wayland_window_initialize(DisplaySettings* settings, std::string title) {
     eglBindAPI(EGL_OPENGL_API);
 
     EGLint samples = settings->samples.get();
+    const EGLint requestedSamples = samples > 0 ? samples : 0;
     EGLConfig config = nullptr;
     EGLint configCount = 0;
-    const EGLint configAttributes[] {
-        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
-        EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
-        EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8,
-        EGL_ALPHA_SIZE, 0, EGL_DEPTH_SIZE, 24, EGL_STENCIL_SIZE, 8,
-        EGL_SAMPLES, samples > 0 ? samples : 0,
-        EGL_NONE
-    };
-    eglChooseConfig(window->eglDisplay, configAttributes, &config, 1, &configCount);
-    if (samples > 0 && configCount == 0) {
-        waylandLogger.warning() << "multisampling is not available";
-        const EGLint fallbackAttributes[] {
+    const auto chooseConfig = [&] (EGLint alpha, EGLint sampleCount) {
+        const EGLint attributes[] {
             EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
             EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT,
             EGL_RED_SIZE, 8, EGL_GREEN_SIZE, 8, EGL_BLUE_SIZE, 8,
-            EGL_ALPHA_SIZE, 0, EGL_DEPTH_SIZE, 24, EGL_STENCIL_SIZE, 8,
+            EGL_ALPHA_SIZE, alpha, EGL_DEPTH_SIZE, 24, EGL_STENCIL_SIZE, 8,
+            EGL_SAMPLES, sampleCount,
             EGL_NONE
         };
+        config = nullptr;
+        configCount = 0;
         eglChooseConfig(
-            window->eglDisplay, fallbackAttributes, &config, 1, &configCount
+            window->eglDisplay, attributes, &config, 1, &configCount
         );
-    }
-    if (configCount == 0) {
-        waylandLogger.error() << "no suitable EGL config";
-        return {nullptr, nullptr};
+        if (configCount == 0) {
+            return false;
+        }
+        EGLint value = 0;
+        eglGetConfigAttrib(
+            window->eglDisplay, config, EGL_ALPHA_SIZE, &value
+        );
+        window->shadowEnabled = value >= 8;
+        return true;
+    };
+    if (!chooseConfig(8, requestedSamples)) {
+        if (requestedSamples > 0) {
+            waylandLogger.warning() << "multisampling is not available";
+        }
+        if (!chooseConfig(8, 0)) {
+            waylandLogger.warning()
+                << "no EGL config with alpha, the drop shadow is off";
+            if (!chooseConfig(0, requestedSamples) && !chooseConfig(0, 0)) {
+                waylandLogger.error() << "no suitable EGL config";
+                return {nullptr, nullptr};
+            }
+            window->shadowEnabled = false;
+        }
     }
 
     const EGLint contextAttributes[] {
@@ -157,8 +170,9 @@ wayland_window_initialize(DisplaySettings* settings, std::string title) {
     window->eglContext = eglCreateContext(
         window->eglDisplay, config, EGL_NO_CONTEXT, contextAttributes
     );
+    const auto surfaceSize = window->surfaceSize();
     window->eglWindow = wl_egl_window_create(
-        state.surface, window->getSize().x, window->getSize().y
+        state.surface, surfaceSize.x, surfaceSize.y
     );
     window->eglSurface = eglCreateWindowSurface(
         window->eglDisplay, config,
@@ -184,6 +198,7 @@ wayland_window_initialize(DisplaySettings* settings, std::string title) {
     }
 
     window->initStretchRenderer();
+    window->initShadowRenderer();
     glViewport(0, 0, window->getSize().x, window->getSize().y);
     glClearColor(0.0f, 0.0f, 0.0f, 1);
     glEnable(GL_BLEND);

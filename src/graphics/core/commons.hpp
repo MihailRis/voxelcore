@@ -46,6 +46,15 @@ enum class CursorShape {
     ALL_RESIZE,
     /// @brief Operation not allowed
     NOT_ALLOWED,
+    /// @brief Corner resize arrows
+    N_RESIZE,
+    S_RESIZE,
+    E_RESIZE,
+    W_RESIZE,
+    NE_RESIZE,
+    NW_RESIZE,
+    SE_RESIZE,
+    SW_RESIZE,
     
     LAST=NOT_ALLOWED
 };
@@ -74,6 +83,14 @@ VC_ENUM_METADATA(CursorShape)
     {"nesw-resize", CursorShape::NESW_RESIZE},
     {"all-resize", CursorShape::ALL_RESIZE},
     {"not-allowed", CursorShape::NOT_ALLOWED},
+    {"n-resize", CursorShape::N_RESIZE},
+    {"s-resize", CursorShape::S_RESIZE},
+    {"e-resize", CursorShape::E_RESIZE},
+    {"w-resize", CursorShape::W_RESIZE},
+    {"ne-resize", CursorShape::NE_RESIZE},
+    {"nw-resize", CursorShape::NW_RESIZE},
+    {"se-resize", CursorShape::SE_RESIZE},
+    {"sw-resize", CursorShape::SW_RESIZE},
 VC_ENUM_END
 
 class Flushable {

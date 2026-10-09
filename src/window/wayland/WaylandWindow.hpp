@@ -55,6 +55,9 @@ double barPressX = 0.0;
 double barPressY = 0.0;
 uint32_t barPressSerial = 0;
 bool barPressed = false;
+bool initialSizeApplied = false;
+mutable bool frameRendered = false;
+bool sizeChanged = false;
 bool barDragging = false;
 int barPressedButton = -1;
 int initialWidth = 0;
@@ -113,9 +116,40 @@ glm::vec4 scissorArea {};
 
 
 
-    static constexpr int BAR_HEIGHT = 30;
-    static constexpr int BAR_BUTTON = 30;
+    static constexpr int BAR_HEIGHT = 48;
+    static constexpr int BAR_BUTTON = 24;
+    static constexpr int BAR_PADDING = 12;
+    static constexpr int BAR_GAP = 12;
     static constexpr int BAR_EDGE = 8;
+    static constexpr int SHADOW_MARGIN = 10;
+    static constexpr int RESIZE_GRAB_EXTRA = 2;
+    bool shadowEnabled = false;
+    GLuint shadowProgram = 0;
+
+    GLint shadowUniforms[7] {};
+
+    int marginSize() const;
+
+    double contentX(double x) const {
+        return x - marginSize();
+    }
+
+    double contentY(double y) const {
+        return y - marginSize();
+    }
+
+    glm::ivec2 surfaceSize() const;
+
+    void updateWindowGeometry();
+
+    void initShadowRenderer();
+
+    void drawShadow();
+
+    void composeFrame();
+
+    void makeContentOpaque(int x, int y, int width, int height);
+
 
     int decorationOffset() const {
         return barVisible() ? BAR_HEIGHT : 0;
@@ -152,6 +186,7 @@ glm::vec4 scissorArea {};
                             int barButtonAt(double x, double y) const;
     uint32_t barEdgeAt(double x, double y) const;
     static CursorShape edgeCursor(uint32_t edges);
+    uint32_t pointerEdges() const;
     bool handleBarMotion(double x, double y);
     bool handleBarButton(uint32_t serial, int button, bool pressed);
     bool handleBarScroll() const;
