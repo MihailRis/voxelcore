@@ -125,8 +125,8 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND VOXELENGINE_WAYLAND)
 
         target_sources(
             VoxelEngineSrc PRIVATE ${WAYLAND_SOURCES} ${wayland_sources})
-        target_include_directories(VoxelEngineSrc PUBLIC ${WAYLAND_GENERATED})
-        target_compile_definitions(VoxelEngineSrc PUBLIC VOXELENGINE_WAYLAND=1)
+        target_include_directories(VoxelEngineSrc PRIVATE ${WAYLAND_GENERATED})
+        target_compile_definitions(VoxelEngineSrc PRIVATE VOXELENGINE_WAYLAND=1)
         if(libsystemd_FOUND)
             target_compile_definitions(VoxelEngineSrc PUBLIC VOXELENGINE_SDBUS=1)
             target_link_libraries(VoxelEngineSrc PRIVATE PkgConfig::libsystemd)

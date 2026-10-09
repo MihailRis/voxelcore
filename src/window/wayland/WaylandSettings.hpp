@@ -16,7 +16,6 @@ public:
 private:
     bool open();
     void close();
-    bool handleMessage(const char* schema, const char* key, std::string& value);
 
     struct Impl;
     Impl* impl = nullptr;

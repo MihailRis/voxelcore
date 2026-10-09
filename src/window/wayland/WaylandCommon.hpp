@@ -28,14 +28,8 @@
 #include <poll.h>
 #include <stack>
 #include <string>
-#include <thread>
 #include <tuple>
 #include <vector>
-
-const wl_registry_listener& registry_listener();
-const wl_data_device_listener& data_device_listener();
-const xdg_surface_listener& surface_listener();
-const xdg_toplevel_listener& toplevel_listener();
 
 struct GlStateGuard {
     GLint values[16] {};
@@ -51,6 +45,12 @@ struct GlStateGuard {
 GLuint compile_program(const char* vertexSource, const char* fragmentSource);
 
 extern debug::Logger waylandLogger;
+
+/// @brief Monotonic time in seconds, shared by the whole backend
+double waylandNow();
+
+/// @brief Fullscreen triangle vertex shader used by the backend renderers
+extern const char* WAYLAND_VERTEX_SHADER;
 
 struct WaylandState {
     wl_display* display = nullptr;
@@ -97,7 +97,6 @@ template <typename... Args>
 void ignore_event(Args...) {
 }
 
-bool decorations_enabled();
 void dispatch_events(int timeoutMs);
 int keycode_from_keysym(xkb_keysym_t sym);
 

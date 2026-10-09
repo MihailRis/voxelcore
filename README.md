@@ -37,6 +37,13 @@ apt-get install entt-devel libglfw3-devel libGLEW-devel libglm-devel libpng-deve
 
 ```sh
 sudo apt install libglfw3 libglfw3-dev libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libcurl4-openssl-dev libssl-dev libfreetype6-dev
+
+#### Wayland (optional, enabled by default on Linux)
+
+The native Wayland backend needs `wayland-client`, `wayland-egl`,
+`wayland-scanner`, `wayland-protocols`, `libxkbcommon` and EGL. Build with
+`-DVOXELENGINE_WAYLAND=OFF` to fall back to GLFW; `libsystemd` (sd-bus) is
+picked up automatically for the desktop button layout.
 ```
 
 > [!TIP]

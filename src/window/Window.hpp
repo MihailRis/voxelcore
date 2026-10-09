@@ -2,6 +2,7 @@
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <stack>
 #include <string>
 #include <vector>
 
@@ -80,9 +81,9 @@ public:
 
     virtual void setIcon(const ImageData* image) = 0;
 
-    virtual void pushScissor(glm::vec4 area) = 0;
-    virtual void popScissor() = 0;
-    virtual void resetScissor() = 0;
+    virtual void pushScissor(glm::vec4 area);
+    virtual void popScissor();
+    virtual void resetScissor();
 
     virtual void setShouldRefresh() = 0;
     virtual bool checkShouldRefresh() = 0;
@@ -104,6 +105,8 @@ public:
     > initialize(DisplaySettings* settings, std::string title);
 protected:
     glm::ivec2 size;
+    std::stack<glm::vec4> scissorStack;
+    glm::vec4 scissorArea {};
     WindowMode mode = WindowMode::WINDOWED;
 };
 

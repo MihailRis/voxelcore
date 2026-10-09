@@ -30,7 +30,8 @@ namespace {
         }
         if (type == 's') {
             const char* text = nullptr;
-            if (sd_bus_message_read(message, "s", &text) < 0 || text == nullptr) {
+            if (sd_bus_message_read(message, "s", &text) < 0 ||
+                text == nullptr) {
                 return {};
             }
             return text;
@@ -167,8 +168,6 @@ bool SettingsWatcher::poll(
     }
     impl->changed = false;
     value = impl->changedValue;
-    (void)schema;
-    (void)key;
     return true;
 #else
     return false;

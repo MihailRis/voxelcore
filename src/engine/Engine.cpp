@@ -1,14 +1,11 @@
-#include <algorithm>
-
-#include <GL/glew.h>
-
 #include "Engine.hpp"
-#include "frontend/screens/MenuScreen.hpp"
 #include "WindowBar.hpp"
 
 #ifndef GLEW_STATIC
 #define GLEW_STATIC
 #endif
+
+#include <GL/glew.h>
 
 #include "AssetsManagement.hpp"
 #include "audio/audio.hpp"
@@ -276,6 +273,7 @@ void Engine::updateFrontend() {
     assets->update();
     updateHotkeys();
     audio::update(delta);
+    gui->setContentInset(screen->getContentInset(*window));
     gui->act(delta, window->getSize());
     screen->update(delta);
     gui->postAct();
@@ -324,11 +322,6 @@ void Engine::renderFrame() {
     screen->draw(time.getDelta());
 
     DrawContext ctx(nullptr, *window, nullptr);
-    gui->setContentInset(
-        dynamic_cast<const MenuScreen*>(screen.get()) != nullptr
-            ? 0
-            : window->getDecorationHeight()
-    );
     gui->draw(ctx, *assets->getStorage());
     draw_window_bar(*this);
 }

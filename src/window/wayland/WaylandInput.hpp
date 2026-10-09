@@ -16,6 +16,9 @@
 #include <thread>
 #include <vector>
 
+/// @brief Offset between the evdev keycode and the xkb one
+static constexpr uint32_t XKB_KEYCODE_OFFSET = 8;
+
 class WaylandInput : public BaseInput {
 public:
     void pollEvents(bool waitForRefresh) override;
@@ -83,7 +86,9 @@ public:
             close(clipboardFd);
             clipboardFd = -1;
         }
-        wl_data_device_set_selection(state.dataDevice, source, state.inputSerial);
+        wl_data_device_set_selection(
+            state.dataDevice, source, state.inputSerial
+        );
         wl_display_flush(state.display);
     }
 
@@ -154,6 +159,20 @@ public:
         applyCursor();
     }
 
+    /// @brief Release every pressed key, e.g. when the keyboard focus is lost
+    void releasePressedKeys() {
+        const auto keys = pressedKeys;
+        for (auto key : keys) {
+            onKeyCallback(static_cast<int>(key), false);
+        }
+        repeatKeycode = 0;
+    }
+
+    /// @brief Forget the cached clipboard text
+    void clearClipboardText() {
+        clipboard.clear();
+    }
+
     void onRelativeMotion(double dx, double dy) {
         delta.x += dx;
         delta.y += dy;
@@ -163,7 +182,7 @@ public:
         if (state.xkbState == nullptr || state.xkbKeymap == nullptr) {
             return;
         }
-        xkb_keycode_t code = key + 8;
+        xkb_keycode_t code = key + XKB_KEYCODE_OFFSET;
         const xkb_keysym_t* syms = nullptr;
         if (xkb_keymap_key_get_syms_by_level(
                 state.xkbKeymap, code, 0, 0, &syms
@@ -244,9 +263,7 @@ private:
     }
 
     static double now() {
-        return std::chrono::duration<double>(
-                   std::chrono::steady_clock::now().time_since_epoch()
-        ).count();
+        return waylandNow();
     }
 
     void appendCodepoints(xkb_keycode_t code) {
@@ -264,18 +281,26 @@ private:
                 codepoint = (codepoint << 6) | (bytes[i] & 0x3F);
                 continue;
             }
-            if (codepoint != 0) {
+            if (codepoint >= 0x20 && codepoint != 0x7F) {
                 codepoints.push_back(codepoint);
             }
-            codepoint = (bytes[i] & 0x80) ? (bytes[i] & 0x1F) : bytes[i];
+            if ((bytes[i] & 0x80) == 0) {
+                codepoint = bytes[i];
+            } else if ((bytes[i] & 0xE0) == 0xC0) {
+                codepoint = bytes[i] & 0x1F;
+            } else if ((bytes[i] & 0xF0) == 0xE0) {
+                codepoint = bytes[i] & 0x0F;
+            } else {
+                codepoint = bytes[i] & 0x07;
+            }
         }
-        if (codepoint != 0) {
+        if (codepoint >= 0x20 && codepoint != 0x7F) {
             codepoints.push_back(codepoint);
         }
     }
 
     void updateRepeat() {
-        if (repeatKeycode == 0 || !state.xkbState) {
+        if (repeatKeycode == 0 || state.repeatRate == 0 || !state.xkbState) {
             return;
         }
         int keycode = 0;
@@ -321,8 +346,10 @@ private:
             ) {
                 if (input) {
                     const std::string& text = input->sourceText;
-                    if (!text.empty() && write(fd, text.data(), text.size()) < 0) {
-                        waylandLogger.warning() << "could not write to the clipboard";
+                    if (!text.empty() &&
+                        write(fd, text.data(), text.size()) < 0) {
+                        waylandLogger.warning()
+                            << "could not write to the clipboard";
                     }
                 }
                 close(fd);

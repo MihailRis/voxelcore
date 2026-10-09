@@ -15,6 +15,10 @@ public:
 
     void onOpen() override;
 
+    int getContentInset(const Window&) const override {
+        return 0;
+    }
+
     void update(float delta) override;
     void draw(float delta) override;
 

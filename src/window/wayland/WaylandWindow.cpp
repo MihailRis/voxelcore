@@ -1,9 +1,5 @@
 #include "window/wayland/WaylandWindow.hpp"
 
-#include <csignal>
-#include <sys/wait.h>
-#include <unistd.h>
-
 #include "settings.hpp"
 #include "graphics/core/Texture.hpp"
 #include "util/platform.hpp"
@@ -20,6 +16,9 @@ WaylandWindow::WaylandWindow(
 }
 
 WaylandWindow::~WaylandWindow() {
+    if (window == this) {
+        window = nullptr;
+    }
     if (state.idleInhibitor) {
         zwp_idle_inhibitor_v1_destroy(state.idleInhibitor);
     }
@@ -81,12 +80,30 @@ WaylandWindow::~WaylandWindow() {
     if (eglDisplay != EGL_NO_DISPLAY) {
         eglTerminate(eglDisplay);
     }
+    if (state.pointer) {
+        wl_pointer_destroy(state.pointer);
+        state.pointer = nullptr;
+    }
+    if (state.keyboard) {
+        wl_keyboard_destroy(state.keyboard);
+        state.keyboard = nullptr;
+    }
+    if (state.seat) {
+        wl_seat_destroy(state.seat);
+        state.seat = nullptr;
+    }
+    if (state.xkbState) {
+        xkb_state_unref(state.xkbState);
+        state.xkbState = nullptr;
+    }
+    if (state.xkbKeymap) {
+        xkb_keymap_unref(state.xkbKeymap);
+        state.xkbKeymap = nullptr;
+    }
 }
 
 double WaylandWindow::time() {
-    return std::chrono::duration<double>(
-               std::chrono::steady_clock::now().time_since_epoch()
-    ).count();
+    return now();
 }
 
 void WaylandWindow::swapBuffers() {
@@ -297,7 +314,9 @@ void WaylandWindow::resize(int width, int height) {
     scissorArea = glm::vec4(0.0f, 0.0f, size.x, size.y);
 }
 
-void WaylandWindow::onConfigure(int32_t width, int32_t height, wl_array* states) {
+void WaylandWindow::onConfigure(
+    int32_t width, int32_t height, wl_array* states
+) {
     pendingWidth = width;
     pendingHeight = height;
     stateMaximized = false;
@@ -339,63 +358,6 @@ void WaylandWindow::applyConfigure() {
     setShouldRefresh();
 }
 
-void WaylandWindow::pushScissor(glm::vec4 area) {
-    if (scissorStack.empty()) {
-        glEnable(GL_SCISSOR_TEST);
-    }
-    scissorStack.push(scissorArea);
-
-    area.z += glm::ceil(area.x);
-    area.w += glm::ceil(area.y);
-
-    area.x = glm::max(area.x, scissorArea.x);
-    area.y = glm::max(area.y, scissorArea.y);
-
-    area.z = glm::min(area.z, scissorArea.z);
-    area.w = glm::min(area.w, scissorArea.w);
-
-    if (area.z < 0.0f || area.w < 0.0f) {
-        glScissor(0, 0, 0, 0);
-    } else {
-        glScissor(
-            area.x,
-            size.y - area.w,
-            std::max(0, static_cast<int>(glm::ceil(area.z - area.x))),
-            std::max(0, static_cast<int>(glm::ceil(area.w - area.y)))
-        );
-    }
-    scissorArea = area;
-}
-
-void WaylandWindow::popScissor() {
-    if (scissorStack.empty()) {
-        waylandLogger.warning() << "extra Window::popScissor call";
-        return;
-    }
-    glm::vec4 area = scissorStack.top();
-    scissorStack.pop();
-    if (area.z < 0.0f || area.w < 0.0f) {
-        glScissor(0, 0, 0, 0);
-    } else {
-        glScissor(
-            area.x,
-            size.y - area.w,
-            std::max(0, static_cast<int>(area.z - area.x)),
-            std::max(0, static_cast<int>(area.w - area.y))
-        );
-    }
-    if (scissorStack.empty()) {
-        glDisable(GL_SCISSOR_TEST);
-    }
-    scissorArea = area;
-}
-
-void WaylandWindow::resetScissor() {
-    scissorArea = glm::vec4(0.0f, 0.0f, size.x, size.y);
-    scissorStack = std::stack<glm::vec4>();
-    glDisable(GL_SCISSOR_TEST);
-}
-
 std::unique_ptr<ImageData> WaylandWindow::takeScreenshot() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     GLint readBuffer = 0;
@@ -424,14 +386,6 @@ void WaylandWindow::setFramerate(int framerate) {
 }
 
 void WaylandWindow::initStretchRenderer() {
-    static const char* vertexSource =
-        "#version 330 core\n"
-        "layout(location = 0) in vec2 aPos;\n"
-        "out vec2 vUV;\n"
-        "void main() {\n"
-        "    vUV = aPos * 0.5 + 0.5;\n"
-        "    gl_Position = vec4(aPos, 0.0, 1.0);\n"
-        "}\n";
     static const char* fragmentSource =
         "#version 330 core\n"
         "in vec2 vUV;\n"
@@ -440,18 +394,15 @@ void WaylandWindow::initStretchRenderer() {
         "void main() {\n"
         "    color = texture(uTexture, vUV);\n"
         "}\n";
-    GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexSource, nullptr);
-    glCompileShader(vertexShader);
-    GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentSource, nullptr);
-    glCompileShader(fragmentShader);
-    stretchProgram = glCreateProgram();
-    glAttachShader(stretchProgram, vertexShader);
-    glAttachShader(stretchProgram, fragmentShader);
-    glLinkProgram(stretchProgram);
-    glDeleteShader(vertexShader);
-    glDeleteShader(fragmentShader);
+    stretchProgram = compile_program(WAYLAND_VERTEX_SHADER, fragmentSource);
+    GLint stretchLinked = 0;
+    glGetProgramiv(stretchProgram, GL_LINK_STATUS, &stretchLinked);
+    if (stretchProgram == 0 || stretchLinked == 0) {
+        waylandLogger.error() << "failed to build the stretch shader";
+        stretchProgram = 0;
+        return;
+    }
+    stretchTextureUniform = glGetUniformLocation(stretchProgram, "uTexture");
 
     const float vertices[] {-1.0f, -1.0f, 3.0f, -1.0f, -1.0f, 3.0f};
     glGenVertexArrays(1, &stretchVao);
@@ -472,14 +423,6 @@ void WaylandWindow::initShadowRenderer() {
     if (!shadowEnabled) {
         return;
     }
-    static const char* vertexSource =
-        "#version 330 core\n"
-        "layout(location = 0) in vec2 aPos;\n"
-        "out vec2 vUV;\n"
-        "void main() {\n"
-        "    vUV = aPos * 0.5 + 0.5;\n"
-        "    gl_Position = vec4(aPos, 0.0, 1.0);\n"
-        "}\n";
     static const char* fragmentSource =
         "#version 330 core\n"
         "in vec2 vUV;\n"
@@ -506,7 +449,8 @@ void WaylandWindow::initShadowRenderer() {
         "        t * 0.17087277)))))))));\n"
         "    return x >= 0.0 ? tau : 2.0 - tau;\n"
         "}\n"
-        "float boxDistance(vec2 p, vec2 center, vec2 halfSize, float radius) {\n"
+        "float boxDistance(vec2 p, vec2 center, vec2 halfSize, float radius)"
+        " {\n"
         "    vec2 q = abs(p - center) - (halfSize - vec2(radius));\n"
         "    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;\n"
         "}\n"
@@ -519,12 +463,13 @@ void WaylandWindow::initShadowRenderer() {
         "        uRadius + uSpread\n"
         "    );\n"
         "    float sigma = max(uBlur * 0.5, 0.001);\n"
-        "    float alpha = uStrength * 0.5 * erfcApprox(shadow / (sigma * 1.41421356));\n"
+        "    float alpha = uStrength * 0.5 * "
+        "erfcApprox(shadow / (sigma * 1.41421356));\n"
         "    float side = boxDistance(p, center, halfSize, uRadius);\n"
         "    float border = side > 0.0 && side <= 1.0 ? uBorder : 0.0;\n"
         "    color = vec4(0.0, 0.0, 0.0, max(alpha, border));\n"
         "}\n";
-    shadowProgram = compile_program(vertexSource, fragmentSource);
+    shadowProgram = compile_program(WAYLAND_VERTEX_SHADER, fragmentSource);
     GLint linked = 0;
     glGetProgramiv(shadowProgram, GL_LINK_STATUS, &linked);
     if (shadowProgram == 0 || linked == 0) {
@@ -537,6 +482,7 @@ void WaylandWindow::initShadowRenderer() {
         }
         waylandLogger.error() << "failed to build the shadow shader: " << log;
         shadowEnabled = false;
+        resize(size.x, size.y);
         return;
     }
     const char* names[] {
@@ -547,6 +493,15 @@ void WaylandWindow::initShadowRenderer() {
         shadowUniforms[i] = glGetUniformLocation(shadowProgram, names[i]);
     }
 
+}
+
+namespace {
+    constexpr float SHADOW_BLUR = 7.0f;
+    constexpr float SHADOW_SPREAD = 1.0f;
+    constexpr float SHADOW_STRENGTH = 0.5f;
+    constexpr float SHADOW_STRENGTH_BACKDROP = 0.3f;
+    constexpr float SHADOW_BORDER = 0.1f;
+    constexpr float SHADOW_BORDER_BACKDROP = 0.05f;
 }
 
 void WaylandWindow::drawShadow() {
@@ -574,11 +529,17 @@ void WaylandWindow::drawShadow() {
         static_cast<float>(size.x),
         static_cast<float>(size.y)
     );
-    glUniform1f(shadowUniforms[2], 7.0f);
-    glUniform1f(shadowUniforms[3], activated ? 0.5f : 0.3f);
+    glUniform1f(shadowUniforms[2], SHADOW_BLUR);
+    glUniform1f(
+        shadowUniforms[3],
+        activated ? SHADOW_STRENGTH : SHADOW_STRENGTH_BACKDROP
+    );
     glUniform1f(shadowUniforms[4], 0.0f);
-    glUniform1f(shadowUniforms[5], 1.0f);
-    glUniform1f(shadowUniforms[6], activated ? 0.1f : 0.05f);
+    glUniform1f(shadowUniforms[5], SHADOW_SPREAD);
+    glUniform1f(
+        shadowUniforms[6],
+        activated ? SHADOW_BORDER : SHADOW_BORDER_BACKDROP
+    );
     glUniform1f(shadowUniforms[7], 0.0f);
     glBindVertexArray(stretchVao);
     glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -628,7 +589,7 @@ void WaylandWindow::composeFrame() {
     glUseProgram(stretchProgram);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cacheTexture);
-    glUniform1i(glGetUniformLocation(stretchProgram, "uTexture"), 0);
+    glUniform1i(stretchTextureUniform, 0);
     glBindVertexArray(stretchVao);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);
@@ -660,6 +621,9 @@ void WaylandWindow::resizeCache(int width, int height) {
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+/// @brief Copies the frame the engine just drew into a texture.
+/// Runs every frame: composeFrame() rebuilds the window from this texture,
+/// which keeps the engine itself unaware of the shadow margins.
 void WaylandWindow::cacheContent() {
     GlStateGuard state;
     if (stretchProgram == 0) {
@@ -692,7 +656,7 @@ void WaylandWindow::drawStretched() {
     glUseProgram(stretchProgram);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, cacheTexture);
-    glUniform1i(glGetUniformLocation(stretchProgram, "uTexture"), 0);
+    glUniform1i(stretchTextureUniform, 0);
     glBindVertexArray(stretchVao);
     glDrawArrays(GL_TRIANGLES, 0, 3);
     glBindVertexArray(0);
@@ -790,7 +754,5 @@ const wl_callback_listener& WaylandWindow::frameListener() {
 }
 
 double WaylandWindow::now() {
-    return std::chrono::duration<double>(
-               std::chrono::steady_clock::now().time_since_epoch()
-    ).count();
+    return waylandNow();
 }

@@ -625,9 +625,14 @@ void Hud::setDebug(bool flag) {
 
 void Hud::draw(const DrawContext& ctx){
     const auto& viewport = ctx.getViewport();
-    uint inset = static_cast<uint>(ctx.getWindow().getDecorationHeight());
+    const int inset = gui.getContentInset();
+    const int contentHeight = std::max(
+        1, static_cast<int>(viewport.y) - inset
+    );
 
-    updateElementsPosition(glm::uvec2(viewport.x, viewport.y - inset));
+    updateElementsPosition(
+        glm::uvec2(viewport.x, static_cast<uint>(contentHeight))
+    );
 
     uicamera->setFov(viewport.y);
     uicamera->setAspectRatio(viewport.x / static_cast<float>(viewport.y));

@@ -5,6 +5,21 @@
 
 debug::Logger waylandLogger("window");
 
+const char* WAYLAND_VERTEX_SHADER =
+    "#version 330 core\n"
+    "layout(location = 0) in vec2 aPos;\n"
+    "out vec2 vUV;\n"
+    "void main() {\n"
+    "    vUV = aPos * 0.5 + 0.5;\n"
+    "    gl_Position = vec4(aPos, 0.0, 1.0);\n"
+    "}\n";
+
+double waylandNow() {
+    return std::chrono::duration<double>(
+               std::chrono::steady_clock::now().time_since_epoch()
+    ).count();
+}
+
 
 GlStateGuard::GlStateGuard() {
     glGetIntegerv(GL_CURRENT_PROGRAM, &values[0]);
@@ -25,12 +40,20 @@ GlStateGuard::GlStateGuard() {
     glGetIntegerv(GL_VIEWPORT, viewport);
     glGetIntegerv(GL_COLOR_WRITEMASK, colorMask);
     for (int i = 0; i < 3; i++) {
-        attribFlags[i] = glIsEnabled(GL_VERTEX_ATTRIB_ARRAY_ENABLED + i);
+        GLint attribEnabled = 0;
+        glGetVertexAttribiv(
+            i, GL_VERTEX_ATTRIB_ARRAY_ENABLED, &attribEnabled
+        );
+        attribFlags[i] = attribEnabled != 0;
         glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_SIZE, &attribs[i][0]);
         glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_TYPE, &attribs[i][1]);
-        glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_NORMALIZED, &attribs[i][2]);
+        glGetVertexAttribiv(
+            i, GL_VERTEX_ATTRIB_ARRAY_NORMALIZED, &attribs[i][2]
+        );
         glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_STRIDE, &attribs[i][3]);
-        glGetVertexAttribiv(i, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &attribs[i][5]);
+        glGetVertexAttribiv(
+            i, GL_VERTEX_ATTRIB_ARRAY_BUFFER_BINDING, &attribs[i][5]
+        );
         void* pointer = nullptr;
         glGetVertexAttribPointerv(i, GL_VERTEX_ATTRIB_ARRAY_POINTER, &pointer);
         attribs[i][6] = static_cast<GLint>(reinterpret_cast<intptr_t>(pointer));
@@ -101,11 +124,6 @@ class WaylandWindow;
 
 WaylandInput* input = nullptr;
 WaylandWindow* window = nullptr;
-
-bool decorations_enabled() {
-    const char* value = getenv("VOXEL_DECORATIONS");
-    return value == nullptr || strcmp(value, "none") != 0;
-}
 
 bool serverDecorations = false;
 

@@ -4,10 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
-#include <csignal>
 #include <cstdio>
-#include <sys/wait.h>
-#include <unistd.h>
 
 namespace {
     constexpr const char* LAYOUT_SCHEMA = "org.gnome.desktop.wm.preferences";
@@ -19,7 +16,8 @@ namespace {
         while (start <= text.size()) {
             const size_t end = text.find(',', start);
             const std::string name = text.substr(
-                start, end == std::string::npos ? std::string::npos : end - start
+                start,
+                end == std::string::npos ? std::string::npos : end - start
             );
             if (name == "close") {
                 buttons.push_back(DecorationButton::CLOSE);
@@ -36,8 +34,30 @@ namespace {
         return buttons;
     }
 
+    void split_layout(
+        const std::string& value, std::vector<DecorationButton>& left,
+        std::vector<DecorationButton>& right
+    ) {
+        std::string text = value;
+        text.erase(
+            std::remove_if(text.begin(), text.end(), [] (char c) {
+                return c == '\'' || c == '"' || c == '\n' || c == '\r';
+            }),
+            text.end()
+        );
+        const size_t separator = text.find(':');
+        if (separator == std::string::npos) {
+            left.clear();
+            right = parse_buttons(text);
+        } else {
+            left = parse_buttons(text.substr(0, separator));
+            right = parse_buttons(text.substr(separator + 1));
+        }
+    }
+
     bool read_button_layout(
-        std::vector<DecorationButton>& left, std::vector<DecorationButton>& right
+        std::vector<DecorationButton>& left,
+        std::vector<DecorationButton>& right
     ) {
         FILE* pipe = popen(
             "gsettings get org.gnome.desktop.wm.preferences button-layout"
@@ -53,46 +73,20 @@ namespace {
         if (line == nullptr || status != 0) {
             return false;
         }
-        std::string value(buffer);
-        value.erase(
-            std::remove_if(value.begin(), value.end(), [] (char c) {
-                return c == '\'' || c == '"' || c == '\n' || c == '\r';
-            }),
-            value.end()
-        );
-        const size_t separator = value.find(':');
-        if (separator == std::string::npos) {
-            left.clear();
-            right = parse_buttons(value);
-        } else {
-            left = parse_buttons(value.substr(0, separator));
-            right = parse_buttons(value.substr(separator + 1));
-        }
+        split_layout(std::string(buffer), left, right);
         return true;
     }
 
     constexpr double DRAG_THRESHOLD = 5.0;
+    constexpr double LAYOUT_CHECK_INTERVAL = 2.0;
     constexpr double DOUBLE_CLICK_TIME = 0.4;
     constexpr double DOUBLE_CLICK_DISTANCE = 8.0;
 }
 
 void WaylandWindow::applyLayoutValue(const std::string& rawValue) {
-    std::string value = rawValue;
-    value.erase(
-        std::remove_if(value.begin(), value.end(), [] (char c) {
-            return c == '\'' || c == '"' || c == '\n' || c == '\r';
-        }),
-        value.end()
-    );
-    const size_t separator = value.find(':');
     std::vector<DecorationButton> left;
     std::vector<DecorationButton> right;
-    if (separator == std::string::npos) {
-        right = parse_buttons(value);
-    } else {
-        left = parse_buttons(value.substr(0, separator));
-        right = parse_buttons(value.substr(separator + 1));
-    }
+    split_layout(rawValue, left, right);
     if (left == leftButtons && right == rightButtons) {
         return;
     }
@@ -127,7 +121,7 @@ void WaylandWindow::updateButtonLayout() {
         return;
     }
     const double current = now();
-    if (current - lastLayoutCheck < 2.0) {
+    if (current - lastLayoutCheck < LAYOUT_CHECK_INTERVAL) {
         return;
     }
     lastLayoutCheck = current;
@@ -145,6 +139,14 @@ void WaylandWindow::updateButtonLayout() {
 }
 
 void WaylandWindow::updateBarGeometry() {
+    if (leftButtons.empty() && rightButtons.empty()) {
+        // desktop layout is unavailable, fall back to the usual three controls
+        rightButtons = {
+            DecorationButton::MINIMIZE,
+            DecorationButton::MAXIMIZE,
+            DecorationButton::CLOSE,
+        };
+    }
     barButtons.clear();
     const float width = static_cast<float>(size.x);
     constexpr float pitch = BAR_BUTTON + BAR_GAP;
@@ -166,7 +168,8 @@ void WaylandWindow::updateBarGeometry() {
     }
 }
 
-const std::vector<DecorationButtonLayout>& WaylandWindow::getDecorationButtons() const {
+const std::vector<DecorationButtonLayout>&
+WaylandWindow::getDecorationButtons() const {
     return barButtons;
 }
 
@@ -183,10 +186,16 @@ int WaylandWindow::getDecorationHoveredButton() const {
 }
 
 void WaylandWindow::enableOwnDecorations() {
-    if (!decorations_enabled()) {
+    barEnabled = true;
+    setShouldRefresh();
+}
+
+void WaylandWindow::disableOwnDecorations() {
+    if (!barEnabled) {
         return;
     }
-    barEnabled = true;
+    barEnabled = false;
+    resize(size.x, size.y);
     setShouldRefresh();
 }
 

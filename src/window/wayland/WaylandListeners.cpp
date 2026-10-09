@@ -53,19 +53,15 @@ static void pointer_button(
     uint32_t buttonState
 ) {
     state.inputSerial = serial;
-    int index = -1;
-    switch (button) {
-        case 0x110: index = 0; break;
-        case 0x111: index = 1; break;
-        case 0x112: index = 2; break;
-        case 0x113: index = 3; break;
-        case 0x114: index = 4; break;
-        case 0x115: index = 5; break;
-        case 0x116: index = 6; break;
-        case 0x117: index = 7; break;
-    }
+    // BTN_LEFT .. BTN_TASK from linux/input-event-codes.h
+    constexpr uint32_t EVDEV_BUTTON_FIRST = 0x110;
+    constexpr uint32_t EVDEV_BUTTON_LAST = 0x117;
+    int index = button >= EVDEV_BUTTON_FIRST && button <= EVDEV_BUTTON_LAST
+        ? static_cast<int>(button - EVDEV_BUTTON_FIRST)
+        : -1;
     const bool pressed = buttonState == WL_POINTER_BUTTON_STATE_PRESSED;
-    if (index >= 0 && window && window->handleBarButton(serial, index, pressed)) {
+    if (index >= 0 && window &&
+        window->handleBarButton(serial, index, pressed)) {
         return;
     }
     if (index >= 0 && input) {
@@ -129,6 +125,9 @@ static void keyboard_enter(
 }
 
 static void keyboard_leave(void*, wl_keyboard*, uint32_t, wl_surface*) {
+    if (input) {
+        input->releasePressedKeys();
+    }
 }
 
 static void keyboard_key(
@@ -154,8 +153,10 @@ static void keyboard_modifiers(
     }
 }
 
-static void keyboard_repeat_info(void*, wl_keyboard*, int32_t rate, int32_t delay) {
-    state.repeatRate = rate > 0 ? rate : 25;
+static void keyboard_repeat_info(
+    void*, wl_keyboard*, int32_t rate, int32_t delay
+) {
+    state.repeatRate = rate > 0 ? static_cast<uint32_t>(rate) : 0;
     state.repeatDelay = delay > 0 ? delay : 400;
 }
 
@@ -273,8 +274,13 @@ void data_device_selection(void*, wl_data_device*, wl_data_offer* offer) {
         wl_data_offer_destroy(input->selection);
     }
     input->selection = offer;
-    input->selectionMimes = std::move(input->pendingMimes);
     input->pendingMimes.clear();
+    if (offer == nullptr) {
+        input->selectionMimes.clear();
+        input->clearClipboardText();
+        return;
+    }
+    input->selectionMimes = std::move(input->pendingMimes);
     input->requestClipboardText();
 }
 
@@ -314,14 +320,18 @@ void registry_global(
                 std::min(version, 3u)
             )
         );
-    } else if (strcmp(interface, wp_cursor_shape_manager_v1_interface.name) == 0) {
+    } else if (
+        strcmp(interface, wp_cursor_shape_manager_v1_interface.name) == 0
+    ) {
         state.cursorShapeManager = static_cast<wp_cursor_shape_manager_v1*>(
             wl_registry_bind(
                 registry, name, &wp_cursor_shape_manager_v1_interface,
                 std::min(version, 2u)
             )
         );
-    } else if (strcmp(interface, zwp_pointer_constraints_v1_interface.name) == 0) {
+    } else if (
+        strcmp(interface, zwp_pointer_constraints_v1_interface.name) == 0
+    ) {
         state.pointerConstraints = static_cast<zwp_pointer_constraints_v1*>(
             wl_registry_bind(
                 registry, name, &zwp_pointer_constraints_v1_interface, 1
@@ -360,8 +370,12 @@ void zxdg_decoration_configure(
     void*, zxdg_toplevel_decoration_v1*, uint32_t mode
 ) {
     serverDecorations = mode == ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE;
-    if (!serverDecorations && window != nullptr) {
-        window->enableOwnDecorations();
+    if (window != nullptr) {
+        if (serverDecorations) {
+            window->disableOwnDecorations();
+        } else {
+            window->enableOwnDecorations();
+        }
     }
 }
 

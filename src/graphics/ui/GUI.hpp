@@ -123,6 +123,8 @@ namespace gui {
         /// @param assets active assets storage
         void draw(const DrawContext& pctx, Assets& assets);
 
+        /// @brief Offset of the main container from the top of the window,
+        /// e.g. the height of the engine drawn window bar
         int viewportOffset = 0;
 
         /// @brief Get the cursor position in the main container coordinates
@@ -133,6 +135,11 @@ namespace gui {
             viewportOffset = inset;
         }
 
+        int getContentInset() const {
+            return viewportOffset;
+        }
+
+        /// @brief Batch used to draw the window bar on top of the GUI
         Batch2D* getBatch2D() {
             return batch2D.get();
         }

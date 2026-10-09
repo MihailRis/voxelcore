@@ -56,7 +56,7 @@ enum class CursorShape {
     SE_RESIZE,
     SW_RESIZE,
     
-    LAST=NOT_ALLOWED
+    LAST=SW_RESIZE
 };
 
 namespace advanced_pipeline {

@@ -185,6 +185,26 @@ static void glfw_error_callback(int error, const char* description) {
 
 static GLFWcursor* standard_cursors[static_cast<int>(CursorShape::LAST) + 1] = {};
 
+/// @brief Map extra cursor shapes onto the ones GLFW knows about
+static int cursor_index(CursorShape shape) {
+    switch (shape) {
+        case CursorShape::N_RESIZE:
+        case CursorShape::S_RESIZE:
+            return static_cast<int>(CursorShape::NS_RESIZE);
+        case CursorShape::E_RESIZE:
+        case CursorShape::W_RESIZE:
+            return static_cast<int>(CursorShape::EW_RESIZE);
+        case CursorShape::NE_RESIZE:
+        case CursorShape::SW_RESIZE:
+            return static_cast<int>(CursorShape::NESW_RESIZE);
+        case CursorShape::NW_RESIZE:
+        case CursorShape::SE_RESIZE:
+            return static_cast<int>(CursorShape::NWSE_RESIZE);
+        default:
+            return static_cast<int>(shape);
+    }
+}
+
 class GLFWInput : public BaseInput {
 public:
     GLFWInput(GLFWwindow* window)
@@ -245,7 +265,9 @@ public:
 
     ~GLFWWindow() {
         for (int i = 0; i <= static_cast<int>(CursorShape::LAST); i++) {
-            glfwDestroyCursor(standard_cursors[i]);
+            if (standard_cursors[i] != nullptr) {
+                glfwDestroyCursor(standard_cursors[i]);
+            }
         }
         glfwTerminate();
     }
@@ -307,7 +329,7 @@ public:
         }
         cursor = shape;
         // nullptr cursor is valid for GLFW
-        glfwSetCursor(window, standard_cursors[static_cast<int>(shape)]);
+        glfwSetCursor(window, standard_cursors[cursor_index(shape)]);
     }
 
     void setMode(WindowMode mode) override {
@@ -397,64 +419,7 @@ public:
         }
     }
 
-    void pushScissor(glm::vec4 area) override {
-        if (scissorStack.empty()) {
-            glEnable(GL_SCISSOR_TEST);
-        }
-        scissorStack.push(scissorArea);
-    
-        area.z += glm::ceil(area.x);
-        area.w += glm::ceil(area.y);
-    
-        area.x = glm::max(area.x, scissorArea.x);
-        area.y = glm::max(area.y, scissorArea.y);
-    
-        area.z = glm::min(area.z, scissorArea.z);
-        area.w = glm::min(area.w, scissorArea.w);
-    
-        if (area.z < 0.0f || area.w < 0.0f) {
-            glScissor(0, 0, 0, 0);
-        } else {
-            glScissor(
-                area.x,
-                size.y - area.w,
-                std::max(0, static_cast<int>(glm::ceil(area.z - area.x))),
-                std::max(0, static_cast<int>(glm::ceil(area.w - area.y)))
-            );
-        }
-        scissorArea = area;
-    }
-
-    void resetScissor() override {
-        scissorArea = glm::vec4(0.0f, 0.0f, size.x, size.y);
-        scissorStack = std::stack<glm::vec4>();
-        glDisable(GL_SCISSOR_TEST);
-    }
-
-    void popScissor() override {
-        if (scissorStack.empty()) {
-            logger.warning() << "extra Window::popScissor call";
-            return;
-        }
-        glm::vec4 area = scissorStack.top();
-        scissorStack.pop();
-        if (area.z < 0.0f || area.w < 0.0f) {
-            glScissor(0, 0, 0, 0);
-        } else {
-            glScissor(
-                area.x,
-                size.y - area.w,
-                std::max(0, static_cast<int>(area.z - area.x)),
-                std::max(0, static_cast<int>(area.w - area.y))
-            );
-        }
-        if (scissorStack.empty()) {
-            glDisable(GL_SCISSOR_TEST);
-        }
-        scissorArea = area;
-    }
-
-    std::unique_ptr<ImageData> takeScreenshot() override {
+                std::unique_ptr<ImageData> takeScreenshot() override {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         auto data = std::make_unique<ubyte[]>(size.x * size.y * 3);
         glPixelStorei(GL_PACK_ALIGNMENT, 1);
@@ -475,8 +440,6 @@ private:
     GLFWwindow* window;
     CursorShape cursor = CursorShape::ARROW;
     int framerate = -1;
-    std::stack<glm::vec4> scissorStack;
-    glm::vec4 scissorArea {};
     double prevSwap = 0.0;
     int posX = 0;
     int posY = 0;
@@ -547,7 +510,9 @@ static void iconify_callback(GLFWwindow* window, int iconified) {
 }
 
 static void create_standard_cursors() {
-    for (int i = 0; i <= static_cast<int>(CursorShape::LAST); i++) {
+    // GLFW knows only the shapes up to NOT_ALLOWED, the rest are mapped
+    // onto them by cursor_index()
+    for (int i = 0; i <= static_cast<int>(CursorShape::NOT_ALLOWED); i++) {
         int cursor = GLFW_ARROW_CURSOR + i;
         // GLFW 3.3 does not support some cursors
         if (GLFW_VERSION_MAJOR <= 3 && GLFW_VERSION_MINOR <= 3 &&
