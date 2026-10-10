@@ -58,11 +58,20 @@ namespace {
     }
 
     uint32_t to_ms_dos_timestamp(const file_time_type& fileTime) {
+        // 1980-01-01 00:00, the earliest MS-DOS date
+        constexpr uint32_t DOS_EPOCH = (0 << 9 | 1 << 5 | 1) << 16;
+        if (fileTime == file_time_type::min()) {
+            return DOS_EPOCH;
+        }
         auto timePoint = time_point_cast<system_clock::duration>(
             fileTime - file_time_type::clock::now() + system_clock::now()
         );
         std::time_t timeT = system_clock::to_time_t(timePoint);
-        std::tm tm = *std::localtime(&timeT);
+        const std::tm* tmPtr = std::localtime(&timeT);
+        if (tmPtr == nullptr || tmPtr->tm_year < 80) {
+            return DOS_EPOCH;
+        }
+        const std::tm& tm = *tmPtr;
         uint16_t date = (tm.tm_year - 80) << 9 | (tm.tm_mon + 1) << 5 | tm.tm_mday;
         uint16_t time = (tm.tm_hour << 11) | (tm.tm_min << 5) | (tm.tm_sec / 2);
         return (date << 16) | time;
@@ -173,7 +182,13 @@ ZipFileDevice::ZipFileDevice(
         entries[entry.fileName] = std::move(entry);
     }
 
-    for (auto& [name, _] : entries) {
+    // Add missing parent directories entries
+    std::vector<std::string> names;
+    names.reserve(entries.size());
+    for (const auto& [name, _] : entries) {
+        names.push_back(name);
+    }
+    for (const auto& name : names) {
         io::path path = name;
 
         while (!(path = path.parent()).pathPart().empty()) {
@@ -184,7 +199,6 @@ ZipFileDevice::ZipFileDevice(
             entry.isDirectory = true;
             entries[path.pathPart()] = entry;
         }
-        break;
     }
 
     for (auto& [_, entry] : entries) {
@@ -253,6 +267,9 @@ file_time_type ZipFileDevice::lastWriteTime(std::string_view path) {
 }
 
 bool ZipFileDevice::exists(std::string_view path) {
+    if (path.empty()) {
+        return true;
+    }
     return entries.find(std::string(path)) != entries.end();
 }
 
@@ -441,7 +458,11 @@ static size_t write_zip(
 void io::write_zip(const path& folder, const path& file) {
     ByteBuilder central_dir;
     auto out = io::write(file);
-    size_t entries = write_zip(folder.pathPart(), folder, *out, central_dir);
+    auto root = folder.pathPart();
+    if (!root.empty() && root.back() != '/') {
+        root += '/';
+    }
+    size_t entries = write_zip(root, folder, *out, central_dir);
 
     size_t central_dir_offset = out->tellp();
     out->write(reinterpret_cast<const char*>(central_dir.data()), central_dir.size());
