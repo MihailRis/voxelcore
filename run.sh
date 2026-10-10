@@ -36,7 +36,7 @@ function test {
     cd build
     rm -rf ./vctest-run
     mkdir ./vctest-run
-    ./vctest/vctest --exe ./VoxelEngine --res res --user ./vctest-run --tests ../dev/tests --memchecker valgrind
+    ./vctest/vctest --exe ./VoxelCore --res res --user ./vctest-run --tests ../dev/tests --memchecker valgrind
     cd ..
     run=
 }
