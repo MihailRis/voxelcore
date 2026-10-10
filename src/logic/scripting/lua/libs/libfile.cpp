@@ -305,13 +305,14 @@ static int l_read_descriptor(lua::State* L) {
     int maxlen = lua::tointeger(L, 2);
 
     auto& stream = io_descriptors::require_input(descriptor);
-    if (stream.eof()) {
-        stream.clear();
-    }
 
     util::Buffer<char> buffer(maxlen);
     stream.read(buffer.data(), maxlen);
-    std::streamsize read_len = stream.gcount(); 
+    std::streamsize read_len = stream.gcount();
+
+    if (stream.eof()) {
+        stream.clear(stream.rdstate() & std::ios::badbit);
+    }
     return lua::create_bytearray(L, buffer.data(), read_len);
 }
 
