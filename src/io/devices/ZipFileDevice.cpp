@@ -58,8 +58,7 @@ namespace {
     }
 
     uint32_t to_ms_dos_timestamp(const file_time_type& fileTime) {
-        // 1980-01-01 00:00, the earliest MS-DOS date; used for unknown time
-        // (devices without timestamps return file_time_type::min())
+        // 1980-01-01 00:00, the earliest MS-DOS date
         constexpr uint32_t DOS_EPOCH = (0 << 9 | 1 << 5 | 1) << 16;
         if (fileTime == file_time_type::min()) {
             return DOS_EPOCH;
@@ -68,7 +67,6 @@ namespace {
             fileTime - file_time_type::clock::now() + system_clock::now()
         );
         std::time_t timeT = system_clock::to_time_t(timePoint);
-        // localtime returns nullptr for out of range time on Windows
         const std::tm* tmPtr = std::localtime(&timeT);
         if (tmPtr == nullptr || tmPtr->tm_year < 80) {
             return DOS_EPOCH;
