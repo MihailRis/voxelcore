@@ -480,6 +480,11 @@ void PlayerController::processRightClick(
         }
     }
     if (chosenBlock != vox->id && chosenBlock) {
+        if (!scripting::can_block_be_placed(
+                &player, def, coord, state.rotation
+            )) {
+            return;
+        }
         if (!player.isInfiniteItems()) {
             auto& slot = player.getInventory()->getSlot(player.getChosenSlot());
             slot.setCount(slot.getCount() - 1);

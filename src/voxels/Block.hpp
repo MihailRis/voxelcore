@@ -41,6 +41,7 @@ struct BlockFuncsSet {
     bool init : 1;
     bool update : 1;
     bool onplaced : 1;
+    bool canbeplaced : 1;
     bool onbreaking : 1;
     bool onbroken : 1;
     bool onreplaced : 1;
