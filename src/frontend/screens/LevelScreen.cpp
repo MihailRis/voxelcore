@@ -85,8 +85,12 @@ LevelScreen::LevelScreen(
     };
     keepAlive(settings.graphics.backlight.observe(resetChunks));
     keepAlive(settings.graphics.softLighting.observe(resetChunks));
-    keepAlive(settings.graphics.denseRender.observe([=](bool flag) {
-        resetChunks(flag);
+    keepAlive(settings.graphics.denseRender.observe([=](bool) {
+        resetChunks(false);
+        frontend->getContentGfxCache().refresh();
+    }));
+    keepAlive(settings.graphics.shadowsQuality.observe([=](int quality) {
+        resetChunks(false);
         frontend->getContentGfxCache().refresh();
     }));
     keepAlive(settings.camera.fov.observe([=](double value) {
