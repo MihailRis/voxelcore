@@ -5,6 +5,7 @@
 #include <cstring>
 #include <climits>
 #include <memory>
+#include <functional>
 #include <algorithm>
 #include <string_view>
 
