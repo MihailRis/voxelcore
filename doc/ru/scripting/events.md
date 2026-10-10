@@ -25,6 +25,26 @@ function on_placed(x, y, z, playerid)
 Вызывается после установки блока игроком
 
 ```lua
+function can_be_placed(x, y, z, playerid, rotation) -> bool
+```
+
+Вызывается перед установкой блока игроком, после встроенных проверок
+(заменяемость, `grounded`, пересечение с сущностями).
+Блок устанавливается, только если функция возвращает `true`.
+`rotation` — индекс поворота, с которым будет установлен блок
+(см. `block.get_rotation`).
+
+Пример: саженец, который можно посадить только на землю.
+
+```lua
+function can_be_placed(x, y, z, playerid, rotation)
+    return block.name(block.get(x, y - 1, z)) == "base:dirt"
+end
+```
+
+Событие не вызывается при установке блока через `block.place` и `block.set`.
+
+```lua
 function on_broken(x, y, z, playerid)
 ```
 
