@@ -31,6 +31,17 @@ function norun {
 }
 
 
+function test {
+    echo "[RUN SCRIPT] Run tests"
+    cd build
+    rm -rf ./vctest-run
+    mkdir ./vctest-run
+    ./vctest/vctest --exe ./VoxelEngine --res res --user ./vctest-run --tests ../dev/tests --memchecker valgrind
+    cd ..
+    run=
+}
+
+
 function help {
     echo "[RUN SCRIPT] Usage: ./run [ARGUMENT]..."
     echo "[RUN SCRIPT] Arguments:"
@@ -38,6 +49,7 @@ function help {
     echo "[RUN SCRIPT]     -b, --build      Build project"
     echo "[RUN SCRIPT]     -r, --rebuild    Rebuild project"
     echo "[RUN SCRIPT]     -R, --norun      Build without run"
+    echo "[RUN SCRIPT]     -t, --test       Run tests (without run)"
     echo "[RUN SCRIPT]     -h, --help       Print this page"
 }
 
@@ -48,6 +60,7 @@ while [ -n "$1" ]; do
         -b | --build) build ;;
         -r | --rebuild) rebuild ;;
         -R | --norun) norun ;;
+        -t | --test) test ;;
         -h | --help) help
                      norun
                      break ;;
