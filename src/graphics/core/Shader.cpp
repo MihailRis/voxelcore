@@ -113,8 +113,6 @@ static inline auto shader_deleter = [](GLuint* shader) {
     delete shader;
 };
 
-inline const uint GL_LOG_LEN = 512;
-
 // shader should be deleted after shader program linking
 using glshader = std::unique_ptr<GLuint, decltype(shader_deleter)>;
 
