@@ -2,6 +2,9 @@
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <stack>
+#include <string>
+#include <vector>
 
 #include "graphics/core/commons.hpp"
 #include "typedefs.hpp"
@@ -9,6 +12,18 @@
 class ImageData;
 class Input;
 struct DisplaySettings;
+
+enum class DecorationButton {
+    CLOSE,
+    MINIMIZE,
+    MAXIMIZE,
+};
+
+struct DecorationButtonLayout {
+    DecorationButton button;
+    float x;
+    float width;
+};
 
 enum class WindowMode {
     WINDOWED,
@@ -32,18 +47,53 @@ public:
     virtual bool isShouldClose() const = 0;
     virtual void setShouldClose(bool flag) = 0;
 
+    virtual bool isFrameRequired() const {
+        return true;
+    }
+
     virtual void setCursor(CursorShape shape) = 0;
+
+    /// @brief Whether the engine drawn window frame owns the cursor now
+    ///
+    /// The frame puts the resize cursors of its edges and of the bar, and the
+    /// GUI must not override them with the cursor of the hovered widget.
+    virtual bool ownsCursor() const {
+        return false;
+    }
     virtual void setMode(WindowMode mode) = 0;
     virtual WindowMode getMode() const = 0;
 
     virtual void focus() = 0;
 
     virtual void setTitle(const std::string& title) = 0;
+
+    virtual const std::string& getTitle() const {
+        static const std::string empty;
+        return empty;
+    }
+
+    virtual const char* getBackendName() const = 0;
+
+    virtual int getDecorationHeight() const {
+        return 0;
+    }
+
+    virtual int getDecorationHoveredButton() const {
+        return -1;
+    }
+
+    virtual const std::vector<DecorationButtonLayout>& getDecorationButtons() const {
+        static const std::vector<DecorationButtonLayout> empty;
+        return empty;
+    }
+
+    virtual bool isIconSupported() const = 0;
+
     virtual void setIcon(const ImageData* image) = 0;
 
-    virtual void pushScissor(glm::vec4 area) = 0;
-    virtual void popScissor() = 0;
-    virtual void resetScissor() = 0;
+    virtual void pushScissor(glm::vec4 area);
+    virtual void popScissor();
+    virtual void resetScissor();
 
     virtual void setShouldRefresh() = 0;
     virtual bool checkShouldRefresh() = 0;
@@ -65,6 +115,8 @@ public:
     > initialize(DisplaySettings* settings, std::string title);
 protected:
     glm::ivec2 size;
+    std::stack<glm::vec4> scissorStack;
+    glm::vec4 scissorArea {};
     WindowMode mode = WindowMode::WINDOWED;
 };
 

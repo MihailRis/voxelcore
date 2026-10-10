@@ -59,9 +59,11 @@ WindowControl::Result WindowControl::initialize() {
         throw initialize_error("could not initialize window");
     }
     window->setFramerate(settings.display.framerate.get());
-    if (auto icon = load_icon()) {
-        icon->flipY();
-        window->setIcon(icon.get());
+    if (window->isIconSupported()) {
+        if (auto icon = load_icon()) {
+            icon->flipY();
+            window->setIcon(icon.get());
+        }
     }
 
     return Result {std::move(window), std::move(input)};

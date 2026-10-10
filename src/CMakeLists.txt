@@ -4,6 +4,13 @@ file(GLOB_RECURSE headers ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 file(GLOB_RECURSE sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 list(REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 
+# The window backends are separate libraries: the engine only talks to the
+# Window/Input interfaces and to the factories in detail/WindowBackends.hpp
+file(GLOB_RECURSE backend_sources
+     ${CMAKE_CURRENT_SOURCE_DIR}/window/detail/*.cpp
+     ${CMAKE_CURRENT_SOURCE_DIR}/window/wayland/*.cpp)
+list(REMOVE_ITEM sources ${backend_sources})
+
 add_library(VoxelCoreSrc STATIC ${sources} ${headers})
 
 find_package(OpenGL REQUIRED)
@@ -72,27 +79,8 @@ endif()
 
 target_include_directories(VoxelCoreSrc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(
-    VoxelCoreSrc
-    PRIVATE glfw
-            OpenGL::GL
-            GLEW::GLEW
-            ZLIB::ZLIB
-            PNG::PNG
-            CURL::libcurl
-            OpenSSL::Crypto
-            OpenAL::OpenAL
-            Vorbis::vorbis
-            Vorbis::vorbisfile
-            Freetype::Freetype
-    PUBLIC luajit::luajit
-           glm::glm # Need public for src/delegates.hpp, which including to
-                    # main.cpp
-)
-
-target_compile_options(
-    VoxelCoreSrc
-    PUBLIC $<$<CXX_COMPILER_ID:MSVC>:
+set(VOXEL_COMPILE_OPTIONS
+    $<$<CXX_COMPILER_ID:MSVC>:
            /utf-8
            /MP
            /D_DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR
@@ -127,6 +115,53 @@ target_compile_options(
            -Wduplicated-branches
            -Wduplicated-cond
            >)
+
+# Everything the engine sources and their public headers include: the backends
+# compile against the same surface, and a missing include directory shows up as
+# a build failure only on the platforms that keep the library outside the
+# default include path.
+add_library(VoxelCoreInterface INTERFACE)
+
+target_include_directories(VoxelCoreInterface INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(VoxelCoreInterface INTERFACE
+    glfw
+    GLEW::GLEW
+    OpenGL::GL
+    glm::glm)
+
+option(VOXELCORE_WAYLAND "Build the native Wayland window backend" ON)
+
+add_subdirectory(window/detail)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND VOXELCORE_WAYLAND)
+    add_subdirectory(window/wayland)
+endif()
+
+target_link_libraries(
+    VoxelCoreSrc
+    PRIVATE VoxelGLFW
+            glfw
+            OpenGL::GL
+            GLEW::GLEW
+            ZLIB::ZLIB
+            PNG::PNG
+            CURL::libcurl
+            OpenSSL::Crypto
+            OpenAL::OpenAL
+            Vorbis::vorbis
+            Vorbis::vorbisfile
+            Freetype::Freetype
+    PUBLIC luajit::luajit
+           glm::glm # Need public for src/delegates.hpp, which including to
+                    # main.cpp
+)
+
+if(TARGET VoxelWayland)
+    target_link_libraries(VoxelCoreSrc PRIVATE VoxelWayland)
+endif()
+
+target_compile_options(VoxelCoreSrc PUBLIC ${VOXEL_COMPILE_OPTIONS})
 
 target_link_options(
     VoxelCoreSrc
