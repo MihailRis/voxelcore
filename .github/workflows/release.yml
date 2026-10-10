@@ -48,7 +48,7 @@ jobs:
         mkdir release
         mv ./artifacts/AppImage/VoxelCore-latest-x86_64.AppImage \
            ./release/voxelcore-${RELEASE_VERSION}_x86-64.AppImage
-        mv ./artifacts/VoxelEngineMacOs/VoxelEngineMacApp.dmg \
+        mv ./artifacts/VoxelCoreMacOs/VoxelCoreMacApp.dmg \
            ./release/voxelcore-${RELEASE_VERSION}_macos.dmg
         (cd ./artifacts/Windows-Build && zip -r ../../release/voxelcore-${RELEASE_VERSION}_win64.zip .)
         ls -la ./release

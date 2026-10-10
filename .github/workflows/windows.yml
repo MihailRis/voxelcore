@@ -37,7 +37,7 @@ jobs:
         run: ctest --preset default-vs-msvc-windows
       - name: Run engine tests
         run: |
-            build/vctest/RelWithDebInfo/vctest.exe -e build/RelWithDebInfo/VoxelEngine.exe -d dev/tests -u build
+            build/vctest/RelWithDebInfo/vctest.exe -e build/RelWithDebInfo/VoxelCore.exe -d dev/tests -u build
         timeout-minutes: 5
       - name: Package for Windows
         run: |
@@ -45,7 +45,6 @@ jobs:
           cp -r build/RelWithDebInfo/* packaged/
           cp build/vctest/RelWithDebInfo/vctest.exe packaged/
           cp C:/Windows/System32/msvcp140.dll packaged/msvcp140.dll
-          mv packaged/VoxelEngine.exe packaged/VoxelCore.exe
         working-directory: ${{ github.workspace }}
       - uses: actions/upload-artifact@v4
         with:

@@ -62,5 +62,5 @@ done
 
 if [[ $run ]]; then
     echo "[RUN SCRIPT] Run project"
-    ./build/VoxelEngine
+    ./build/VoxelCore
 fi

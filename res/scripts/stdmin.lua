@@ -183,6 +183,12 @@ function on_deprecated_call(name, alternatives)
     end
 end
 
+local __pack_envs = __vc__pack_envs
+function __vc_internals.get_pack_env(packid)
+    return __pack_envs[packid]
+end
+__vc__pack_envs = nil
+
 function reload_module(name)
     local prefix, name = parse_path(name)
     local path = prefix..":modules/"..name..".lua"
@@ -195,6 +201,10 @@ function reload_module(name)
     local script, err = load(file.read(path), path)
     if script == nil then
         error(err)
+    end
+    local env = __pack_envs[prefix]
+    if env then
+        script = setfenv(script, env)
     end
     local result = script()
     if not result then
@@ -269,12 +279,6 @@ end
 function __vc_lock_internal_modules()
     __internal_locked = true
 end
-
-local __pack_envs = __vc__pack_envs
-function __vc_internals.get_pack_env(packid)
-    return __pack_envs[packid]
-end
-__vc__pack_envs = nil
 
 function require(path)
     if not string.find(path, ':') then

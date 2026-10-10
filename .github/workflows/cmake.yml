@@ -62,7 +62,7 @@ jobs:
       # Build your program with the given configuration
       run: |
         cmake --build ${{github.workspace}}/build --config ${{inputs.build_type}}
-        mv ${{github.workspace}}/build/VoxelEngine VoxelEngine
+        mv ${{github.workspace}}/build/VoxelCore VoxelCore
     - name: Run tests
       if: ${{ inputs.run_tests }}
       run: ctest --test-dir ${{github.workspace}}/build
@@ -70,7 +70,7 @@ jobs:
       if: ${{ inputs.upload_artifacts }}
       uses: actions/upload-artifact@v4
       with:
-        name: VoxelEngine
+        name: VoxelCore
         path: |
-          VoxelEngine
+          VoxelCore
           res/*

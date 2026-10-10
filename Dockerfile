@@ -1,6 +1,6 @@
 # Build docker container: docker build -t voxelcore .
 # Build project: docker run --rm -it -v$(pwd):/project voxelcore bash -c "cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_RPATH_USE_LINK_PATH=TRUE -Bbuild && cmake --build build"
-# Run project in docker: docker run --rm -it -v$(pwd):/project -v/tmp/.X11-unix:/tmp/.X11-unix -v${XAUTHORITY}:/home/user/.Xauthority:ro -eDISPLAY --network=host voxelcore ./build/VoxelEngine
+# Run project in docker: docker run --rm -it -v$(pwd):/project -v/tmp/.X11-unix:/tmp/.X11-unix -v${XAUTHORITY}:/home/user/.Xauthority:ro -eDISPLAY --network=host voxelcore ./build/VoxelCore
 
 FROM debian:bookworm-slim
 LABEL Description="Docker container for building VoxelCore for Linux"

@@ -1,10 +1,10 @@
-project(VoxelEngineSrc)
+project(VoxelCoreSrc)
 
 file(GLOB_RECURSE headers ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
 file(GLOB_RECURSE sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 list(REMOVE_ITEM sources ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 
-add_library(VoxelEngineSrc STATIC ${sources} ${headers})
+add_library(VoxelCoreSrc STATIC ${sources} ${headers})
 
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
@@ -70,10 +70,10 @@ else()
     add_library(luajit::luajit ALIAS PkgConfig::luajit)
 endif()
 
-target_include_directories(VoxelEngineSrc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(VoxelCoreSrc PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(
-    VoxelEngineSrc
+    VoxelCoreSrc
     PRIVATE glfw
             OpenGL::GL
             GLEW::GLEW
@@ -91,7 +91,7 @@ target_link_libraries(
 )
 
 target_compile_options(
-    VoxelEngineSrc
+    VoxelCoreSrc
     PUBLIC $<$<CXX_COMPILER_ID:MSVC>:
            /utf-8
            /MP
@@ -129,7 +129,7 @@ target_compile_options(
            >)
 
 target_link_options(
-    VoxelEngineSrc
+    VoxelCoreSrc
     PUBLIC
     $<$<CXX_COMPILER_ID:GNU>:
     -no-pie

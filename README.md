@@ -188,7 +188,7 @@ docker run --rm -it \
   -v "$XAUTHORITY:/home/user/.Xauthority:ro" \
   -e DISPLAY="$DISPLAY" \
   --network=host \
-  voxel-engine ./build/VoxelEngine
+  voxel-engine ./build/VoxelCore
 ```
 
 ### On Windows
@@ -218,5 +218,5 @@ docker run --rm -it -v "${PWD}:/project" voxel-engine bash -c "cmake -DCMAKE_BUI
 #### Step 4. Run the application
 
 ```powershell
-docker run --rm -it -v "${PWD}:/project" -e DISPLAY=host.docker.internal:0.0 --network=host voxel-engine ./build/VoxelEngine
+docker run --rm -it -v "${PWD}:/project" -e DISPLAY=host.docker.internal:0.0 --network=host voxel-engine ./build/VoxelCore
 ```
