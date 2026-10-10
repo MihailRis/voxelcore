@@ -44,6 +44,7 @@ SettingsHandler::SettingsHandler(EngineSettings& settings) {
     builder.add("volume-ui", &settings.audio.volumeUI);
     builder.add("volume-ambient", &settings.audio.volumeAmbient);
     builder.add("volume-music", &settings.audio.volumeMusic);
+    builder.add("volume-contrast", &settings.audio.volumeContrast);
     builder.add("input-device", &settings.audio.inputDevice);
     builder.add("acoustic-effects", &settings.audio.acousticEffects);
 
@@ -55,6 +56,7 @@ SettingsHandler::SettingsHandler(EngineSettings& settings) {
     builder.add("limit-fps-iconified", &settings.display.limitFpsIconified);
     builder.add("window-mode", &settings.display.windowMode);
     builder.add("adaptive-menu-fps", &settings.display.adaptiveFpsInMenu);
+    builder.add("gui-scale", &settings.display.guiScale);
 
     builder.addSection("camera");
     builder.add("sensitivity", &settings.camera.sensitivity);
