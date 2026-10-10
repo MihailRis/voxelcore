@@ -125,12 +125,14 @@ glshader compile_shader(GLenum type, const GLchar* source, const std::string& fi
     glCompileShader(shader);
     glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
     if (!success) {
-        GLchar infoLog[GL_LOG_LEN];
-        glGetShaderInfoLog(shader, GL_LOG_LEN, nullptr, infoLog);
+        GLint infoLogLength;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &infoLogLength);
+        auto infoLog = std::make_unique<GLchar[]>(infoLogLength);
+        glGetShaderInfoLog(shader, infoLogLength, nullptr, infoLog.get());
         glDeleteShader(shader);
         throw std::runtime_error(
             "vertex shader compilation failed (" + file + "):\n" +
-            std::string(infoLog)
+            std::string(infoLog.get(), infoLogLength)
         );
     }
     return glshader(new GLuint(shader), shader_deleter); //-V508
@@ -172,10 +174,14 @@ static GLuint compile_program(
     glGetProgramiv(program, GL_LINK_STATUS, &success);
 
     if (!success) {
-        GLchar infoLog[GL_LOG_LEN];
-        glGetProgramInfoLog(program, GL_LOG_LEN, nullptr, infoLog);
+        GLint infoLogLength;
+        glGetProgramiv(program, GL_INFO_LOG_LENGTH, &infoLogLength);
+        auto infoLog = std::make_unique<GLchar[]>(infoLogLength);
+        glGetProgramInfoLog(program, infoLogLength, nullptr, infoLog.get());
+        glDeleteProgram(program);
         throw std::runtime_error(
-            "shader program linking failed:\n" + std::string(infoLog)
+            "shader program linking failed:\n" +
+            std::string(infoLog.get(), infoLogLength)
         );
     }
     return program;
