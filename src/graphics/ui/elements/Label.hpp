@@ -60,6 +60,8 @@ namespace gui {
 
         /// @brief Auto resize label to fit text
         bool autoresize = false;
+        bool renderText = true;
+        glm::vec2 textOrigin {0};
 
         /// @brief Text markup language
         std::string markup;
@@ -110,6 +112,10 @@ namespace gui {
         uint getLineByTextIndex(size_t index) const;
         uint getLinesNumber() const;
         bool isFakeLine(size_t line) const;
+
+        bool prepareLayout(const Assets& assets);
+        glm::vec2 getTextOrigin() const;
+        void setRenderText(bool value);
 
         void draw(const DrawContext& pctx, const Assets& assets) override;
 
