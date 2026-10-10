@@ -35,6 +35,7 @@ entity:set_enabled(name: str, enable: bool)
 -- Returns id of player the entity is bound, otherwise -1 is returned.
 -- At components initialization -1 is also returned,
 -- since the binding occurs after initialization.
+-- Returns nil if the entity does not exist.
 entity:get_player() -> int or nil
 
 -- Checks the 'selectable' property of an entity (raycast opacity)
@@ -42,6 +43,22 @@ body:is_selectable() -> bool
 -- Sets the value of the 'selectable' property of an entity
 body:set_selectable(flag: bool)
 ```
+
+### Player entity
+
+An entity bound to a player serves as the player's body: the player position
+is taken from its Transform, and the player hitbox is its Rigidbody. The engine
+spawns this entity automatically from the definition set by the `player-entity`
+parameter of `config/defaults.toml` (`base:player` in the base pack) and binds
+it to the player. `player.get_entity(playerid)` returns the player entity ID.
+
+`entity:get_player()` lets you tell the player entity apart from other entities
+and find out which player it belongs to. For example, the dropped item component
+`base:drop` checks `other:get_player()` when touching another entity: a player
+picks the item up, while another dropped item gets merged into one stack.
+
+Use the [on_player_set](#component-events) component event to run code
+when the binding happens.
 
 ## Custom Components
 
@@ -118,6 +135,7 @@ body:is_vdamping() -> bool
 -- Returns the vertical damping multiplier
 body:get_vdamping() -> number
 -- Enables/disables vertical damping / sets vertical damping multiplier
+-- (true is 1.0, false is 0.0)
 body:set_vdamping(enabled: bool | number)
 
 -- Checks if the entity is on the ground
@@ -151,6 +169,48 @@ body:set_elasticity(elasticity: number)
 -- Returns the velocity of the surface the body is on, or {0,0,0}
 body:get_ground_vel() -> vec3
 ```
+
+#### Velocity damping
+
+After the movement is calculated, the body velocity changes every frame
+as follows (`delta` is the frame duration in seconds):
+
+```lua
+-- pseudocode
+local k = body:is_grounded() and 10.0 or body:get_linear_damping()
+local ground_vel = body:get_ground_vel()
+
+vel.x = vel.x + (ground_vel.x - vel.x) * delta * k
+vel.z = vel.z + (ground_vel.z - vel.z) * delta * k
+if body:get_vdamping() > 0 then
+    vel.y = vel.y / (1 + delta * k * body:get_vdamping())
+end
+```
+
+**linear_damping** (0.5 by default) is the decay rate of the horizontal
+velocity relative to the surface the body is on. The value is not limited
+to the 0..1 range:
+- 0 - no damping, the body keeps its horizontal velocity in the air;
+- the greater the value, the faster the damping: the horizontal velocity
+  decreases roughly e^(k*t) times in t seconds. At 0.5 it halves in about
+  1.4 s, at 10 - in about 0.07 s;
+- at `delta * k = 1` (e.g. k = 60 at 60 FPS) the velocity is cancelled
+  in one frame. Greater values overshoot the surface velocity, and at
+  `delta * k > 2` the velocity starts to grow.
+
+While the body is on the ground (`body:is_grounded()`), the fixed value 10
+(surface friction) is used instead of the set one, so `set_linear_damping`
+only affects movement in the air.
+
+**vdamping** (1.0 by default) is the vertical velocity damping multiplier
+relative to `k`. It does not affect horizontal damping:
+- 0 (or `false`) - the vertical velocity is not damped;
+- 1 (or `true`) - the vertical velocity is damped as fast as the horizontal one;
+- values above 1 strengthen vertical damping, values below 1 weaken it.
+
+Vertical damping limits the falling speed: under constant gravity it tends
+to about `g * gravity_scale / (k * vdamping)`, where `g` is the world
+gravity acceleration.
 
 ### Skeleton
 
