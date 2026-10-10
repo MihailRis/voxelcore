@@ -173,7 +173,13 @@ ZipFileDevice::ZipFileDevice(
         entries[entry.fileName] = std::move(entry);
     }
 
-    for (auto& [name, _] : entries) {
+    // Add missing parent directories entries
+    std::vector<std::string> names;
+    names.reserve(entries.size());
+    for (const auto& [name, _] : entries) {
+        names.push_back(name);
+    }
+    for (const auto& name : names) {
         io::path path = name;
 
         while (!(path = path.parent()).pathPart().empty()) {
@@ -184,7 +190,6 @@ ZipFileDevice::ZipFileDevice(
             entry.isDirectory = true;
             entries[path.pathPart()] = entry;
         }
-        break;
     }
 
     for (auto& [_, entry] : entries) {
@@ -253,6 +258,9 @@ file_time_type ZipFileDevice::lastWriteTime(std::string_view path) {
 }
 
 bool ZipFileDevice::exists(std::string_view path) {
+    if (path.empty()) {
+        return true;
+    }
     return entries.find(std::string(path)) != entries.end();
 }
 
@@ -441,7 +449,11 @@ static size_t write_zip(
 void io::write_zip(const path& folder, const path& file) {
     ByteBuilder central_dir;
     auto out = io::write(file);
-    size_t entries = write_zip(folder.pathPart(), folder, *out, central_dir);
+    auto root = folder.pathPart();
+    if (!root.empty() && root.back() != '/') {
+        root += '/';
+    }
+    size_t entries = write_zip(root, folder, *out, central_dir);
 
     size_t central_dir_offset = out->tellp();
     out->write(reinterpret_cast<const char*>(central_dir.data()), central_dir.size());
