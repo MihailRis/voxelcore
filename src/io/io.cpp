@@ -152,6 +152,9 @@ std::vector<ubyte> io::read_bytes(const path& filename) {
 std::string io::read_string(const path& filename) {
     size_t size;
     auto bytes = read_bytes(filename, size);
+    if (bytes == nullptr) {
+        throw std::runtime_error("could not read file " + filename.string());
+    }
     return std::string((const char*)bytes.get(), size);
 }
 

@@ -133,6 +133,9 @@ static model::Mesh load_mesh(
     if (flags == FLAG_ZLIB) {
         throw std::runtime_error("compression is not supported yet");
     }
+    if (attributeCount <= 0) {
+        throw std::runtime_error("mesh must have at least one attribute");
+    }
     std::vector<VertexAttribute> attributes;
     for (int i = 0; i < attributeCount; i++) {
         attributes.push_back(load_attribute(reader));

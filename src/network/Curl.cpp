@@ -113,6 +113,14 @@ public:
 
         curl_easy_setopt(curl, CURLOPT_URL, request.url.c_str());
         curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, request.method.c_str());
+
+#if LIBCURL_VERSION_NUM >= 0x075500
+        curl_easy_setopt(curl, CURLOPT_PROTOCOLS_STR, "http,https");
+        curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS_STR, "http,https");
+#else
+        curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+        curl_easy_setopt(curl, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS);
+#endif
         
         curl_slist* hs = nullptr;
         

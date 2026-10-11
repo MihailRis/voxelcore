@@ -266,8 +266,10 @@ static int l_peek(lua::State* L, network::Network& network) {
 static int l_available(lua::State* L, network::Network& network) {
     u64id_t id = lua::tointeger(L, 1);
 
-    if (auto connection = network.getConnection(id, false)) {
-        return lua::pushinteger(L, dynamic_cast<network::TcpConnection*>(connection)->available());
+    if (auto connection = dynamic_cast<network::ReadableConnection*>(
+            network.getConnection(id, false)
+        )) {
+        return lua::pushinteger(L, connection->available());
     }
 
     return 0;
