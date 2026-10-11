@@ -48,26 +48,6 @@ protected:
 
     pos_type seekoff(
         off_type off,
-        std::ios_base::seekdir way,
-        std::ios_base::openmode mode = std::ios_base::out
-    ) override {
-        // only position query (tellp) is supported
-        if (off == 0 && way == std::ios_base::cur &&
-            (mode & std::ios_base::out)) {
-            return pos_type(off_type(size()));
-        }
-        return pos_type(off_type(-1));
-    }
-
-    std::streamsize xsputn(const char* s, std::streamsize count) override {
-        reserve(position() + count);
-        std::memcpy(pptr(), s, count);
-        advance(count);
-        return count;
-    }
-
-    pos_type seekoff(
-        off_type off,
         std::ios_base::seekdir dir,
         std::ios_base::openmode which
     ) override {
