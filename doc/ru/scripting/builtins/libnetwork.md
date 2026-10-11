@@ -50,7 +50,7 @@ network.get(
 )
 
 -- Пример:
-network.get("https://api.github.com/repos/MihailRis/VoxelEngine-Cpp/releases/latest", function (s)
+network.get("https://api.github.com/repos/MihailRis/voxelcore/releases/latest", function (s)
     print(json.parse(s).name) -- выведет имя последнего релиза движка
 end)
 

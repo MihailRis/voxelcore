@@ -35,8 +35,15 @@ void InlineFrame::setDocument(const std::shared_ptr<UiDocument>& document) {
 
     root->setSize(size);
 
-    gui.postRunnable([this]() {
-        scripting::on_ui_open(*this->document, {});
+    gui.postRunnable([weak = weak_from_this(), document]() {
+        auto node = weak.lock();
+        if (node == nullptr) {
+            return;
+        }
+        if (static_cast<InlineFrame&>(*node).document != document) {
+            return;
+        }
+        scripting::on_ui_open(*document, {});
     });
 }
 

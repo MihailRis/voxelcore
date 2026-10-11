@@ -263,7 +263,7 @@ runnable lua::create_runnable(State* L) {
     };
 }
 
-KeyCallback lua::create_simple_handler(State* L) {
+InputCallback lua::create_simple_handler(State* L) {
     auto funcptr = create_lambda_handler(L);
     return [=]() -> bool {
         if (!get_from_registry(L, LAMBDAS_TABLE, *funcptr, false)) {

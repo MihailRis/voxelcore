@@ -185,9 +185,11 @@ rig:index(name: str) -> int
 -- or the skeleton if no index is specified
 rig:is_visible([optional] index: int) -> bool
 
+-- Sets the visibility status of the skeleton
+rig:set_visible(status: bool)
+
 -- Sets the visibility status of a bone by index
--- or the skeleton if no index is specified
-rig:set_visible([optional] index: int, status: bool)
+rig:set_visible(index: int, status: bool)
 
 -- Returns the color of the entity
 rig:get_color() -> vec4

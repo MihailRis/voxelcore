@@ -41,6 +41,17 @@ assert(entries[1] == "memtest:dir/subdir/a.txt")
 assert(entries[2] == "memtest:dir/subdir/b.txt")
 assert(entries[3] == "memtest:dir/subdir/other")
 
+debug.log("create sibling directory")
+file.mkdir("memtest:dir/subdir/sibling")
+assert(file.isfile("memtest:dir/subdir/a.txt"))
+assert(file.isdir("memtest:dir/subdir/other"))
+asserts.equals(4, #file.list("memtest:dir/subdir"))
+
+debug.log("overwrite file")
+file.write("memtest:dir/subdir/a.txt", "overwritten")
+asserts.equals("overwritten", file.read("memtest:dir/subdir/a.txt"))
+asserts.equals(4, #file.list("memtest:dir/subdir"))
+
 debug.log("remove tree")
 file.remove_tree("memtest:dir")
 assert(not file.isdir("memtest:dir"))

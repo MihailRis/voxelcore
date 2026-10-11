@@ -8,7 +8,7 @@ TEST(curltest, curltest) {
     auto network = network::Network::create(settings);
 
     network::HttpRequest request {};
-    request.url = "https://raw.githubusercontent.com/MihailRis/VoxelEngine-Cpp/refs/"
+    request.url = "https://raw.githubusercontent.com/MihailRis/voxelcore/refs/"
                   "heads/curl/res/content/base/blocks/lamp.json";
     request.onResponse = [](network::HttpResponse response) {
         if (response.body.empty()) {

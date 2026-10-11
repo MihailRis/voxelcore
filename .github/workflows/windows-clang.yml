@@ -59,11 +59,10 @@ jobs:
         run: |
           mkdir packaged
           mkdir packaged/res
-          cp build/VoxelEngine.exe packaged/
+          cp build/VoxelCore.exe packaged/
           cp build/vctest/vctest.exe packaged/
           cp build/*.dll packaged/
           cp -r build/res/* packaged/res/
-          mv packaged/VoxelEngine.exe packaged/VoxelCore.exe
       - uses: actions/upload-artifact@v4
         with:
           name: Windows-Build

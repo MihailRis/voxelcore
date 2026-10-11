@@ -42,8 +42,14 @@ skeleton:is_visible([опционально] index: int) -> boolean
 skeleton:set_visible([опционально] index: int, status: boolean)
 
 -- Возвращает цвет сущности
-skeleton:get_color() -> vec3
+skeleton:get_color() -> vec4
+
+-- Возвращает цвет кости
+skeleton:get_color(index: int) -> vec4
 
 -- Устанавливает цвет сущности
-skeleton:set_color(color: vec3)
+skeleton:set_color(color: vec4)
+
+-- Устанавливает цвет кости
+skeleton:set_color(color: vec4, index: int)
 ```

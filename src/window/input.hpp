@@ -288,12 +288,13 @@ public:
 
     virtual const Bindings& getBindings() const = 0;
 
-    virtual ObserverHandler addKeyCallback(Keycode key, KeyCallback callback) = 0;
+    virtual ObserverHandler addKeyCallback(Keycode key, InputCallback callback) = 0;
+    virtual ObserverHandler addMouseCallback(Mousecode button, InputCallback callback) = 0;
 
     virtual const std::vector<Keycode>& getPressedKeys() const = 0;
     virtual const std::vector<uint>& getCodepoints() const = 0;
 
-    ObserverHandler addCallback(const std::string& name, KeyCallback callback) {
+    ObserverHandler addCallback(const std::string& name, InputCallback callback) {
         return getBindings().require(name).onactived.add(callback);
     }
 };

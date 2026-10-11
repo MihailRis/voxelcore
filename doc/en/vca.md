@@ -28,6 +28,9 @@ Two kinds of curve definitions are currently available, each producing a value `
 - `@scale` - scales an object/bone (multiplier)
 - `@zoom` - camera zoom (multiplier)
 - `@texture` - change of a dynamically assigned texture (see [skeleton:set_texture](scripting/ecs.md#skeleton))
+- `@model` - bone model replacement (see [skeleton:set_model](scripting/ecs.md#skeleton))
+- `@show` - visibility of a bone or the entire skeleton/object (if no bone is specified)
+- `@color` - color of a bone or the entire skeleton/object (if no bone is specified) (RGBA)
 
 ## Metadata
 
@@ -94,6 +97,23 @@ If you do not wish to limit the animation duration via `configure` but want to l
     @key frame 12 value 1
     @key frame 24 value 0
 }
+```
+
+Example of using flag directives like `show`:
+
+```vcd
+# Specific bone
+@show bone head period 20 {
+    @key frame 0 value on
+    @key frame 10 value off
+}
+
+# Entire skeleton
+@show period 30 {
+    @key frame 0 value on
+    @key frame 10 value off
+}
+
 ```
 
 ## Expression curves

@@ -39,7 +39,7 @@ jobs:
         run: chmod +x dev/fix_dylibs.sh
 
       - name: Fix dylibs
-        run: ./dev/fix_dylibs.sh VoxelEngine Release build
+        run: ./dev/fix_dylibs.sh VoxelCore Release build
 
       - name: Run tests
         run: ctest --output-on-failure --test-dir build
@@ -47,19 +47,19 @@ jobs:
       - name: Run engine tests
         timeout-minutes: 5
         run: |
-          chmod +x build/VoxelEngine
+          chmod +x build/VoxelCore
           chmod +x AppDir/usr/bin/vctest
-          AppDir/usr/bin/vctest -e build/VoxelEngine -d dev/tests -u build --output-always --debugger "lldb -batch -o 'run' -o 'thread backtrace all' -o 'quit' -- "
+          AppDir/usr/bin/vctest -e build/VoxelCore -d dev/tests -u build --output-always --debugger "lldb -batch -o 'run' -o 'thread backtrace all' -o 'quit' -- "
       - name: Create DMG
         run: |
-          mkdir VoxelEngineDmgContent
-          cp -r build/res VoxelEngineDmgContent/
-          cp -r build/VoxelEngine VoxelEngineDmgContent/
-          cp -r build/libs VoxelEngineDmgContent/libs
-          hdiutil create VoxelEngineMacApp.dmg -volname "VoxelEngine" -srcfolder VoxelEngineDmgContent -ov -format UDZO
+          mkdir VoxelCoreDmgContent
+          cp -r build/res VoxelCoreDmgContent/
+          cp -r build/VoxelCore VoxelCoreDmgContent/
+          cp -r build/libs VoxelCoreDmgContent/libs
+          hdiutil create VoxelCoreMacApp.dmg -volname "VoxelCore" -srcfolder VoxelCoreDmgContent -ov -format UDZO
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: VoxelEngineMacOs
-          path: VoxelEngineMacApp.dmg
+          name: VoxelCoreMacOs
+          path: VoxelCoreMacApp.dmg

@@ -56,7 +56,7 @@
 
           installPhase = ''
             mkdir -p $out/bin
-            cp VoxelEngine $out/bin/
+            cp VoxelCore $out/bin/
           '';
         };
       in

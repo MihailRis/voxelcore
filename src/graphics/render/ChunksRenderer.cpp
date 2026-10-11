@@ -22,7 +22,7 @@ static debug::Logger logger("chunks-render");
 
 size_t ChunksRenderer::visibleChunks = 0;
 
-static constexpr inline size_t MAX_CHUNKS_ENQUEUED_IN_FRAME = 4;
+static constexpr inline size_t MAX_CHUNKS_ENQUEUED_IN_FRAME = 64;
 
 class RendererWorker : public util::Worker<RendererJob, RendererResult> {
     BlocksRenderer renderer;
@@ -197,8 +197,7 @@ void ChunksRenderer::update() {
 
     int loadDistance = settings.chunks.loadDistance.get();
 
-    const int topN = 10;
-    int top = std::min<int>(meshBuildQueue.size(), topN);
+    int top = std::min<int>(meshBuildQueue.size(), MAX_CHUNKS_ENQUEUED_IN_FRAME);
     for (int i = 0; i < top; i++) {
         glm::ivec2 offset = meshBuildQueue[i];
         size_t index =

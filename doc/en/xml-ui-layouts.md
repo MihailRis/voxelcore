@@ -215,6 +215,9 @@ Element is a container. Does not have specific attributes.
 > [!WARNING]
 > Inventories position is controlled by the engine and can not be changed by attributes *pos* and *margin*
 
+> [!WARNING]
+> Slots not linked to an inventory will not be displayed. "Linked to an inventory" refers to the association between an inventory UI element and an inventory via an ID. This link can be explicitly established using `inventory_ui.inventory = inventory_id`. [(see ui.md)](scripting/ui.md#inventory)
+
 ## *slot*
 
 Element must be in direct sub-element of *inventory*.

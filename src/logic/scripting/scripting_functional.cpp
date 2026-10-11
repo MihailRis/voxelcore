@@ -99,14 +99,21 @@ template <typename T, T(tovalueFunc)(lua::State*, int)>
 std::function<T()> create_supplier(
     const scriptenv& env, const std::string& src, const std::string& file
 ) {
-    return [=]() {
+    return [=, errorLogged = false]() mutable {
+        lua::stackguard guard(lua::get_main_state());
         if (auto L = process_callback(env, src, file)) {
-            if (lua::isfunction(L, -1)) {
-                lua::call_nothrow(L, 0);
+            if (lua::isfunction(L, -1) && !lua::call_nothrow(L, 0)) {
+                return T {};
             }
-            auto str = tovalueFunc(L, -1);
-            lua::pop(L);
-            return str;
+            try {
+                return tovalueFunc(L, -1);
+            } catch (const std::exception& err) {
+                if (!errorLogged) {
+                    logger.error() << "supplier " << util::quote(src) << ": "
+                                   << err.what();
+                    errorLogged = true;
+                }
+            }
         }
         return T {};
     };
@@ -158,16 +165,33 @@ int_array_consumer scripting::create_int_array_consumer(
 vec2supplier scripting::create_vec2_supplier(
     const scriptenv& env, const std::string& src, const std::string& file
 ) {
-    return [=]() {
-        if (auto L = process_callback(env, src, file)) {
-            if (lua::isfunction(L, -1)) {
-                lua::call_nothrow(L, 0);
+    return [=, errorLogged = false]() mutable {
+        auto L = lua::get_main_state();
+        lua::stackguard guard(L);
+        int top = lua::gettop(L);
+        if (process_callback(env, src, file)) {
+            if (lua::isfunction(L, -1) && !lua::call_nothrow(L, 0)) {
+                return glm::vec2(0, 0);
             }
-            auto y = lua::tonumber(L, -1);
-            lua::pop(L);
-            auto x = lua::tonumber(L, -1);
-            lua::pop(L);
-            return glm::vec2(x, y);
+            if (lua::gettop(L) - top < 2) {
+                if (!errorLogged) {
+                    logger.error() << "supplier " << util::quote(src)
+                                   << ": two numbers expected";
+                    errorLogged = true;
+                }
+                return glm::vec2(0, 0);
+            }
+            try {
+                auto y = lua::tonumber(L, -1);
+                auto x = lua::tonumber(L, -2);
+                return glm::vec2(x, y);
+            } catch (const std::exception& err) {
+                if (!errorLogged) {
+                    logger.error() << "supplier " << util::quote(src) << ": "
+                                   << err.what();
+                    errorLogged = true;
+                }
+            }
         }
         return glm::vec2(0, 0);
     };

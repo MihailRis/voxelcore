@@ -174,9 +174,11 @@ rig:index(name: str) -> int
 -- или всего скелета, если индекс не указан
 rig:is_visible([optional] index: int) -> bool
 
+-- Устанавливает статус видимости всего скелета
+rig:set_visible(status: bool)
+
 -- Устанавливает статус видимости кости по индексу
--- или всего скелета, если индекс не указан
-rig:set_visible([optional] index: int, status: bool)
+rig:set_visible(index: int, status: bool)
 
 -- Возвращает цвет сущности
 rig:get_color() -> vec4

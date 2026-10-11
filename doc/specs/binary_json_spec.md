@@ -2,7 +2,7 @@
 
 Format version: 1.1
 
-This binary data format is developed for use as binary version of JSON in [VoxelEngine-Cpp](https://github.com/MihailRis/VoxelEngine-Cpp) and not compatible with [BSON](https://bsonspec.org/spec.html) due to elements/entries syntax and type codes differences
+This binary data format is developed for use as binary version of JSON in [voxelcore](https://github.com/MihailRis/voxelcore) and not compatible with [BSON](https://bsonspec.org/spec.html) due to elements/entries syntax and type codes differences
 
 ## Basic types
 

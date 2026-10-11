@@ -41,8 +41,14 @@ skeleton:is_visible([optional] index: int) -> bool
 skeleton:set_visible([optional] index: int, status: bool)
 
 -- Returns the color of the entity
-skeleton:get_color() -> vec3
+skeleton:get_color() -> vec4
+
+-- Returns the color of the bone
+skeleton:get_color(index: int) -> vec4
 
 -- Sets the color of the entity
-skeleton:set_color(color: vec3)
+skeleton:set_color(color: vec4)
+
+-- Sets the color of the bone
+skeleton:set_color(color: vec4, bone: int)
 ```
