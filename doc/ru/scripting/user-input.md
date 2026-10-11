@@ -20,6 +20,8 @@ packid.binding.name="inputtype:codename"
 - a..z
 - 0..9
 - f1..f25
+- grave-accent, minus, equal, left-bracket, right-bracket, backslash
+- semicolon, apostrophe, comma, period, slash
 
 ## Библиотека input
 

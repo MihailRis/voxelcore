@@ -196,6 +196,10 @@ void lua::init_state(State* L, StateType stateType) {
     if (stateType == StateType::GENERATOR) {
         pushnil(L);
         setglobal(L, "ffi");
+
+        static const char* removed_debug[] {
+            "getregistry", "getupvalue", "setupvalue", "getinfo", nullptr};
+        remove_lib_funcs(L, "debug", removed_debug);
     }
 }
 

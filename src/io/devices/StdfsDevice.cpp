@@ -20,10 +20,29 @@ StdfsDevice::StdfsDevice(fs::path root, bool createDirectory)
                            << ": " << ec.message();
         }
     }
+    absoluteRoot = fs::absolute(this->root).lexically_normal();
+    if (!absoluteRoot.has_filename() && absoluteRoot.has_relative_path()) {
+        absoluteRoot = absoluteRoot.parent_path();
+    }
 }
 
 fs::path StdfsDevice::resolve(std::string_view path) {
-    return root / fs::u8path(io::path(std::string(path)).normalized().string());
+    if (path.find_first_of(std::string_view("\0\\:", 3)) != std::string_view::npos) {
+        throw std::runtime_error("invalid path");
+    }
+    fs::path rel = fs::u8path(io::path(std::string(path)).normalized().string());
+    if (rel.has_root_name() || rel.has_root_directory()) {
+        throw std::runtime_error("absolute paths are not allowed");
+    }
+    fs::path full = (absoluteRoot / rel).lexically_normal();
+    fs::path inside = full.lexically_relative(absoluteRoot);
+    if (inside.empty() || *inside.begin() == "..") {
+        throw std::runtime_error("path escapes device root");
+    }
+    if (inside == ".") {
+        return absoluteRoot;
+    }
+    return full;
 }
 
 std::unique_ptr<std::ostream> StdfsDevice::write(std::string_view path) {
@@ -90,17 +109,32 @@ bool StdfsDevice::mkdirs(std::string_view path) {
 
 bool StdfsDevice::remove(std::string_view path) {
     auto resolved = resolve(path);
-    return fs::remove(resolved);
+    if (resolved == absoluteRoot) {
+        throw std::runtime_error("unable to remove device root");
+    }
+    std::error_code ec;
+    bool removed = fs::remove(resolved, ec);
+    if (ec) {
+        logger.error() << "error removing " << resolved << ": " << ec.message();
+    }
+    return removed;
 }
 
 uint64_t StdfsDevice::removeAll(std::string_view path) {
     auto resolved = resolve(path);
-    if (fs::exists(resolved)) {
-        logger.info() << "removeAll " << resolved; 
-        return fs::remove_all(resolved);
-    } else {
+    if (resolved == absoluteRoot) {
+        throw std::runtime_error("unable to remove device root");
+    }
+    std::error_code ec;
+    auto removed = fs::remove_all(resolved, ec);
+    if (ec) {
+        logger.error() << "error removing " << resolved << ": " << ec.message();
         return 0;
     }
+    if (removed > 0) {
+        logger.info() << "removeAll " << resolved << ": " << removed;
+    }
+    return removed;
 }
 
 class StdfsPathsGenerator : public PathsGenerator {

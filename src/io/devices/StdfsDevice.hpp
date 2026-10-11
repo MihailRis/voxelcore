@@ -23,5 +23,6 @@ namespace io {
         std::unique_ptr<PathsGenerator> list(std::string_view path) override;
     private:
         std::filesystem::path root;
+        std::filesystem::path absoluteRoot;
     };
 }

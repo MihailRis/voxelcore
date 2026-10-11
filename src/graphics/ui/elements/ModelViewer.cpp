@@ -120,7 +120,7 @@ void ModelViewer::draw(const DrawContext& pctx, const Assets& assets) {
         if (size.x <= 0 || size.y <= 0) {
             return;
         }
-        fbo = std::make_unique<Framebuffer>(size.x, size.y);
+        fbo = std::make_unique<Framebuffer>(size.x, size.y, true);
     }
     fbo->resize(size.x, size.y);
     {
@@ -130,7 +130,13 @@ void ModelViewer::draw(const DrawContext& pctx, const Assets& assets) {
         ctx.setViewport({size.x, size.y});
         ctx.setDepthTest(true);
         ctx.setCullFace(true);
+        GLfloat clearColor[4];
+        glGetFloatv(GL_COLOR_CLEAR_VALUE, clearColor);
+        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
         display::clear();
+        glClearColor(
+            clearColor[0], clearColor[1], clearColor[2], clearColor[3]
+        );
         
         auto& ui3dShader = assets.require<Shader>("ui3d");
         ui3dShader.use();
