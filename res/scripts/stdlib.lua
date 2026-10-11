@@ -35,6 +35,26 @@ local function complete_app_lib(app)
     local __app_tick = coroutine.yield
     local __app_set_setting = app.set_setting
     local __app_quit = app.quit
+    local __app_get_stdout_stream = app.get_stdout_stream
+    local io_stream = require "core:io_stream"
+    local stdout_stream_lib = {
+        read = file.__read_descriptor,
+        write = file.__write_descriptor,
+        seek = file.__seek_descriptor,
+        tell = file.__tell_descriptor,
+        flush = file.__flush_descriptor,
+        available = file.__available_descriptor,
+        is_alive = file.__has_descriptor,
+        close = file.__close_descriptor,
+    }
+
+    app.get_stdout_stream = function(handle)
+        local descriptor = __app_get_stdout_stream(handle)
+        if descriptor == nil then
+            return nil
+        end
+        return io_stream.new(descriptor, false, stdout_stream_lib)
+    end
 
     app.sleep = sleep
     app.script = __VC_SCRIPT_NAME

@@ -483,6 +483,18 @@ static int l_terminate_instance(lua::State* L) {
     return lua::pushboolean(L, active);
 }
 
+static int l_get_stdout_stream(lua::State* L) {
+    int handle = lua::tointeger(L, 1);
+    if (handle < 0 || handle >= ::processes.size()) {
+        throw std::runtime_error("invalid process handle");
+    }
+    auto& process = ::processes[handle];
+    if (process == nullptr) {
+        return 0;
+    }
+    return lua::pushinteger(L, process->getStdoutDescriptor());
+}
+
 const luaL_Reg applib[] = {
     /// content
     {"is_content_loaded", lua::wrap<l_is_content_loaded>},
@@ -515,9 +527,11 @@ const luaL_Reg applib[] = {
     /// other
     {"get_version", lua::wrap<l_get_version>},
     {"create_memory_device", lua::wrap<l_create_memory_device>},
+    // sub-instances
     {"start_debug_instance", lua::wrap<l_start_debug_instance>},
     {"start_background_instance", lua::wrap<l_start_background_instance>},
     {"is_instance_alive", lua::wrap<l_is_instance_alive>},
     {"terminate_instance", lua::wrap<l_terminate_instance>},
+    {"get_stdout_stream", lua::wrap<l_get_stdout_stream>},
     {nullptr, nullptr}
 };
