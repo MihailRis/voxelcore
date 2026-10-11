@@ -68,7 +68,8 @@ private:
         PostEffect& effect,
         Shader& shader,
         float timer,
-        const Camera& camera
+        const Camera& camera,
+        unsigned downsample = 1U
     );
 
     void refreshFbos(uint width, uint height);

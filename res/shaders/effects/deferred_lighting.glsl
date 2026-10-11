@@ -3,22 +3,27 @@
 
 #define CLOUDS_FOG_FACTOR_MUL 0.3f
 #define CLOUDS_FOG_CURVE_MUL 0.4f
-#define COLOR_TEMPERATURE_COMPENSATION 1.12f
+#define COLOR_TEMPERATURE_COMPENSATION 1.14f
 
 vec4 effect() {
     vec4 pos = texture(u_position, v_uv);
     float light = 1.0;
 
 #ifdef ENABLE_SSAO
-    light = 0.0;
-    float z = pos.z;
-    for (int y = -2; y <= 2; y++) {
-        for (int x = -2; x <= 2; x++) {
-            vec2 offset = vec2(x, y) / u_screenSize;
-            light += texture(u_ssao, v_uv + offset * 2.0).r;
+    vec2 texel = 2.0 / u_screenSize;
+    float centerZ = pos.z;
+    float sum = 0.0;
+    float wsum = 0.0;
+    for (int y = -2; y < 2; y++) {
+        for (int x = -2; x < 2; x++) {
+            vec2 uv = v_uv + vec2(x, y) * texel;
+            float z = texture(u_position, uv).z;
+            float w = exp(-abs(centerZ - z) / (abs(centerZ) * 0.05 + 0.001));
+            sum  += texture(u_ssao, uv).r * w;
+            wsum += w;
         }
     }
-    light /= 24.0;
+    light = sum / wsum;
 #endif // ENABLE_SSAO
 
     vec4 modelpos = u_inverseView * pos;

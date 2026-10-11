@@ -23,6 +23,8 @@ struct UVRegion;
 
 class BlocksRenderer final {
 public:
+    static constexpr float DEFAULT_DIRECTIONAL_LIGHT_FACTOR = 0.3f;
+
     BlocksRenderer(
         size_t capacity,
         const Block* const* blockDefs,
@@ -56,6 +58,8 @@ private:
     bool cancelled = false;
     bool densePass = false;
     bool denseRender = false;
+    float directionalLightFactor = 0.0f;
+
     AABB meshAABB {};
     const Chunk* chunk = nullptr;
     const VoxelsRenderVolume* voxelsBuffer = nullptr;

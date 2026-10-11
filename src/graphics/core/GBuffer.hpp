@@ -24,6 +24,8 @@ public:
     uint getHeight() const;
 
     std::unique_ptr<ImageData> toImage() const;
+
+    uint getSSAODownsample() const;
 private:
     uint width;
     uint height;

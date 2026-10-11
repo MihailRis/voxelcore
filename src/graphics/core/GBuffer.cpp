@@ -10,6 +10,10 @@ static debug::Logger logger("gl-gbuffer");
 
 // TODO: REFACTOR
 
+uint GBuffer::getSSAODownsample() const {
+    return 2;
+}
+
 void GBuffer::createColorBuffer() {
     if (colorBuffer == 0)
         glGenTextures(1, &colorBuffer);
@@ -117,15 +121,17 @@ void GBuffer::createDepthBuffer() {
 }
 
 void GBuffer::createSSAOBuffer() {
-    if (ssaoBuffer == 0)
+    if (ssaoBuffer == 0) {
         glGenTextures(1, &ssaoBuffer);
+    }
+    uint ssaoDownsample = getSSAODownsample();
     glBindTexture(GL_TEXTURE_2D, ssaoBuffer);
     glTexImage2D(
         GL_TEXTURE_2D,
         0,
         GL_R16F,
-        width,
-        height,
+        width / ssaoDownsample,
+        height / ssaoDownsample,
         0,
         GL_RED,
         GL_FLOAT,

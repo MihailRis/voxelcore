@@ -31,7 +31,8 @@ PostProcessing::PostProcessing(size_t effectSlotsCount)
     quadMesh = std::make_unique<Mesh<PostProcessingVertex>>(meshData, 6);
 
     std::vector<glm::vec3> ssaoNoise;
-    for (unsigned int i = 0; i < 16; i++)
+    int res = 4;
+    for (unsigned int i = 0; i < res*res; i++)
     {
         glm::vec3 noise(
             (rand() / static_cast<float>(RAND_MAX)) * 2.0 - 1.0, 
@@ -41,7 +42,7 @@ PostProcessing::PostProcessing(size_t effectSlotsCount)
     }  
     glGenTextures(1, &noiseTexture);
     glBindTexture(GL_TEXTURE_2D, noiseTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, 4, 4, 0, GL_RGB, GL_FLOAT, ssaoNoise.data());
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, res, res, 0, GL_RGB, GL_FLOAT, ssaoNoise.data());
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -89,7 +90,8 @@ void PostProcessing::configureEffect(
     PostEffect& effect,
     Shader& shader,
     float timer,
-    const Camera& camera
+    const Camera& camera,
+    unsigned int downsample
 ) {
     const auto& viewport = context.getViewport();
     shader.uniform1i("u_screen", TARGET_COLOR);
@@ -101,7 +103,7 @@ void PostProcessing::configureEffect(
     }
     shader.uniform1i("u_noise", TARGET_SSAO); // used in SSAO pass
     shader.uniform1i("u_ssao", TARGET_SSAO);
-    shader.uniform2i("u_screenSize", viewport);
+    shader.uniform2i("u_screenSize", viewport / downsample);
     shader.uniform3f("u_cameraPos", camera.position);
     shader.uniform1f("u_timer", timer);
     shader.uniformMatrix("u_projection", camera.getProjection());
@@ -128,15 +130,14 @@ void PostProcessing::renderDeferredShading(
 
     auto& ssaoEffect = assets.require<PostEffect>("ssao");
     auto& shader = ssaoEffect.use();
-    configureEffect(
-        context,
-        ssaoEffect,
-        shader,
-        timer,
-        camera
-    );
+    uint ssaoDownscale = gbuffer->getSSAODownsample();
+    configureEffect(context, ssaoEffect, shader, timer, camera, ssaoDownscale);
     gbuffer->bindSSAO();
-    quadMesh->draw();
+    {
+        auto ssaoContext = context.sub();
+        ssaoContext.setViewport(context.getViewport() / ssaoDownscale);
+        quadMesh->draw();
+    }
     gbuffer->unbind();
 
     {

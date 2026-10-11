@@ -10,7 +10,6 @@
 #include "frontend/ContentGfxCache.hpp"
 
 const glm::vec3 BlocksRenderer::SUN_VECTOR(0.528265, 0.833149, -0.163704);
-constexpr float DIRECTIONAL_LIGHT_FACTOR = 0.3f;
 
 BlocksRenderer::BlocksRenderer(
     size_t capacity,
@@ -128,7 +127,7 @@ void BlocksRenderer::faceAO(
     float s = 0.5f;
     if (lights) {
         float d = glm::dot(glm::normalize(Z), SUN_VECTOR);
-        d = (1.0f - DIRECTIONAL_LIGHT_FACTOR) + d * DIRECTIONAL_LIGHT_FACTOR;
+        d = (1.0f - directionalLightFactor) + d * directionalLightFactor;
 
         auto axisX = glm::normalize(X);
         auto axisY = glm::normalize(Y);
@@ -167,7 +166,7 @@ void BlocksRenderer::face(
     float s = 0.5f;
     if (lights) {
         float d = glm::dot(glm::normalize(Z), SUN_VECTOR);
-        d = (1.0f - DIRECTIONAL_LIGHT_FACTOR) + d * DIRECTIONAL_LIGHT_FACTOR;
+        d = (1.0f - directionalLightFactor) + d * directionalLightFactor;
         tint *= d;
     }
     vertex(coord + (-X - Y + Z) * s, region.u1, region.v1, tint, Z, lights ? 0 : 1);
@@ -349,7 +348,7 @@ void BlocksRenderer::blockCustomModel(
             }
 
             float d = glm::dot(n, SUN_VECTOR);
-            d = (1.0f - DIRECTIONAL_LIGHT_FACTOR) + d * DIRECTIONAL_LIGHT_FACTOR;
+            d = (1.0f - directionalLightFactor) + d * directionalLightFactor;
             glm::vec3 t = glm::cross(r, n);
 
             for (int i = 0; i < 3; i++) {
@@ -692,6 +691,10 @@ SortingMeshData BlocksRenderer::renderTranslucent(
 void BlocksRenderer::build(
     const Chunk* chunk, const VoxelsRenderVolume& volume
 ) {
+    directionalLightFactor = settings.graphics.shadowsQuality.get() > 0.0f
+                                 ? 0.0f
+                                 : DEFAULT_DIRECTIONAL_LIGHT_FACTOR;
+
     meshAABB = AABB(glm::vec3(CHUNK_W, CHUNK_H, CHUNK_D));
     this->chunk = chunk;
     this->voxelsBuffer = &volume;
