@@ -25,7 +25,7 @@
 using namespace scripting;
 
 namespace {
-    static std::array<std::unique_ptr<Process>, MAX_SUBPROCESSES> processes;
+    static std::array<std::unique_ptr<SystemProcess>, MAX_SUBPROCESSES> processes;
 }
 
 /// @brief Check if content is loaded
