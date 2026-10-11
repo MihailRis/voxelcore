@@ -28,6 +28,8 @@
 #endif
 #ifdef __linux__
     #include <sys/prctl.h>
+#endif
+#if defined(__linux__) || defined(__APPLE__)
     #include <sys/wait.h>
 #endif
 
@@ -222,7 +224,7 @@ std::filesystem::path platform::get_executable_path() {
 
 class SystemProcessImpl final : public SystemProcess {
 public:
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
     SystemProcessImpl(
         pid_t pid, int stdinDescriptor = -1, int stdoutDescriptor = -1
     )
@@ -259,7 +261,7 @@ public:
 
     SystemProcessImpl& operator=(SystemProcessImpl&& other) noexcept {
         if (this != &other) {
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
             pid = other.pid;
 #elif defined(_WIN32)
             if (processHandle != nullptr) {
@@ -279,7 +281,7 @@ public:
     }
 
     bool isActive() const override {
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
         if (pid <= 0) {
             return false;
         }
@@ -319,7 +321,7 @@ public:
     void update() override {}
 
     void waitForEnd() override {
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
         if (pid <= 0) {
             return;
         }
@@ -333,7 +335,7 @@ public:
     };
 
     void terminate() final override {
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
         if (pid <= 0) {
             return;
         }
@@ -356,7 +358,7 @@ public:
     }
 
 private:
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
     pid_t pid;
     int stdinDescriptor;
     int stdoutDescriptor;
