@@ -180,6 +180,10 @@ std::unique_ptr<io::PathsGenerator> io::MemoryDevice::list(std::string_view path
 }
 
 io::MemoryDevice::Dir* io::MemoryDevice::createDir(std::string path) {
+    const auto& found = nodes.find(path);
+    if (found != nodes.end()) {
+        return found->second.get_if<Dir>();
+    }
     io::path filePath = path;
     io::path parent = filePath.parent();
     auto parentDir = getDir(parent.string());
@@ -195,6 +199,15 @@ io::MemoryDevice::Dir* io::MemoryDevice::createDir(std::string path) {
 io::MemoryDevice::Node* io::MemoryDevice::createFile(
     std::string path, util::Buffer<char>&& content
 ) {
+    const auto& found = nodes.find(path);
+    if (found != nodes.end()) {
+        auto& node = found->second;
+        if (!node.holds_alternative<File>()) {
+            return nullptr;
+        }
+        node.data = File {std::move(content)};
+        return &node;
+    }
     io::path filePath = path;
     io::path parent = filePath.parent();
     auto dir = getDir(parent.string());

@@ -480,15 +480,17 @@ void Entities::render(
     const Frustum* frustum,
     entityid_t fpsEntity
 ) {
-    auto view = registry->view<EntityId, Transform, rigging::Skeleton>();
-    for (auto [entity, eid, transform, skeleton] : view.each()) {
+    auto view = registry->view<EntityId, Transform, rigging::Skeleton, Rigidbody>();
+    for (auto [entity, eid, transform, skeleton, rigidbody] : view.each()) {
         if (eid.uid == fpsEntity) {
             continue;
         }
         const auto& def = eid.def;
         const auto& pos = transform.pos;
         const auto& size = transform.size;
-        if (frustum && !frustum->isBoxVisible(pos - size, pos + size)) {
+        const auto& halfSize = rigidbody.hitbox.getHalfSize();
+        // todo: more correct frustum culling
+        if (frustum && !frustum->isBoxVisible(pos - halfSize, pos + halfSize)) {
             continue;
         }
 
