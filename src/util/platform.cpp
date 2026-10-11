@@ -25,6 +25,8 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
+#include <cerrno>
+#include <cstring>
 #endif
 #ifdef __linux__
     #include <sys/prctl.h>
@@ -370,6 +372,126 @@ private:
 #endif
 };
 
+#ifndef _WIN32
+static void close_fd(int& fd) {
+    if (fd >= 0) {
+        close(fd);
+        fd = -1;
+    }
+}
+
+static bool make_cloexec_pipe(int fds[2]) {
+#ifdef __linux__
+    return pipe2(fds, O_CLOEXEC) == 0;
+#else
+    if (pipe(fds) != 0) {
+        return false;
+    }
+    fcntl(fds[0], F_SETFD, FD_CLOEXEC);
+    fcntl(fds[1], F_SETFD, FD_CLOEXEC);
+    return true;
+#endif
+}
+
+static void report_error_and_exit(int fd) {
+    int err = errno;
+    [[maybe_unused]] ssize_t _ = write(fd, &err, sizeof(err));
+    _exit(127);
+}
+
+// TODO: make sub-process die with parent in MacOS
+static std::unique_ptr<SystemProcess> start_engine_subprocess(
+    const std::filesystem::path& executable,
+    const std::vector<std::string>& args
+) {
+    int stdinPipe[2] = {-1, -1};
+    int stdoutPipe[2] = {-1, -1};
+    int execPipe[2] = {-1, -1};
+    auto closeAll = [&]() {
+        for (int* fd :
+             {&stdinPipe[0],
+              &stdinPipe[1],
+              &stdoutPipe[0],
+              &stdoutPipe[1],
+              &execPipe[0],
+              &execPipe[1]}) {
+            close_fd(*fd);
+        }
+    };
+
+    if (!make_cloexec_pipe(stdinPipe) || !make_cloexec_pipe(stdoutPipe) ||
+        !make_cloexec_pipe(execPipe)) {
+        closeAll();
+        throw std::runtime_error("failed to create subprocess pipes");
+    }
+
+    std::string path = executable.string();
+    std::vector<char*> argv;
+    argv.reserve(args.size() + 2);
+    argv.push_back(path.data());
+    for (const auto& arg : args) {
+        argv.push_back(const_cast<char*>(arg.c_str()));
+    }
+    argv.push_back(nullptr);
+
+#ifdef __linux__
+    const pid_t parentPid = getpid();
+#endif
+    const pid_t pid = fork();
+    if (pid < 0) {
+        int err = errno;
+        closeAll();
+        throw std::runtime_error("fork failed: "s + std::strerror(err));
+    }
+
+    if (pid == 0) {
+#ifdef __linux__
+        prctl(PR_SET_PDEATHSIG, SIGTERM);
+        if (getppid() != parentPid) {
+            _exit(1);
+        }
+        prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
+#endif
+        if (dup2(stdinPipe[0], STDIN_FILENO) < 0 ||
+            dup2(stdoutPipe[1], STDOUT_FILENO) < 0 ||
+            dup2(stdoutPipe[1], STDERR_FILENO) < 0) {
+            report_error_and_exit(execPipe[1]);
+        }
+        execv(argv[0], argv.data());
+        report_error_and_exit(execPipe[1]);
+    }
+
+    close_fd(stdinPipe[0]);
+    close_fd(stdoutPipe[1]);
+    close_fd(execPipe[1]);
+
+    int childErrno = 0;
+    ssize_t n;
+    do {
+        n = read(execPipe[0], &childErrno, sizeof(childErrno));
+    } while (n < 0 && errno == EINTR);
+    close_fd(execPipe[0]);
+
+    if (n > 0) {
+        waitpid(pid, nullptr, 0);
+        closeAll();
+        throw std::runtime_error(
+            "starting an engine instance failed: "s + std::strerror(childErrno)
+        );
+    }
+
+    const int stdinDescriptorId = scripting::io_descriptors::add_descriptor(
+        std::make_unique<fd_ostream>(stdinPipe[1])
+    );
+    const int stdoutDescriptorId = scripting::io_descriptors::add_descriptor(
+        std::make_unique<fd_istream>(stdoutPipe[0])
+    );
+    return std::make_unique<SystemProcessImpl>(
+        pid, stdinDescriptorId, stdoutDescriptorId
+    );
+}
+#endif
+
 std::unique_ptr<SystemProcess> platform::new_engine_instance(
     const std::vector<std::string>& args,
     std::filesystem::path outputFile,
@@ -521,71 +643,12 @@ std::unique_ptr<SystemProcess> platform::new_engine_instance(
         );
     }
 #else
-#ifndef __APPLE__
     if (subProcess) {
-        int stdinPipe[2] = {-1, -1};
-        int stdoutPipe[2] = {-1, -1};
-        if (pipe(stdinPipe) != 0 || pipe(stdoutPipe) != 0) {
-            if (stdinPipe[0] >= 0) {
-                close(stdinPipe[0]);
-            }
-            if (stdinPipe[1] >= 0) {
-                close(stdinPipe[1]);
-            }
-            if (stdoutPipe[0] >= 0) {
-                close(stdoutPipe[0]);
-            }
-            if (stdoutPipe[1] >= 0) {
-                close(stdoutPipe[1]);
-            }
-            throw std::runtime_error("failed to create subprocess pipes");
-        }
-
-        pid_t pid = fork();
-
-        if (pid == 0) {
-            prctl(PR_SET_PDEATHSIG, SIGTERM);
-            if (getppid() == 1) {
-                _exit(1);
-            }
-
-            close(stdinPipe[1]);
-            close(stdoutPipe[0]);
-            dup2(stdinPipe[0], STDIN_FILENO);
-            dup2(stdoutPipe[1], STDOUT_FILENO);
-            dup2(stdoutPipe[1], STDERR_FILENO);
-            close(stdinPipe[0]);
-            close(stdoutPipe[1]);
-
-            std::vector<const char*> argv(args.size() + 2);
-            argv[0] = const_cast<char*>(executable.c_str());
-            for (int i = 0; i < args.size(); i++) {
-                argv[i + 1] = args[i].c_str();
-            }
-            argv[args.size() + 1] = nullptr;
-
-            prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
-            execvp(executable.c_str(), const_cast<char**>(argv.data()));
-            _exit(127);
-        }
-
-        close(stdinPipe[0]);
-        close(stdoutPipe[1]);
-
-        const int stdinDescriptorId = scripting::io_descriptors::add_descriptor(
-            std::make_unique<fd_ostream>(stdinPipe[1])
-        );
-        const int stdoutDescriptorId = scripting::io_descriptors::add_descriptor(
-            std::make_unique<fd_istream>(stdoutPipe[0])
-        );
-
-        usleep(1000);  // waiting for execvp call
-        return std::make_unique<SystemProcessImpl>(pid, stdinDescriptorId, stdoutDescriptorId);
+        return start_engine_subprocess(executable, args);
     }
-#endif
 
     std::stringstream ss;
-    ss << executable;
+    ss << util::quote(executable.u8string());
     for (int i = 0; i < args.size(); i++) {
         ss << " " << util::quote(args[i]);
     }
