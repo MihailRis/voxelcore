@@ -672,7 +672,22 @@ std::unique_ptr<SystemProcess> platform::new_engine_instance(
 
 bool platform::stdin_has_data() {
 #ifdef _WIN32
-    return _kbhit();
+    const HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+    if (inputHandle == nullptr || inputHandle == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+
+    DWORD mode = 0;
+    if (GetConsoleMode(inputHandle, &mode)) {
+        return _kbhit() != 0;
+    }
+
+    DWORD available = 0;
+    if (!PeekNamedPipe(inputHandle, nullptr, 0, nullptr, &available, nullptr)) {
+        const DWORD error = GetLastError();
+        return error != ERROR_BROKEN_PIPE && error != ERROR_INVALID_HANDLE;
+    }
+    return available > 0;
 #else
     struct pollfd fds;
     fds.fd = STDIN_FILENO;
