@@ -21,11 +21,13 @@
 #include "world/Level.hpp"
 
 #include <array>
+#include <unordered_map>
 
 using namespace scripting;
 
 namespace {
-    static std::array<std::unique_ptr<SystemProcess>, MAX_SUBPROCESSES> processes;
+    static std::unordered_map<int, std::unique_ptr<SystemProcess>> processes;
+    static int next_process_id = 1;
 }
 
 /// @brief Check if content is loaded
@@ -445,25 +447,17 @@ static int l_start_background_instance(lua::State* L) {
         }
     }
 
-    int handle = -1;
-    for (int i = 0; i < ::processes.size(); i++) {
-        if (!::processes[i] || !::processes[i]->isActive()) {
-            handle = i;
-            break;
-        }
-    }
-    if (handle == -1) {
+    if (::processes.size() >= MAX_SUBPROCESSES) {
         throw std::runtime_error("sub-processes limit exceeded");
     }
-    ::processes[handle] =
-        platform::new_engine_instance(std::move(args), "", true);
-
-    return lua::pushinteger(L, handle);
+    int id = ::next_process_id++;
+    ::processes[id] = platform::new_engine_instance(std::move(args), "", true);
+    return lua::pushinteger(L, id);
 }
 
 static int l_is_instance_alive(lua::State* L) {
     int handle = lua::tointeger(L, 1);
-    if (handle < 0 || handle >= ::processes.size()) {
+    if (handle < 0 || ::processes.find(handle) == ::processes.end()) {
         throw std::runtime_error("invalid process handle");
     }
     auto& process = ::processes[handle];
@@ -472,21 +466,23 @@ static int l_is_instance_alive(lua::State* L) {
 
 static int l_terminate_instance(lua::State* L) {
     int handle = lua::tointeger(L, 1);
-    if (handle < 0 || handle >= ::processes.size()) {
+    if (handle < 0 || ::processes.find(handle) == ::processes.end()) {
         throw std::runtime_error("invalid process handle");
     }
-    auto& process = ::processes[handle];
-    if (process == nullptr) {
+    auto it = ::processes.find(handle);
+    if (it->second == nullptr) {
+        ::processes.erase(it);
         return lua::pushboolean(L, false);
     }
-    bool active = process->isActive();
-    process.reset();
+    bool active = it->second->isActive();
+    it->second.reset();
+    ::processes.erase(it);
     return lua::pushboolean(L, active);
 }
 
 static int l_get_stdin_stream(lua::State* L) {
     int handle = lua::tointeger(L, 1);
-    if (handle < 0 || handle >= ::processes.size()) {
+    if (handle < 0 || ::processes.find(handle) == ::processes.end()) {
         throw std::runtime_error("invalid process handle");
     }
     auto& process = ::processes[handle];
@@ -498,7 +494,7 @@ static int l_get_stdin_stream(lua::State* L) {
 
 static int l_get_stdout_stream(lua::State* L) {
     int handle = lua::tointeger(L, 1);
-    if (handle < 0 || handle >= ::processes.size()) {
+    if (handle < 0 || ::processes.find(handle) == ::processes.end()) {
         throw std::runtime_error("invalid process handle");
     }
     auto& process = ::processes[handle];
