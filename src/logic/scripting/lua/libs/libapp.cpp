@@ -429,6 +429,7 @@ static int l_start_background_instance(lua::State* L) {
         "--sub-depth", std::to_string(engine->getCoreParameters()
             .subProcessDepth + 1),
         "--log", io::resolve(outputPath).u8string(),
+        "--stdin-cmd",
     };
     args.emplace_back("--project");
     args.emplace_back(io::resolve(engine->getProject().path).u8string());
@@ -483,6 +484,18 @@ static int l_terminate_instance(lua::State* L) {
     return lua::pushboolean(L, active);
 }
 
+static int l_get_stdin_stream(lua::State* L) {
+    int handle = lua::tointeger(L, 1);
+    if (handle < 0 || handle >= ::processes.size()) {
+        throw std::runtime_error("invalid process handle");
+    }
+    auto& process = ::processes[handle];
+    if (process == nullptr) {
+        return 0;
+    }
+    return lua::pushinteger(L, process->getStdinDescriptor());
+}
+
 static int l_get_stdout_stream(lua::State* L) {
     int handle = lua::tointeger(L, 1);
     if (handle < 0 || handle >= ::processes.size()) {
@@ -532,6 +545,7 @@ const luaL_Reg applib[] = {
     {"start_background_instance", lua::wrap<l_start_background_instance>},
     {"is_instance_alive", lua::wrap<l_is_instance_alive>},
     {"terminate_instance", lua::wrap<l_terminate_instance>},
+    {"get_stdin_stream", lua::wrap<l_get_stdin_stream>},
     {"get_stdout_stream", lua::wrap<l_get_stdout_stream>},
     {nullptr, nullptr}
 };

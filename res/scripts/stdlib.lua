@@ -36,8 +36,9 @@ local function complete_app_lib(app)
     local __app_set_setting = app.set_setting
     local __app_quit = app.quit
     local __app_get_stdout_stream = app.get_stdout_stream
+    local __app_get_stdin_stream = app.get_stdin_stream
     local io_stream = require "core:io_stream"
-    local stdout_stream_lib = {
+    local stdio_stream_lib = {
         read = file.__read_descriptor,
         write = file.__write_descriptor,
         seek = file.__seek_descriptor,
@@ -53,7 +54,15 @@ local function complete_app_lib(app)
         if descriptor == nil then
             return nil
         end
-        return io_stream.new(descriptor, false, stdout_stream_lib)
+        return io_stream.new(descriptor, false, stdio_stream_lib)
+    end
+
+    app.get_stdin_stream = function(handle)
+        local descriptor = __app_get_stdin_stream(handle)
+        if descriptor == nil then
+            return nil
+        end
+        return io_stream.new(descriptor, false, stdio_stream_lib)
     end
 
     app.sleep = sleep
