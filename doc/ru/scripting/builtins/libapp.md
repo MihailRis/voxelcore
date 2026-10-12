@@ -173,4 +173,10 @@ app.is_instance_alive(handle: int) -> boolean
 -- Останавливает под-экземпляр движка.
 -- Возвращает true если экземпляр был жив в момент вызова.
 app.terminate_instance(handle: int) -> boolean
+
+-- Возвращает поток ввода под-экземпляра движка.
+app.get_stdin_stream(handle: int) -> stream
+
+-- Возвращает поток вывода под-экземпляра движка.
+app.get_stdout_stream(handle: int) -> stream
 ```
