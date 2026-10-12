@@ -183,4 +183,10 @@ app.is_instance_alive(handle: int) -> boolean
 -- Stops the engine sub-instance.
 -- Returns true if the instance was alive at the time of the call.
 app.terminate_instance(handle: int) -> boolean
+
+-- Returns the input stream of the engine sub-instance.
+app.get_stdin_stream(handle: int) -> stream
+
+-- Returns the output stream of the engine sub-instance.
+app.get_stdout_stream(handle: int) -> stream
 ```
