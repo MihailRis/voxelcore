@@ -116,7 +116,10 @@ protected:
         size_t remaining = size;
         while (remaining > 0) {
             const auto written = ::write(fd, ptr, remaining);
-            if (written <= 0) {
+            if (written < 0) {
+                if (errno == EINTR) {
+                    continue;
+                }
                 return -1;
             }
             ptr += written;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <array>
-#include <iostream>
+#include <istream>
 #include <streambuf>
 #include <vector>
 

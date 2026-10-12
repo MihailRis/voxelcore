@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
         std::cerr << err.what() << std::endl;
         return EXIT_FAILURE;
     }
+    std::signal(SIGPIPE, SIG_IGN);
     std::signal(SIGTERM, sigterm_handler);
 #ifdef NDEBUG
     std::signal(SIGINT, sigterm_handler);
