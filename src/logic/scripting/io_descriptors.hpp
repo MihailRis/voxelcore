@@ -1,6 +1,7 @@
 #pragma once
 
 #include <istream>
+#include <memory>
 #include <ostream>
 
 #include "io/fwd.hpp"
@@ -22,6 +23,8 @@ namespace scripting::io_descriptors {
 
     void close(int id);
     int open_descriptor(const io::path& path, bool write, bool read);
+    int add_descriptor(std::unique_ptr<std::istream> stream);
+    int add_descriptor(std::unique_ptr<std::ostream> stream);
 
     void close_all_descriptors();
 }
