@@ -130,7 +130,7 @@ class Hud : public util::ObjectsKeeper {
     std::shared_ptr<gui::InventoryView> createHotbar();
 
     void processInput(bool visible);
-    void updateElementsPosition(const glm::uvec2& viewport);
+    void updateElementsPosition(const glm::vec2& viewport);
     void updateHotbarControl();
     void cleanup();
 

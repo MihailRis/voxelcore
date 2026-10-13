@@ -160,6 +160,8 @@ namespace gui {
 
         static const int SLOT_INTERVAL = 4;
         static const int SLOT_SIZE = ITEM_ICON_SIZE;
+        /// @brief Default background color (can be overridden by 'color' attribute)
+        static inline const glm::vec4 DEFAULT_COLOR {0.122f, 0.122f, 0.122f, 0.878f};
     };
 
     class InventoryBuilder {

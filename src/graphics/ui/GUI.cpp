@@ -1,6 +1,7 @@
 #include "GUI.hpp"
 
 #include <algorithm>
+#include <cmath>
 #include <utility>
 
 #include "assets/Assets.hpp"
@@ -88,13 +89,65 @@ void GUI::onAssetsLoad(Assets* assets) {
     assets->store(rootDocument, "core:root");
 }
 
+/// @brief Minimal UI size (in UI units) that GUI scale must keep, so
+/// menus always fit the window. Larger scale values are limited to it
+static constexpr glm::uvec2 MIN_UI_SIZE {640, 480};
+static constexpr int MAX_SCALE = 4;
+
+int GUI::calcMaxScale(const glm::uvec2& viewport) {
+    int maxFit = 1;
+    while (maxFit < MAX_SCALE &&
+           viewport.x / (maxFit + 1) >= MIN_UI_SIZE.x &&
+           viewport.y / (maxFit + 1) >= MIN_UI_SIZE.y) {
+        maxFit++;
+    }
+    return maxFit;
+}
+
+float GUI::calcScale(const glm::uvec2& viewport) const {
+    float value = engine.getSettings().display.guiScale.get();
+    float result = value <= 0.0f
+        ? static_cast<float>(calcMaxScale(viewport)) // auto
+        : value;
+
+    // explicitly set scale is applied as is; in auto mode an open menu page
+    // must fit the window
+    auto& page = menu->getCurrent();
+    if (value <= 0.0f && page.panel) {
+        auto size = page.panel->getSize();
+        if (size.x > 0.0f && size.y > 0.0f) {
+            float fit = std::min(viewport.x / size.x, viewport.y / size.y);
+            fit = std::floor(fit * 2.0f) / 2.0f; // step 0.5
+            result = std::min(result, std::max(fit, 0.5f));
+        }
+    }
+    // keep UI size at least 1 unit
+    float limit = static_cast<float>(std::min(viewport.x, viewport.y));
+    return std::max(0.5f, std::min(result, std::max(limit, 0.5f)));
+}
+
+float GUI::getScale() const {
+    return scale;
+}
+
+int GUI::getMaxScale() const {
+    return calcMaxScale(engine.getWindow().getSize());
+}
+
+CursorState GUI::getCursor() const {
+    auto cursor = input.getCursor();
+    cursor.pos /= scale;
+    cursor.delta /= scale;
+    return cursor;
+}
+
 void GUI::resetTooltip() {
     tooltipTimer = 0.0f;
     tooltip->setVisible(false);
 }
 
 void GUI::updateTooltip(float delta) {
-    const auto& cursor = input.getCursor();
+    const auto cursor = getCursor();
     if (hover == nullptr || !hover->isInside(cursor.pos)) {
         return resetTooltip();
     }
@@ -229,7 +282,7 @@ void GUI::actFocused() {
         focus->keyPressed(key);
     }
 
-    const auto& cursor = input.getCursor();
+    const auto cursor = getCursor();
     if (!cursor.locked) {
         if (input.clicked(Mousecode::BUTTON_1) &&
             (input.jclicked(Mousecode::BUTTON_1) || cursor.delta.x ||
@@ -242,7 +295,8 @@ void GUI::actFocused() {
 }
 
 void GUI::act(float delta, const glm::uvec2& vp) {
-    container->setSize(vp);
+    scale = calcScale(vp);
+    container->setSize(glm::vec2(vp) / scale);
     for (auto& pair : frames) {
         pair.second->act(delta);
     }
@@ -250,7 +304,7 @@ void GUI::act(float delta, const glm::uvec2& vp) {
 
     updateTooltip(delta);
 
-    const auto& cursor = input.getCursor();
+    const auto cursor = getCursor();
     if (!cursor.locked && activeFrame) {
         actMouse(*activeFrame, delta, cursor);
     } else {
@@ -278,8 +332,11 @@ void GUI::postAct() {
 
 void GUI::draw(const DrawContext& pctx, Assets& assets) {
     auto ctx = pctx.sub(batch2D.get());
+    ctx.setUiScale(scale);
 
-    auto& viewport = ctx.getViewport();
+    // viewport in UI units
+    const glm::vec2 viewport =
+        glm::vec2(ctx.getViewport()) / scale;
 
     auto& page = menu->getCurrent();
     if (page.panel) {
@@ -289,15 +346,18 @@ void GUI::draw(const DrawContext& pctx, Assets& assets) {
             panel->cropToContent();
         }
     }
-    menu->setPos((glm::vec2(viewport) - menu->getSize()) / 2.0f);
+    menu->setPos((viewport - menu->getSize()) / 2.0f);
     uicamera->setFov(viewport.y);
-    uicamera->setAspectRatio(viewport.x / static_cast<float>(viewport.y));
+    uicamera->setAspectRatio(viewport.x / viewport.y);
 
     auto uishader = assets.get<Shader>("ui");
     uishader->use();
     uishader->uniformMatrix("u_projview", uicamera->getProjView());
 
     batch2D->begin();
+    // fractional scale puts quad edges at pixel centers, which makes
+    // atlas sampling bleed into neighbour glyphs
+    batch2D->setPixelSnap(scale != std::floor(scale) ? scale : 0.0f);
     for (auto& [outputTexture, frame] : frames) {
         frame->updateOutput(assets);
         frame->draw(ctx, assets);
@@ -339,6 +399,7 @@ void GUI::draw(const DrawContext& pctx, Assets& assets) {
         batch2D->setColor(0, 255, 0);
         batch2D->lineRect(pos.x, pos.y, size.x-1, size.y-1);
     }
+    batch2D->setPixelSnap(0.0f);
 }
 
 std::shared_ptr<UINode> GUI::getFocused() const {

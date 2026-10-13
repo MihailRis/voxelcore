@@ -1067,6 +1067,20 @@ static int l_gui_getviewport(lua::State* L) {
     return lua::pushvec2(L, engine->getGUI().getContainer()->getSize());
 }
 
+static int l_gui_get_scale(lua::State* L) {
+    return lua::pushnumber(L, engine->getGUI().getScale());
+}
+
+static int l_gui_get_max_scale(lua::State* L) {
+    return lua::pushinteger(L, engine->getGUI().getMaxScale());
+}
+
+static int l_gui_get_cursor_pos(lua::State* L) {
+    if (engine->isHeadless())
+        return 0;
+    return lua::pushvec2(L, engine->getGUI().getCursor().pos);
+}
+
 static int l_gui_clear_markup(lua::State* L) {
     auto lang = lua::require_string(L, 1);
     std::string text = lua::require_string(L, 2);
@@ -1247,6 +1261,9 @@ static int l_screenshot(lua::State* L) {
 const luaL_Reg guilib[] = {
     {"screenshot", lua::wrap<l_screenshot>},
     {"get_viewport", lua::wrap<l_gui_getviewport>},
+    {"get_scale", lua::wrap<l_gui_get_scale>},
+    {"get_max_scale", lua::wrap<l_gui_get_max_scale>},
+    {"get_cursor_pos", lua::wrap<l_gui_get_cursor_pos>},
     {"getattr", lua::wrap<l_gui_getattr>},
     {"setattr", lua::wrap<l_gui_setattr>},
     {"get_env", lua::wrap<l_gui_get_env>},

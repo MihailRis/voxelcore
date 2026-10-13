@@ -78,7 +78,7 @@ void InventoryBuilder::addGrid(
     if (addpanel) {
         auto panel =
             std::make_shared<gui::Container>(gui, glm::vec2(width, height));
-        view->setColor(glm::vec4(0.122f, 0.122f, 0.122f, 0.878f));
+        view->setColor(InventoryView::DEFAULT_COLOR);
         view->add(panel, pos);
     }
 

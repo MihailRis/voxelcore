@@ -33,6 +33,8 @@ class Batch2D : public Flushable {
     const Texture* currentTexture;
     DrawPrimitive primitive = DrawPrimitive::triangle;
     UVRegion region {0.0f, 0.0f, 1.0f, 1.0f};
+    /// @brief Vertex positions are rounded to 1/pixelSnap (0 - disabled)
+    float pixelSnap = 0.0f;
 
     void setPrimitive(DrawPrimitive primitive);
 
@@ -56,6 +58,11 @@ public:
     void texture(const Texture* texture);
     void untexture();
     void setRegion(UVRegion region);
+
+    /// @brief Align vertices to the pixel grid (fixes artifacts of textured
+    /// quads on fractional UI scale)
+    /// @param pixelsPerUnit window pixels per one unit, 0 - disable
+    void setPixelSnap(float pixelsPerUnit);
     void sprite(float x, float y, float w, float h, const UVRegion& region, glm::vec4 tint);
     void sprite(float x, float y, float w, float h, int atlasRes, int index, glm::vec4 tint);
     void sprite(float x, float y, float w, float h, float skew, int atlasRes, int index, glm::vec4 tint);

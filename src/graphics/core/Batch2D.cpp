@@ -44,6 +44,10 @@ void Batch2D::vertex(
     float u, float v,
     float r, float g, float b, float a
 ) {
+    if (pixelSnap > 0.0f) {
+        x = std::round(x * pixelSnap) / pixelSnap;
+        y = std::round(y * pixelSnap) / pixelSnap;
+    }
     buffer[index].position = {x, y};
     buffer[index].uv = {u * region.getWidth() + region.u1, v * region.getHeight() + region.v1};
     buffer[index].color = {r, g, b, a};
@@ -54,6 +58,9 @@ void Batch2D::vertex(
     glm::vec2 uvpoint,
     float r, float g, float b, float a
 ) {
+    if (pixelSnap > 0.0f) {
+        point = glm::round(point * pixelSnap) / pixelSnap;
+    }
     buffer[index].position = point;
     buffer[index].uv = {uvpoint.x * region.getWidth() + region.u1, uvpoint.y * region.getHeight() + region.v1};
     buffer[index].color = {r, g, b, a};
@@ -81,6 +88,10 @@ void Batch2D::untexture() {
 
 void Batch2D::setRegion(UVRegion region) {
     this->region = region;
+}
+
+void Batch2D::setPixelSnap(float pixelsPerUnit) {
+    pixelSnap = pixelsPerUnit;
 }
 
 void Batch2D::point(float x, float y, float r, float g, float b, float a){

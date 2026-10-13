@@ -20,6 +20,7 @@ function reset_audio()
     reset_setting("audio.volume-ui")
     reset_setting("audio.volume-ambient")
     reset_setting("audio.volume-music")
+    reset_setting("audio.volume-contrast")
 end
 
 function reset_display()

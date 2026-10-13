@@ -1,28 +1,7 @@
-function create_trackbar_setting(id, name, step, postfix)
-    local info = app.get_setting_info(id)
-    postfix = postfix or ""
-    document.root:add(gui.template("track_setting", {
-        id=id,
-        name=gui.str(name, "settings"),
-        value=app.get_setting(id),
-        min=info.min,
-        max=info.max,
-        step=step,
-        postfix=postfix
-    }))
-    update_trackbar_label(app.get_setting(id), id, name, postfix)
-end
-
-function update_trackbar_label(x, id, name, postfix)
-    app.set_setting(id, x)
-    -- updating label
-    document[id..".L"].text = string.format(
-        "%s: %s%s", 
-        gui.str(name, "settings"),
-        app.str_setting(id),
-        postfix
-    )
-end
+local settings = require "core:settings_common".new(document, {app=app})
+-- templates call these functions by name, so they must be global
+create_trackbar_setting = settings.create_trackbar_setting
+update_trackbar_label = settings.update_trackbar_label
 
 function update_checkbox_setting(id, value)
     app.set_setting(id, value)
@@ -41,12 +20,8 @@ function update_checkbox_setting(id, value)
     end
 end
 
-function create_checkbox(id, name, tooltip)
-    tooltip = tooltip or ''
-    document.root:add(string.format(
-        "<checkbox consumer='function(x) update_checkbox_setting(\"%s\", x) end' checked='%s' tooltip='%s'>%s</checkbox>",
-        id, app.str_setting(id), gui.str(tooltip, "settings"), gui.str(name, "settings")
-    ))
+local function create_audio_checkbox(id, name, tooltip)
+    settings.create_checkbox(id, name, tooltip, "update_checkbox_setting")
     update_checkbox_setting(id, app.get_setting(id))
 end
 
@@ -78,6 +53,7 @@ function on_open()
     create_trackbar_setting("audio.volume-ui", "UI Sounds", 0.01)
     create_trackbar_setting("audio.volume-ambient", "Ambient", 0.01)
     create_trackbar_setting("audio.volume-music", "Music", 0.01)
+    create_trackbar_setting("audio.volume-contrast", "Volume Contrast", 0.01, "", "audio.volume-contrast.tooltip")
 
     document.root:add("<label context='settings'>@Microphone</label>")
     document.root:add("<select id='input_device_select' "..
@@ -100,6 +76,6 @@ function on_open()
         selectbox.value = app.get_setting("audio.input-device")
     end
 
-    create_checkbox("audio.recording-enabled", "Microphone access", "audio.recording-enabled.tooltip")
-    create_checkbox("audio.acoustic-effects", "Acoustic effects", "audio.acoustic-effects.tooltip")
+    create_audio_checkbox("audio.recording-enabled", "Microphone access", "audio.recording-enabled.tooltip")
+    create_audio_checkbox("audio.acoustic-effects", "Acoustic effects", "audio.acoustic-effects.tooltip")
 end

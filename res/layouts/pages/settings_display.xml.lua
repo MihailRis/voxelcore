@@ -9,54 +9,24 @@ tostring_overrides["display.framerate"] = function(x)
     end
 end
 
-function create_trackbar_setting(id, name, step, postfix, tooltip, changeonrelease)
-    local info = app.get_setting_info(id)
-    postfix = postfix or ""
-    tooltip = tooltip or ""
-    changeonrelease = changeonrelease or ""
-    document.root:add(gui.template("track_setting", {
-        id=id,
-        name=gui.str(name, "settings"),
-        value=app.get_setting(id),
-        min=info.min,
-        max=info.max,
-        step=step,
-        postfix=postfix,
-        tooltip=tooltip,
-        changeonrelease=changeonrelease
-    }))
-    update_trackbar_label(app.get_setting(id), id, name, postfix)
-end
-
-function update_trackbar_label(x, id, name, postfix)
-    local str
-    local func = tostring_overrides[id]
-    if func then
-        str = func(x)
-    else
-        str = app.str_setting(id)
+tostring_overrides["display.gui-scale"] = function(x)
+    if x == 0 then
+        -- the scale chosen automatically for the current window
+        return string.format("%s (%s)", gui.str("Auto"), tostring(gui.get_scale()))
     end
-    -- updating label
-    document[id..".L"].text = string.format(
-        "%s: %s%s",
-        gui.str(name, "settings"),
-        str,
-        postfix
-    )
+    return tostring(x)
 end
 
-function create_checkbox(id, name, tooltip)
-    tooltip = tooltip or ''
-    document.root:add(string.format(
-        "<checkbox consumer='function(x) app.set_setting(\"%s\", x) end' checked='%s' tooltip='%s'>%s</checkbox>",
-        id, app.str_setting(id), gui.str(tooltip, "settings"), gui.str(name, "settings")
-    ))
-end
-
+local settings = require "core:settings_common".new(document, {app=app, tostring_overrides=tostring_overrides})
+-- templates call these functions by name, so they must be global
+create_trackbar_setting = settings.create_trackbar_setting
+update_trackbar_label = settings.update_trackbar_label
+create_checkbox = settings.create_checkbox
 
 function on_open()
     create_trackbar_setting("camera.fov", "FOV", 1, "°")
     create_trackbar_setting("display.framerate", "Framerate", 1, "", "", true)
+    create_trackbar_setting("display.gui-scale", "GUI Scale", 0.5, "", "display.gui-scale.tooltip", true)
 
     document.root:add(string.format(
         "<select context='settings' onselect='function(opt) app.set_setting(\"display.window-mode\", tonumber(opt)) end' selected='%s'>"..

@@ -24,6 +24,7 @@ class DrawContext {
     BlendMode blendMode = BlendMode::normal;
     int scissorsCount = 0;
     float lineWidth = 1.0f;
+    float uiScale = 1.0f;
     std::array<const Bindable*, advanced_pipeline::TARGETS_COUNT> textures {};
 public:
     DrawContext(
@@ -46,5 +47,9 @@ public:
     void setBlendMode(BlendMode mode);
     void setScissors(const glm::vec4& area);
     void setLineWidth(float width);
+
+    /// @brief Set scale of UI coordinates (UI units -> window pixels).
+    /// Affects setScissors only
+    void setUiScale(float scale);
     void useTexture(int target, const Bindable* texture);
 };

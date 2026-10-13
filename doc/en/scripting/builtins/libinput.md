@@ -55,7 +55,8 @@ end, document.root)
 input.get_mouse_pos() --> {int, int}
 ```
 
-Returns cursor screen position.
+Returns cursor screen position in window pixels.
+To get position in UI units (affected by GUI scale) use `gui.get_cursor_pos()`.
 
 ```lua
 input.get_mouse_delta() --> {int, int}
