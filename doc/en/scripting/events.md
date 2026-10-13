@@ -15,6 +15,26 @@ function on_placed(x, y, z, playerid)
 Called on block placed by player
 
 ```lua
+function can_be_placed(x, y, z, playerid, rotation) -> bool
+```
+
+Called before a player places the block, after the built-in checks
+(replaceability, `grounded`, intersection with entities).
+The block is placed only if the function returns `true`.
+`rotation` is the rotation index the block will be placed with
+(see `block.get_rotation`).
+
+Example: a sapling that can only be planted on dirt.
+
+```lua
+function can_be_placed(x, y, z, playerid, rotation)
+    return block.name(block.get(x, y - 1, z)) == "base:dirt"
+end
+```
+
+The event is not called when the block is placed with `block.place` or `block.set`.
+
+```lua
 function on_broken(x, y, z, playerid)
 ```
 

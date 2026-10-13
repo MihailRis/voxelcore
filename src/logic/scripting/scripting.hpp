@@ -92,6 +92,9 @@ namespace scripting {
     void on_blocks_tick(const Block& block, int tps);
     void update_block(const Block& block, const glm::ivec3& pos);
     void random_update_block(const Block& block, const glm::ivec3& pos);
+    bool can_block_be_placed(
+        Player* player, const Block& block, const glm::ivec3& pos, int rotation
+    );
     void on_block_placed(
         Player* player, const Block& block, const glm::ivec3& pos
     );

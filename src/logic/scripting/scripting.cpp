@@ -451,6 +451,23 @@ static bool on_block_common(
     return result;
 }
 
+bool scripting::can_block_be_placed(
+    Player* player, const Block& block, const glm::ivec3& pos, int rotation
+) {
+    if (!block.rt.funcsset.canbeplaced) {
+        return true;
+    }
+    std::string name = block.name + ".canbeplaced";
+    return lua::emit_event(
+        lua::get_main_state(), name, [pos, player, rotation](auto L) {
+            lua::pushivec_stack(L, pos);
+            lua::pushinteger(L, player ? player->getId() : -1);
+            lua::pushinteger(L, rotation);
+            return 5;
+        }
+    );
+}
+
 void scripting::on_block_placed(
     Player* player, const Block& block, const glm::ivec3& pos
 ) {
@@ -717,6 +734,8 @@ void scripting::load_content_script(
         register_event(env, "on_breaking", prefix + ".breaking");
     funcsset.onbroken = register_event(env, "on_broken", prefix + ".broken");
     funcsset.onplaced = register_event(env, "on_placed", prefix + ".placed");
+    funcsset.canbeplaced =
+        register_event(env, "can_be_placed", prefix + ".canbeplaced");
     funcsset.onreplaced =
         register_event(env, "on_replaced", prefix + ".replaced");
     funcsset.oninteract =
