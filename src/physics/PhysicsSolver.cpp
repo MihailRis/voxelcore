@@ -14,6 +14,7 @@
 
 inline constexpr float E = 0.03f;
 inline constexpr float MAX_FIX = 0.1f;
+inline constexpr int MAX_NEARBY_REBUILDS = 4;
 
 static debug::Logger logger("physics-solver");
 
@@ -141,12 +142,15 @@ static void calc_collision(
 }
 
 bool PhysicsSolver::calcCollisionNegY(
-    Hitbox& hitbox, const glm::vec3& half, float dt
+    Hitbox& hitbox,
+    const glm::vec3& half,
+    float dt,
+    const std::vector<Hitbox*>& solids
 ) {
     auto& pos = hitbox.position;
     auto& vel = hitbox.velocity;
 
-    for (auto box : solidHitboxes) {
+    for (auto box : solids) {
         if (glm::distance2(box->position, pos) < E) {
             continue;
         }
@@ -215,23 +219,24 @@ void PhysicsSolver::calcCollisions(
     glm::vec3& pos,
     const glm::vec3& half,
     float stepHeight,
-    float dt
+    float dt,
+    const std::vector<Hitbox*>& solids
 ) {
     stepHeight = calc_step_height(chunks, pos, half, stepHeight);
 
     auto prevPos = pos;
 
-    calc_collision<0, 1, 2, -1>(hitbox, chunks, solidHitboxes, half, stepHeight);
-    calc_collision<0, 1, 2, 1>(hitbox, chunks, solidHitboxes, half, stepHeight);
+    calc_collision<0, 1, 2, -1>(hitbox, chunks, solids, half, stepHeight);
+    calc_collision<0, 1, 2, 1>(hitbox, chunks, solids, half, stepHeight);
 
     float xpos = pos.x;
     pos.x = prevPos.x;
 
-    calc_collision<2, 1, 0, -1>(hitbox, chunks, solidHitboxes, half, stepHeight);
-    calc_collision<2, 1, 0, 1>(hitbox, chunks, solidHitboxes, half, stepHeight);
+    calc_collision<2, 1, 0, -1>(hitbox, chunks, solids, half, stepHeight);
+    calc_collision<2, 1, 0, 1>(hitbox, chunks, solids, half, stepHeight);
     pos.x = xpos;
 
-    if (calcCollisionNegY(hitbox, half, dt)) {
+    if (calcCollisionNegY(hitbox, half, dt, solids)) {
         hitbox.grounded = true;
     }
 
@@ -255,7 +260,7 @@ void PhysicsSolver::calcCollisions(
                 }
             }
         }
-        for (auto box : solidHitboxes) {
+        for (auto box : solids) {
             if (glm::distance2(box->position, pos) < E) {
                 continue;
             }
@@ -297,7 +302,7 @@ void PhysicsSolver::calcCollisions(
                 }
             }
         }
-        for (auto box : solidHitboxes) {
+        for (auto box : solids) {
             if (glm::distance2(box->position, pos) < E) {
                 continue;
             }
@@ -314,7 +319,11 @@ void PhysicsSolver::calcCollisions(
 }
 
 void PhysicsSolver::calcSubstep(
-    Hitbox& hitbox, glm::vec3& vel, glm::vec3& pos, float dt
+    Hitbox& hitbox,
+    glm::vec3& vel,
+    glm::vec3& pos,
+    float dt,
+    const std::vector<Hitbox*>& solids
 ) {
     auto initpos = pos;
     auto half = hitbox.getHalfSize();
@@ -328,7 +337,8 @@ void PhysicsSolver::calcSubstep(
             half,
             (hitbox.prevGrounded && gravityScale > 0.0f) ? hitbox.stepHeight
                                                          : 0.0f,
-            dt
+            dt,
+            solids
         );
     }
 
@@ -359,7 +369,7 @@ void PhysicsSolver::calcSubstep(
                 }
             }
         }
-        for (auto box : solidHitboxes) {
+        for (auto box : solids) {
             if (glm::distance2(box->position, pos) < E) {
                 continue;
             }
@@ -376,6 +386,58 @@ void PhysicsSolver::calcSubstep(
     hitbox.grounded = true;
 }
 
+static float calc_move_budget(
+    const Hitbox& hitbox, const glm::vec3& gravity, float time
+) {
+    float speed = glm::length(hitbox.velocity) * 1.25f +
+                  glm::length(gravity) * glm::abs(hitbox.gravityScale) * time;
+    return speed * time + 0.05f;
+}
+
+static glm::vec3 calc_extents(const Hitbox& hitbox) {
+    return glm::max(hitbox.halfsize, hitbox.getHalfSize());
+}
+
+void PhysicsSolver::findNearbySolids(float time) {
+    size_t count = hitboxes.size();
+    nearbySolids.resize(count);
+    nearbyOrigins.resize(count);
+    nearbyBudgets.resize(count);
+    solidBudgets.resize(solidHitboxes.size());
+
+    float maxSolidHalfY = 0.0f;
+    for (size_t j = 0; j < solidHitboxes.size(); j++) {
+        const auto& box = *solidHitboxes[j];
+        solidBudgets[j] = calc_move_budget(box, gravity, time);
+        maxSolidHalfY = glm::max(maxSolidHalfY, calc_extents(box).y);
+    }
+    for (size_t i = 0; i < count; i++) {
+        const auto& hitbox = *hitboxes[i];
+        auto& solids = nearbySolids[i];
+        solids.clear();
+        nearbyOrigins[i] = hitbox.position;
+        nearbyBudgets[i] = calc_move_budget(hitbox, gravity, time);
+
+        auto ext = calc_extents(hitbox);
+
+        glm::vec3 reach(
+            0.5f,
+            hitbox.stepHeight * 2.0f + E * 8.0f + ext.y * 0.5f +
+                maxSolidHalfY + 0.5f + MAX_FIX * 2.0f,
+            0.5f
+        );
+        reach += ext + nearbyBudgets[i];
+        for (size_t j = 0; j < solidHitboxes.size(); j++) {
+            const auto& box = *solidHitboxes[j];
+            auto limit = reach + calc_extents(box) + solidBudgets[j];
+            auto diff = glm::abs(box.position - hitbox.position);
+            if (diff.x <= limit.x && diff.y <= limit.y && diff.z <= limit.z) {
+                solids.push_back(solidHitboxes[j]);
+            }
+        }
+    }
+}
+
 void PhysicsSolver::step(
     const GlobalChunks& chunks, float delta, uint substeps
 ) {
@@ -387,11 +449,32 @@ void PhysicsSolver::step(
     }
     
     float dt = delta / static_cast<float>(substeps);
+    findNearbySolids(delta);
+
+    int rebuildsLeft = MAX_NEARBY_REBUILDS;
     for (uint i = 0; i < substeps; i++) {
-        for (auto hitbox : hitboxes) {
+        for (size_t j = 0; j < hitboxes.size(); j++) {
+            auto hitbox = hitboxes[j];
             glm::vec3& pos = hitbox->position;
             hitbox->prevPosition = hitbox->position;
-            calcSubstep(*hitbox, hitbox->velocity, pos, dt);
+            calcSubstep(
+                *hitbox,
+                hitbox->velocity,
+                pos,
+                dt,
+                rebuildsLeft >= 0 ? nearbySolids[j] : solidHitboxes
+            );
+            if (rebuildsLeft < 0) {
+                continue;
+            }
+
+            auto moved = glm::abs(pos - nearbyOrigins[j]);
+            if (glm::max(moved.x, glm::max(moved.y, moved.z)) >
+                nearbyBudgets[j]) {
+                if (--rebuildsLeft >= 0) {
+                    findNearbySolids(dt * static_cast<float>(substeps - i));
+                }
+            }
         }
     }
 

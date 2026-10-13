@@ -38,6 +38,12 @@ private:
     std::vector<Sensor*> sensors;
     std::vector<Hitbox*> solidHitboxes;
     std::vector<Hitbox*> hitboxes;
+    std::vector<std::vector<Hitbox*>> nearbySolids;
+    std::vector<glm::vec3> nearbyOrigins;
+    std::vector<float> nearbyBudgets;
+    std::vector<float> solidBudgets;
+
+    void findNearbySolids(float time);
 
     void calcCollisions(
         Hitbox& hitbox,
@@ -45,12 +51,24 @@ private:
         glm::vec3& pos,
         const glm::vec3& half,
         float stepHeight,
-        float dt
+        float dt,
+        const std::vector<Hitbox*>& solids
     );
 
-    void calcSubstep(Hitbox& hitbox, glm::vec3& vel, glm::vec3& pos, float dt);
+    void calcSubstep(
+        Hitbox& hitbox,
+        glm::vec3& vel,
+        glm::vec3& pos,
+        float dt,
+        const std::vector<Hitbox*>& solids
+    );
 
-    bool calcCollisionNegY(Hitbox& hitbox, const glm::vec3& half, float dt);
+    bool calcCollisionNegY(
+        Hitbox& hitbox,
+        const glm::vec3& half,
+        float dt,
+        const std::vector<Hitbox*>& solids
+    );
 
     void updateSensors(Hitbox& hitbox);
 };

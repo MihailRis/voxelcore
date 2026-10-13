@@ -86,3 +86,4 @@ inline const std::string SOUNDS_FOLDER = "sounds";
 inline const std::string TEXTURES_FOLDER = "textures";
 
 inline const std::string FONT_DEFAULT = "normal";
+inline const std::string DEFAULT_PROJECT_PATH = "project";
