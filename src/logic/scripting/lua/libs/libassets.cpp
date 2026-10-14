@@ -6,6 +6,7 @@
 #include "coders/obj.hpp"
 #include "coders/png.hpp"
 #include "coders/vcm.hpp"
+#include "coders/vec3.hpp"
 #include "debug/Logger.hpp"
 #include "engine/Engine.hpp"
 #include "graphics/commons/Model.hpp"
@@ -25,6 +26,35 @@ static void load_texture(
         debug::Logger logger("lua.assetslib");
         logger.error() << err.what();
     }
+}
+
+static void store_vcm(
+    Assets& assets,
+    const std::string& modelName,
+    const std::string& skeletonName,
+    vcm::VcmModel& vcmModel
+) {
+    auto skeleton = std::make_unique<rigging::SkeletonConfig>(
+        std::move(*vcmModel.skeleton)
+    );
+    if (vcmModel.parts.size() > 1) {
+        for (auto& [partName, model] : vcmModel.parts) {
+            assets.store(
+                std::make_unique<model::Model>(std::move(model)),
+                modelName + "." + partName
+            );
+        }
+        for (auto& bone : skeleton->getBones()) {
+            bone->setModel(modelName + "." + bone->model.name);
+        }
+    } else {
+        assets.store(
+            std::make_unique<model::Model>(std::move(vcmModel.parts["root"])),
+            modelName
+        );
+        skeleton->getRoot()->setModel(modelName);
+    }
+    assets.store(std::move(skeleton), skeletonName);
 }
 
 static int l_request_texture(lua::State* L) {
@@ -85,7 +115,6 @@ static int l_parse_model(lua::State* L) {
     auto& assets = engine->requireAssets();
 
     auto format = lua::require_lstring(L, 1);
-    auto string = lua::require_lstring(L, 2);
     std::string name = lua::require_string(L, 3);
     std::string skeletonName;
     if (lua::isstring(L, 4)) {
@@ -93,7 +122,68 @@ static int l_parse_model(lua::State* L) {
     }
 
     if (format == "obj") {
+        auto string = lua::require_lstring(L, 2);
         assets.store(obj::parse(name, string), name);
+        return 0;
+    }
+
+    if (format == "vec3") {
+        auto content = lua::bytearray_as_string(L, 2);
+        util::Buffer<ubyte> buffer(content.size());
+        for (size_t i = 0; i < content.size(); i++) {
+            buffer[i] = static_cast<ubyte>(content[i]);
+        }
+        auto vec3File = vec3::load(name, buffer);
+        for (auto& [modelName, model] : vec3File.models) {
+            auto fullName = name;
+            if (name != modelName) {
+                fullName += "." + modelName;
+            }
+            model.model.translate(model.origin);
+            assets.store(
+                std::make_unique<model::Model>(std::move(model.model)),
+                fullName
+            );
+        }
+        return 0;
+    }
+
+    if (format != "xml" && format != "vcm") {
+        throw std::runtime_error(
+            "unknown format " + util::quote(std::string(format))
+        );
+    }
+
+    auto string = lua::require_lstring(L, 2);
+    auto vcmModel = vcm::parse(name, string, format == "xml");
+
+    if (skeletonName.empty()) {
+        assets.store(
+            std::make_unique<model::Model>(std::move(vcmModel.squash())), name
+        );
+        return 0;
+    }
+
+    if (!vcmModel.skeleton) {
+        throw std::runtime_error(
+            "model format " + util::quote(std::string(format)) +
+            " does not define a skeleton"
+        );
+    }
+    store_vcm(assets, name, skeletonName, vcmModel);
+    return 0;
+}
+
+static int l_parse_skeleton(lua::State* L) {
+    auto& assets = engine->requireAssets();
+
+    auto format = lua::require_lstring(L, 1);
+    auto string = lua::require_lstring(L, 2);
+    std::string name = lua::require_string(L, 3);
+
+    if (format == "json") {
+        auto skeleton = rigging::SkeletonConfig::parse(string, name, name);
+        assets.store(std::move(skeleton), name);
         return 0;
     }
 
@@ -104,34 +194,17 @@ static int l_parse_model(lua::State* L) {
     }
 
     auto vcmModel = vcm::parse(name, string, format == "xml");
-    
-    if (skeletonName.empty()) {
-        assets.store(
-            std::make_unique<model::Model>(std::move(vcmModel.squash())), name
+    if (!vcmModel.skeleton) {
+        throw std::runtime_error(
+            "model format " + util::quote(std::string(format)) +
+            " does not define a skeleton"
         );
-    } else {
-        auto skeleton = std::make_unique<rigging::SkeletonConfig>(
-            std::move(*vcmModel.skeleton)
-        );
-        if (vcmModel.parts.size() > 1) {
-            for (auto& [partName, model] : vcmModel.parts) {
-                assets.store(
-                    std::make_unique<model::Model>(std::move(model)),
-                    name + "." + partName
-                );
-            }
-            for (auto& bone : skeleton->getBones()) {
-                bone->setModel(name + "." + bone->model.name);
-            }
-        } else {
-            assets.store(
-                std::make_unique<model::Model>(
-                    std::move(vcmModel.parts["root"])), name
-            );
-            skeleton->getRoot()->setModel(name);
-        }
-        assets.store(std::move(skeleton), skeletonName);
     }
+
+    assets.store(
+        std::make_unique<rigging::SkeletonConfig>(std::move(*vcmModel.skeleton)),
+        name
+    );
     return 0;
 }
 
@@ -151,7 +224,7 @@ static int l_to_canvas(lua::State* L) {
         return 0;
     }
     auto atlasName = alias.substr(0, sep);
-    
+
     if (auto atlas = assets.get<Atlas>(std::string(atlasName))) {
         auto textureName = std::string(alias.substr(sep + 1));
         auto image = atlas->shareImageData();
@@ -178,6 +251,7 @@ const luaL_Reg assetslib[] = {
     {"load_texture", lua::wrap<l_load_texture>},
     {"parse_animation", lua::wrap<l_parse_animation>},
     {"parse_model", lua::wrap<l_parse_model>},
+    {"parse_skeleton", lua::wrap<l_parse_skeleton>},
     {"to_canvas", lua::wrap<l_to_canvas>},
     {nullptr, nullptr}
 };
