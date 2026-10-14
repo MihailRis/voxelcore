@@ -3,14 +3,6 @@
 #include "MeshData.hpp"
 #include "gl_util.hpp"
 
-inline constexpr size_t calc_size(const VertexAttribute attrs[]) {
-    size_t vertexSize = 0;
-    for (int i = 0; attrs[i].count; i++) {
-        vertexSize += attrs[i].size();
-    }
-    return vertexSize;
-}
-
 template <typename VertexStructure>
 inline std::vector<IndexBufferData> convert_to_ibd(const MeshData<VertexStructure>& data) {
     std::vector<IndexBufferData> indices;
@@ -143,4 +135,22 @@ void Mesh<VertexStructure>::draw(unsigned int primitive, int iboIndex) const {
 template <typename VertexStructure>
 void Mesh<VertexStructure>::draw() const {
     draw(GL_TRIANGLES);
+}
+
+template <typename VertexStructure>
+template <typename InstanceStructure>
+void Mesh<VertexStructure>::drawInstanced(
+    const InstanceBuffer<InstanceStructure>& instances,
+    size_t first,
+    size_t count
+) const {
+    if (vertexCount == 0 || count == 0) {
+        return;
+    }
+    MeshStats::drawCalls++;
+
+    glBindVertexArray(vao);
+    instances.bind(count_attributes(VertexStructure::ATTRIBUTES), first);
+    glDrawArraysInstanced(GL_TRIANGLES, 0, vertexCount, count);
+    glBindVertexArray(0);
 }

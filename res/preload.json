@@ -5,6 +5,7 @@
         "main",
         "lines",
         "entity",
+        "model",
         "translucent",
         "background",
         "skybox_gen",
