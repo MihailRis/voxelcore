@@ -43,7 +43,8 @@ function on_hud_open()
         end
         local id = block.get_picking_item(block.get(x, y, z))
         local inv, cur_slot = player.get_inventory(pid)
-        local slot = inventory.find_by_item(inv, id, 0, 9)
+        local hotbar_size = player.get_hotbar_size(pid)
+        local slot = inventory.find_by_item(inv, id, 0, hotbar_size)
         if slot then
             player.set_selected_slot(pid, slot)
             return
@@ -51,7 +52,7 @@ function on_hud_open()
         if not rules.get("allow-content-access") then
             return
         end
-        slot = inventory.find_by_item(inv, 0, 0, 9)
+        slot = inventory.find_by_item(inv, 0, 0, hotbar_size)
         if slot then
             cur_slot = slot
         end

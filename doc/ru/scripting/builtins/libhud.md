@@ -84,6 +84,12 @@ hud.is_player_inventory_open() -> boolean
 -- Устанавливает разрешение на паузу. При значении false меню паузы не приостанавливает игру.
 hud.set_allow_pause(flag: boolean)
 
+-- Возвращает true, если хотбар не скрыт через hud.set_hotbar_visible.
+hud.is_hotbar_visible() -> boolean
+
+-- Показывает или скрывает хотбар. Выбор слота колесом мыши и цифровыми клавишами продолжает работать.
+hud.set_hotbar_visible(flag: boolean)
+
 -- Функция, управляющая именованным скелетом 'hand' (см. gfx.skeletons)
 hud.hand_controller: function()
 ```

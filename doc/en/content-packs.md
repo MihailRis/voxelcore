@@ -97,6 +97,9 @@ Don't be intimidated by the following text, as a minimal pack only requires `pac
 - Configuration:
     - `config/` - Configuration files
         - `defaults.toml` - Overrides for standard content bindings, such as the player entity, default generator, etc.
+            - `hotbar-size` - number of hotbar slots, 10 by default (see `player.set_hotbar_size`)
+            - `hotbar-layout` - layout replacing the built-in hotbar, for example `"pack:hotbar"`. The root element must be `inventory`, it is bound to the player inventory. Without `position-func` the layout is placed at the bottom center of the screen
+            - `inventory-layout` - player inventory layout, `"core:inventory"` by default. The root element must be `inventory`
         - `bindings.toml` - Keyboard/Mouse bindings
         - `user-props.toml` - User properties for content definitions
     - `devtools/` - Auxiliary files for internal debugging tools

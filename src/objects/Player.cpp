@@ -41,6 +41,12 @@ Player::Player(
       name(name),
       speed(speed),
       chosenSlot(0),
+      hotbarSize(glm::max(
+          1,
+          static_cast<int>(
+              level.content.getDefaults()["hotbar-size"].asInteger(10)
+          )
+      )),
       position(position),
       inventory(std::move(inv)),
       eid(eid),
@@ -153,11 +159,20 @@ void Player::attemptToChooseSpawnpoint() {
 }
 
 void Player::setChosenSlot(int index) {
-    chosenSlot = index;
+    chosenSlot = glm::clamp(index, 0, hotbarSize - 1);
 }
 
 int Player::getChosenSlot() const {
     return chosenSlot;
+}
+
+void Player::setHotbarSize(int size) {
+    hotbarSize = glm::max(1, size);
+    setChosenSlot(chosenSlot);
+}
+
+int Player::getHotbarSize() const {
+    return hotbarSize;
 }
 
 float Player::getSpeed() const {
