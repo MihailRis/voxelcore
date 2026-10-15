@@ -137,10 +137,10 @@ function on_world_save()
 Called before world save.
 
 ```lua
-function on_world_tick()
+function on_world_tick(tps)
 ```
 
-Called 20 times per second
+Called *tps* times per second
 
 ```lua
 function on_world_quit()
