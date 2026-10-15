@@ -46,6 +46,7 @@ public:
     ~WorldRenderer();
 
     void update(const Camera& camera, float delta);
+    void updateEntitiesCulling(const Camera& camera);
 
     void renderFrame(
         const DrawContext& context, 

@@ -20,7 +20,7 @@ hud.open(
     [опционально] invid: int
 ) -> int
 
--- Возвращает true если указаный макет UI открыт.
+-- Возвращает true если указанный макет UI открыт.
 hud.is_open(
     layoutid: string
 ) -> boolean

@@ -274,12 +274,11 @@ void LevelScreen::draw(float delta) {
     const DrawContext ctx(nullptr, engine.getWindow(), batch.get());
 
     if (!hud->isPause()) {
+        renderer->updateEntitiesCulling(camera);
         scripting::on_entities_render(engine.getTime().getDelta());
-    }
-    renderer->renderFrame(ctx, camera, hudVisible, *postProcessing);
-    if (!hud->isPause()) {
         scripting::on_frontend_render();
     }
+    renderer->renderFrame(ctx, camera, hudVisible, *postProcessing);
 
     if (hudVisible) {
         hud->draw(ctx);

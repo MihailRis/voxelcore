@@ -6,7 +6,7 @@ Entity skeletons are created via json files in the *skeletons* folder.
 
 > [!IMPORTANT]
 >
-> The skeleton is a non-indexable content unit. When loading it, the pack prefix is ​​added to the name (example: *drop* in the base pack -> *base:drop*).
+> The skeleton is a non-indexable content unit. When loading it, the pack prefix is added to the name (example: *drop* in the base pack -> *base:drop*).
 
 A skeletal element, or bone, consists of a transformation matrix defining its position, rotation and scale relative to the parent element (bone) or entity if the element is the root, a model and a list of sub-elements.
 

@@ -58,7 +58,7 @@ The library contains functions for serializing and deserializing XML:
 
 Further, XML as a data type denotes a Lua table with the following structure:
 - Element tag is accessible by the key `#`
-- XML ​​attributes are accessible as key = value pairs
+- XML attributes are accessible as key = value pairs
 - Inner elements are accessible by index
 
 The table is used both as a dictionary and an array.

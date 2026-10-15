@@ -23,7 +23,7 @@ jobs:
 
       - name: Install dependencies from brew
         run: |
-          brew install glfw3 glew libpng openal-soft luajit libvorbis skypjack/entt/entt googletest glm freetype
+          brew install glfw glew libpng openal-soft luajit libvorbis skypjack/entt/entt googletest glm freetype
 
       - name: Configure
         run: |

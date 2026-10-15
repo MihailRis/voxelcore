@@ -89,7 +89,7 @@ mat4.scale(m: matrix, scale: vec3, dst: matrix)
 The angle of rotation is indicated in degrees.
 
 ```lua
--- creates a rotation matrix (angle - rotation angle) along a given axis (axis is an unit vector)
+-- creates a rotation matrix (angle - rotation angle) along a given axis (axis is a unit vector)
 mat4.rotate(axis: vec3, angle: number)
 -- returns the result of applying rotation to matrix m
 mat4.rotate(m: matrix, axis: vec3, angle: number)

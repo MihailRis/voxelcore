@@ -80,7 +80,7 @@ cmake --build . --parallel
 ### Install libraries
 
 ```sh
-brew install glfw3 glew glm libpng libvorbis lua luajit libcurl openal-soft skypjack/entt/entt freetype
+brew install glfw glew glm libpng libvorbis lua luajit libcurl openal-soft skypjack/entt/entt freetype
 ```
 
 > [!TIP]

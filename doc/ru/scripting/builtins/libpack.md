@@ -49,7 +49,7 @@ pack.is_installed(packid: string) -> boolean
 pack.get_installed() -> table<string>
 ```
 
-Возращает id всех установленных в мире контент-паков.
+Возвращает id всех установленных в мире контент-паков.
 
 ```lua
 pack.get_available() -> table<string>
@@ -102,4 +102,4 @@ pack.assemble(packids: table<string>) -> table<string>
 pack.request_writeable(packid: string, callback: function(string))
 ```
 
-Запрашивает у пользователя право на модификацию пака. При подтвержении новая точка входа будет передана в callback.
+Запрашивает у пользователя право на модификацию пака. При подтверждении новая точка входа будет передана в callback.

@@ -20,7 +20,7 @@ Example:
 ]
 ```
 
-You can pass values ​​in ARGS from the entity configuration.
+You can pass values in ARGS from the entity configuration.
 They will be passed both when creating a new entity and when loading a saved one.
 The `args` list is used for this:
 
@@ -76,15 +76,15 @@ Applies to all uses of raycast without the include_non_selectable flag.
 
 A sensor is an area attached to a physical body that detects the entry of other bodies into it.
 
-- When a body enter, the *on_sensor_enter* event is triggered.
-- When a body exit, the *on_sensor_exit* event is called.
+- When a body enters, the *on_sensor_enter* event is triggered.
+- When a body exits, the *on_sensor_exit* event is called.
 
 Sensors are indexed in the same order as they are presented in the list, starting from 0.
 
 The following types (shapes) of sensors exist:
-- *radius* is the simplest sensor. Defines the area around the center of the hitbox. The following values ​​are specified:
+- *radius* is the simplest sensor. Defines the area around the center of the hitbox. The following values are specified:
     - radius - number.
-- *aabb* - a rectangular area that changes position depending on the rotation of the entity. **The area itself does not rotate.** The following values ​​are specified:
+- *aabb* - a rectangular area that changes position depending on the rotation of the entity. **The area itself does not rotate.** The following values are specified:
     - three numbers x, y, z of the minimal corner of the area.
     - three numbers x, y, z of the opposite corner of the area.
 
@@ -138,7 +138,7 @@ In addition to custom components, the engine automatically saves data from the b
 
 There is a set of flags that allow you to specify which data will be saved and which will not.
 
-(Boolean values ​​are specified)
+(Boolean values are specified)
 
 | Title                  | Target                                               | Default |
 | ---------------------- | ---------------------------------------------------- | ------- |

@@ -36,7 +36,7 @@ quat.mul_vec3(a: quat, b: vec3, [optional] dst: vec3) -> vec3
 
 ## Spherical linear interpolation - *quat.slerp(...)*
 
-The interpolation always take the short path and the rotation is performed at constant speed.
+The interpolation always takes the short path and the rotation is performed at constant speed.
 
 ```lua
 -- creates a quaternion as an interpolation between a and b,

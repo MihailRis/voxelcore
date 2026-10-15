@@ -7,7 +7,7 @@ The script/test name without the path and extension is available as `app.script`
 local filename = "script:"..app.script..".lua"
 ```
 
-Since the control script may not belong to any of the packs, it does not belongs to its own package and has its own global namespace in which all global functions and tables are available, as well as the `app` library.
+Since the control script may not belong to any of the packs, it does not belong to any package and has its own global namespace in which all global functions and tables are available, as well as the `app` library.
 
 
 ## Common functions
@@ -67,7 +67,7 @@ app.reconfig_packs(
     remove_packs: table
 )
 
--- To remove all packs from the configuration,you can use `pack.get_installed()`:
+-- To remove all packs from the configuration, you can use `pack.get_installed()`:
 app.reconfig_packs({}, pack.get_installed())
 -- In this case, `base` will also be removed from the configuration.
 

@@ -20,7 +20,7 @@ Same structure in XML:
 
 Unlike XML, the root can contain multiple elements.
 
-Currently, there are three types of primitives: `tri`, `box`, `rect` and `part` (describes a part of a primitive, such as the side of a cube).
+Currently, there are three types of primitives: `tri`, `box` and `rect`, as well as `part` (describes a part of a primitive, such as the side of a cube).
 
 > [!NOTE]
 > By default, texture coordinates are determined by the dimensions of the primitives.

@@ -74,7 +74,7 @@ player.set_infinite_items(playerid: int, boolean)
 player.is_infinite_items(playerid: int) -> boolean
 
 
--- Сеттер и геттер мнгновенного разрушения блоков при активации привязки player.destroy.
+-- Сеттер и геттер мгновенного разрушения блоков при активации привязки player.destroy.
 player.set_instant_destruction(playerid: int, boolean)
 player.is_instant_destruction(playerid: int) -> boolean
 

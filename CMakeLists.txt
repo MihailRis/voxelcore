@@ -42,7 +42,7 @@ target_link_options(VoxelCore PRIVATE $<$<CXX_COMPILER_ID:GNU>:-no-pie>)
 add_custom_command(
     TARGET VoxelCore
     POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
             ${CMAKE_CURRENT_SOURCE_DIR}/res $<TARGET_FILE_DIR:VoxelCore>/res)
 
 if(VOXELENGINE_BUILD_TESTS)

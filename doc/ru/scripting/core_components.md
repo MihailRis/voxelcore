@@ -2,7 +2,7 @@
 
 ## *core:pathfinding*
 
-Компонент для построение путей движения мобов.
+Компонент для построения путей движения мобов.
 
 ```lua
 local pathfinding = entity:require_component("core:pathfinding")

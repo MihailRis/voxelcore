@@ -8,6 +8,22 @@
 #include "debug/Logger.hpp"
 #include "core_defs.hpp"
 
+inline constexpr uint FACE_WEST = FACE_MX;
+inline constexpr uint FACE_EAST = FACE_PX;
+inline constexpr uint FACE_BOTTOM = FACE_MY;
+inline constexpr uint FACE_TOP = FACE_PY;
+inline constexpr uint FACE_SOUTH = FACE_MZ;
+inline constexpr uint FACE_NORTH = FACE_PZ;
+
+inline constexpr std::array<uint8_t, 6> LEGACY_CUSTOM_MODEL_TEXTURE_ORDER = {
+    FACE_WEST,
+    FACE_EAST,
+    FACE_BOTTOM,
+    FACE_TOP,
+    FACE_SOUTH,
+    FACE_NORTH,
+};
+
 static debug::Logger logger("models-generator");
 
 static void configure_textures(
@@ -47,6 +63,21 @@ static inline UVRegion get_region_for(
 ) {
     auto texreg = util::get_texture_region(assets, "blocks:" + texture, "");
     return texreg.region;
+}
+
+static inline void map_legacy_box_textures(
+    const std::vector<std::string>& modelTextures,
+    size_t offset,
+    UVRegion (&boxtexfaces)[6],
+    const Assets& assets
+) {
+    for (size_t i = 0; i < 6; ++i) {
+        const auto legacyFace = LEGACY_CUSTOM_MODEL_TEXTURE_ORDER[i];
+        boxtexfaces[legacyFace] = get_region_for(modelTextures[offset + i], assets);
+    }
+    boxtexfaces[FACE_TOP].scale(glm::vec2(-1, 1));
+    boxtexfaces[FACE_EAST].scale(glm::vec2(-1, 1));
+    boxtexfaces[FACE_NORTH].scale(glm::vec2(-1, 1));
 }
 
 void ModelsGenerator::prepareModel(
@@ -120,16 +151,8 @@ model::Model ModelsGenerator::fromCustom(
     for (size_t i = 0; i < modelBoxes.size(); i++) {
         auto& mesh = model.addMesh("blocks:");
         mesh.shading = lighting;
-        UVRegion boxtexfaces[6] = {
-            get_region_for(modelTextures[i * 6 + 5], assets),
-            get_region_for(modelTextures[i * 6 + 4], assets),
-            get_region_for(modelTextures[i * 6 + 3], assets),
-            get_region_for(modelTextures[i * 6 + 2], assets),
-            get_region_for(modelTextures[i * 6 + 1], assets),
-            get_region_for(modelTextures[i * 6 + 0], assets)
-        };
-        boxtexfaces[2].scale(glm::vec2(-1));
-        boxtexfaces[5].scale(glm::vec2(-1, 1));
+        UVRegion boxtexfaces[6] = {};
+        map_legacy_box_textures(modelTextures, i * 6, boxtexfaces, assets);
 
         bool enabled[6] {1,1,1,1,1,1};
         mesh.addBox(
@@ -232,17 +255,14 @@ model::Model ModelsGenerator::loadCustomBlockModel(
             modelBoxes.push_back(modelbox);
 
             if (boxarr.size() == 7) {
-                for (uint j = 6; j < 12; j++) {
-                    modelTextures.emplace_back(boxarr[6].asString());
-                }
+                const auto texture = boxarr[6].asString();
+                modelTextures.insert(modelTextures.end(), 6, texture);
             } else if (boxarr.size() == 12) {
                 for (uint j = 6; j < 12; j++) {
                     modelTextures.emplace_back(boxarr[j].asString());
                 }
             } else {
-                for (uint j = 6; j < 12; j++) {
-                    modelTextures.emplace_back("notfound");
-                }
+                modelTextures.insert(modelTextures.end(), 6, "notfound");
             }
         }
     }

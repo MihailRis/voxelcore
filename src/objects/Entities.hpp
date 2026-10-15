@@ -58,7 +58,7 @@ public:
     void update(float delta);
 
     void renderDebug(
-        LineBatch& batch, const Frustum* frustum, const DrawContext& ctx
+        LineBatch& batch, const Frustum* frustum, const DrawContext& ctx, entityid_t fpsEntity
     );
     void render(
         const Assets& assets,
@@ -66,6 +66,8 @@ public:
         const Frustum* frustum,
         entityid_t fpsEntity
     );
+
+    void updateCulling(const Frustum* frustum, entityid_t fpsEntity);
 
     entityid_t spawn(
         const EntityDef& def,

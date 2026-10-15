@@ -48,6 +48,7 @@ local function new_Rigidbody(eid)
 end
 
 local Skeleton = {__index={
+    __native_rig=true,
     get_model=function(self, i) return __skeleton.get_model(self.eid, i) end,
     set_model=function(self, i, s) return __skeleton.set_model(self.eid, i, s) end,
     get_matrix=function(self, i, ...) return __skeleton.get_matrix(self.eid, i, ...) end,
@@ -61,6 +62,7 @@ local Skeleton = {__index={
     get_color=function(self, ...) return __skeleton.get_color(self.eid, ...) end,
     set_color=function(self, color, ...) return __skeleton.set_color(self.eid, color, ...) end,
     set_interpolated=function(self, b) return __skeleton.set_interpolated(self.eid, b) end,
+    is_culled=function(self) return __skeleton.is_culled(self.eid) end,
 }}
 
 local function new_Skeleton(eid)

@@ -11,11 +11,11 @@ Existing world logic parameters:
 -- Checks if world is open
 world.is_open() -> bool
 
--- Returns worlds information.
+-- Returns world information.
 world.get_list() -> tables array {
     -- world name
     name: str,
-    -- world icon/preview (loading automatically)
+    -- world icon/preview (loaded automatically)
     icon: str
     -- engine version the world was saved on
     version: {int, int}
@@ -114,7 +114,7 @@ world.raycast(
         -- id of the block types used for filtering
         filter_blocks: table<string|number> = nil,
         -- exclusion filtering mode:
-        --   if true, filter_blocks defines the list Ignored
+        --   if true, filter_blocks defines the list of ignored block types
         blocks_exclusion: bool = true,
         -- include blocks with selectable=false
         nonselect_blocks: bool = false;

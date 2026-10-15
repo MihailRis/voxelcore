@@ -8,7 +8,7 @@
 
 ### Step 1
 
-Connection initiating with binary header exchange:
+Connection is initiated with binary header exchange:
 
 ```
 'v' 'c' '-' 'd' 'b' 'g' NUL XX

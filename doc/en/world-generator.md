@@ -68,11 +68,11 @@ The following variables are available in the generator script:
 
 ## Fragments
 
-A fragment is a region of the world, like a chunk, saved for later use, limited by a certain width, height and length. A fragment can contain data not only blocks, but also the block inventories and entities. Unlike a chunk, the size of a fragment is arbitrary.
+A fragment is a region of the world, like a chunk, saved for later use, limited by a certain width, height and length. A fragment can contain not only block data, but also block inventories and entities. Unlike a chunk, the size of a fragment is arbitrary.
 
 Fragment can be created using the `fragment.save` command, or the `generation.create_fragment` function.
 
-Fragments used by the generator must present in the directory:
+Fragments used by the generator must be present in the directory:
 `generators/generator_name.files/fragments/`
 
 ## Structures
@@ -130,7 +130,7 @@ structures = [
 ```
 
 - key 'forest' - biome name
-- parameters - weights and central values ​​of the parameters for the biome. See the [biome selection](#biome-selection) section. The number of entries must match the number of biome selection parameters.
+- parameters - weights and central values of the parameters for the biome. See the [biome selection](#biome-selection) section. The number of entries must match the number of biome selection parameters.
 - layers - block layers from top to bottom.
     - height - layer height in blocks. -1 is used to mark the filler layer, of which there can only be one. Its height is calculated automatically.
     - block - full block name
@@ -189,11 +189,11 @@ Where $V$ is the parameter value, $V_b$ is the central parameter value for the b
 The generator selects the biome with the **least** sum of parameter scores.
 
 >[!WARNING]
-> If the parameter values ​​and weights are not set up correctly, biomes may have an effect similar to the depth conflict in 3D graphics when two surfaces overlap.
+> If the parameter values and weights are not set up correctly, biomes may have an effect similar to the depth conflict in 3D graphics when two surfaces overlap.
 >
    In the case of biomes, the pattern looks random due to the distortion of these 'surfaces' by the noise used to generate the parameter maps.
    >
-   To get rid of the effect, you can either adjust the weights or parameter values ​​of the biomes, or increase the difference in the generation of the parameter maps.
+   To get rid of the effect, you can either adjust the weights or parameter values of the biomes, or increase the difference in the generation of the parameter maps.
 
 ## Heightmap
 
@@ -224,13 +224,13 @@ map:ceil()
 -- Round to the nearest integer
 map:round()
 
--- Sine of height values ​​(in radians)
+-- Sine of height values (in radians)
 map:sin()
 
--- Cosine of height values ​​(in radians)
+-- Cosine of height values (in radians)
 map:cos()
 
--- Tangent of height values ​​(in radians)
+-- Tangent of height values (in radians)
 map:tan()
 ```
 
@@ -272,7 +272,7 @@ map:mixin(value: Heightmap|number, t: Heightmap|number)
 
 ### heightmap:dump(...)
 
-A method used for debugging, creates an image based on a heightmap by converting values ​​from the range `[-1.0, 1.0]` to brightness values ​​`[0, 255]`, saving it to the specified file.
+A method used for debugging, creates an image based on a heightmap by converting values from the range `[-1.0, 1.0]` to brightness values `[0, 255]`, saving it to the specified file.
 
 ```lua
 map:dump('export:test.png')
@@ -541,5 +541,5 @@ fragment_name = {}
     {"struct": "fragment_name", "rarity": rarity}
 ]
 ```
-The higher the rarity value, the less ore generation chance.
+The higher the rarity value, the lower the ore generation chance.
 You can rely on the rarity of coal ore: 4400.

@@ -32,10 +32,10 @@ table.index(t: table, x: any) -> int
 -- Removes element x from t.
 table.remove_value(t: table, x: any)
 
--- Shuffles values ​​in the table.
+-- Shuffles values in the table.
 table.shuffle(t: table) -> table
 
--- Adds values ​​from table t2 to table t1. If table t2 contains a key from t1, the key's value will not be changed.
+-- Adds values from table t2 to table t1. If table t2 contains a key from t1, the key's value will not be changed.
 table.merge(t1: table, t2: table) -> table
 
 -- Iterates through the table and applies a func to all its elements, returning the new value of the element.
@@ -180,7 +180,7 @@ math.sum(x: number, ... | t: table) -> number
 bit.compile(expr: string, args: table | nil, asFunction: boolean=true) -> function | string
 
 -- Compiles the function to perform bitwise operations and executes it in place
--- * ...: Values ​​to be passed to the compiled function. bit.execute(expr: string, args: table | nil, ...) -> number
+-- * ...: Values to be passed to the compiled function. bit.execute(expr: string, args: table | nil, ...) -> number
 ```
 ## Additional Global Functions
 
@@ -202,7 +202,7 @@ parse_path(path: string) -> string, string
 sleep(timesec: number)
 
 -- Waits for the passed coroutine to complete, returning the control flow. The function can only be used inside a coroutine.
--- Returns values ​​similar to those returned by pcall.
+-- Returns values similar to those returned by pcall.
 await(co: coroutine) -> result, error
 
 -- A constant storing the PID of the current engine instance.

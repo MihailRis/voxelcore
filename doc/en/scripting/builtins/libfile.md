@@ -23,7 +23,7 @@ Read whole text file.
 file.read_bytes(path: str, [optional] usetable) -> array of integers
 ```
 
-Read file into bytes array. If usetable = false , returns Bytearray instead of table.
+Read file into bytes array. If usetable = false, returns Bytearray instead of table.
 
 ```lua
 file.is_writeable(path: str) -> bool
@@ -53,7 +53,7 @@ Get file length (bytes) or 0.
 file.exists(path: str) -> bool
 ```
 
-Check if file or directory exist.
+Check if file or directory exists.
 
 ```python
 file.isfile(path: str) -> bool
@@ -83,7 +83,7 @@ Create directories chain. Returns true if new directory created.
 file.list(path: str) -> array of strings
 ```
 
-Returns a list of files and directories in the specified.
+Returns a list of files and directories in the specified directory.
 
 ```python
 file.list_all_res(path: str) -> array of strings
@@ -151,7 +151,7 @@ file.name(path: str) --> str
 
 Extracts the file name from the path. Example: `world:data/base/config.toml` -> `config.toml`.
 
-``lua
+```lua
 file.stem(path: str) --> str
 ```
 
@@ -191,6 +191,6 @@ Removes the entry point (prefix) from the path. Example: `world:data/base/config
 file.join(directory: str, path: str) --> str
 ```
 
-Joins the path. Example: `file.join("world:data", "base/config.toml)` -> `world:data/base/config.toml`.
+Joins the path. Example: `file.join("world:data", "base/config.toml")` -> `world:data/base/config.toml`.
 
 You should use this function instead of concatenating with `/`, since `prefix:/path` is not valid.

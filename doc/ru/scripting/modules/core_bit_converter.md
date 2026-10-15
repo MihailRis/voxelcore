@@ -95,4 +95,4 @@ function bit_converter.bytes_to_sint32(bytes: table|Bytearray, [опционал
 ```lua
 function bit_converter.bytes_to_int64(bytes: table|Bytearray, [опционально] order: string) -> int
 ```
-Конвертирует массив байтов в 8-х байтовое знаковое число
+Конвертирует массив байтов в 8-и байтовое знаковое число

@@ -33,7 +33,7 @@ Block model type from list:
 - "block" - default block model
 - "none" - invisible block (air)
 - "X" - grass model (two crossed sprites)
-- "aabb" - model based of block hitbox (complex hitbox will be combined into one). Examples: pipes, bulbs, panels.
+- "aabb" - model based on block hitbox (complex hitbox will be combined into one). Examples: pipes, bulbs, panels.
 - "custom" - used when specifying custom models via *model-name*
 
 ### *model-name*
@@ -187,7 +187,7 @@ Block is not a physical obstacle if **false**
 
 ### *hitbox*
 
-An array of 6 numbers describing an offset an size of a block hitbox.
+An array of 6 numbers describing an offset and size of a block hitbox.
 
 The numbers are specified in the range [0.0, 1.0] - i.e. within the block (in the case of an extended block, the hitbox can be larger than one, but must not go beyond the "size" property).
 
@@ -210,7 +210,7 @@ For composite hitboxes, the *hitboxes* property is used - an array of hitboxes, 
 
 ### *grounded*
 
-Is block may only be set on a solid block and destructs on below block destruction.
+Block may only be placed on a solid block and is destroyed when the block below is destroyed.
 
 ### *selectable*
 
@@ -279,7 +279,7 @@ Block fields are declared in the following format:
 In addition to `type` and `length`, the `convert-strategy` parameter determines the value conversion strategy when narrowing the data type.
 
 The parameter takes one of two values:
-- `reset` - a value that does not exists in the new range will be reset to 0
+- `reset` - a value that does not exist in the new range will be reset to 0
 - `clamp` - the value will be reduced to the closest one in the new range
 
 Example: the number 231 when changing the field type from int16 to int8:
@@ -362,7 +362,7 @@ Adds elements to the end of the list instead of completely overwriting it.
 ## Tags
 
 Tags allow you to designate general properties of blocks. Names should be formatted as `prefix:tag_name`.
-The prefix is ​​optional, but helps avoid unwanted logical collisions. Example:
+The prefix is optional, but helps avoid unwanted logical collisions. Example:
 
 ```json
 {

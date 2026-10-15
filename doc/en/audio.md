@@ -23,7 +23,7 @@ Channels are controlled by the engine and currently are not available in scripts
 
 ### Speaker
 
-One-time use playing audio controller for sound or stream. Speaker is destroying after stop (**stop** method call or audio track end if not looped)
+One-time use playing audio controller for sound or stream. Speaker is destroyed after stop (**stop** method call or audio track end if not looped)
 
 > [!NOTE]
 > Speaker access is performed using 64 bit integer identifiers that **will not be reused** after speaker destruction. You should avoid storing direct references and pointers instead of ID.
@@ -40,7 +40,7 @@ Stream used by an audio stream as an audio data source. Implementation depends o
 
 ### Stream
 
-Streaming audio. Not fully loading to the memory. Cannot be played via multiple speakers simultaneously.
+Streaming audio. Not fully loaded into memory. Cannot be played via multiple speakers simultaneously.
 
 ## Formats support
 
@@ -50,7 +50,7 @@ Streaming audio. Not fully loading to the memory. Cannot be played via multiple 
 ## Additional information
 
 > [!WARNING]
-> **Stereo** audio played with OpenAL will ignore 3D position relative to the listener. Sounds that supposed to be played at specific world position must be **mono**
+> **Stereo** audio played with OpenAL will ignore 3D position relative to the listener. Sounds that are supposed to be played at specific world position must be **mono**
 
 ## Scripting Audio API
 
@@ -98,7 +98,7 @@ Plays streaming audio from the specified file. Returns speaker ID.
 ```lua
 audio.play_sound(
     -- name of a loaded sound without pack prefix, "sounds/", variant number and extension 
-    -- example: "steps/stone" to play sound loaded from "sounds/steps/stone.ogg" or any of its variant
+    -- example: "steps/stone" to play sound loaded from "sounds/steps/stone.ogg" or any of its variants
     -- variant will be randomly chosen
     name: string, 
     -- audio source world position
@@ -119,7 +119,7 @@ Plays the specified sound on the specified position in world. Returns speaker ID
 ```lua
 audio.play_sound_2d(
     -- name of a loaded sound without pack prefix, "sounds/", variant number and extension 
-    -- example: "steps/stone" to play sound loaded from "sounds/steps/stone.ogg" or any of its variant
+    -- example: "steps/stone" to play sound loaded from "sounds/steps/stone.ogg" or any of its variants
     -- variant will be randomly chosen
     name: string, 
     -- audio gain (0.0 - 1.0)
@@ -153,34 +153,34 @@ audio.resume(speakerid: integer)
 -- set audio loop
 audio.set_loop(speakerid: integer, state: bool)
 
--- check if audio is in loop (false if does not exists)
+-- check if audio is in loop (false if does not exist)
 audio.is_loop(speakerid: integer) -> bool
 
--- get audio gain value (0.0 if does not exists)
+-- get audio gain value (0.0 if does not exist)
 audio.get_volume(speakerid: integer) -> number
 
 -- set audio gain value
 audio.set_volume(speakerid: integer, volume: number)
 
--- get audio playback speed (1.0 if does not exists)
+-- get audio playback speed (1.0 if does not exist)
 audio.get_pitch(speakerid: integer) -> number
 
 -- set audio playback speed
 audio.set_pitch(speakerid: integer, pitch: number)
 
--- get current audio playback time in seconds (0.0 if does not exists)
+-- get current audio playback time in seconds (0.0 if does not exist)
 audio.get_time(speakerid: integer) -> number
 
 -- set audio playback time position in seconds
 audio.set_time(speakerid: integer, time: number)
 
--- get audio source world position (nil if does not exists)
+-- get audio source world position (nil if does not exist)
 audio.get_position(speakerid: integer) -> number, number, number
 
 -- set audio source world position
 audio.set_position(speakerid: integer, x: number, y: number, z: number)
 
--- get audio source movement speed in world (nil if does not exists)
+-- get audio source movement speed in world (nil if does not exist)
 -- (OpenAL uses it for Doppler effect simulation)
 audio.get_velocity(speakerid: integer) -> number, number, number
 
@@ -189,7 +189,7 @@ audio.get_velocity(speakerid: integer) -> number, number, number
 audio.set_velocity(speakerid: integer, x: number, y: number, z: number)
 
 -- get audio duration
--- returns 0, if does not exists
+-- returns 0, if does not exist
 -- also returns 0, if duration is unknown (example: radio)
 audio.get_duration(speakerid: integer) -> number
 ```

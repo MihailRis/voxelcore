@@ -7,7 +7,7 @@
 Icon type defines a source of an item image displayed in inventory.
 - **none** - invisible type, used for *core:empty* only (empty item, like the air block). May be removed in future updates.
 - **sprite** - default type. 2D image. Requires *icon* set to *atlas_name:texture_name*. Example: *blocks:notfound*.
-  There's two atlases available:
+  There are two atlases available:
 	- **blocks** (generated from *png* files in *res/textures/blocks/*)
 	- **items** (generated from *png* files in *res/textures/items/*)
 - **block** - block preview. Block ID must be specified in **icon** property. Example: *base:wood*.
@@ -22,7 +22,7 @@ If the model is not specified, an automatic one will be generated.
 `caption` - name of item in inventory
 `description` - item description in inventory
 
-this props allow to use `md`
+These properties allow using `md`
 
 *see [Text Styles](/doc/en/text-styles.md)*
 
@@ -32,7 +32,7 @@ this props allow to use `md`
 
 Specifies what block will be placed on RMB click. Automatically specified in generated items.
 
-Example: an items that places bazalt blocks:
+Example: an item that places bazalt blocks:
 
 ```json
 "placing-block": "base:bazalt"
@@ -75,7 +75,7 @@ Allows you to reuse a single script for multiple items.
 ## Tags
 
 Tags allow you to designate general properties of items. Names should be formatted as `prefix:tag_name`.
-The prefix is ​​optional, but helps avoid unwanted logical collisions. Example:
+The prefix is optional, but helps avoid unwanted logical collisions. Example:
 
 ```json
 {

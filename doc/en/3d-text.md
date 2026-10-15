@@ -2,7 +2,7 @@
 
 2D text displayed in 3D space.
 
-The appearance of 3D text, is configured via a table, like [particles](particles.md). All fields are optional.
+The appearance of 3D text is configured via a table, like [particles](particles.md). All fields are optional.
 
 | Field           | Description                              | Default          |
 | --------------- | ---------------------------------------- | ---------------- |

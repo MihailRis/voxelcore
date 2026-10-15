@@ -50,7 +50,7 @@ inventory.has_data(
 inventory.size(invid: int) -> int
 
 -- Add an item to the specified inventory. 
--- Returns remaining count if could not to add fully.
+-- Returns remaining count if it could not be added fully.
 inventory.add(invid: int, itemid: int, count: int) -> int
 
 -- Returns the index of the first matching slot in the given range.
@@ -164,7 +164,7 @@ inventory.get_all_data(
     slot: int,
 ) -> table | nil
 
--- Sets the values ​​of all local item properties.
+-- Sets the values of all local item properties.
 inventory.set_all_data(
     -- inventory id
     invid: int,
@@ -186,8 +186,8 @@ inventory.clone(invid: int) -> int
 
 -- Move an item from slotA of invA to slotB of invB. 
 -- invA may be the same as invB.
--- If slotB will be chosen automatically if argument is not specified.
--- The move may be incomplete if the available slot has no enough stack space.
+-- slotB will be chosen automatically if argument is not specified.
+-- The move may be incomplete if the available slot does not have enough stack space.
 inventory.move(invA: int, slotA: int, invB: int, slotB: int)
 
 -- Moves an item from slotA of inventory invA to a suitable slot(s)

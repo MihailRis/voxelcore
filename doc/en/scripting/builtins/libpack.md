@@ -74,7 +74,7 @@ Returns the ids of all content packs available but not installed in the world.
 pack.get_base_packs() -> strings array
 ```
 
-Returns the id of all base packages (non-removeable)
+Returns the ids of all base packages (non-removable)
 
 ```lua
 pack.get_info(packid: str) -> {
@@ -90,7 +90,7 @@ pack.get_info(packid: str) -> {
 ```
 
 Returns information about the pack (not necessarily installed).
-- icon - name of the preview texture (loading automatically)
+- icon - name of the preview texture (loaded automatically)
 - dependencies - strings following format `{lvl}{id}`, where lvl:
   - `!` - required
   - `?` - optional
@@ -98,7 +98,7 @@ Returns information about the pack (not necessarily installed).
   
   for example `!teal`
 
-To obtain information about multiple packs, use table of ids to avoid re-scanning:one
+To obtain information about multiple packs, use table of ids to avoid re-scanning:
 
 ```lua
 pack.get_info(packids: table) -> {id={...}, id2={...}, ...}

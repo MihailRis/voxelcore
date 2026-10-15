@@ -58,7 +58,7 @@ Examples:
 
 # Template attributes
 
-- `if` with values ​​('', 'false', 'nil') the element will be ignored, including sub-elements.
+- `if` with values ('', 'false', 'nil') the element will be ignored, including sub-elements.
 - `ifnot` is the same as `if`, but with the opposite condition.
 
 # Common *container* attributes
@@ -162,17 +162,17 @@ The key code for comparison can be obtained via `input.keycode("key_name")`
 - `min` - minimal value. Type: number. Default: 0
 - `max` - maximal value. Type: number. Default: 1
 - `value` - initial value. Type: number. Default: 0
-- `step` - track step size. Type: number: Default: 1
-- `track-width` track pointer width (in steps). Type: number. Default: 1
+- `step` - track step size. Type: number. Default: 1
+- `track-width` - track pointer width (in steps). Type: number. Default: 1
 - `track-color` - the color of the pointer when hovering over the cursor. Type: RGBA color.
 - `consumer` - Lua function - new value consumer
-- `sub-consumer` - Lua function that receives intermediate values ​​(use to update text when `change-on-release="true"`)
+- `sub-consumer` - Lua function that receives intermediate values (use to update text when `change-on-release="true"`)
 - `supplier` - Lua function - value supplier
 - `change-on-release` - Call consumer on trackbar release only. Type: boolean. Default: false
 
 ## Inline frame - *iframe*
 
-Container for embedding an external document. Content is scaling to the iframe size.
+Container for embedding an external document. Content is scaled to the iframe size.
 
 - `src` - document id in the format `pack:name` (`pack/layouts/name.xml`)
 
@@ -196,7 +196,7 @@ Example of list description:
 - `onselect` - function to which the user-selected value is passed
 - `mode` - behaviour / display mode:
     - `select` - default mode.
-    - `button` - button mode: the text is not replaced with the selected option; the element rendered as a regular button.
+    - `button` - button mode: the text is not replaced with the selected option; the element is rendered as a regular button.
 
 ## *bindbox*
 
@@ -213,18 +213,18 @@ An element for displaying and editing key or mouse button bindings.
 Element is a container. Does not have specific attributes.
 
 > [!WARNING]
-> Inventories position is controlled by the engine and can not be changed by attributes *pos* and *margin*
+> Inventory position is controlled by the engine and can not be changed by attributes *pos* and *margin*
 
 > [!WARNING]
 > Slots not linked to an inventory will not be displayed. "Linked to an inventory" refers to the association between an inventory UI element and an inventory via an ID. This link can be explicitly established using `inventory_ui.inventory = inventory_id`. [(see ui.md)](scripting/ui.md#inventory)
 
 ## *slot*
 
-Element must be in direct sub-element of *inventory*.
+Element must be a direct sub-element of *inventory*.
 - `index` - inventory slot index (starting from 0). Type: integer
 - `item-source` - content access panel behaviour (infinite source of an item). Type: boolean
 - `sharefunc` - Lua event called on <btn>LMB</btn> + <btn>Shift</btn>. Inventory id and slot index passed as arguments.
-- `updatefunc` - Lua event called on slot content update.Inventory id and slot index passed as arguments.
+- `updatefunc` - Lua event called on slot content update. Inventory id and slot index passed as arguments.
 - `onrightclick` - Lua event called on <btn>RMB</btn> click. Inventory id and slot index passed as arguments.
 - `taking` - the ability to take an item from a slot.
 - `placing` - the ability to put an item in a slot.
@@ -235,12 +235,12 @@ Element must be in direct sub-element of *inventory*.
 - `interval` - visual slots interval. Type: number
 - `padding` - grid padding (not slots interval). Type: number. (*deprecated*)
 - `sharefunc` - Lua event called on <btn>LMB</btn> + <btn>Shift</btn>. Inventory id and slot index passed as arguments.
-- `updatefunc` - Lua event called on slot content update.Inventory id and slot index passed as arguments.
+- `updatefunc` - Lua event called on slot content update. Inventory id and slot index passed as arguments.
 - `onrightclick` - Lua event called on <btn>RMB</btn> click. Inventory id and slot index passed as arguments.
 - `taking` - the ability to take an item from a slot.
 - `placing` - the ability to put an item in a slot.
 
 Slots configuration (just specify two attributes):
-- `rows` - ​​number of rows. Type: integer
+- `rows` - number of rows. Type: integer
 - `cols` - number of columns. Type: integer
 - `count` - total number of slots. Type: integer

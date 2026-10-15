@@ -45,7 +45,7 @@ Value characters describe the type and size.
 byteutil.unpack(format: str, bytes: table|Bytearray) -> ...
 ```
 
-Extracts values ​​from a byte array based on a format string.
+Extracts values from a byte array based on a format string.
 
 Example:
 

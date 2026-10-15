@@ -112,7 +112,7 @@ socket:recv(
     -- Использовать таблицу вместо Bytearray
     [опционально] usetable: boolean=false
 ) -> nil|table|Bytearray
--- В случае ошибки возвращает nil (сокет закрыт или несуществует).
+-- В случае ошибки возвращает nil (сокет закрыт или не существует).
 -- Если данных пока нет, возвращает пустой массив байт.
 
 -- Асинхронный вариант для использования в корутинах.
@@ -170,7 +170,7 @@ socket:set_nodelay(state: boolean)
 network.tcp_open(
     -- Порт
     port: int,
-    -- Функция, вызываемая при поключениях
+    -- Функция, вызываемая при подключениях
     -- Как единственный аргумент передаётся сокет подключенного клиента
     callback: function(Socket)
 ) -> ServerSocket
@@ -224,7 +224,7 @@ socket:get_address() -> string, int
 ```lua
 network.udp_open(
 	port: int,
-	-- Функция, вызываемая при получении датаграмы
+	-- Функция, вызываемая при получении датаграммы
 	-- В параметры передаётся адрес и порт отправителя, а также сами данные
 	datagramHandler: function(address: string, port: int, data: Bytearray, server: DatagramServerSocket)
 ) -> DatagramServerSocket

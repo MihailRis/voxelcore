@@ -5,7 +5,7 @@
 ### Content packs ID
 
 Content pack identifier requirements:
-- name can consist of Capital letters A-Z, lowercase letters a-z digits 0-9, and underscore '\_' signs. 
+- name can consist of Capital letters A-Z, lowercase letters a-z, digits 0-9, and underscore '\_' signs. 
 - the first character must not be a digit.
 - name length must be in range \[2, 24\]
 
@@ -19,7 +19,7 @@ Content pack identifier requirements:
 
 ### Content packs data
 
-State that supposed to be saved with a world, must be stored in `world:data/pack_id/`. The path should be retrieved by calling a function:
+State that is supposed to be saved with a world, must be stored in `world:data/pack_id/`. The path should be retrieved by calling a function:
 
 ```lua
 local path = pack.data_file(PACK_ID, "file_name")

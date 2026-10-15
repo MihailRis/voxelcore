@@ -1,8 +1,5 @@
 #include "GUI.hpp"
 
-#include <algorithm>
-#include <utility>
-
 #include "assets/Assets.hpp"
 #include "debug/Logger.hpp"
 #include "elements/Label.hpp"
@@ -17,7 +14,6 @@
 #include "graphics/core/Shader.hpp"
 #include "graphics/core/Font.hpp"
 #include "graphics/core/DrawContext.hpp"
-#include "graphics/core/Shader.hpp"
 #include "gui_util.hpp"
 #include "window/Camera.hpp"
 #include "window/Window.hpp"

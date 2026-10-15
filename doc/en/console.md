@@ -56,7 +56,7 @@ Example:
 x:num~pos.x
 ```
 
-Variables may be specified as default values ​​using the `$` prefix:
+Variables may be specified as default values using the `$` prefix:
 
 ```python
 t:int=$time
@@ -110,7 +110,7 @@ console.add_command(
 )
 ```
 
-- Checked values ​​of positional arguments are passed to **args**.
-- A table of keyword argument values ​​is passed to **kwargs**.
+- Checked values of positional arguments are passed to **args**.
+- A table of keyword argument values is passed to **kwargs**.
 
 The command interpreter performs type checking and casting automatically.

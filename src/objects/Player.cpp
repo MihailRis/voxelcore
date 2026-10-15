@@ -322,7 +322,7 @@ void Player::deserialize(const dv::value& src) {
     src.at("loading-chunks").get(loadingChunks);
 
     setChosenSlot(src["chosen-slot"].asInteger());
-    eid = src["entity"].asNumber();
+    eid = src["entity"].asInteger();
 
     if (src.has("inventory")) {
         getInventory()->deserialize(src["inventory"]);

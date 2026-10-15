@@ -29,11 +29,11 @@ block.properties: table<int, table<string, any>>
 -- Если чанк на указанных координатах не загружен, возвращает -1.
 block.get(x: int, y: int, z: int) -> int
 
--- Устанавливает блок с заданным числовым id и состоянием (0 - по-умолчанию) на заданных координатах.
+-- Устанавливает блок с заданным числовым id и состоянием (0 - по умолчанию) на заданных координатах.
 -- Если передан noupdate=true, то вызов ивента `on_update` для соседних блоков не произойдёт.
 block.set(x: int, y: int, z: int, id: int, states: int, noupdate: boolean=false)
 
--- Устанавливает блок с заданным числовым id и состоянием (0 - по-умолчанию) на заданных координатах
+-- Устанавливает блок с заданным числовым id и состоянием (0 - по умолчанию) на заданных координатах
 -- от лица игрока, вызывая событие on_placed.
 -- playerid не является обязательным
 block.place(x: int, y: int, z: int, id: int, states: int, [опционально] playerid: int)
@@ -70,7 +70,7 @@ block.caption(blockid: int) -> string
 -- Возвращает строковый id блока по его числовому id.
 block.name(blockid: int) -> string
 
--- Возвращает числовой id блока, принимая в качестве агрумента строковый
+-- Возвращает числовой id блока, принимая в качестве аргумента строковый
 block.index(name: string) -> int
 
 -- Собирает полное состояние в виде целого числа
@@ -106,7 +106,7 @@ block.raycast(start: vec3, dir: vec3, max_distance: number, [опциональ�
 Бросает луч из точки start в направлении dir. Max_distance указывает максимальную длину луча.
 
 Аргумент `filter` позволяет указать какие блоки являются "прозрачными" для луча, прим.: {"base:glass","base:water"}. 
-Для использования агрумент `dest` нужно чем-то заполнить(можно nil), это сделано для обратной совместимости
+Для использования аргумент `dest` нужно чем-то заполнить (можно nil), это сделано для обратной совместимости
 
 Аргумент `include_non_selectable` определяет, будут ли учтены блоки, которые нельзя выбрать курсором.
 Пример - `base:water`
@@ -125,11 +125,11 @@ block.raycast(start: vec3, dir: vec3, max_distance: number, [опциональ�
 block.get_X(x: int, y: int, z: int) -> int, int, int
 block.get_X(id: int, rotation: int) -> int, int, int
 
--- То же, но для оси Y (по-умолчанию 0, 1, 0)
+-- То же, но для оси Y (по умолчанию 0, 1, 0)
 block.get_Y(x: int, y: int, z: int) -> int, int, int
 block.get_Y(id: int, rotation: int) -> int, int, int
 
--- То же, но для оси Z (по-умолчанию 0, 0, 1)
+-- То же, но для оси Z (по умолчанию 0, 0, 1)
 block.get_Z(x: int, y: int, z: int) -> int, int, int
 block.get_Z(id: int, rotation: int) -> int, int, int
 

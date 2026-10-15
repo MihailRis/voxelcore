@@ -16,13 +16,13 @@ utf8.length(text: string) -> int
 -- Возвращает код первого символа строки
 utf8.codepoint(chars: string) -> int
 
--- Кодирует код в в UTF-8
+-- Кодирует код в UTF-8
 utf8.encode(codepoint: int) -> string
 
 -- Возвращает подстроку от позиции startchar до endchar включительно
 utf8.sub(text: string, startchar: int, [опционально] endchar: int) -> string
 
--- Переводит строку в вверхний регистр
+-- Переводит строку в верхний регистр
 utf8.upper(text: string) -> string
 
 -- Переводит строку в нижний регистр

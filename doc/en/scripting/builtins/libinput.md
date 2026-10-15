@@ -100,7 +100,7 @@ input.is_pressed(code: str) --> bool
 
 Checks input activity using a code consisting of:
 - input type: *key* or *mouse*
-- input code: [key name](#key names) or mouse button name (left, middle, right)
+- input code: [key name](../user-input.md#key-names) or mouse button name (left, middle, right)
 
 Example:
 ```lua

@@ -1,6 +1,6 @@
 # Пользовательский ввод
 
-Обработка нажатий клавиш и кнопок мыши обрабатываются через привязки (bindings), которые назначаются в паке, в файле `config/bindings.toml` в формате:
+Нажатия клавиш и кнопок мыши обрабатываются через привязки (bindings), которые назначаются в паке, в файле `config/bindings.toml` в формате:
 
 ```toml
 packid.binding.name="inputtype:codename"
@@ -25,4 +25,4 @@ packid.binding.name="inputtype:codename"
 
 ## Библиотека input
 
-См. [библиотека *input*](builtins/libinput.md)
+См. [библиотеку *input*](builtins/libinput.md)

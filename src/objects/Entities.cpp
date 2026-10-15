@@ -425,7 +425,7 @@ static void debug_render_skeleton(
 }
 
 void Entities::renderDebug(
-    LineBatch& batch, const Frustum* frustum, const DrawContext& pctx
+    LineBatch& batch, const Frustum* frustum, const DrawContext& pctx, entityid_t fpsEntity
 ) {
     {
         auto ctx = pctx.sub(&batch);
@@ -453,12 +453,15 @@ void Entities::renderDebug(
         }
     }
     {
-        auto view = registry->view<Transform, rigging::Skeleton>();
+        auto view = registry->view<EntityId, Transform, rigging::Skeleton>();
         auto ctx = pctx.sub(&batch);
         ctx.setDepthTest(false);
         ctx.setDepthMask(false);
         ctx.setLineWidth(2);
-        for (auto [entity, transform, skeleton] : view.each()) {
+        for (auto [entity, eid, transform, skeleton] : view.each()) {
+            if (eid.uid == fpsEntity) {
+                continue;
+            }
             auto config = skeleton.config;
             if (config == nullptr) {
                 continue;
@@ -506,6 +509,19 @@ void Entities::render(
                 size
             );
         }
+    }
+}
+
+void Entities::updateCulling(const Frustum* frustum, entityid_t fpsEntity) {
+    auto view = registry->view<EntityId, Transform, rigging::Skeleton, Rigidbody>();
+    for (auto [entity, eid, transform, skeleton, rigidbody] : view.each()) {
+        if (frustum == nullptr || eid.uid == fpsEntity) {
+            skeleton.culled = false;
+            continue;
+        }
+        const auto& pos = transform.pos;
+        const auto& halfSize = rigidbody.hitbox.getHalfSize();
+        skeleton.culled = !frustum->isBoxVisible(pos - halfSize, pos + halfSize);
     }
 }
 

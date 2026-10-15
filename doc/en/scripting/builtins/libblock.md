@@ -70,7 +70,7 @@ block.get_variant(x: int, y: int, z: int) -> int
 -- Sets the block variant by index
 block.set_variant(x: int, y: int, z: int, index: int)
 
--- Checks if an block has specified tag
+-- Checks if a block has specified tag
 block.has_tag(id: int, tag: str) -> bool
 ```
 
@@ -150,15 +150,15 @@ block.raycast(start: vec3, dir: vec3, max_distance: number, [optional] dest: tab
 
 Casts a ray from the start point in the direction of *dir*. Max_distance specifies the maximum ray length.
 
-Argument `filter` can be used to tell ray what blocks can be skipped(passed through) during ray-casting.
-To use filter `dest` argument must be filled with some value(can be nil), it's done for backwards compatibility 
+Argument `filter` can be used to tell ray what blocks can be skipped (passed through) during ray-casting.
+To use filter `dest` argument must be filled with some value (can be nil), it's done for backwards compatibility 
 
 The `include_non_selectable` argument determines whether blocks that cannot be selected by the cursor will be included.
 Example - `base:water`
 
 The function returns a table with the results or nil if the ray does not hit any block.
 
-The result will use the destination table instead of creating a new one if the optional argument specified.
+The result will use the destination table instead of creating a new one if the optional argument is specified.
 
 Use `world.raycast(...)` for more detailed configuration.
 

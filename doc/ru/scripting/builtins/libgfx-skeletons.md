@@ -33,7 +33,7 @@ skeleton:get_texture(key: string) -> string
 -- Назначает текстуру по ключу
 skeleton:set_texture(key: string, value: string)
 
--- Проверяет статус видимости кости по индесу 
+-- Проверяет статус видимости кости по индексу 
 -- или всего скелета, если индекс не указан
 skeleton:is_visible([опционально] index: int) -> boolean
 

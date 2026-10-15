@@ -1,6 +1,6 @@
 # Module core:bit_converter
 
-## Converting values ​​to bytes and back
+## Converting values to bytes and back
 
 ```lua
 function bit_converter.string_to_bytes(string: str) -> table

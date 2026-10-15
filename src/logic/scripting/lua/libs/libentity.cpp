@@ -70,7 +70,7 @@ static int l_get_def(lua::State* L) {
 
 static int l_spawn(lua::State* L) {
     auto level = controller->getLevel();
-    auto defname = lua::tostring(L, 1);
+    auto defname = lua::require_string(L, 1);
     auto& def = content->entities.require(defname);
     auto pos = lua::tovec3(L, 2);
     dv::value args = nullptr;

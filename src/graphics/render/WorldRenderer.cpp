@@ -324,9 +324,22 @@ void WorldRenderer::renderInWorldLines(
         auto ctx = pctx.sub(lineBatch.get());
         bool culling = engine.getSettings().graphics.frustumCulling.get();
         level.entities->renderDebug(
-            *lineBatch, culling ? frustumCulling.get() : nullptr, ctx
+            *lineBatch, culling ? frustumCulling.get() : nullptr, ctx,
+            player.currentCamera.get() == player.fpCamera.get() ? player.getEntity() : 0
         );
     }
+}
+
+void WorldRenderer::updateEntitiesCulling(const Camera& camera) {
+    bool culling = engine.getSettings().graphics.frustumCulling.get();
+    if (culling) {
+        frustumCulling->update(camera.getProjView());
+    }
+    level.entities->updateCulling(
+        culling ? frustumCulling.get() : nullptr,
+        player.currentCamera.get() == player.fpCamera.get() ? player.getEntity()
+                                                            : 0
+    );
 }
 
 void WorldRenderer::update(const Camera& camera, float delta) {

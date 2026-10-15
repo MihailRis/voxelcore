@@ -11,7 +11,8 @@ input.mousecode(mousename: string) -> number
 
 -- Проверяет активность ввода по коду, состоящему из:
 -- * типа ввода: key (клавиша) или mouse (кнопка мыши)
--- * код ввода: [имя клавиши](#имена-клавиш) или имя кнопки мыши (left, middle, right)
+-- * код ввода: имя клавиши или имя кнопки мыши (left, middle, right).
+-- См. user-input.md
 input.is_pressed(code: string) -> boolean
 
 -- Возвращает названия всех доступных привязок.
@@ -32,7 +33,7 @@ input.set_enabled(bindname: string, flag: boolean)
 -- Возвращает позицию курсора на экране.
 input.get_mouse_pos() -> {number, number}
 
--- Возращает дельту позиции курсора.
+-- Возвращает дельту позиции курсора.
 input.get_mouse_delta() -> {number, number}
 
 -- Возвращает вертикальное смещение колеса мыши, накопленное за текущий кадр.

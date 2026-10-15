@@ -1,6 +1,6 @@
 # Assets preloading (*preload.json* file)
 
-`preload.json` in content-pack folder is used for specifying additional assets should be loaded, like sounds.
+`preload.json` in content-pack folder is used for specifying additional assets that should be loaded, like sounds.
 
 The file contains following categories available:
 - animation

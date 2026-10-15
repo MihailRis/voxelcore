@@ -96,6 +96,7 @@ namespace rigging {
         std::unordered_map<std::string, std::string> textures;
         std::vector<ModelReference> modelOverrides;
         bool visible;
+        bool culled = false;
         glm::vec4 tint {1.0f, 1.0f, 1.0f, 1.0f};
         std::vector<glm::vec4> boneTints;
 
