@@ -41,6 +41,14 @@ namespace network {
         const ServerDatagramCallback& handler
     );
 
+    std::shared_ptr<HttpServer> open_http_server(
+        u64id_t id,
+        Network* network,
+        int port,
+        HttpRequestCallback handler,
+        long responseTimeoutMs
+    );
+
     int find_free_port();
 }
 
@@ -121,6 +129,17 @@ u64id_t Network::connectUdp(
 u64id_t Network::openUdpServer(int port, const ServerDatagramCallback& handler) {
     u64id_t id = nextServer++;
     auto server = open_udp_server(id, this, port, handler);
+    servers[id] = std::move(server);
+    return id;
+}
+
+u64id_t Network::openHttpServer(
+    int port, HttpRequestCallback handler, long responseTimeoutMs
+) {
+    u64id_t id = nextServer++;
+    auto server = open_http_server(
+        id, this, port, std::move(handler), responseTimeoutMs
+    );
     servers[id] = std::move(server);
     return id;
 }
