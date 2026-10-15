@@ -130,14 +130,26 @@ void BlocksController::updateBlock(int x, int y, int z) {
 }
 
 void BlocksController::update(float delta, uint padding) {
-    if (int parts = randTickClock.update(delta)) {
-        for (int i = 0; i < parts; i++) {
-            randomTick(randTickClock.convertPart(i), randTickClock.getParts(), padding);
+    auto& worldInfo = level.getWorld().getInfo();
+
+    if (worldInfo.getLogicFlag("random_ticks", true)) {
+        if (int parts = randTickClock.update(delta)) {
+            for (int i = 0; i < parts; i++) {
+                randomTick(
+                    randTickClock.convertPart(i),
+                    randTickClock.getParts(),
+                    padding
+                );
+            }
         }
     }
-    if (int parts = blocksTickClock.update(delta)) {
-        for (int i = 0; i < parts; i++) {
-            onBlocksTick(blocksTickClock.convertPart(i), blocksTickClock.getParts());
+    if (worldInfo.getLogicFlag("block_ticks", true)) {
+        if (int parts = blocksTickClock.update(delta)) {
+            for (int i = 0; i < parts; i++) {
+                onBlocksTick(
+                    blocksTickClock.convertPart(i), blocksTickClock.getParts()
+                );
+            }
         }
     }
     if (worldTickClock.update(delta)) {

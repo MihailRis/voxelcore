@@ -22,12 +22,26 @@ public:
 };
 
 struct WorldInfo : public Serializable {
+    static const dv::value& defaultLogic() {
+        static const dv::value logic = dv::object({
+            {"random_ticks", true},
+            {"block_ticks", true}
+        });
+        return logic;
+    }
+
+    static bool isLogicKey(const std::string& name) {
+        return defaultLogic().has(name);
+    }
+
     std::string name;
     std::string environment;
     std::string explicitGenerator;
     uint64_t seed;
     int64_t nextInventoryId = 1;
     int64_t nextPlayerId = 0;
+
+    dv::value logic = defaultLogic();
 
     /// @brief Day/night loop timer in range 0..1 where
     /// 0.0 - is midnight and
@@ -44,6 +58,12 @@ struct WorldInfo : public Serializable {
     int major = 0, minor = -1;
 
     bool isLoaded = false;
+
+    dv::value getLogicValue(
+        const std::string& name, const dv::value& def = nullptr
+    ) const;
+    void setLogicValue(const std::string& name, dv::value value);
+    bool getLogicFlag(const std::string& name, bool def = true) const;
 
     dv::value serialize() const override;
     void deserialize(const dv::value& src) override;
