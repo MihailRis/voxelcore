@@ -39,7 +39,8 @@ jobs:
     #   make && make install INSTALL_INC=/usr/include/lua
       run: |
           sudo apt-get update
-          sudo apt-get install libglfw3-dev libglfw3 libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libgtest-dev libcurl4-openssl-dev libssl-dev libfreetype6-dev
+          # the Wayland backend is on by default on Linux (VOXELCORE_WAYLAND)
+          sudo apt-get install libglfw3-dev libglfw3 libglew-dev libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev libgtest-dev libcurl4-openssl-dev libssl-dev libfreetype6-dev libwayland-dev libxkbcommon-dev libegl1-mesa-dev libsystemd-dev
           # fix luajit paths
           sudo ln -s /usr/lib/x86_64-linux-gnu/libluajit-5.1.a /usr/lib/x86_64-linux-gnu/liblua-5.1.a
           sudo ln -s /usr/include/luajit-2.1 /usr/include/lua

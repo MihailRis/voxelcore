@@ -118,6 +118,10 @@ settings.microphone.None=Нет
 settings.Clouds quality=Качество облаков
 settings.Acoustic effects=Акустические эффекты
 settings.Microphone access=Доступ к микрофону
+settings.Narrow Window Bar=Узкая шапка окна
+settings.Live Window Resize=Живой ресайз окна
+display.compact-window-bar.tooltip=Шапка окна высотой 24 px вместо 48 px
+display.live-resize.tooltip=Перерисовывать окно при изменении размера (выключено — показывать последний кадр)
 
 # Управление
 chunks.reload=Перезагрузить Чанки
