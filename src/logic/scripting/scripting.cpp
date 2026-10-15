@@ -345,7 +345,9 @@ void scripting::on_world_tick(int tps) {
         lua::pop(L);
     } 
     for (auto& pack : content_control->getAllContentPacks()) {
-        lua::emit_event(L, pack.id + ":.worldtick");
+        lua::emit_event(L, pack.id + ":.worldtick", [tps](lua::State* L) {
+            return lua::pushinteger(L, tps);
+        });
     }
 }
 

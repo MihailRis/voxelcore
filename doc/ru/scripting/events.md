@@ -124,7 +124,7 @@ function on_block_break_by(x: int, y: int, z: int, playerid: int)
 
 Вызывается при нажатии ЛКМ на блок (в т.ч неразрушимый). Предотвращает разрушение блока, если возвращает `true`
 
-## События мира  
+## События мира
 
 События мира для контент-пака прописываются в `scripts/world.lua`
 
@@ -141,10 +141,10 @@ function on_world_save()
 Вызывается перед сохранением мира
 
 ```lua
-function on_world_tick()
+function on_world_tick(tps)
 ```
 
-Вызывается 20 раз в секунду
+Вызывается *tps* раз в секунду
 
 ```lua
 function on_world_quit()
