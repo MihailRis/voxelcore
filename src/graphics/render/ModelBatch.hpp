@@ -35,9 +35,15 @@ public:
         const glm::vec4& tint,
         const glm::vec3& lightSampleOffset,
         const model::Model* model,
-        const TextureNamesMap* varTextures
+        const TextureNamesMap* varTextures,
+        bool translucent = false
     );
+
     void render();
+
+    void renderOpaque();
+
+    void renderTranslucent(const glm::vec3& cameraPosition);
 
     void setLightsOffset(const glm::vec3& offset);
 private:
@@ -73,4 +79,7 @@ private:
         const TextureNamesMap* varTextures;
     };
     std::vector<DrawEntry> entries;
+    std::vector<DrawEntry> translucentEntries;
+
+    void render(std::vector<DrawEntry>& queue);
 };

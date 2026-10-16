@@ -35,6 +35,7 @@
 #include "graphics/core/Shadows.hpp"
 #include "graphics/core/Cubemap.hpp"
 #include "graphics/core/Texture.hpp"
+#include "graphics/core/TranslucentLayers.hpp"
 #include "items/Inventory.hpp"
 #include "items/ItemDef.hpp"
 #include "items/ItemStack.hpp"
@@ -65,6 +66,31 @@ inline constexpr size_t BATCH3D_CAPACITY = 4096;
 inline constexpr size_t MODEL_BATCH_CAPACITY = 20'000;
 
 static debug::Logger logger("world-renderer");
+
+namespace translucent {
+    enum Layer : size_t {
+        BLOCKS,
+        ENTITIES,
+        WEATHER,
+        COUNT
+    };
+}
+
+struct EntityShaderPass {
+    float alphaThreshold;
+    bool opaque;
+    bool forward;
+    bool forwardLight;
+    float opacity;
+};
+
+static void setup_entity_pass(Shader& shader, const EntityShaderPass& pass) {
+    shader.uniform1f("u_alphaThreshold", pass.alphaThreshold);
+    shader.uniform1i("u_opaque", pass.opaque);
+    shader.uniform1i("u_forward", pass.forward);
+    shader.uniform1i("u_forwardLight", pass.forwardLight);
+    shader.uniform1f("u_opacity", pass.opacity);
+}
 
 bool WorldRenderer::showChunkBorders = false;
 bool WorldRenderer::showEntitiesDebug = false;
@@ -246,9 +272,7 @@ void WorldRenderer::renderOpaque(
         frustumCulling->update(camera.getProjView());
     }
 
-    entityShader.uniform1i("u_alphaClip", true);
-    entityShader.uniform1i("u_dithering", 1);
-    entityShader.uniform1f("u_opacity", 1.0f);
+    setup_entity_pass(entityShader, {0.5f, true, false, false, 1.0f});
     level.entities->render(
         assets,
         *modelBatch,
@@ -256,7 +280,7 @@ void WorldRenderer::renderOpaque(
         player.currentCamera.get() == player.fpCamera.get() ? player.getEntity()
                                                             : 0
     );
-    modelBatch->render();
+    modelBatch->renderOpaque();
     particles->render(camera);
 
     auto& mainShader = assets.require<Shader>("main");
@@ -373,21 +397,7 @@ void WorldRenderer::renderFrameClassic(
         renderDebugLines(ctx, camera);
     }
 
-    DrawContext wctx = ctx.sub();
-    wctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
-    wctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
-    // Translucent blocks
-    {
-        const auto& settings = engine.getSettings();
-        auto& translucentShader = assets.require<Shader>("translucent");
-        auto sctx = wctx.sub();
-        sctx.setCullFace(true);
-        translucentShader.use();
-        setupWorldShader(translucentShader, camera, settings, calcFogFactor());
-        chunksRenderer->drawSortedMeshes(camera, translucentShader);
-    }
-
-    renderWeatherEffects(camera);
+    renderTranslucency(ctx, camera, postProcessing);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -418,6 +428,7 @@ void WorldRenderer::renderFrameAdvanced(
     ctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
 
     postProcessing.bindDepthBuffer();
+    ctx.setFramebuffer(postProcessing.getFramebuffer());
     skybox->draw(
         level.environment, ctx, camera, worldInfo.daytime, weather.clouds()
     );
@@ -426,21 +437,7 @@ void WorldRenderer::renderFrameAdvanced(
         renderDebugLines(ctx, camera);
     }
 
-    DrawContext wctx = ctx.sub();
-    wctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
-    wctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
-    // Translucent blocks
-    {
-        const auto& settings = engine.getSettings();
-        auto& translucentShader = assets.require<Shader>("translucent");
-        auto sctx = wctx.sub();
-        sctx.setCullFace(true);
-        translucentShader.use();
-        setupWorldShader(translucentShader, camera, settings, fogFactor);
-        chunksRenderer->drawSortedMeshes(camera, translucentShader);
-    }
-
-    renderWeatherEffects(camera);
+    renderTranslucency(ctx, camera, postProcessing);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
@@ -528,14 +525,75 @@ void WorldRenderer::renderWeatherEffects(Camera& camera) {
         float zero = weather->fall.minOpacity;
         float one = weather->fall.maxOpacity;
         float t = (weather->intensity * (one - zero)) * maxIntensity + zero;
-        entityShader.uniform1i("u_alphaClip", weather->fall.opaque);
-        entityShader.uniform1i("u_dithering", 0);
-        entityShader.uniform1f(
-            "u_opacity", weather->fall.opaque ? t * t : t
+        bool opaque = weather->fall.opaque;
+        setup_entity_pass(
+            entityShader,
+            {opaque ? 0.5f : 0.15f, false, true, false, opaque ? t * t : t}
         );
         if (weather->intensity > 1.e-3f && !weather->fall.texture.empty()) {
             precipitation->render(camera, *weather);
         }
+    }
+}
+
+void WorldRenderer::renderTranslucency(
+    const DrawContext& pctx,
+    Camera& camera,
+    PostProcessing& postProcessing
+) {
+    const auto& settings = engine.getSettings();
+    float fogFactor = calcFogFactor();
+    auto& frame = *postProcessing.getFramebuffer();
+    const auto& vp = pctx.getViewport();
+
+    if (translucentLayers == nullptr) {
+        translucentLayers = std::make_unique<TranslucentLayers>(
+            translucent::COUNT, vp.x, vp.y
+        );
+    } else {
+        translucentLayers->resize(vp.x, vp.y);
+    }
+    translucentLayers->prepare(frame.getFBO());
+
+    DrawContext ctx = pctx.sub();
+    ctx.setFramebuffer(&frame);
+    ctx.setDepthTest(true);
+    ctx.setDepthMask(true);
+    ctx.setBlendMode(BlendMode::coverage);
+    ctx.useTexture(advanced_pipeline::TARGET_SKYBOX, skybox->getCubemap());
+    ctx.useTexture(advanced_pipeline::TARGET_COLOR, nullptr);
+
+    {
+        auto lctx = ctx.sub();
+        lctx.setFramebuffer(&translucentLayers->getLayer(translucent::BLOCKS));
+        lctx.setCullFace(true);
+        auto& shader = assets.require<Shader>("translucent");
+        shader.use();
+        setupWorldShader(shader, camera, settings, fogFactor);
+        chunksRenderer->drawSortedMeshes(camera, shader);
+    }
+    {
+        auto lctx = ctx.sub();
+        lctx.setFramebuffer(&translucentLayers->getLayer(translucent::ENTITIES));
+        lctx.setCullFace(true);
+        auto& shader = assets.require<Shader>("entity");
+        setupWorldShader(shader, camera, settings, fogFactor);
+        setup_entity_pass(shader, {0.002f, false, true, true, 1.0f});
+        modelBatch->renderTranslucent(camera.position);
+    }
+    {
+        auto lctx = ctx.sub();
+        lctx.setFramebuffer(&translucentLayers->getLayer(translucent::WEATHER));
+        renderWeatherEffects(camera);
+    }
+    {
+        auto cctx = ctx.sub();
+        cctx.setDepthTest(false);
+        cctx.setDepthMask(false);
+        cctx.setBlendMode(BlendMode::premultiplied);
+        translucentLayers->compose(
+            assets.require<Shader>("translucent_composite")
+        );
     }
 }
 
@@ -566,6 +624,7 @@ void WorldRenderer::renderHandsPass(const DrawContext& pctx, Camera& camera) {
     hudcam.position = {};
 
     setupWorldShader(entityShader, hudcam, engine.getSettings(), 0.0f);
+    setup_entity_pass(entityShader, {0.15f, false, false, false, 1.0f});
     hands->render(camera);
 }
 

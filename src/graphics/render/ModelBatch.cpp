@@ -102,10 +102,13 @@ void ModelBatch::draw(
     const glm::vec4& tint,
     const glm::vec3& lightSampleOffset,
     const model::Model* model,
-    const TextureNamesMap* varTextures
+    const TextureNamesMap* varTextures,
+    bool translucent
 ) {
+    auto& queue =
+        translucent || tint.a < 1.0f ? translucentEntries : entries;
     for (const auto& mesh : model->meshes) {
-        entries.push_back(DrawEntry {
+        queue.push_back(DrawEntry {
             matrix,
             extract_rotation(matrix),
             tint,
@@ -115,14 +118,9 @@ void ModelBatch::draw(
     }
 }
 
-void ModelBatch::render() {
-    std::sort(entries.begin(), entries.end(), 
-        [](const DrawEntry& a, const DrawEntry& b) {
-            return a.mesh->texture < b.mesh->texture;
-        }
-    );
+void ModelBatch::render(std::vector<DrawEntry>& queue) {
     bool backlight = settings.graphics.backlight.get();
-    for (auto& entry : entries) {
+    for (auto& entry : queue) {
         localLightsOffset = entry.lightSampleOffset;
         draw(
             *entry.mesh,
@@ -135,7 +133,36 @@ void ModelBatch::render() {
         localLightsOffset = {};
     }
     batch->flush();
-    entries.clear();
+    queue.clear();
+}
+
+void ModelBatch::render() {
+    renderOpaque();
+    render(translucentEntries);
+}
+
+void ModelBatch::renderOpaque() {
+    std::sort(entries.begin(), entries.end(), 
+        [](const DrawEntry& a, const DrawEntry& b) {
+            return a.mesh->texture < b.mesh->texture;
+        }
+    );
+    render(entries);
+}
+
+void ModelBatch::renderTranslucent(const glm::vec3& cameraPosition) {
+    auto distance2 = [&cameraPosition](const DrawEntry& entry) {
+        glm::vec3 delta = glm::vec3(entry.matrix[3]) - cameraPosition;
+        return glm::dot(delta, delta);
+    };
+    std::stable_sort(
+        translucentEntries.begin(),
+        translucentEntries.end(),
+        [&distance2](const DrawEntry& a, const DrawEntry& b) {
+            return distance2(a) > distance2(b);
+        }
+    );
+    render(translucentEntries);
 }
 
 void ModelBatch::setLightsOffset(const glm::vec3& offset) {
