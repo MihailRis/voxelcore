@@ -82,6 +82,12 @@ hud.is_player_inventory_open() -> boolean
 -- Sets whether to allow pausing. If false, the pause menu will not pause the game.
 hud.set_allow_pause(flag: bool)
 
+-- Returns true if the hotbar is not hidden with hud.set_hotbar_visible.
+hud.is_hotbar_visible() -> bool
+
+-- Shows or hides the hotbar. Selecting a slot with the mouse wheel and number keys keeps working.
+hud.set_hotbar_visible(flag: bool)
+
 -- Function that controls the named skeleton 'hand' (see gfx.skeletons)
 hud.hand_controller: function()
 ```
