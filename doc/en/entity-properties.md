@@ -132,6 +132,14 @@ The default value is the same as the entity name. Determines which skeleton will
 - *bone-based* - lighting is calculated for each skeletal bone separately.
 - *solid* - lighting is calculated for the entire entity.
 
+### *translucent*
+
+Enables translucency support in the entity textures (semi-transparent parts).
+Should only be used when needed, as it impacts performance.
+Not required for full transparency (cutout parts) and for fading the entity out with the skeleton tint alpha.
+
+Default value: *false*.
+
 ## Saving/Loading
 
 In addition to custom components, the engine automatically saves data from the built-in ones: transform, rigidbody, skeleton.
