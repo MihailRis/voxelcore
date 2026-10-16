@@ -43,7 +43,7 @@ struct EntityDef {
     ModelLightingMode lightingMode = ModelLightingMode::SOLID;
 
     /// @brief Render the entity in the translucent pass
-    bool translucent = true;
+    bool translucent = false;
 
     /// @brief Can the entity be interacted with cursor (on_attack, on_use)
     bool selectable = true;
