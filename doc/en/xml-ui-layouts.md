@@ -218,6 +218,8 @@ Element is a container. Does not have specific attributes.
 > [!WARNING]
 > Slots not linked to an inventory will not be displayed. "Linked to an inventory" refers to the association between an inventory UI element and an inventory via an ID. This link can be explicitly established using `inventory_ui.inventory = inventory_id`. [(see ui.md)](scripting/ui.md#inventory)
 
+A pack can replace the player inventory screen and the hotbar with its own layouts using `inventory-layout` (`"core:inventory"` by default) and `hotbar-layout` in `config/defaults.toml`. The root element of such a layout must be `inventory`, it is bound to the player inventory. The hotbar layout is placed at the bottom center of the screen unless it has `position-func`.
+
 ## *slot*
 
 Element must be in direct sub-element of *inventory*.
