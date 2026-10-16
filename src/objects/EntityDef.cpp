@@ -15,4 +15,5 @@ void EntityDef::cloneTo(EntityDef& dst) {
     dst.stepHeight = stepHeight;
     dst.save = save;
     dst.lightingMode = lightingMode;
+    dst.translucent = translucent;
 }
