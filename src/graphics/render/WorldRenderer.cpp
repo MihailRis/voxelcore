@@ -147,6 +147,7 @@ void WorldRenderer::refreshSettings() {
     Shader* affectedShaders[] {
         &assets.require<Shader>("main"),
         &assets.require<Shader>("entity"),
+        &assets.require<Shader>("model"),
         &assets.require<Shader>("clouds"),
         &assets.require<Shader>("translucent"),
         &assets.require<PostEffect>("deferred_lighting").getShader(),
@@ -249,6 +250,12 @@ void WorldRenderer::renderOpaque(
     entityShader.uniform1i("u_alphaClip", true);
     entityShader.uniform1i("u_dithering", 1);
     entityShader.uniform1f("u_opacity", 1.0f);
+
+    auto& modelShader = assets.require<Shader>("model");
+    setupWorldShader(modelShader, camera, settings, fogFactor);
+    modelShader.uniform1i("u_alphaClip", true);
+    modelShader.uniform1i("u_dithering", 1);
+    modelShader.uniform1f("u_opacity", 1.0f);
     level.entities->render(
         assets,
         *modelBatch,
@@ -257,6 +264,7 @@ void WorldRenderer::renderOpaque(
                                                             : 0
     );
     modelBatch->render();
+    entityShader.use();
     particles->render(camera);
 
     auto& mainShader = assets.require<Shader>("main");
@@ -550,7 +558,7 @@ void WorldRenderer::renderDebugLines(const DrawContext& ctx, Camera& camera) {
 }
 
 void WorldRenderer::renderHandsPass(const DrawContext& pctx, Camera& camera) {
-    auto& entityShader = assets.require<Shader>("entity");
+    auto& modelShader = assets.require<Shader>("model");
 
     DrawContext ctx = pctx.sub();
     ctx.setDepthTest(true);
@@ -565,7 +573,10 @@ void WorldRenderer::renderHandsPass(const DrawContext& pctx, Camera& camera) {
     hudcam.setFov(0.9f);
     hudcam.position = {};
 
-    setupWorldShader(entityShader, hudcam, engine.getSettings(), 0.0f);
+    setupWorldShader(modelShader, hudcam, engine.getSettings(), 0.0f);
+    modelShader.uniform1i("u_alphaClip", false);
+    modelShader.uniform1i("u_dithering", 0);
+    modelShader.uniform1f("u_opacity", 1.0f);
     hands->render(camera);
 }
 

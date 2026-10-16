@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "MeshData.hpp"
+#include "InstanceBuffer.hpp"
 
 
 struct MeshStats {
@@ -64,6 +65,13 @@ public:
 
     /// @brief Draw mesh as triangles
     void draw() const;
+
+    template <typename InstanceStructure>
+    void drawInstanced(
+        const InstanceBuffer<InstanceStructure>& instances,
+        size_t first,
+        size_t count
+    ) const;
 private:
     
 };

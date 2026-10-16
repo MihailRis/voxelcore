@@ -6,12 +6,17 @@
 #include <glm/glm.hpp>
 #include <unordered_map>
 
-template<typename VertexStructure> class Mesh;
+#include "assets/assets_util.hpp"
+#include "graphics/core/MeshData.hpp"
+
+template<typename VertexStructure>
+class Mesh;
+template<typename InstanceStructure>
+class InstanceBuffer;
 class Texture;
 class Chunks;
 class Assets;
 struct EngineSettings;
-class MainBatch;
 
 namespace model {
     struct Mesh;
@@ -34,7 +39,7 @@ public:
         const glm::mat4& matrix,
         const glm::vec4& tint,
         const glm::vec3& lightSampleOffset,
-        const model::Model* model,
+        const std::shared_ptr<model::Model>& model,
         const TextureNamesMap* varTextures
     );
     void render();
@@ -46,31 +51,72 @@ private:
 
     const EngineSettings& settings;
     glm::vec3 lightsOffset {};
-    glm::vec3 localLightsOffset {};
 
-    static inline glm::vec3 SUN_VECTOR {0.411934f, 0.863868f, -0.279161f};
+    struct Vertex {
+        glm::vec3 coord;
+        glm::vec2 uv;
+        glm::vec3 normal;
 
-    std::unique_ptr<MainBatch> batch;
+        static constexpr VertexAttribute ATTRIBUTES[] = {
+            {VertexAttribute::Type::FLOAT, false, 3},
+            {VertexAttribute::Type::FLOAT, false, 2},
+            {VertexAttribute::Type::FLOAT, false, 3},
+            {{}, 0}};
+    };
 
-    void draw(
-        const model::Mesh& mesh,
-        const glm::mat4& matrix,
-        const glm::mat3& rotation,
-        const glm::vec4& tint,
-        const TextureNamesMap* varTextures,
-        bool backlight
-    );
+    struct Instance {
+        glm::mat4 matrix;
+        glm::vec4 tint;
+        glm::vec4 light;
+        glm::vec4 uvRegion;
+        glm::vec4 params;
 
-    void setTexture(const std::string& name,
-                    const TextureNamesMap* varTextures);
+        static constexpr VertexAttribute ATTRIBUTES[] = {
+            {VertexAttribute::Type::FLOAT, false, 4},
+            {VertexAttribute::Type::FLOAT, false, 4},
+            {VertexAttribute::Type::FLOAT, false, 4},
+            {VertexAttribute::Type::FLOAT, false, 4},
+            {VertexAttribute::Type::FLOAT, false, 4},
+            {VertexAttribute::Type::FLOAT, false, 4},
+            {VertexAttribute::Type::FLOAT, false, 4},
+            {VertexAttribute::Type::FLOAT, false, 4},
+            {{}, 0}};
+    };
+
+    struct GpuMesh {
+        std::unique_ptr<Mesh<Vertex>> mesh;
+        size_t vertexCount = 0;
+    };
+
+    struct GpuModel {
+        std::weak_ptr<model::Model> model;
+        std::vector<GpuMesh> meshes;
+        uint64_t lastUsed = 0;
+    };
 
     struct DrawEntry {
-        glm::mat4 matrix;
-        glm::mat3 rotation;
-        glm::vec4 tint;
-        glm::vec3 lightSampleOffset;
-        const model::Mesh* mesh;
-        const TextureNamesMap* varTextures;
+        const Texture* texture;
+        const Mesh<Vertex>* mesh;
+        glm::vec3 lightSamplePos;
+        bool shading;
+        Instance instance;
     };
+
+    std::unordered_map<const model::Model*, GpuModel> models;
+    std::unordered_map<const std::string*, util::TextureRegion> textures;
+    std::unordered_map<std::string, util::TextureRegion> texturesByName;
     std::vector<DrawEntry> entries;
+    std::vector<size_t> order;
+    std::vector<Instance> instances;
+
+    std::unique_ptr<InstanceBuffer<Instance>> instanceBuffer;
+    std::unique_ptr<Texture> blank;
+    uint64_t frame = 0;
+
+    GpuModel& upload(const std::shared_ptr<model::Model>& model);
+    void collectUnused();
+
+    const util::TextureRegion& getTexture(
+        const std::string& name, const TextureNamesMap* varTextures
+    );
 };
