@@ -180,7 +180,8 @@ void SkeletonConfig::render(
     ModelLightingMode lightingMode,
     const glm::mat3& rotation,
     const glm::vec3& position,
-    const glm::vec3& scale
+    const glm::vec3& scale,
+    bool translucent
 ) const {
     if (skeleton.config->root == nullptr) {
         return;
@@ -220,7 +221,8 @@ void SkeletonConfig::render(
                   )
                 : glm::vec3(),
             model,
-            &skeleton.textures
+            &skeleton.textures,
+            translucent
         );
     }
 }

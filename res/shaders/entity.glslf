@@ -3,18 +3,19 @@ layout (location = 1) out vec4 f_position;
 layout (location = 2) out vec4 f_normal;
 layout (location = 3) out vec4 f_emission;
 
+uniform vec3 u_sunDir;
+
 #include <world_fragment_header>
+#include <deferred_light>
 
 in vec4 a_color;
 
 uniform sampler2D u_texture0;
-
-uniform vec3 u_fogColor;
-uniform float u_fogFactor;
-uniform float u_fogCurve;
+uniform float u_alphaThreshold;
+uniform bool u_opaque;
+uniform bool u_forward;
+uniform bool u_forwardLight;
 uniform bool u_alphaClip;
-uniform bool u_dithering;
-uniform vec3 u_sunDir;
 
 const float BAYER_MATRIX[64] = float[](
      0.0, 32.0,  8.0, 40.0,  2.0, 34.0, 10.0, 42.0,
@@ -35,28 +36,35 @@ float calc_bayer(vec2 pos){
 void main() {
     vec4 texColor = texture(u_texture0, a_texCoord);
     float alpha = a_color.a * texColor.a;
-    // anyway it's any alpha-test alternative required
-    if (u_dithering) {
-        if (u_alphaClip) {
-            float bayer = calc_bayer(gl_FragCoord.xy);
-            if (alpha - bayer < 0.01f) {
-                discard;
-            }
-            alpha = 1.0;
-        } else if (alpha < 0.05f) {
+    if (u_opaque) {
+        float bayer = calc_bayer(gl_FragCoord.xy);
+        if (alpha - bayer < 0.01) {
             discard;
         }
-    } else if (alpha < (u_alphaClip ? 0.5f : 0.15f)) {
-        discard;
+        alpha = 1.0;
+    } else {
+        if (alpha < u_alphaThreshold) {
+            discard;
+        }
     }
     f_color = a_color * texColor;
 
-#ifndef ADVANCED_RENDER
+#ifdef ADVANCED_RENDER
+    if (u_forward) {
+        if (u_forwardLight) {
+            f_color.rgb *= calc_deferred_light(
+                a_modelpos, a_realnormal, length(a_position), a_emission, 1.0
+            );
+        }
+        vec3 fogColor = texture(u_skybox, a_dir).rgb;
+        f_color.rgb = mix(f_color.rgb, fogColor, a_fog);
+    }
+#else
     vec3 fogColor = texture(u_skybox, a_dir).rgb;
-    f_color = mix(f_color, vec4(fogColor, 1.0), a_fog);
+    f_color.rgb = mix(f_color.rgb, fogColor, a_fog);
 #endif
 
-    f_color.a = alpha;
+    f_color.a = u_opaque ? 1.0 : alpha;
     f_position = vec4(a_position, 1.0);
     f_normal = vec4(a_normal, 1.0);
     f_emission = vec4(vec3(a_emission), 1.0);

@@ -506,7 +506,8 @@ void Entities::render(
                 def.lightingMode,
                 transform.rot,
                 pos,
-                size
+                size,
+                def.translucent
             );
         }
     }
