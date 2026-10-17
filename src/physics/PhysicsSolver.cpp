@@ -15,6 +15,8 @@
 inline constexpr float E = 0.03f;
 inline constexpr float MAX_FIX = 0.1f;
 inline constexpr int MAX_NEARBY_REBUILDS = 4;
+inline constexpr float MAX_SUBSTEP_MOVE = 0.03f;
+inline constexpr float MAX_SUBSTEP_SINK = 0.015f;
 
 static debug::Logger logger("physics-solver");
 
@@ -36,6 +38,13 @@ static glm::vec3 calc_collsion_velocity_result(
     const auto& mA = a.mass;
     const auto& mB = b.mass;
     return (mA * vA + mB * vB + a.elasticity * mB * (vB - vA)) / (mA + mB);
+}
+
+static void push_body(Hitbox& box, int axis, float value, uint wakeSubstep) {
+    if (box.velocity[axis] != value) {
+        box.velocity[axis] = value;
+        box.nextSubstep = std::min(box.nextSubstep, wakeSubstep);
+    }
 }
 
 static float calc_step_height(
@@ -70,7 +79,8 @@ static void calc_collision(
     const GlobalChunks& chunks,
     const std::vector<Hitbox*>& solidHitboxes,
     const glm::vec3& half,
-    float stepHeight
+    float stepHeight,
+    uint wakeSubstep
 ) {
     auto& pos = hitbox.position;
     auto& vel = hitbox.velocity;
@@ -106,7 +116,7 @@ static void calc_collision(
             auto velB = calc_collsion_velocity_result(*box, hitbox);
             if ((vel[nx] - box->velocity[nx]) * sign > 0.0f) {
                 vel[nx] = velA[nx];
-                box->velocity[nx] = velB[nx];
+                push_body(*box, nx, velB[nx], wakeSubstep);
             }
             pos[nx] = newx;
         }
@@ -170,10 +180,11 @@ bool PhysicsSolver::calcCollisionNegY(
             auto velA = calc_collsion_velocity_result(hitbox, *box);
             auto velB = calc_collsion_velocity_result(*box, hitbox);
 
-            hitbox.groundVelocity = (box->position - box->prevPosition) / dt;
+            float boxdt = box->substepTime > 0.0f ? box->substepTime : dt;
+            hitbox.groundVelocity = (box->position - box->prevPosition) / boxdt;
             if (vel.y < hitbox.groundVelocity.y) {
                 vel.y = velA.y;
-                box->velocity.y = velB.y;
+                push_body(*box, 1, velB.y, wakeSubstep);
                 if (hitbox.groundMaterial.empty() && !box->material.empty()) {
                     hitbox.groundMaterial = box->material;
                 }
@@ -226,14 +237,22 @@ void PhysicsSolver::calcCollisions(
 
     auto prevPos = pos;
 
-    calc_collision<0, 1, 2, -1>(hitbox, chunks, solids, half, stepHeight);
-    calc_collision<0, 1, 2, 1>(hitbox, chunks, solids, half, stepHeight);
+    calc_collision<0, 1, 2, -1>(
+        hitbox, chunks, solids, half, stepHeight, wakeSubstep
+    );
+    calc_collision<0, 1, 2, 1>(
+        hitbox, chunks, solids, half, stepHeight, wakeSubstep
+    );
 
     float xpos = pos.x;
     pos.x = prevPos.x;
 
-    calc_collision<2, 1, 0, -1>(hitbox, chunks, solids, half, stepHeight);
-    calc_collision<2, 1, 0, 1>(hitbox, chunks, solids, half, stepHeight);
+    calc_collision<2, 1, 0, -1>(
+        hitbox, chunks, solids, half, stepHeight, wakeSubstep
+    );
+    calc_collision<2, 1, 0, 1>(
+        hitbox, chunks, solids, half, stepHeight, wakeSubstep
+    );
     pos.x = xpos;
 
     if (calcCollisionNegY(hitbox, half, dt, solids)) {
@@ -274,7 +293,7 @@ void PhysicsSolver::calcCollisions(
                 auto velB = calc_collsion_velocity_result(*box, hitbox);
                 if (vel.y > hitbox.groundVelocity.y) {
                     vel.y = velA.y;
-                    box->velocity.y = velB.y;
+                    push_body(*box, 1, velB.y, wakeSubstep);
                     break;
                 }
             }
@@ -438,6 +457,44 @@ void PhysicsSolver::findNearbySolids(float time) {
     }
 }
 
+static uint calc_substep_stride(
+    const Hitbox& hitbox, const glm::vec3& gravity, float dt, uint left
+) {
+    float speed = glm::length(hitbox.velocity);
+    float accel = glm::length(gravity) * glm::abs(hitbox.gravityScale) * 1.5f;
+    float time;
+    if (accel > 0.0f) {
+        time = (glm::sqrt(speed * speed + 4.0f * accel * MAX_SUBSTEP_MOVE) -
+                speed) / (2.0f * accel);
+        time = glm::min(time, glm::sqrt(MAX_SUBSTEP_SINK / accel));
+    } else if (speed > 0.0f) {
+        time = MAX_SUBSTEP_MOVE / speed;
+    } else {
+        return left;
+    }
+    float stride = glm::floor(time / dt);
+    if (stride >= static_cast<float>(left)) {
+        return left;
+    }
+    return glm::max(1u, static_cast<uint>(stride));
+}
+
+void PhysicsSolver::scheduleSubstep(
+    Hitbox& hitbox, uint done, uint substeps, float dt
+) {
+    hitbox.doneSubsteps = done;
+    if (done >= substeps) {
+        hitbox.nextSubstep = substeps;
+        return;
+    }
+    uint left = substeps - done;
+    if (left > 1) {
+        left--;
+    }
+    hitbox.nextSubstep =
+        done + calc_substep_stride(hitbox, gravity, dt, left) - 1;
+}
+
 void PhysicsSolver::step(
     const GlobalChunks& chunks, float delta, uint substeps
 ) {
@@ -450,20 +507,31 @@ void PhysicsSolver::step(
     
     float dt = delta / static_cast<float>(substeps);
     findNearbySolids(delta);
+    for (auto hitbox : hitboxes) {
+        scheduleSubstep(*hitbox, 0, substeps, dt);
+    }
 
     int rebuildsLeft = MAX_NEARBY_REBUILDS;
     for (uint i = 0; i < substeps; i++) {
+        wakeSubstep = i + 1;
         for (size_t j = 0; j < hitboxes.size(); j++) {
             auto hitbox = hitboxes[j];
+            if (hitbox->nextSubstep > i) {
+                continue;
+            }
+            float substepTime =
+                dt * static_cast<float>(i + 1 - hitbox->doneSubsteps);
             glm::vec3& pos = hitbox->position;
             hitbox->prevPosition = hitbox->position;
+            hitbox->substepTime = substepTime;
             calcSubstep(
                 *hitbox,
                 hitbox->velocity,
                 pos,
-                dt,
+                substepTime,
                 rebuildsLeft >= 0 ? nearbySolids[j] : solidHitboxes
             );
+            scheduleSubstep(*hitbox, i + 1, substeps, dt);
             if (rebuildsLeft < 0) {
                 continue;
             }

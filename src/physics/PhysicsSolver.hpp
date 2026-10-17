@@ -42,8 +42,11 @@ private:
     std::vector<glm::vec3> nearbyOrigins;
     std::vector<float> nearbyBudgets;
     std::vector<float> solidBudgets;
+    uint wakeSubstep = 0;
 
     void findNearbySolids(float time);
+
+    void scheduleSubstep(Hitbox& hitbox, uint done, uint substeps, float dt);
 
     void calcCollisions(
         Hitbox& hitbox,
