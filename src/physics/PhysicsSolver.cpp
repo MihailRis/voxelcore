@@ -14,9 +14,13 @@
 
 inline constexpr float E = 0.03f;
 inline constexpr float MAX_FIX = 0.1f;
-inline constexpr int MAX_NEARBY_REBUILDS = 4;
 inline constexpr float MAX_SUBSTEP_MOVE = 0.03f;
 inline constexpr float MAX_SUBSTEP_SINK = 0.015f;
+inline constexpr float GRID_CELL_SIZE = 4.0f;
+inline constexpr float GRID_PADDING = 0.01f;
+inline constexpr float GRID_MAX_COORD = 1e9f;
+inline constexpr int GRID_MAX_CELLS = 64;
+inline constexpr size_t GRID_SCAN_RATIO = 8;
 
 static debug::Logger logger("physics-solver");
 
@@ -417,42 +421,238 @@ static glm::vec3 calc_extents(const Hitbox& hitbox) {
     return glm::max(hitbox.halfsize, hitbox.getHalfSize());
 }
 
+static uint64_t grid_key(int x, int z) {
+    return (static_cast<uint64_t>(static_cast<uint32_t>(x)) << 32) |
+           static_cast<uint32_t>(z);
+}
+
+static bool grid_range(
+    const glm::vec3& center,
+    const glm::vec3& extents,
+    glm::ivec2& min,
+    glm::ivec2& max
+) {
+    glm::vec2 a = glm::floor(
+        (glm::vec2(center.x, center.z) - glm::vec2(extents.x, extents.z)) /
+        GRID_CELL_SIZE
+    );
+    glm::vec2 b = glm::floor(
+        (glm::vec2(center.x, center.z) + glm::vec2(extents.x, extents.z)) /
+        GRID_CELL_SIZE
+    );
+    if (!(glm::abs(a.x) < GRID_MAX_COORD && glm::abs(a.y) < GRID_MAX_COORD &&
+          glm::abs(b.x) < GRID_MAX_COORD && glm::abs(b.y) < GRID_MAX_COORD)) {
+        return false;
+    }
+    if ((b.x - a.x + 1.0f) * (b.y - a.y + 1.0f) > GRID_MAX_CELLS) {
+        return false;
+    }
+    min = glm::ivec2(a);
+    max = glm::ivec2(b);
+    return true;
+}
+
+static glm::vec3 calc_nearby_reach(
+    const Hitbox& hitbox, float maxSolidHalfY, float budget
+) {
+    auto ext = calc_extents(hitbox);
+
+    glm::vec3 reach(
+        0.5f,
+        hitbox.stepHeight * 2.0f + E * 8.0f + ext.y * 0.5f +
+            maxSolidHalfY + 0.5f + MAX_FIX * 2.0f,
+        0.5f
+    );
+    reach += ext + budget;
+    return reach;
+}
+
+void PhysicsSolver::buildSolidGrid() {
+    solidCells.clear();
+    oversizedSolids.clear();
+    movedSolids.clear();
+    solidMoved.assign(solidHitboxes.size(), false);
+
+    for (uint j = 0; j < solidHitboxes.size(); j++) {
+        glm::ivec2 min, max;
+        auto extents =
+            calc_extents(*solidHitboxes[j]) + solidBudgets[j] + GRID_PADDING;
+        if (!grid_range(solidOrigins[j], extents, min, max)) {
+            oversizedSolids.push_back(j);
+            continue;
+        }
+        for (int x = min.x; x <= max.x; x++) {
+            for (int z = min.y; z <= max.y; z++) {
+                solidCells.emplace_back(grid_key(x, z), j);
+            }
+        }
+    }
+    std::sort(solidCells.begin(), solidCells.end());
+}
+
+bool PhysicsSolver::isSolidNearby(size_t index, uint solid) const {
+    auto limit = nearbyReaches[index] +
+                 calc_extents(*solidHitboxes[solid]) + solidBudgets[solid];
+    auto diff = glm::abs(solidOrigins[solid] - nearbyOrigins[index]);
+    return diff.x <= limit.x && diff.y <= limit.y && diff.z <= limit.z;
+}
+
+void PhysicsSolver::collectNearbySolids(size_t index) {
+    auto& solids = nearbySolids[index];
+    solids.clear();
+    auto testSolid = [&](uint j) {
+        if (isSolidNearby(index, j)) {
+            solids.push_back(solidHitboxes[j]);
+        }
+    };
+
+    glm::ivec2 min, max;
+    if (!grid_range(
+            nearbyOrigins[index], nearbyReaches[index] + GRID_PADDING, min, max
+        )) {
+        for (uint j = 0; j < solidHitboxes.size(); j++) {
+            testSolid(j);
+        }
+        return;
+    }
+    size_t stamp = ++solidStamp;
+    candidates.clear();
+    auto addCandidate = [&](uint j) {
+        if (solidStamps[j] != stamp) {
+            solidStamps[j] = stamp;
+            candidates.push_back(j);
+        }
+    };
+    for (uint j : oversizedSolids) {
+        addCandidate(j);
+    }
+    for (uint j : movedSolids) {
+        addCandidate(j);
+    }
+    for (int x = min.x; x <= max.x; x++) {
+        for (int z = min.y; z <= max.y; z++) {
+            uint64_t key = grid_key(x, z);
+            auto it = std::lower_bound(
+                solidCells.begin(),
+                solidCells.end(),
+                key,
+                [](const auto& cell, uint64_t value) {
+                    return cell.first < value;
+                }
+            );
+            for (; it != solidCells.end() && it->first == key; ++it) {
+                addCandidate(it->second);
+            }
+        }
+    }
+    if (candidates.size() * GRID_SCAN_RATIO > solidHitboxes.size()) {
+        for (uint j = 0; j < solidHitboxes.size(); j++) {
+            if (solidStamps[j] == stamp) {
+                testSolid(j);
+            }
+        }
+        return;
+    }
+    std::sort(candidates.begin(), candidates.end());
+    for (uint j : candidates) {
+        testSolid(j);
+    }
+}
+
 void PhysicsSolver::findNearbySolids(float time) {
     size_t count = hitboxes.size();
     nearbySolids.resize(count);
     nearbyOrigins.resize(count);
     nearbyBudgets.resize(count);
+    nearbyReaches.resize(count);
     solidBudgets.resize(solidHitboxes.size());
+    solidOrigins.resize(solidHitboxes.size());
+    solidStamps.assign(solidHitboxes.size(), 0);
+    solidStamp = 0;
 
-    float maxSolidHalfY = 0.0f;
+    maxSolidHalfY = 0.0f;
     for (size_t j = 0; j < solidHitboxes.size(); j++) {
         const auto& box = *solidHitboxes[j];
         solidBudgets[j] = calc_move_budget(box, gravity, time);
+        solidOrigins[j] = box.position;
         maxSolidHalfY = glm::max(maxSolidHalfY, calc_extents(box).y);
     }
+    buildSolidGrid();
+
     for (size_t i = 0; i < count; i++) {
         const auto& hitbox = *hitboxes[i];
-        auto& solids = nearbySolids[i];
-        solids.clear();
         nearbyOrigins[i] = hitbox.position;
         nearbyBudgets[i] = calc_move_budget(hitbox, gravity, time);
+        nearbyReaches[i] =
+            calc_nearby_reach(hitbox, maxSolidHalfY, nearbyBudgets[i]);
+        collectNearbySolids(i);
+    }
+}
 
-        auto ext = calc_extents(hitbox);
+void PhysicsSolver::indexSolids() {
+    solidIndices.resize(solidHitboxes.size());
+    for (size_t j = 0; j < solidHitboxes.size(); j++) {
+        solidIndices[j] = {solidHitboxes[j], static_cast<uint>(j)};
+    }
+    std::sort(solidIndices.begin(), solidIndices.end());
 
-        glm::vec3 reach(
-            0.5f,
-            hitbox.stepHeight * 2.0f + E * 8.0f + ext.y * 0.5f +
-                maxSolidHalfY + 0.5f + MAX_FIX * 2.0f,
-            0.5f
+    hitboxSolids.resize(hitboxes.size());
+    for (size_t i = 0; i < hitboxes.size(); i++) {
+        auto it = std::lower_bound(
+            solidIndices.begin(),
+            solidIndices.end(),
+            std::make_pair(hitboxes[i], 0u)
         );
-        reach += ext + nearbyBudgets[i];
-        for (size_t j = 0; j < solidHitboxes.size(); j++) {
-            const auto& box = *solidHitboxes[j];
-            auto limit = reach + calc_extents(box) + solidBudgets[j];
-            auto diff = glm::abs(box.position - hitbox.position);
-            if (diff.x <= limit.x && diff.y <= limit.y && diff.z <= limit.z) {
-                solids.push_back(solidHitboxes[j]);
+        bool found = it != solidIndices.end() && it->first == hitboxes[i];
+        hitboxSolids[i] = found ? static_cast<int>(it->second) : -1;
+    }
+}
+
+uint PhysicsSolver::getSolidIndex(Hitbox* box) const {
+    return std::lower_bound(
+        solidIndices.begin(), solidIndices.end(), std::make_pair(box, 0u)
+    )->second;
+}
+
+void PhysicsSolver::rebuildNearbySolids(size_t index, float time) {
+    const auto& hitbox = *hitboxes[index];
+    nearbyOrigins[index] = hitbox.position;
+    nearbyBudgets[index] = calc_move_budget(hitbox, gravity, time);
+    nearbyReaches[index] =
+        calc_nearby_reach(hitbox, maxSolidHalfY, nearbyBudgets[index]);
+
+    int solid = hitboxSolids[index];
+    if (solid >= 0) {
+        solidOrigins[solid] = hitbox.position;
+        solidBudgets[solid] = nearbyBudgets[index];
+        if (!solidMoved[solid]) {
+            solidMoved[solid] = true;
+            movedSolids.push_back(solid);
+        }
+        if (movedSolids.size() * GRID_SCAN_RATIO > solidHitboxes.size()) {
+            buildSolidGrid();
+        }
+    }
+    collectNearbySolids(index);
+    if (solid < 0) {
+        return;
+    }
+    auto box = solidHitboxes[solid];
+    for (size_t i = 0; i < hitboxes.size(); i++) {
+        if (i == index || !isSolidNearby(i, solid)) {
+            continue;
+        }
+        auto& list = nearbySolids[i];
+        auto it = std::lower_bound(
+            list.begin(),
+            list.end(),
+            static_cast<uint>(solid),
+            [this](Hitbox* other, uint value) {
+                return getSolidIndex(other) < value;
             }
+        );
+        if (it == list.end() || *it != box) {
+            list.insert(it, box);
         }
     }
 }
@@ -507,11 +707,11 @@ void PhysicsSolver::step(
     
     float dt = delta / static_cast<float>(substeps);
     findNearbySolids(delta);
+    indexSolids();
     for (auto hitbox : hitboxes) {
         scheduleSubstep(*hitbox, 0, substeps, dt);
     }
 
-    int rebuildsLeft = MAX_NEARBY_REBUILDS;
     for (uint i = 0; i < substeps; i++) {
         wakeSubstep = i + 1;
         for (size_t j = 0; j < hitboxes.size(); j++) {
@@ -529,19 +729,14 @@ void PhysicsSolver::step(
                 hitbox->velocity,
                 pos,
                 substepTime,
-                rebuildsLeft >= 0 ? nearbySolids[j] : solidHitboxes
+                nearbySolids[j]
             );
             scheduleSubstep(*hitbox, i + 1, substeps, dt);
-            if (rebuildsLeft < 0) {
-                continue;
-            }
 
             auto moved = glm::abs(pos - nearbyOrigins[j]);
             if (glm::max(moved.x, glm::max(moved.y, moved.z)) >
                 nearbyBudgets[j]) {
-                if (--rebuildsLeft >= 0) {
-                    findNearbySolids(dt * static_cast<float>(substeps - i));
-                }
+                rebuildNearbySolids(j, dt * static_cast<float>(substeps - i));
             }
         }
     }
