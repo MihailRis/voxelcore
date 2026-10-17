@@ -44,6 +44,16 @@ static glm::vec3 calc_collsion_velocity_result(
     return (mA * vA + mB * vB + a.elasticity * mB * (vB - vA)) / (mA + mB);
 }
 
+static void integrate(
+    Hitbox& box, const glm::vec3& gravity, float dt, uint substeps
+) {
+    float n = static_cast<float>(substeps);
+    auto accel = gravity * box.gravityScale;
+    box.position += box.velocity * (dt * n) +
+                    accel * (dt * dt * n * (n + 2.0f) * 0.5f);
+    box.velocity += accel * (dt * n);
+}
+
 static void push_body(Hitbox& box, int axis, float value, uint wakeSubstep) {
     if (box.velocity[axis] != value) {
         box.velocity[axis] = value;
@@ -274,8 +284,9 @@ void PhysicsSolver::calcCollisions(
                 float z = (pos.z - half.z + E) + iz;
                 float y = (pos.y + half.y + E) - E;
                 if (auto aabb = chunks.isObstacleAt(x, y, z, boxAABB)) {
-                    float newy = std::floor(y) - half.y + aabb->min().y - E;
-                    if (pos.y >= newy) {
+                    float bottom = std::floor(y) + aabb->min().y;
+                    float newy = bottom - half.y - E;
+                    if (pos.y >= newy && pos.y - half.y < bottom) {
                         vel.y = -hitbox.elasticity * vel.y;
                         pos.y = newy;
                     }
@@ -660,6 +671,9 @@ void PhysicsSolver::rebuildNearbySolids(size_t index, float time) {
 static uint calc_substep_stride(
     const Hitbox& hitbox, const glm::vec3& gravity, float dt, uint left
 ) {
+    if (hitbox.crouching) {
+        return 1;
+    }
     float speed = glm::length(hitbox.velocity);
     float accel = glm::length(gravity) * glm::abs(hitbox.gravityScale) * 1.5f;
     float time;
@@ -719,25 +733,34 @@ void PhysicsSolver::step(
             if (hitbox->nextSubstep > i) {
                 continue;
             }
-            float substepTime =
-                dt * static_cast<float>(i + 1 - hitbox->doneSubsteps);
-            glm::vec3& pos = hitbox->position;
             hitbox->prevPosition = hitbox->position;
-            hitbox->substepTime = substepTime;
-            calcSubstep(
-                *hitbox,
-                hitbox->velocity,
-                pos,
-                substepTime,
-                nearbySolids[j]
-            );
-            scheduleSubstep(*hitbox, i + 1, substeps, dt);
+            hitbox->substepTime =
+                dt * static_cast<float>(i + 1 - hitbox->doneSubsteps);
+            while (hitbox->doneSubsteps <= i) {
+                uint left = i + 1 - hitbox->doneSubsteps;
+                uint skip = calc_substep_stride(*hitbox, gravity, dt, left) - 1;
+                if (skip > 0) {
+                    integrate(*hitbox, gravity, dt, skip);
+                    hitbox->doneSubsteps += skip;
+                }
+                calcSubstep(
+                    *hitbox,
+                    hitbox->velocity,
+                    hitbox->position,
+                    dt,
+                    nearbySolids[j]
+                );
+                hitbox->doneSubsteps++;
 
-            auto moved = glm::abs(pos - nearbyOrigins[j]);
-            if (glm::max(moved.x, glm::max(moved.y, moved.z)) >
-                nearbyBudgets[j]) {
-                rebuildNearbySolids(j, dt * static_cast<float>(substeps - i));
+                auto moved = glm::abs(hitbox->position - nearbyOrigins[j]);
+                if (glm::max(moved.x, glm::max(moved.y, moved.z)) >
+                    nearbyBudgets[j]) {
+                    rebuildNearbySolids(
+                        j, dt * static_cast<float>(substeps - i)
+                    );
+                }
             }
+            scheduleSubstep(*hitbox, i + 1, substeps, dt);
         }
     }
 
