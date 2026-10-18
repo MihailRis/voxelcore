@@ -224,6 +224,7 @@ void AssetsLoader::processPreloadList(AssetType tag, const dv::value& list) {
 
 void AssetsLoader::processPreloadConfig(const io::path& file) {
     auto root = io::read_json(file);
+    processPreloadList(AssetType::ANIMATION, root["animations"]);
     processPreloadList(AssetType::ANIMATION, root["animation"]);
     processPreloadList(AssetType::ATLAS, root["atlases"]);
     processPreloadList(AssetType::FONT, root["fonts"]);

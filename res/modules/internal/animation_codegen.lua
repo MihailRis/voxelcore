@@ -259,7 +259,7 @@ end
 local function codegen_rig_target(raw_track, context)
     local code = "\n if target.set_matrix and target.index then\n"
     for bone, lineset in pairs(raw_track.linesets) do
-        if lineset.target_type ~= "bone" and lineset.target_type ~= "texture" then
+        if lineset.target_type ~= "bone" then
             goto continue
         end
         local lineset_code = codegen_track(raw_track, lineset, context.keysets, true, "bone")
@@ -270,7 +270,7 @@ local function codegen_rig_target(raw_track, context)
         end
         code = code
             .. "\n  do" .. lineset_code .. "\n  end\n"
-        if lineset.target_type == "bone" and context.has_tsf then
+        if context.has_tsf then
             code = code ..
                 "  target:set_matrix(bone_index, dst)\n"
         end
@@ -309,14 +309,14 @@ local function codegen_native_rig_target(raw_track, context, track_name)
     end
 
     for bone, lineset in pairs(raw_track.linesets) do
-        if lineset.target_type ~= "bone" and lineset.target_type ~= "texture" then
+        if lineset.target_type ~= "bone" then
             goto continue
         end
         local lineset_code = codegen_track(
-            raw_track, lineset, context.memoised, context.keysets, false)
+            raw_track, lineset, context.keysets, false, "bone")
         local exported = {}
         local entry = {name = bone}
-        if lineset.target_type == "bone" then
+        do
             local channels = {
                 [animation.CH_TRANSLATE] = {},
                 [animation.CH_ROTATE] = {},
@@ -381,14 +381,30 @@ local function codegen_native_rig_target(raw_track, context, track_name)
     return "\n if target.__native_rig then" .. code
 end
 
-local function codegen_object_target(raw_track, context)
-    local code = "  local dst = mat4.idt()\n"
-    local lineset = raw_track.linesets[""]
-    if not lineset then
+local function codegen_texture_target(raw_track, context)
+    local code = ""
+    for _, lineset in pairs(raw_track.linesets) do
+        if lineset.target_type == "texture" then
+            code = code .. "\n  do"
+                .. codegen_track(raw_track, lineset, context.keysets, false, "texture")
+                .. "\n  end\n"
+        end
+    end
+    if #code == 0 then
         return ""
     end
+    return "\n if target.set_texture then" .. code .. " end\n"
+end
+
+local function codegen_object_target(raw_track, context)
+    local code = codegen_texture_target(raw_track, context)
+    local lineset = raw_track.linesets[""]
+    if not lineset then
+        return code
+    end
     local lineset_code = codegen_track(raw_track, lineset, context.keysets, true)
-    code = code .. "\n  do" .. lineset_code .. "\n  end\n"
+    code = code .. "  local dst = mat4.idt()\n"
+        .. "\n  do" .. lineset_code .. "\n  end\n"
 
     if context.has_tsf then
         code = code .. "  set_matrix(target, dst)\n"
