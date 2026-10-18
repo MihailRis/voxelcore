@@ -197,13 +197,13 @@ void SkeletonConfig::render(
             continue;
         }
         node->model.refresh(assets);
-        auto model = node->model.model.lock().get(); // TODO: cache model pointer during frame
+        auto model = node->model.model.lock(); // TODO: cache model pointer during frame
         auto& modelOverride = skeleton.modelOverrides.at(i);
         if (modelOverride.updateFlag) {
             modelOverride.refresh(assets);
         }
         if (auto foundOverride = modelOverride.model.lock()) {
-            model = foundOverride.get();
+            model = std::move(foundOverride);
         }
         if (model == nullptr) {
             if (!node->model.name.empty()) {

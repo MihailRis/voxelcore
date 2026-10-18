@@ -173,6 +173,7 @@ void WorldRenderer::refreshSettings() {
     Shader* affectedShaders[] {
         &assets.require<Shader>("main"),
         &assets.require<Shader>("entity"),
+        &assets.require<Shader>("model"),
         &assets.require<Shader>("clouds"),
         &assets.require<Shader>("translucent"),
         &assets.require<PostEffect>("deferred_lighting").getShader(),
@@ -273,6 +274,10 @@ void WorldRenderer::renderOpaque(
     }
 
     setup_entity_pass(entityShader, {0.5f, true, false, false, 1.0f});
+
+    auto& modelShader = assets.require<Shader>("model");
+    setupWorldShader(modelShader, camera, settings, fogFactor);
+    setup_entity_pass(modelShader, {0.5f, true, false, false, 1.0f});
     level.entities->render(
         assets,
         *modelBatch,
@@ -281,6 +286,7 @@ void WorldRenderer::renderOpaque(
                                                             : 0
     );
     modelBatch->renderOpaque();
+    entityShader.use();
     particles->render(camera);
 
     auto& mainShader = assets.require<Shader>("main");
@@ -576,7 +582,7 @@ void WorldRenderer::renderTranslucency(
         auto lctx = ctx.sub();
         lctx.setFramebuffer(&translucentLayers->getLayer(translucent::ENTITIES));
         lctx.setCullFace(true);
-        auto& shader = assets.require<Shader>("entity");
+        auto& shader = assets.require<Shader>("model");
         setupWorldShader(shader, camera, settings, fogFactor);
         setup_entity_pass(shader, {0.002f, false, true, true, 1.0f});
         modelBatch->renderTranslucent(camera.position);
@@ -608,7 +614,7 @@ void WorldRenderer::renderDebugLines(const DrawContext& ctx, Camera& camera) {
 }
 
 void WorldRenderer::renderHandsPass(const DrawContext& pctx, Camera& camera) {
-    auto& entityShader = assets.require<Shader>("entity");
+    auto& modelShader = assets.require<Shader>("model");
 
     DrawContext ctx = pctx.sub();
     ctx.setDepthTest(true);
@@ -623,8 +629,8 @@ void WorldRenderer::renderHandsPass(const DrawContext& pctx, Camera& camera) {
     hudcam.setFov(0.9f);
     hudcam.position = {};
 
-    setupWorldShader(entityShader, hudcam, engine.getSettings(), 0.0f);
-    setup_entity_pass(entityShader, {0.15f, false, false, false, 1.0f});
+    setupWorldShader(modelShader, hudcam, engine.getSettings(), 0.0f);
+    setup_entity_pass(modelShader, {0.15f, false, false, false, 1.0f});
     hands->render(camera);
 }
 
