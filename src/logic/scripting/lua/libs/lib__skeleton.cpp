@@ -89,6 +89,17 @@ static int l_set_matrix(lua::State* L) {
     return 0;
 }
 
+static int l_get_bone_offset(lua::State* L) {
+    if (auto skeleton = get_skeleton(L)) {
+        if (skeleton->config == nullptr) {
+            return 0;
+        }
+        auto index = index_range_check(*skeleton, lua::tointeger(L, 2));
+        return lua::pushvec(L, skeleton->config->getBones()[index]->getOffset());
+    }
+    return 0;
+}
+
 static int l_reset_pose(lua::State* L) {
     if (auto skeleton = get_skeleton(L)) {
         auto& pose = skeleton->pose;
@@ -372,6 +383,7 @@ const luaL_Reg skeletonlib[] = {
     {"set_model", lua::wrap<l_set_model>},
     {"get_matrix", lua::wrap<l_get_matrix>},
     {"set_matrix", lua::wrap<l_set_matrix>},
+    {"get_bone_offset", lua::wrap<l_get_bone_offset>},
     {"reset_pose", lua::wrap<l_reset_pose>},
     {"get_texture", lua::wrap<l_get_texture>},
     {"set_texture", lua::wrap<l_set_texture>},

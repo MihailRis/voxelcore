@@ -18,6 +18,7 @@ local Skeleton = {__index={
     set_model=function(self, i, s) return gfx.skeletons.set_model(self.name, i, s) end,
     get_matrix=function(self, i) return gfx.skeletons.get_matrix(self.name, i) end,
     set_matrix=function(self, i, m) return gfx.skeletons.set_matrix(self.name, i, m) end,
+    get_bone_offset=function(self, i) return gfx.skeletons.get_bone_offset(self.name, i) end,
     get_texture=function(self, i) return gfx.skeletons.get_texture(self.name, i) end,
     set_texture=function(self, i, s) return gfx.skeletons.set_texture(self.name, i, s) end,
     is_visible=function(self, i) return gfx.skeletons.is_visible(self.name, i) end,
