@@ -37,6 +37,22 @@ struct VertexAttribute {
     }
 };
 
+inline constexpr size_t calc_size(const VertexAttribute attrs[]) {
+    size_t vertexSize = 0;
+    for (int i = 0; attrs[i].count; i++) {
+        vertexSize += attrs[i].size();
+    }
+    return vertexSize;
+}
+
+inline constexpr int count_attributes(const VertexAttribute attrs[]) {
+    int count = 0;
+    while (attrs[count].count) {
+        count++;
+    }
+    return count;
+}
+
 /// @brief Raw mesh data structure
 template<typename VertexStructure>
 struct MeshData {

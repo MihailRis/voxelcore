@@ -5,6 +5,7 @@
         "main",
         "lines",
         "entity",
+        "model",
         "translucent",
         "translucent_composite",
         "background",
