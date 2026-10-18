@@ -261,7 +261,12 @@ static int push_properties_tables(
 }
 
 void scripting::on_assets_loading() {
-     lua::call_internal(lua::get_main_state(), "backup_and_clear_animation");
+    auto L = lua::get_main_state();
+    lua::call_internal(L, "backup_and_clear_animation");
+
+    for (auto& pack : content_control->getAllContentPacks()) {
+        lua::emit_event(L, pack.id + ":.onassetsloading");
+    }
 }
 
 void scripting::revert_assets_loading() {
@@ -842,6 +847,7 @@ void scripting::load_content_script(
 
     register_event(env, "on_scripts_loading", prefix + ":.onscriptsloading");
     register_event(env, "on_content_loaded", prefix + ":.oncontentloaded");
+    register_event(env, "on_assets_loading", prefix + ":.onassetsloading");
 }
 
 void scripting::load_layout_script(

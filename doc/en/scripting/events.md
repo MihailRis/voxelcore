@@ -245,6 +245,12 @@ function on_content_loaded()
 
 Called after the content pack has been fully loaded
 
+```lua
+function on_assets_loading()
+```
+
+Called on assets loading start
+
 ## HUD events
 
 Callbacks specified in *hud.lua* script.
