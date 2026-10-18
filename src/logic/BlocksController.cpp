@@ -69,11 +69,11 @@ void BlocksController::breakBlock(
     onBlockInteraction(
         player, glm::ivec3(x, y, z), def, BlockInteraction::destruction
     );
+    scripting::on_block_broken(player, def, glm::ivec3(x, y, z));
     blocks_agent::set(chunks, x, y, z, 0, {});
     if (lighting) {
         lighting->onBlockSet(x, y, z, 0);
     }
-    scripting::on_block_broken(player, def, glm::ivec3(x, y, z));
     if (def.rt.extended) {
         updateSides(x, y, z , def.size.x, def.size.y, def.size.z);
     } else {
