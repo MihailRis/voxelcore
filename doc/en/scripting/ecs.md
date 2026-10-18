@@ -172,6 +172,9 @@ rig:get_matrix(index: int) -> mat4
 -- Sets the bone transformation matrix at the specified index
 rig:set_matrix(index: int, matrix: mat4)
 
+-- Returns the bone offset relative to its parent (from the skeleton config)
+rig:get_bone_offset(index: int) -> vec3
+
 -- Returns the texture by key (dynamically assigned textures - '$name')
 rig:get_texture(key: str) -> str
 
