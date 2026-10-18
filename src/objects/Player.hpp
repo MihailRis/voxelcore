@@ -49,6 +49,7 @@ class Player : public Serializable {
     float speed;
     
     int chosenSlot;
+    int hotbarSize;
     glm::vec3 position;
     glm::vec3 spawnpoint {std::nanf(""), std::nanf(""), std::nanf("")};
     std::shared_ptr<Inventory> inventory;
@@ -95,6 +96,10 @@ public:
     void setChosenSlot(int index);
 
     int getChosenSlot() const;
+
+    void setHotbarSize(int size);
+
+    int getHotbarSize() const;
 
     float getSpeed() const;
 

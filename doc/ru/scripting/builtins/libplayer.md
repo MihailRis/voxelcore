@@ -95,8 +95,16 @@ player.get_interaction_distance(playerid: int) -> number
 -- Возвращает ID инвентаря и индекс выбранного слота
 player.get_inventory(playerid: int) -> int, int
 
--- Устанавливает выбранный слот
+-- Устанавливает выбранный слот (индекс берётся по модулю размера хотбара)
 player.set_selected_slot(playerid: int, slotid: int)
+
+-- Возвращает / устанавливает размер хотбара - число первых слотов инвентаря игрока,
+-- доступных для выбора. player.set_selected_slot берёт индекс по модулю этого числа,
+-- а при уменьшении размера выбранный слот сдвигается в допустимый диапазон.
+-- По умолчанию - `hotbar-size` из `config/defaults.toml` (10), в мире не сохраняется.
+-- На клиенте эти слоты показывает хотбар, они выбираются колесом мыши и цифровыми клавишами.
+player.get_hotbar_size(playerid: int) -> int
+player.set_hotbar_size(playerid: int, size: int)
 
 -- Возвращает позицию выбранного блока
 player.get_selected_block(playerid: int) -> x,y,z
