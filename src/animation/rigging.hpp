@@ -147,7 +147,8 @@ namespace rigging {
             ModelLightingMode lightingMode,
             const glm::mat3& rotation,
             const glm::vec3& position,
-            const glm::vec3& scale
+            const glm::vec3& scale,
+            bool translucent = false
         ) const;
 
         Skeleton instance() const {

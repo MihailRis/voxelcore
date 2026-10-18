@@ -6,6 +6,7 @@
         "lines",
         "entity",
         "translucent",
+        "translucent_composite",
         "background",
         "skybox_gen",
         "shadows",

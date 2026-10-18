@@ -143,8 +143,10 @@ void BlockWrapsRenderer::draw(const DrawContext& pctx) {
 
     auto& shader = assets.require<Shader>("entity");
     shader.use();
-    shader.uniform1i("u_alphaClip", false);
-    shader.uniform1i("u_dithering", 0);
+    shader.uniform1f("u_alphaThreshold", 0.15f);
+    shader.uniform1i("u_opaque", false);
+    shader.uniform1i("u_forward", false);
+    shader.uniform1i("u_forwardLight", false);
     
     for (const auto& [_, wrapper] : wrappers) {
         if (wrapper->dirtySides) {
