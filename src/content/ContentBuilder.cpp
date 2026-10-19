@@ -123,6 +123,13 @@ std::unique_ptr<Content> ContentBuilder::build() {
         def->properties["script-file"] = def->scriptFile;
     }
 
+    for (EntityDef* def : entityDefsIndices) {
+        if (def->properties == nullptr) {
+            def->properties = dv::object();
+        }
+        def->properties["name"] = def->name;
+    }
+
     for (auto& [name, def] : content->generators.getDefs()) {
         def->prepare(content.get());
     }

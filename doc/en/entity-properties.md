@@ -1,5 +1,17 @@
 # Entity properties
 
+## User properties
+
+Access to custom entity properties is provided through the table `entities.properties[id]["property"]`, where `id` is the entity definition index.
+
+Custom properties follow the same pack inheritance and override rules as block and item properties, and must be declared in `pack:config/user-props.toml`:
+
+```toml
+"pack:property_name" = {}
+```
+
+This makes the property available in Lua scripts as `entities.properties[entities.def_index("pack:entity")]["property"]`.
+
 ## Logic
 
 ### *components*

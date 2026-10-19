@@ -24,6 +24,7 @@
 #include "world/Level.hpp"
 #include "world/World.hpp"
 #include "interfaces/Process.hpp"
+#include "objects/EntityDef.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -295,6 +296,11 @@ void scripting::on_content_load(Content* content) {
     }
     if (lua::getglobal(L, "item")) {
         push_properties_tables(L, indices.items);
+        lua::setfield(L, "properties");
+        lua::pop(L);
+    }
+    if (lua::getglobal(L, "entities")) {
+        push_properties_tables(L, indices.entities);
         lua::setfield(L, "properties");
         lua::pop(L);
     }

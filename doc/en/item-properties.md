@@ -72,6 +72,45 @@ Property status is displayed in the inventory interface. Display method is defin
 Defines the name of the script containing the item's event handlers. By default, equals to the item's string id (name).
 Allows you to reuse a single script for multiple items.
 
+## User properties
+
+Access to custom item properties is provided through the table `item.properties[id]["property"]`, where `id` is the numeric item index.
+
+User properties must be declared in `pack:config/user-props.toml`:
+
+```toml
+"pack:property_name" = {}
+```
+
+### Example usage in Lua - `base_survival:tool`
+
+```lua
+local tool = item.properties[itemid]["base_survival:tool"]
+if tool then
+    local stone_material = tool.materials['base:stone']
+    if stone_material then
+        print(tool.type, stone_material.speed)
+    end
+end
+```
+
+Definition in item JSON:
+
+```json
+{
+    "base_survival:tool": {
+        "type": "breaker",
+        "materials": {
+            "base:stone": {
+                "speed": 15.0
+            }
+        }
+    }
+}
+```
+
+Custom property tables follow the same inheritance and override rules as block properties.
+
 ## Tags
 
 Tags allow you to designate general properties of items. Names should be formatted as `prefix:tag_name`.
