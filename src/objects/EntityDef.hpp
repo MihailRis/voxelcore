@@ -19,6 +19,8 @@ struct EntityDef {
     /// @brief Entity string id (with prefix included)
     std::string const name;
 
+    dv::value properties = nullptr;
+
     /// @brief Component instances
     std::vector<ComponentInstance> components;
 
