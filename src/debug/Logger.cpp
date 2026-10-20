@@ -68,8 +68,8 @@ static void write(
     }
 }
 
-void Logger::init(const std::string& filename) {
-    file.open(filename);
+void Logger::init(const std::filesystem::path& path) {
+    file.open(path);
 
     time_t tm = std::time(nullptr);
     std::stringstream ss;

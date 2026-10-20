@@ -12,7 +12,7 @@ using namespace imageio;
 
 using image_reader =
     std::function<std::unique_ptr<ImageData>(const ubyte*, size_t)>;
-using image_writer = std::function<void(const std::string&, const ImageData*)>;
+using image_writer = std::function<void(const io::path&, const ImageData*)>;
 
 static std::unordered_map<ImageFileFormat, image_reader> readers {
     {ImageFileFormat::PNG, png::load_image},
@@ -75,7 +75,7 @@ void imageio::write(const io::path& file, const ImageData* image) {
             "file format is not supported (write): " + file.string()
         );
     }
-    return found->second(io::resolve(file).u8string(), image);
+    return found->second(file, image);
 }
 
 util::Buffer<unsigned char> imageio::encode(

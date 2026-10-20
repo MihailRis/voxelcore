@@ -47,8 +47,25 @@ std::unique_ptr<audio::PCM> ogg::load_pcm(
     const io::path& file, bool headerOnly
 ) {
     OggVorbis_File vf;
-    int code;
-    if ((code = ov_fopen(io::resolve(file).u8string().c_str(), &vf))) {
+    FILE* fileHandle = nullptr;
+#ifdef _WIN32
+    if (errno_t err =
+            _wfopen_s(
+                &fileHandle, io::resolve(file).wstring().c_str(), L"rb"
+            ) != 0) {
+#else
+    if ((fileHandle = fopen(io::resolve(file).u8string().c_str(), "rb")) ==
+        nullptr) {
+#endif
+        throw std::runtime_error(
+            "could not open file " + file.string() + " for reading"
+        );
+    }
+
+    if (int code = ov_open(fileHandle, &vf, nullptr, 0)) {
+        if (fileHandle) {
+            fclose(fileHandle);
+        }
         throw std::runtime_error("vorbis: " + vorbis_error_message(code));
     }
     std::vector<char> data;
@@ -169,8 +186,25 @@ public:
 
 std::unique_ptr<PCMStream> ogg::create_stream(const io::path& file) {
     OggVorbis_File vf;
-    int code;
-    if ((code = ov_fopen(io::resolve(file).u8string().c_str(), &vf))) {
+    FILE* fileHandle = nullptr;
+#ifdef _WIN32
+    if (errno_t err =
+            _wfopen_s(
+                &fileHandle, io::resolve(file).wstring().c_str(), L"rb"
+            ) != 0) {
+#else
+    if ((fileHandle = fopen(io::resolve(file).u8string().c_str(), "rb")) ==
+        nullptr) {
+#endif
+        throw std::runtime_error(
+            "could not open file " + file.string() + " for reading"
+        );
+    }
+
+    if (int code = ov_open(fileHandle, &vf, nullptr, 0)) {
+        if (fileHandle) {
+            fclose(fileHandle);
+        }
         throw std::runtime_error("vorbis: " + vorbis_error_message(code));
     }
     return std::make_unique<OggStream>(vf);
