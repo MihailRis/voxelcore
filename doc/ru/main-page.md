@@ -14,6 +14,7 @@
 - [Контент‐паки](content-packs.md)
 - [Модели блоков](block-models.md)
 - [Предзагрузка ассетов](assets-preload.md)
+- [Проекты](projects.md)
 - [Рекомендации по использованию движка](engine-use-recommendations.md)
 - [Ресурсы (resources.json)](resources.md)
 - [Риггинг](rigging.md)

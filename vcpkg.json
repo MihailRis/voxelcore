@@ -16,5 +16,12 @@
       "curl",
       "freetype",
       "openssl"
+    ],
+    "builtin-baseline": "802d61d714db2714e3fefcfc59447431166b8367",
+    "overrides": [
+      {
+        "name": "entt",
+        "version": "3.16.0"
+      }
     ]
-  }
+}
