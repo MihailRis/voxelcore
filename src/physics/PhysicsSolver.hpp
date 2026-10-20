@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Hitbox.hpp"
+#include "BroadPhase.hpp"
 
 #include "typedefs.hpp"
 #include "voxels/voxel.hpp"
@@ -38,64 +39,5 @@ private:
     std::vector<Sensor*> sensors;
     std::vector<Hitbox*> solidHitboxes;
     std::vector<Hitbox*> hitboxes;
-    std::vector<std::vector<Hitbox*>> nearbySolids;
-    std::vector<glm::vec3> nearbyOrigins;
-    std::vector<float> nearbyBudgets;
-    std::vector<float> solidBudgets;
-    std::vector<std::pair<uint64_t, uint>> solidCells;
-    std::vector<uint> oversizedSolids;
-    std::vector<uint> candidates;
-    std::vector<size_t> solidStamps;
-    std::vector<uint> movedSolids;
-    std::vector<bool> solidMoved;
-    std::vector<glm::vec3> nearbyReaches;
-    std::vector<glm::vec3> solidOrigins;
-    std::vector<std::pair<Hitbox*, uint>> solidIndices;
-    std::vector<int> hitboxSolids;
-    size_t solidStamp = 0;
-    float maxSolidHalfY = 0.0f;
-    uint wakeSubstep = 0;
-
-    void findNearbySolids(float time);
-
-    void buildSolidGrid();
-
-    void collectNearbySolids(size_t index);
-
-    void indexSolids();
-
-    uint getSolidIndex(Hitbox* box) const;
-
-    bool isSolidNearby(size_t index, uint solid) const;
-
-    void rebuildNearbySolids(size_t index, float time);
-
-    void scheduleSubstep(Hitbox& hitbox, uint done, uint substeps, float dt);
-
-    void calcCollisions(
-        Hitbox& hitbox,
-        glm::vec3& vel,
-        glm::vec3& pos,
-        const glm::vec3& half,
-        float stepHeight,
-        float dt,
-        const std::vector<Hitbox*>& solids
-    );
-
-    void calcSubstep(
-        Hitbox& hitbox,
-        glm::vec3& vel,
-        glm::vec3& pos,
-        float dt,
-        const std::vector<Hitbox*>& solids
-    );
-
-    bool calcCollisionNegY(
-        Hitbox& hitbox,
-        const glm::vec3& half,
-        float dt,
-        const std::vector<Hitbox*>& solids
-    );
-
-    void updateSensors(Hitbox& hitbox);
+    BroadPhase broadPhase;
 };
