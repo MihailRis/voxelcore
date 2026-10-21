@@ -183,7 +183,7 @@ static int l_push_ray(
     lua::pushvec3(L, ray ? ray->normal : normal);
     lua::setfield(L, "normal");
 
-    lua::pushnumber(L, glm::distance(start, end));
+    lua::pushnumber(L, ray ? ray->distance : glm::distance(start, end));
     lua::setfield(L, "length");
 
     lua::pushvec3(L, iend);
@@ -306,12 +306,12 @@ static int l_world_raycast(lua::State* L) {
         entityRaycast.ignoredUid = lua::tointeger(L, -1);
         lua::pop(L);
     }
-    if (lua::getfield(L, "filter_entities")) {
+    if (lua::getfield(L, "filter_entities", 1)) {
         load_entities_filter(L, -1, filteredEntities);
-        blocksRaycast.filter = &filteredEntities;
+        entityRaycast.entitiesFilter = &filteredEntities;
         lua::pop(L);
     }
-    if (lua::getfield(L, "entities_exclusion")) {
+    if (lua::getfield(L, "entities_exclusion", 1)) {
         entityRaycast.entityFilterExcludeMode = lua::toboolean(L, -1);
         lua::pop(L);
     }
@@ -324,7 +324,7 @@ static int l_world_raycast(lua::State* L) {
         blocksRaycast.filter = &filteredBlocks;
         lua::pop(L);
     }
-    if (lua::getfield(L, "blocks_exclusion")) {
+    if (lua::getfield(L, "blocks_exclusion", 1)) {
         blocksRaycast.blocksFilterExcludeMode = lua::toboolean(L, -1);
         lua::pop(L);
     }
@@ -357,7 +357,7 @@ static int l_raycast(lua::State* L) {
         }
     }
     if (luaStackSize >= 7) {
-        blocksRaycast.includeNonSelectable = lua::toboolean(L, 6);
+        blocksRaycast.includeNonSelectable = lua::toboolean(L, 7);
     }
     return l_raycast(
         L, start, dir, maxDistance, blocksRaycast, entityRaycast, true
