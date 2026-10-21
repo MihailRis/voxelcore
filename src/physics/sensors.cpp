@@ -1,6 +1,8 @@
 #include "sensors.hpp"
 
-void update_sensors(Hitbox& hitbox, const std::vector<Sensor*>& sensors) {
+void physics::update_sensors(
+    Hitbox& hitbox, const std::vector<Sensor*>& sensors
+) {
     auto aabb = hitbox.getAABB();
 
     for (size_t i = 0; i < sensors.size(); i++) {

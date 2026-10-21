@@ -9,15 +9,17 @@
 
 class GlobalChunks;
 
-inline constexpr float E = 0.03f;
-inline constexpr float MAX_FIX = 0.1f;
+namespace physics {
+    inline constexpr float E = 0.03f;
+    inline constexpr float MAX_FIX = 0.1f;
 
-struct CollisionContext {
-    const GlobalChunks& chunks;
-    const std::vector<Hitbox*>& solids;
-    glm::vec3 gravity;
-    float dt;
-    uint wakeSubstep;
-};
+    struct CollisionContext {
+        const GlobalChunks& chunks;
+        const std::vector<Hitbox*>& solids;
+        glm::vec3 gravity;
+        float dt;
+        uint wakeSubstep;
+    };
 
-void calc_substep(Hitbox& hitbox, const CollisionContext& ctx);
+    void calc_substep(Hitbox& hitbox, const CollisionContext& ctx);
+}

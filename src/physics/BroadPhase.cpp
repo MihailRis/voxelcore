@@ -24,8 +24,8 @@ static glm::vec3 calc_nearby_reach(
 
     glm::vec3 reach(
         0.5f,
-        hitbox.stepHeight * 2.0f + E * 8.0f + ext.y * 0.5f +
-            maxSolidHalfY + 0.5f + MAX_FIX * 2.0f,
+        hitbox.stepHeight * 2.0f + physics::E * 8.0f + ext.y * 0.5f +
+            maxSolidHalfY + 0.5f + physics::MAX_FIX * 2.0f,
         0.5f
     );
     reach += ext + budget;

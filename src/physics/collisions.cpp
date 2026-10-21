@@ -7,6 +7,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/norm.hpp>
 
+using namespace physics;
+
 static glm::vec3 calc_collsion_velocity_result(
     const Hitbox& a, const Hitbox& b
 ) {
@@ -316,7 +318,7 @@ static void calc_collisions(
     }
 }
 
-void calc_substep(Hitbox& hitbox, const CollisionContext& ctx) {
+void physics::calc_substep(Hitbox& hitbox, const CollisionContext& ctx) {
     const auto& chunks = ctx.chunks;
     const auto& solids = ctx.solids;
     const auto& gravity = ctx.gravity;

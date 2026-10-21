@@ -3,7 +3,7 @@
 inline constexpr float MAX_SUBSTEP_MOVE = 0.03f;
 inline constexpr float MAX_SUBSTEP_SINK = 0.015f;
 
-uint calc_substep_stride(
+uint physics::calc_substep_stride(
     const Hitbox& hitbox, const glm::vec3& gravity, float dt, uint left
 ) {
     if (hitbox.crouching) {
@@ -28,7 +28,7 @@ uint calc_substep_stride(
     return glm::max(1u, static_cast<uint>(stride));
 }
 
-void schedule_substep(
+void physics::schedule_substep(
     Hitbox& hitbox, const glm::vec3& gravity, uint done, uint substeps, float dt
 ) {
     hitbox.doneSubsteps = done;

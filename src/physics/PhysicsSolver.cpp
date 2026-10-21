@@ -30,7 +30,7 @@ void PhysicsSolver::step(
     float dt = delta / static_cast<float>(substeps);
     broadPhase.build(delta);
     for (auto hitbox : hitboxes) {
-        schedule_substep(*hitbox, gravity, 0, substeps, dt);
+        physics::schedule_substep(*hitbox, gravity, 0, substeps, dt);
     }
 
     for (uint i = 0; i < substeps; i++) {
@@ -44,12 +44,14 @@ void PhysicsSolver::step(
                 dt * static_cast<float>(i + 1 - hitbox->doneSubsteps);
             while (hitbox->doneSubsteps <= i) {
                 uint left = i + 1 - hitbox->doneSubsteps;
-                uint skip = calc_substep_stride(*hitbox, gravity, dt, left) - 1;
+                uint skip =
+                    physics::calc_substep_stride(*hitbox, gravity, dt, left) -
+                    1;
                 if (skip > 0) {
-                    integrate(*hitbox, gravity, dt, skip);
+                    physics::integrate(*hitbox, gravity, dt, skip);
                     hitbox->doneSubsteps += skip;
                 }
-                calc_substep(
+                physics::calc_substep(
                     *hitbox,
                     {this->chunks,
                      broadPhase.getNearbySolids(j),
@@ -61,7 +63,7 @@ void PhysicsSolver::step(
 
                 broadPhase.update(j, dt * static_cast<float>(substeps - i));
             }
-            schedule_substep(*hitbox, gravity, i + 1, substeps, dt);
+            physics::schedule_substep(*hitbox, gravity, i + 1, substeps, dt);
         }
     }
 
@@ -84,7 +86,7 @@ void PhysicsSolver::step(
             hitbox->groundVelocity *= 1.0f - delta;
         }
 
-        update_sensors(*hitbox, sensors);
+        physics::update_sensors(*hitbox, sensors);
     }
 }
 

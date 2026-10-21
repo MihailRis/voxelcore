@@ -4,4 +4,6 @@
 
 #include <vector>
 
-void update_sensors(Hitbox& hitbox, const std::vector<Sensor*>& sensors);
+namespace physics {
+    void update_sensors(Hitbox& hitbox, const std::vector<Sensor*>& sensors);
+}
