@@ -7,6 +7,14 @@
 
 #if defined(_WIN32)
 #include <malloc.h>
+#elif defined(__ANDROID__)
+static inline void* aligned_alloc(size_t alignment, size_t size) {
+    void* ptr = nullptr;
+    if (posix_memalign(&ptr, alignment, size) != 0) {
+        return nullptr;
+    }
+    return ptr;
+}
 #endif
 
 namespace util {
@@ -63,6 +71,8 @@ namespace util {
             std::unique_ptr<void, AlignedDeleter> ptr(
 #if defined(_WIN32)
                 _aligned_malloc(sizeof(T), alignof(T))
+#elif defined(__ANDROID__)
+                aligned_alloc(sizeof(T), alignof(T))
 #else
                 std::aligned_alloc(alignof(T), sizeof(T))
 #endif

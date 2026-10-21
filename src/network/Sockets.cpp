@@ -1,15 +1,14 @@
 #include "commons.hpp"
 
-#pragma comment(lib, "Ws2_32.lib")
-
-#define NOMINMAX
 #include <stdexcept>
 #include <limits>
 #include <queue>
 #include <thread>
 
 #ifdef _WIN32
+#define NOMINMAX
 #include <curl/curl.h>
+#pragma comment(lib, "Ws2_32.lib")
 #define SHUT_RDWR SD_BOTH
 #else
 #include <sys/types.h>
