@@ -124,7 +124,7 @@ static int l_set(lua::State* L) {
 
     auto chunksController = controller->getChunksController();
     if (chunksController == nullptr) {
-        return 1;
+        return 0;
     }
     if (chunksController->lighting) {
         Lighting& lighting = *chunksController->lighting;
