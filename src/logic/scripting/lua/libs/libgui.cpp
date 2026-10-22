@@ -28,6 +28,9 @@
 #include "window/Window.hpp"
 #include "../usertypes/lua_type_canvas.hpp"
 
+#include <algorithm>
+#include <cmath>
+
 using namespace gui;
 using namespace scripting;
 
@@ -331,6 +334,72 @@ static int p_get_caret(UINode* node, lua::State* L) {
         return lua::pushinteger(L, static_cast<integer_t>(box->getCaret()));
     }
     return 0;
+}
+
+static int p_get_selection(UINode* node, lua::State* L) {
+    if (auto box = dynamic_cast<TextBox*>(node)) {
+        lua::createtable(L, 2, 0);
+        lua::pushinteger(L, box->getSelectionAnchor());
+        lua::rawseti(L, 1);
+        lua::pushinteger(L, box->getCaret());
+        lua::rawseti(L, 2);
+        return 1;
+    }
+    return 0;
+}
+
+static int p_get_external_rendering(UINode* node, lua::State* L) {
+    if (auto box = dynamic_cast<TextBox*>(node)) {
+        return lua::pushboolean(L, box->isExternalRendering());
+    }
+    return 0;
+}
+
+static int p_get_text_layout(UINode* node, lua::State* L) {
+    auto box = dynamic_cast<TextBox*>(node);
+    if (box == nullptr) {
+        return 0;
+    }
+    const auto layout = box->getTextLayout(engine->requireAssets());
+    lua::createtable(L, 0, 10);
+    lua::pushboolean(L, layout.ready);
+    lua::setfield(L, "ready");
+    lua::pushwstring(L, box->getText());
+    lua::setfield(L, "text");
+    lua::pushstring(L, layout.font);
+    lua::setfield(L, "font");
+    lua::pushinteger(L, layout.lineHeight);
+    lua::setfield(L, "lineHeight");
+    lua::pushinteger(L, layout.textHeight);
+    lua::setfield(L, "textHeight");
+    lua::pushvec4(L, layout.caret);
+    lua::setfield(L, "caretRect");
+    lua::createtable(L, layout.selection.size(), 0);
+    for (size_t i = 0; i < layout.selection.size(); ++i) {
+        lua::pushvec4(L, layout.selection[i]);
+        lua::rawseti(L, i + 1);
+    }
+    lua::setfield(L, "selectionRects");
+    lua::createtable(L, layout.lines.size(), 0);
+    for (size_t i = 0; i < layout.lines.size(); ++i) {
+        const auto& line = layout.lines[i];
+        lua::createtable(L, 0, 4);
+        lua::pushinteger(L, line.start);
+        lua::setfield(L, "start");
+        lua::pushwstring(L, line.text);
+        lua::setfield(L, "text");
+        lua::pushvec2(L, line.pos);
+        lua::setfield(L, "pos");
+        lua::createtable(L, line.advances.size(), 0);
+        for (size_t j = 0; j < line.advances.size(); ++j) {
+            lua::pushinteger(L, line.advances[j]);
+            lua::rawseti(L, j + 1);
+        }
+        lua::setfield(L, "advances");
+        lua::rawseti(L, i + 1);
+    }
+    lua::setfield(L, "lines");
+    return 1;
 }
 
 static int p_get_placeholder(UINode* node, lua::State* L) {
@@ -671,6 +740,9 @@ static int l_gui_getattr(lua::State* L) {
             {"hint", p_get_hint},
             {"valid", p_is_valid},
             {"caret", p_get_caret},
+            {"selection", p_get_selection},
+            {"externalRendering", p_get_external_rendering},
+            {"textLayout", p_get_text_layout},
             {"text", p_get_text},
             {"editable", p_get_editable},
             {"edited", p_get_edited},
@@ -773,6 +845,37 @@ static void p_set_caret(UINode* node, lua::State* L, int idx) {
         box->resetSelection();
     }
 }
+static void p_set_selection(UINode* node, lua::State* L, int idx) {
+    if (auto box = dynamic_cast<TextBox*>(node)) {
+        if (!lua::istable(L, idx)) {
+            throw std::runtime_error("selection must be {anchor, caret}");
+        }
+        ptrdiff_t positions[2];
+        for (int i = 0; i < 2; ++i) {
+            lua::rawgeti(L, i + 1, idx);
+            const double value = lua::tonumber(L, -1);
+            if (lua_type(L, -1) != LUA_TNUMBER || !std::isfinite(value) ||
+                std::floor(value) != value) {
+                throw std::runtime_error(
+                    "selection indices must be finite integers"
+                );
+            }
+            positions[i] = static_cast<ptrdiff_t>(std::clamp(
+                value, 0.0, static_cast<double>(box->getText().size())
+            ));
+            lua::pop(L);
+        }
+        box->prepareTextLayout(engine->requireAssets());
+        box->setSelection(positions[0], positions[1]);
+    }
+}
+
+static void p_set_external_rendering(UINode* node, lua::State* L, int idx) {
+    if (auto box = dynamic_cast<TextBox*>(node)) {
+        box->setExternalRendering(lua::toboolean(L, idx));
+    }
+}
+
 static void p_set_editable(UINode* node, lua::State* L, int idx) {
     if (auto box = dynamic_cast<TextBox*>(node)) {
         box->setEditable(lua::toboolean(L, idx));
@@ -990,6 +1093,8 @@ static int l_gui_setattr(lua::State* L) {
             {"src", p_set_src},
             {"fallback", p_set_fallback},
             {"caret", p_set_caret},
+            {"selection", p_set_selection},
+            {"externalRendering", p_set_external_rendering},
             {"value", p_set_value},
             {"min", p_set_min},
             {"max", p_set_max},
