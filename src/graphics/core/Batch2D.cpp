@@ -33,6 +33,7 @@ void Batch2D::setPrimitive(DrawPrimitive primitive) {
 
 void Batch2D::begin(){
     currentTexture = nullptr;
+    glActiveTexture(GL_TEXTURE0);
     blank->bind();
     region = blank->getUVRegion();
     color = glm::vec4(1.0f);
@@ -61,7 +62,16 @@ void Batch2D::vertex(
 }
 
 void Batch2D::texture(const Texture* newTexture){
-    if (currentTexture == newTexture) {
+    // The batch is not the only owner of the texture unit: the render pipeline
+    // binds textures of its own, so the cached value is only a hint. Compare it
+    // with the actual binding, otherwise a rectangle without a texture is
+    // modulated by whatever texture is left bound.
+    glActiveTexture(GL_TEXTURE0);
+    const uint expected =
+        newTexture != nullptr ? newTexture->getId() : blank->getId();
+    GLint bound = 0;
+    glGetIntegerv(GL_TEXTURE_BINDING_2D, &bound);
+    if (currentTexture == newTexture && static_cast<uint>(bound) == expected) {
         return;
     }
     flush();

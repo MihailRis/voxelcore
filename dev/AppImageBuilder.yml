@@ -32,6 +32,10 @@ AppDir:
     - libvorbisfile3
     - libluajit-5.1-2
     - libfreetype6
+    - libwayland-client0
+    - libwayland-cursor0
+    - libwayland-egl1
+    - libxkbcommon0
     exclude:
       - hicolor-icon-theme
       - sound-theme-freedesktop

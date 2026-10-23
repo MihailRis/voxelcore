@@ -31,7 +31,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential libglfw3-dev libglfw3 libglew-dev libglew2.2 \
             libglm-dev libpng-dev libopenal-dev libluajit-5.1-dev libvorbis-dev \
-            libcurl4-openssl-dev libssl-dev libgtest-dev libfreetype6-dev cmake squashfs-tools valgrind
+            libcurl4-openssl-dev libssl-dev libgtest-dev libfreetype6-dev cmake squashfs-tools valgrind \
+            libwayland-dev libxkbcommon-dev libegl1-mesa-dev libsystemd-dev
           # fix luajit paths
           sudo ln -s /usr/lib/x86_64-linux-gnu/libluajit-5.1.a /usr/lib/x86_64-linux-gnu/liblua5.1.a
           sudo ln -s /usr/include/luajit-2.1 /usr/include/lua
