@@ -16,6 +16,9 @@ AppScriptsControl::AppScriptsControl(const CoreParameters& params) {
     if (io::exists(scriptFile)) {
         logger.info() << "starting script: " << params.scriptFile.u8string();
         scriptCoroutine = scripting::start_app_script(scriptFile);
+        if (scriptCoroutine) {
+            scriptCoroutine->update();
+        }
     } else {
         logger.warning() << "script does not exists: " << params.scriptFile.u8string();
     }
