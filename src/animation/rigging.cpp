@@ -160,17 +160,17 @@ void SkeletonConfig::update(
     const glm::vec3& position,
     const glm::vec3& scale
 ) const {
-    if (skeleton.interpolation.isEnabled()) {
-        const auto& interpolation = skeleton.interpolation;
-        update(
-            0,
-            skeleton,
-            root.get(),
-            build_matrix(rotation, interpolation.getCurrent(), scale)
-        );
-    } else {
-        update(0, skeleton, root.get(), build_matrix(rotation, position, scale));
+    glm::vec3 pos = position;
+    const auto& interpolation = skeleton.interpolation;
+    if (interpolation.isEnabled() && interpolation.isRefreshed()) {
+        pos = interpolation.getCurrent();
     }
+    glm::mat3 rot = rotation;
+    const auto& rotationInterpolation = skeleton.rotationInterpolation;
+    if (rotationInterpolation.isEnabled() && rotationInterpolation.isRefreshed()) {
+        rot = glm::mat3_cast(rotationInterpolation.getCurrent());
+    }
+    update(0, skeleton, root.get(), build_matrix(rot, pos, scale));
 }
 
 void SkeletonConfig::render(

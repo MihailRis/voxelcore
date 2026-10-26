@@ -403,6 +403,9 @@ void Entities::update(float delta) {
         if (skeleton.interpolation.isEnabled()) {
             skeleton.interpolation.updateTimer(delta);
         }
+        if (skeleton.rotationInterpolation.isEnabled()) {
+            skeleton.rotationInterpolation.updateTimer(delta);
+        }
     }
 }
 

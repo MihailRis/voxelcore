@@ -101,6 +101,7 @@ namespace rigging {
         std::vector<glm::vec4> boneTints;
 
         util::VecInterpolation<3, float> interpolation {false};
+        util::RotationInterpolation rotationInterpolation {false};
 
         Skeleton(std::shared_ptr<const SkeletonConfig> config);
 

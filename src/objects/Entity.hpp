@@ -6,6 +6,7 @@
 #include <string>
 #include <entt/fwd.hpp>
 #include <glm/vec3.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 class Entities;
 struct EntityDef;
@@ -71,6 +72,8 @@ public:
     void setInterpolatedPosition(const glm::vec3& position);
 
     glm::vec3 getInterpolatedPosition() const;
+
+    void setInterpolatedRotation(const glm::quat& rotation);
 
     entt::entity getHandler() const {
         return entity;
