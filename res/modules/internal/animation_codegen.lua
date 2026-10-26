@@ -118,8 +118,8 @@ local env = {
             if target.set_rot then
                 target:set_rot(rot)
             end
-            if target.set_scale then
-                target:set_scale(scale)
+            if target.set_size then
+                target:set_size(scale)
             end
         end
     end,
