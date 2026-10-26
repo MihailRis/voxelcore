@@ -231,7 +231,7 @@ TextBox::~TextBox() = default;
 void TextBox::draw(const DrawContext& pctx, const Assets& assets) {
     Container::draw(pctx, assets);
 
-    if (!isFocused() && !keepLineSelection) {
+    if (externalRendering || (!isFocused() && !keepLineSelection)) {
         return;
     }
     const auto& labelText = getText();
@@ -1290,6 +1290,9 @@ const std::string& TextBox::getSyntax() const {
 }
 
 void TextBox::setMarkup(std::string_view lang) {
+    if (externalRendering && !lang.empty()) {
+        throw std::runtime_error("external textbox rendering does not support markup");
+    }
     markup = lang;
 }
 
@@ -1299,4 +1302,122 @@ const std::string& TextBox::getMarkup() const {
 
 std::shared_ptr<Label> TextBox::getLabel() const {
     return label;
+}
+
+size_t TextBox::getSelectionAnchor() const {
+    return selectionStart == selectionEnd
+               ? std::min(caret, input.size())
+               : std::min(selectionOrigin, input.size());
+}
+
+void TextBox::setSelection(ptrdiff_t anchor, ptrdiff_t head) {
+    auto clamp = [this](ptrdiff_t index) {
+        return std::min(
+            static_cast<size_t>(std::max<ptrdiff_t>(0, index)), input.size()
+        );
+    };
+    selectionOrigin = clamp(anchor);
+    const auto end = clamp(head);
+    selectionStart = std::min(selectionOrigin, end);
+    selectionEnd = std::max(selectionOrigin, end);
+    setCaret(end);
+    resetMaxLocalCaret();
+}
+
+void TextBox::setExternalRendering(bool value) {
+    if (value && !markup.empty()) {
+        throw std::runtime_error(
+            "external textbox rendering does not support markup"
+        );
+    }
+    externalRendering = value;
+    label->setRenderText(!value);
+}
+
+bool TextBox::isExternalRendering() const {
+    return externalRendering;
+}
+
+bool TextBox::prepareTextLayout(const Assets& assets) {
+    if (!markup.empty()) {
+        return false;
+    }
+    auto font = assets.getShared<Font>(label->getFontName());
+    if (font == nullptr) {
+        return false;
+    }
+    rawTextCache.prepare(font, font->getMetrics(), label->getSize().x);
+    refreshLabel();
+    if (!label->prepareLayout(assets)) {
+        return false;
+    }
+    refreshLabel();
+    return label->prepareLayout(assets);
+}
+
+TextBoxLayout TextBox::getTextLayout(const Assets& assets) {
+    TextBoxLayout result;
+    if (!prepareTextLayout(assets)) {
+        return result;
+    }
+    auto font = assets.getShared<Font>(label->getFontName());
+    result.ready = true;
+    result.font = label->getFontName();
+    result.lineHeight = multiline
+                            ? font->getLineHeight() * label->getLineInterval()
+                            : font->getLineHeight();
+    result.textHeight = font->getLineHeight() + font->getYOffset();
+    const auto origin = label->getTextOrigin() - calcPos();
+    const auto& display = label->getText();
+    const size_t head = std::min(caret, input.size());
+    const size_t lo = std::min(selectionStart, input.size());
+    const size_t hi = std::min(selectionEnd, input.size());
+    const uint caretLine = label->getLineByTextIndex(head);
+    const size_t caretStart = label->getTextLineOffset(caretLine);
+    result.caret = {
+        origin.x + font->calcWidth(
+                       input,
+                       std::min(caretStart, input.size()),
+                       head - std::min(caretStart, head)
+                   ),
+        origin.y + caretLine * result.lineHeight,
+        head < input.size() && input[head] != L'\n'
+            ? font->calcWidth(input, head, 1)
+            : font->calcWidth(L" "),
+        result.lineHeight
+    };
+    for (uint i = 0; i < label->getLinesNumber(); ++i) {
+        const float y = origin.y + i * result.lineHeight;
+        if (y + result.lineHeight < 0 || y >= getSize().y) {
+            continue;
+        }
+        const size_t start = label->getTextLineOffset(i);
+        const size_t next = i + 1 < label->getLinesNumber()
+                                ? label->getTextLineOffset(i + 1)
+                                : display.size();
+        size_t end = next;
+        if (end > start && display[end - 1] == L'\n') {
+            --end;
+        }
+        TextBoxLineLayout row;
+        row.start = start;
+        row.text = display.substr(start, end - start);
+        row.pos = {origin.x, y};
+        for (size_t j = start; j < end; ++j) {
+            row.advances.push_back(font->calcWidth(display, j, 1));
+        }
+        result.lines.push_back(std::move(row));
+        if (hi > start && lo < next && lo != hi) {
+            const size_t a = std::min(end, std::max(start, lo));
+            const size_t b = std::min(end, hi);
+            const float x =
+                origin.x + font->calcWidth(display, start, a - start);
+            float width = font->calcWidth(display, a, b - a);
+            if (hi > end && next > end) {
+                width += font->calcWidth(L" ");
+            }
+            result.selection.emplace_back(x, y, width, result.lineHeight);
+        }
+    }
+    return result;
 }
