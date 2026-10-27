@@ -30,10 +30,14 @@ local __vc__app_script_coroutine
 local __vc_process_streams = { stdin = {}, stdout = {} }
 
 local function complete_app_lib(app)
+    local tick_required = true
     local __app_load_content = app.load_content
     local __app_reset_content = app.reset_content
     local __app_reconfig_packs = app.reconfig_packs
-    local __app_tick = coroutine.yield
+    local __app_tick = function ()
+        coroutine.yield()
+        tick_required = false
+    end
     local __app_set_setting = app.set_setting
     local __app_quit = app.quit
     local __app_get_stdout_stream = app.get_stdout_stream
@@ -89,6 +93,9 @@ local function complete_app_lib(app)
         if internals.is_post_runnable_context() then
             func(...)
             return
+        end
+        if tick_required then
+            __app_tick()
         end
         local running = coroutine.running()
         if not running or running ~= __vc__app_script_coroutine then

@@ -124,7 +124,7 @@ static int l_set(lua::State* L) {
 
     auto chunksController = controller->getChunksController();
     if (chunksController == nullptr) {
-        return 1;
+        return 0;
     }
     if (chunksController->lighting) {
         Lighting& lighting = *chunksController->lighting;
@@ -682,7 +682,7 @@ static int l_get_field(lua::State* L) {
         return 0;
     }
     auto lx = x - cx * CHUNK_W;
-    auto lz = z - cz * CHUNK_W;
+    auto lz = z - cz * CHUNK_D;
     size_t voxelIndex = vox_index(lx, y, lz);
 
     const auto& vox = chunk->voxels[voxelIndex];
@@ -751,7 +751,7 @@ static int l_set_field(lua::State* L) {
     auto cx = floordiv(x, CHUNK_W);
     auto cz = floordiv(z, CHUNK_D);
     auto lx = x - cx * CHUNK_W;
-    auto lz = z - cz * CHUNK_W;
+    auto lz = z - cz * CHUNK_D;
     auto chunk = blocks_agent::get_chunk(*level.chunks, cx, cz);
     if (chunk == nullptr || y < 0 || y >= CHUNK_H) {
         return 0;

@@ -67,14 +67,20 @@ static util::Buffer<ubyte> write_to_memory(uint width, uint height, const ubyte*
 
 // returns 0 if all-right, 1 otherwise
 static int png_write(
-    const char* filename, uint width, uint height, const ubyte* data, bool alpha
+    const io::path& file, uint width, uint height, const ubyte* data, bool alpha
 ) {
     uint pixsize = alpha ? 4 : 3;
 
     // Open file for writing (binary mode)
-    FILE* fp = fopen(filename, "wb");
-    if (fp == nullptr) {
-        logger.error() << "could not open file " << filename << " for writing";
+    FILE* fp = nullptr;
+#ifdef _WIN32
+    if (errno_t err =
+            _wfopen_s(&fp, io::resolve(file).wstring().c_str(), L"wb") != 0) {
+#else
+    if ((fp = fopen(io::resolve(file).u8string().c_str(), "wb")) == nullptr) {
+#endif
+        logger.error() << "could not open file " << file.string()
+                       << " for writing";
         return 1;
     }
 
@@ -290,9 +296,9 @@ std::unique_ptr<Texture> png::load_texture(const std::string& filename) {
     }
 }
 
-void png::write_image(const std::string& filename, const ImageData* image) {
+void png::write_image(const io::path& file, const ImageData* image) {
     png_write(
-        filename.c_str(),
+        file,
         image->getWidth(),
         image->getHeight(),
         (const ubyte*)image->getData(),

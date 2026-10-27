@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sstream>
+#include <filesystem>
 
 namespace debug {
     enum class LogLevel { print, debug, info, warning, error };
@@ -27,7 +28,7 @@ namespace debug {
     class Logger {
         std::string name;
     public:
-        static void init(const std::string& filename);
+        static void init(const std::filesystem::path& path);
         static void flush();
 
         Logger(const std::string& name) : name(name) {

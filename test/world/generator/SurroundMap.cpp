@@ -38,6 +38,7 @@ TEST(SurroundMap, InitTest) {
 
 #include "coders/png.hpp"
 #include "graphics/core/ImageData.hpp"
+#include "io/path.hpp"
 
 void visualize(const SurroundMap& map, int mul, int max) {
     const auto& areaMap = map.getArea();
@@ -59,7 +60,7 @@ void visualize(const SurroundMap& map, int mul, int max) {
             bytes[(y * w + x) * 3 + 2] = val;
         }
     }
-    png::write_image("test.png", &image);
+    png::write_image("user:test.png", &image);
 }
 
 TEST(SurroundMap, Visualize) {
