@@ -4,9 +4,9 @@
 #include "engine/EnginePaths.hpp"
 #include "api_lua.hpp"
 
-inline const char* DEFAULT_CHANNEL = "regular";
+static inline const char* DEFAULT_CHANNEL = "regular";
 
-inline int extract_channel_index(lua::State* L, int idx) {
+static int extract_channel_index(lua::State* L, int idx) {
     const char* channel = DEFAULT_CHANNEL;
     if (lua::isstring(L, idx)) {
         channel = lua::tostring(L, idx);
@@ -18,7 +18,7 @@ inline int extract_channel_index(lua::State* L, int idx) {
     return index;
 }
 
-inline audio::speakerid_t play_sound(
+static audio::speakerid_t play_sound(
     const char* name,
     bool relative,
     lua::Number x,
@@ -54,7 +54,7 @@ inline audio::speakerid_t play_sound(
     );
 }
 
-inline audio::speakerid_t play_stream(
+static audio::speakerid_t play_stream(
     const char* filename,
     bool relative,
     lua::Number x,
