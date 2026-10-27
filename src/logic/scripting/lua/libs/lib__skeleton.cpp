@@ -201,7 +201,9 @@ static int l_is_interpolated(lua::State* L) {
 
 static int l_set_interpolated(lua::State* L) {
     if (auto skeleton = get_skeleton(L)) {
-        skeleton->interpolation.setEnabled(lua::toboolean(L, 2));
+        bool enabled = lua::toboolean(L, 2);
+        skeleton->interpolation.setEnabled(enabled);
+        skeleton->rotationInterpolation.setEnabled(enabled);
     }
     return 0;
 }

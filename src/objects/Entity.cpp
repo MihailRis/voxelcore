@@ -20,11 +20,18 @@ void Entity::setInterpolatedPosition(const glm::vec3& position) {
 
 glm::vec3 Entity::getInterpolatedPosition() const {
     if (auto skeleton = getSkeleton()) {
-        if (skeleton->interpolation.isEnabled()) {
-            return skeleton->interpolation.getCurrent();
+        const auto& interpolation = skeleton->interpolation;
+        if (interpolation.isEnabled() && interpolation.isRefreshed()) {
+            return interpolation.getCurrent();
         }
     }
     return getTransform().pos;
+}
+
+void Entity::setInterpolatedRotation(const glm::quat& rotation) {
+    if (auto skeleton = getSkeleton()) {
+        skeleton->rotationInterpolation.refresh(rotation);
+    }
 }
 
 void Entity::destroy() {
