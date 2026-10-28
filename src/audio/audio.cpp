@@ -262,6 +262,18 @@ std::unique_ptr<Sound> audio::create_sound(
 }
 
 std::unique_ptr<PCMStream> audio::open_PCM_stream(const io::path& file) {
+    if (!io::exists(file)) {
+        io::path candidate = file.string() + ".wav";
+        if (io::exists(candidate)) {
+            return wav::create_stream(candidate);
+        }
+        candidate = file.string() + ".ogg";
+        if (io::exists(candidate)) {
+            return ogg::create_stream(candidate);
+        }
+        throw std::runtime_error("file not found '" + file.string() + "'");
+    }
+
     std::string ext = file.extension();
     if (ext == ".wav" || ext == ".WAV") {
         return wav::create_stream(file);
