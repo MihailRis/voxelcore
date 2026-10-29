@@ -76,6 +76,9 @@ local function complete_app_lib(app)
     end
 
     function app.config_packs(packs_list)
+        if tick_required and not internals.is_post_runnable_context() then
+            __app_tick()
+        end
         -- Check if packs are valid and add dependencies to the configuration
         packs_list = pack.assemble(packs_list)
 
