@@ -78,7 +78,8 @@ Common methods:
 | clear()                         | clears content                                                                               |
 | add(xml)                        | adds an element, creating it using xml code. Example: `container:add("<image src='test'/>")` |
 | add(xml, data)                  | overload with table, which in events declared in xml will be available as DATA               |
-| setInterval(interval, callback) | assigns a function to be executed repeatedly at an interval specified in milliseconds        |
+| setInterval(interval, callback) | assigns a function to be executed repeatedly at an interval specified in milliseconds, returns interval id |
+| clearInterval(id)               | cancels an interval created with setInterval                                                 |
 
 ## Textbox
 
