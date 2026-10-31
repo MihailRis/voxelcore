@@ -126,17 +126,20 @@ void Mesh<VertexStructure>::draw(unsigned int primitive, int iboIndex) const {
     
     if (!ibos.empty()) {
         if (iboIndex < ibos.size()) {
+            size_t indexCount = ibos.at(iboIndex).indexCount;
             glBindVertexArray(vao);
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibos[iboIndex].ibo);
             glDrawElements(
-                primitive, ibos.at(iboIndex).indexCount, GL_UNSIGNED_INT, nullptr
+                primitive, indexCount, GL_UNSIGNED_INT, nullptr
             );
             glBindVertexArray(0);
+            MeshStats::vertices += indexCount;
         }
     } else if (vertexCount > 0) {
         glBindVertexArray(vao);
         glDrawArrays(primitive, 0, vertexCount);
         glBindVertexArray(0);
+        MeshStats::vertices += vertexCount;
     }
 }
 

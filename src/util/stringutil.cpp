@@ -667,6 +667,25 @@ std::string util::format_data_size(size_t size) {
            postfixes[group];
 }
 
+std::string util::format_count(size_t count) {
+    if (count < 1000) {
+        return std::to_string(count);
+    }
+    const std::string postfixes[] {
+        "", " K", " M", " B"
+    };
+    int group = 0;
+    size_t remainder = 0;
+    while (count >= 1000) {
+        group++;
+        remainder = count % 1000;
+        count /= 1000;
+    }
+    return std::to_string(count) + "." +
+           std::to_string(static_cast<int>(round(remainder / 1000.0f))) +
+           postfixes[group];
+}
+
 std::pair<std::string, std::string> util::split_at(
     std::string_view view, char c
 ) {
