@@ -9,6 +9,7 @@
 struct MeshStats {
     static int meshesCount;
     static int drawCalls;
+    static int vertices;
 };
 
 struct IndexBufferData {

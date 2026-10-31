@@ -2,3 +2,4 @@
 
  int MeshStats::meshesCount = 0;
  int MeshStats::drawCalls = 0;
+ int MeshStats::vertices = 0;
