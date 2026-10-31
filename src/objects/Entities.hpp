@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "constants.hpp"
+#include "Entity.hpp"
 #include "physics/Hitbox.hpp"
 #include "Transform.hpp"
 #include "Rigidbody.hpp"
@@ -13,8 +14,7 @@
 #include "typedefs.hpp"
 #include "util/Clock.hpp"
 
-#include <entt/entity/fwd.hpp>
-#include <unordered_map>
+#include <map>
 
 struct EntityDef;
 
@@ -33,10 +33,8 @@ namespace rigging {
 }
 
 class Entities final {
-    std::unique_ptr<entt::registry> registry;
     Level& level;
-    std::unordered_map<entityid_t, entt::entity> entities;
-    std::unordered_map<entt::entity, entityid_t> uids;
+    std::map<entityid_t, std::unique_ptr<Entity>> entities;
     entityid_t nextID = 1;
     util::Clock sensorsTickClock;
     util::Clock updateTickClock;
@@ -77,7 +75,7 @@ public:
         entityid_t uid = 0
     );
 
-    std::optional<Entity> get(entityid_t id);
+    Entity* get(entityid_t id);
 
     struct RaycastSettings {
         /// @param ignore Ignored entity uid
@@ -111,14 +109,14 @@ public:
 
     void loadEntities(dv::value map);
     void loadEntity(const dv::value& map);
-    void loadEntity(const dv::value& map, Entity entity);
+    void loadEntity(const dv::value& map, Entity& entity);
     void onSave(const Entity& entity);
     bool hasBlockingInside(AABB aabb);
-    std::vector<Entity> getAllInside(AABB aabb);
-    std::vector<Entity> getAllInRadius(glm::vec3 center, float radius);
+    std::vector<Entity*> getAllInside(AABB aabb);
+    std::vector<Entity*> getAllInRadius(glm::vec3 center, float radius);
     void despawn(entityid_t id);
-    void despawn(std::vector<Entity> entities);
-    dv::value serialize(const std::vector<Entity>& entities);
+    void despawn(const std::vector<Entity*>& entities);
+    dv::value serialize(const std::vector<Entity*>& entities);
 
     void setNextID(entityid_t id) {
         nextID = id;

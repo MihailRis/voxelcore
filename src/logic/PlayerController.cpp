@@ -498,11 +498,11 @@ void PlayerController::processRightClick(
 void PlayerController::updateEntityInteraction(
     entityid_t eid, bool lclick, bool rclick
 ) {
-    auto entityOpt = level.entities->get(eid);
-    if (!entityOpt.has_value()) {
+    auto entityPtr = level.entities->get(eid);
+    if (entityPtr == nullptr) {
         return;
     }
-    auto entity = *entityOpt;
+    const auto& entity = *entityPtr;
     if (lclick) {
         scripting::on_attacked(entity, &player, player.getEntity());
     }

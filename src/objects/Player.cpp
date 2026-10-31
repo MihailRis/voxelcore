@@ -107,7 +107,7 @@ void Player::updateSelectedEntity() {
 
 void Player::postUpdate() {
     auto entity = level.entities->get(eid);
-    if (!entity.has_value()) {
+    if (entity == nullptr) {
         return;
     }
     auto& hitbox = entity->getRigidbody().hitbox;

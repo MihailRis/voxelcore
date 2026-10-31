@@ -20,7 +20,6 @@
 #include "physics/PhysicsSolver.hpp"
 #include "world/Level.hpp"
 
-#include <entt/entity/registry.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <limits>
 #include <sstream>
@@ -28,8 +27,7 @@
 static debug::Logger logger("entities");
 
 Entities::Entities(Level& level)
-    : registry(std::make_unique<entt::registry>()),
-      level(level),
+    : level(level),
       sensorsTickClock(20, 3),
       updateTickClock(20, 3) {
 }
@@ -40,12 +38,12 @@ void Entities::setAssets(Assets& assets) {
     this->assets = &assets;
 }
 
-std::optional<Entity> Entities::get(entityid_t id) {
+Entity* Entities::get(entityid_t id) {
     const auto& found = entities.find(id);
-    if (found != entities.end() && registry->valid(found->second)) {
-        return Entity(*this, id, *registry, found->second);
+    if (found != entities.end()) {
+        return found->second.get();
     }
-    return std::nullopt;
+    return nullptr;
 }
 
 entityid_t Entities::spawn(
@@ -81,33 +79,30 @@ entityid_t Entities::spawn(
             throw std::runtime_error(ss.str());
         }
     }
-    auto entity = registry->create();
-    entities[id] = entity;
-    uids[entity] = id;
-
-    registry->emplace<EntityId>(entity, id, def);
-    const auto& tsf = registry->emplace<Transform>(
-        entity,
-        position,
-        glm::vec3(1.0f),
-        glm::mat3(1.0f),
-        glm::mat4(1.0f),
-        true
-    );
-    auto& body = registry->emplace<Rigidbody>(
-        entity,
-        true,
-        Hitbox {id, def.bodyType, position, def.hitbox * 0.5f},
-        std::vector<Sensor> {}
-    );
-    body.initialize(def, id, *this);
-
-    auto& scripting = registry->emplace<ScriptComponents>(entity);
+    std::unique_ptr<rigging::Skeleton> skeletonInstance;
     if (assets) {
-        registry->emplace<rigging::Skeleton>(
-            entity, skeleton ? skeleton->instance() : rigging::Skeleton(nullptr)
+        skeletonInstance = std::make_unique<rigging::Skeleton>(
+            skeleton ? skeleton->instance() : rigging::Skeleton(nullptr)
         );
     }
+    auto& entity = *(entities[id] = std::make_unique<Entity>(
+        *this,
+        EntityId {id, def},
+        Transform {
+            position, glm::vec3(1.0f), glm::mat3(1.0f), glm::mat4(1.0f), true
+        },
+        Rigidbody {
+            true,
+            Hitbox {id, def.bodyType, position, def.hitbox * 0.5f},
+            std::vector<Sensor> {}
+        },
+        std::move(skeletonInstance)
+    ));
+    const auto& tsf = entity.getTransform();
+    auto& body = entity.getRigidbody();
+    body.initialize(def, id, *this);
+
+    auto& scripting = entity.getScripting();
 
     for (auto& instance : def.components) {
         auto component = std::make_unique<UserComponent>(
@@ -118,7 +113,7 @@ entityid_t Entities::spawn(
     dv::value componentsMap = nullptr;
     if (saved != nullptr) {
         componentsMap = saved["comps"];
-        loadEntity(saved, get(id).value());
+        loadEntity(saved, entity);
     }
     body.hitbox.position = tsf.pos;
     scripting::on_entity_spawn(
@@ -144,7 +139,7 @@ void Entities::loadEntity(const dv::value& map) {
     spawn(def, {}, nullptr, map, uid);
 }
 
-void Entities::loadEntity(const dv::value& map, Entity entity) {
+void Entities::loadEntity(const dv::value& map, Entity& entity) {
     auto& transform = entity.getTransform();
     auto& body = entity.getRigidbody();
     auto skeleton = entity.getSkeleton();
@@ -175,12 +170,12 @@ std::optional<Entities::RaycastResult> Entities::rayCast(
     const RaycastSettings& settings
 ) {
     Ray ray(start, dir);
-    auto view = registry->view<EntityId, Transform, Rigidbody>();
-
     entityid_t foundUID = 0;
     glm::ivec3 foundNormal;
 
-    for (auto [entity, eid, transform, body] : view.each()) {
+    for (const auto& [uid, entity] : entities) {
+        const auto& eid = entity->getID();
+        const auto& body = entity->getRigidbody();
         const auto& hitbox = body.hitbox;
         if (eid.uid == settings.ignoredUid || !body.enabled ||
             (settings.solidEntitiesOnly && !eid.def.solid) ||
@@ -227,40 +222,38 @@ void Entities::onSave(const Entity& entity) {
     scripting::on_entity_save(entity);
 }
 
-dv::value Entities::serialize(const std::vector<Entity>& entities) {
+dv::value Entities::serialize(const std::vector<Entity*>& entities) {
     auto list = dv::list();
-    for (auto& entity : entities) {
-        const EntityId& eid = entity.getID();
-        if (!entity.getDef().save.enabled || eid.destroyFlag) {
+    for (auto entity : entities) {
+        const EntityId& eid = entity->getID();
+        if (!entity->getDef().save.enabled || eid.destroyFlag) {
             continue;
         }
-        level.entities->onSave(entity);
+        level.entities->onSave(*entity);
         if (!eid.destroyFlag) {
-            list.add(entity.serialize());
+            list.add(entity->serialize());
         }
     }
     return list;
 }
 
-void Entities::despawn(std::vector<Entity> entities) {
-    for (auto& entity : entities) {
-        entity.destroy();
+void Entities::despawn(const std::vector<Entity*>& entities) {
+    for (auto entity : entities) {
+        entity->destroy();
     }
 }
 
 void Entities::clean() {
     for (auto it = entities.begin(); it != entities.end();) {
-        if (!registry->get<EntityId>(it->second).destroyFlag) {
+        if (!it->second->getID().destroyFlag) {
             ++it;
         } else {
-            auto& rigidbody = registry->get<Rigidbody>(it->second);
+            auto& rigidbody = it->second->getRigidbody();
             // todo: refactor
             auto physics = level.physics.get();
             for (auto& sensor : rigidbody.sensors) {
                 physics->removeSensor(&sensor);
             }
-            uids.erase(it->second);
-            registry->destroy(it->second);
             it = entities.erase(it);
         }
     }
@@ -309,15 +302,16 @@ void Entities::preparePhysics(float delta) {
             auto part = sensorsTickClock.convertPart(i);
             auto allParts = sensorsTickClock.getParts();
 
-            auto view = registry->view<EntityId, Transform, Rigidbody>();
-            for (auto [entity, eid, transform, rigidbody] : view.each()) {
+            for (const auto& [uid, entity] : entities) {
+                const auto& eid = entity->getID();
+                auto& rigidbody = entity->getRigidbody();
                 if (!rigidbody.enabled) {
                     continue;
                 }
                 if ((eid.uid + part) % allParts != 0) {
                     continue;
                 }
-                updateSensors(rigidbody, transform, sensors);
+                updateSensors(rigidbody, entity->getTransform(), sensors);
             }
         }
     }
@@ -325,8 +319,9 @@ void Entities::preparePhysics(float delta) {
     hitboxes.clear();
     solidHitboxes.clear();
 
-    auto view = registry->view<EntityId, Rigidbody>();
-    for (auto [entity, eid, rigidbody] : view.each()) {
+    for (const auto& [uid, entity] : entities) {
+        const auto& eid = entity->getID();
+        auto& rigidbody = entity->getRigidbody();
         auto bodyType = rigidbody.hitbox.type;
         if (eid.destroyFlag || !rigidbody.enabled) {
             continue;
@@ -350,13 +345,15 @@ void Entities::preparePhysics(float delta) {
 void Entities::updatePhysics(float delta) {
     preparePhysics(delta);
 
-    auto view = registry->view<EntityId, Transform, Rigidbody>();
     auto physics = level.physics.get();
 
     int substeps = std::max<int>(std::min<int>(delta * 1000, 200), 8);
     physics->step(*level.chunks, delta, substeps);
 
-    for (auto [entity, eid, transform, rigidbody] : view.each()) {
+    for (const auto& [uid, entity] : entities) {
+        const auto& eid = entity->getID();
+        auto& transform = entity->getTransform();
+        auto& rigidbody = entity->getRigidbody();
         if (!rigidbody.enabled ||
             rigidbody.hitbox.type == BodyType::STATIC) {
             continue;
@@ -373,11 +370,11 @@ void Entities::updatePhysics(float delta) {
         }
         if (hitbox.grounded && !hitbox.prevGrounded) {
             scripting::on_entity_grounded(
-                *get(eid.uid), glm::length(hitbox.prevVelocity - hitbox.velocity)
+                *entity, glm::length(hitbox.prevVelocity - hitbox.velocity)
             );
         }
         if (!hitbox.grounded && hitbox.prevGrounded) {
-            scripting::on_entity_fall(*get(eid.uid));
+            scripting::on_entity_fall(*entity);
         }
     }
 }
@@ -395,8 +392,12 @@ void Entities::update(float delta) {
     updatePhysics(delta);
     scripting::on_entities_physics_update(delta);
 
-    auto view = registry->view<Transform, rigging::Skeleton>();
-    for (auto [entity, transform, skeleton] : view.each()) {
+    for (const auto& [uid, entity] : entities) {
+        if (!entity->getSkeleton()) {
+            continue;
+        }
+        auto& transform = entity->getTransform();
+        auto& skeleton = *entity->getSkeleton();
         if (transform.dirty) {
             transform.refresh();
         }
@@ -457,8 +458,13 @@ void Entities::renderDebug(
     {
         auto ctx = pctx.sub(&batch);
         ctx.setLineWidth(1);
-        auto view = registry->view<Transform, Rigidbody, rigging::Skeleton>();
-        for (auto [entity, transform, rigidbody, skeleton] : view.each()) {
+        for (const auto& [uid, entity] : entities) {
+            if (!entity->getSkeleton()) {
+                continue;
+            }
+            const auto& transform = entity->getTransform();
+            const auto& rigidbody = entity->getRigidbody();
+            const auto& skeleton = *entity->getSkeleton();
             const auto& hitbox = rigidbody.hitbox;
             if (frustum && !check_frustum(*frustum, transform, rigidbody, skeleton)) {
                 continue;
@@ -481,15 +487,17 @@ void Entities::renderDebug(
         }
     }
     {
-        auto view = registry->view<EntityId, Transform, Rigidbody, rigging::Skeleton>();
         auto ctx = pctx.sub(&batch);
         ctx.setDepthTest(false);
         ctx.setDepthMask(false);
         ctx.setLineWidth(2);
-        for (auto [entity, eid, transform, rigidbody, skeleton] : view.each()) {
-            if (eid.uid == fpsEntity) {
+        for (const auto& [uid, entity] : entities) {
+            if (!entity->getSkeleton() || uid == fpsEntity) {
                 continue;
             }
+            const auto& transform = entity->getTransform();
+            const auto& rigidbody = entity->getRigidbody();
+            const auto& skeleton = *entity->getSkeleton();
             auto config = skeleton.config;
             if (config == nullptr) {
                 continue;
@@ -509,12 +517,14 @@ void Entities::render(
     const Frustum* frustum,
     entityid_t fpsEntity
 ) {
-    auto view = registry->view<EntityId, Transform, rigging::Skeleton, Rigidbody>();
-    for (auto [entity, eid, transform, skeleton, rigidbody] : view.each()) {
-        if (eid.uid == fpsEntity) {
+    for (const auto& [uid, entity] : entities) {
+        if (!entity->getSkeleton() || uid == fpsEntity) {
             continue;
         }
-        const auto& def = eid.def;
+        const auto& transform = entity->getTransform();
+        const auto& rigidbody = entity->getRigidbody();
+        auto& skeleton = *entity->getSkeleton();
+        const auto& def = entity->getID().def;
         const auto& pos = transform.pos;
         const auto& size = transform.size;
         const auto& rigConfig = skeleton.config;
@@ -544,58 +554,48 @@ void Entities::render(
 }
 
 void Entities::updateCulling(const Frustum* frustum, entityid_t fpsEntity) {
-    auto view = registry->view<EntityId, Transform, rigging::Skeleton, Rigidbody>();
-    for (auto [entity, eid, transform, skeleton, rigidbody] : view.each()) {
-        if (frustum == nullptr || eid.uid == fpsEntity) {
+    for (const auto& [uid, entity] : entities) {
+        if (!entity->getSkeleton()) {
+            continue;
+        }
+        auto& skeleton = *entity->getSkeleton();
+        if (frustum == nullptr || uid == fpsEntity) {
             skeleton.culled = false;
             continue;
         }
-        skeleton.culled = !check_frustum(*frustum, transform, rigidbody, skeleton);
+        skeleton.culled = !check_frustum(
+            *frustum, entity->getTransform(), entity->getRigidbody(), skeleton
+        );
     }
 }
 
 bool Entities::hasBlockingInside(AABB aabb) {
     constexpr float eps = 0.05f;
-    auto view = registry->view<EntityId, Rigidbody>();
-    for (auto [entity, eid, body] : view.each()) {
-        AABB bodyAABB(body.hitbox.getAABB());
+    for (const auto& [uid, entity] : entities) {
+        AABB bodyAABB(entity->getRigidbody().hitbox.getAABB());
         bodyAABB.scale(glm::vec3(1.0f - eps));
-        if (eid.def.blocking && aabb.intersects(bodyAABB)) {
+        if (entity->getID().def.blocking && aabb.intersects(bodyAABB)) {
             return true;
         }
     }
     return false;
 }
 
-std::vector<Entity> Entities::getAllInside(AABB aabb) {
-    std::vector<Entity> collected;
-    auto view = registry->view<EntityId, Transform>();
-    for (auto [entity, eid, transform] : view.each()) {
-        if (!eid.destroyFlag && aabb.contains(transform.pos)) {
-            const auto& found = uids.find(entity);
-            if (found == uids.end()) {
-                continue;
-            }
-            if (auto wrapper = get(found->second)) {
-                collected.push_back(*wrapper);
-            }
+std::vector<Entity*> Entities::getAllInside(AABB aabb) {
+    std::vector<Entity*> collected;
+    for (const auto& [uid, entity] : entities) {
+        if (!entity->getID().destroyFlag && aabb.contains(entity->getTransform().pos)) {
+            collected.push_back(entity.get());
         }
     }
     return collected;
 }
 
-std::vector<Entity> Entities::getAllInRadius(glm::vec3 center, float radius) {
-    std::vector<Entity> collected;
-    auto view = registry->view<Transform>();
-    for (auto [entity, transform] : view.each()) {
-        if (glm::distance2(transform.pos, center) <= radius * radius) {
-            const auto& found = uids.find(entity);
-            if (found == uids.end()) {
-                continue;
-            }
-            if (auto wrapper = get(found->second)) {
-                collected.push_back(*wrapper);
-            }
+std::vector<Entity*> Entities::getAllInRadius(glm::vec3 center, float radius) {
+    std::vector<Entity*> collected;
+    for (const auto& [uid, entity] : entities) {
+        if (glm::distance2(entity->getTransform().pos, center) <= radius * radius) {
+            collected.push_back(entity.get());
         }
     }
     return collected;

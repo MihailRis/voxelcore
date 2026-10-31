@@ -4,7 +4,6 @@
 #include "physics/Hitbox.hpp"
 
 #include <vector>
-#include <entt/fwd.hpp>
 
 class Entities;
 struct EntityDef;
@@ -13,9 +12,9 @@ struct Rigidbody {
     bool enabled = true;
     Hitbox hitbox;
     std::vector<Sensor> sensors;
-    float mass;
-    float elasticity;
-    bool selectable;
+    float mass = 1.0f;
+    float elasticity = 0.0f;
+    bool selectable = false;
 
     dv::value serialize(bool saveVelocity, bool saveBodySettings) const;
     void deserialize(const dv::value& root);
