@@ -156,4 +156,5 @@ void Mesh<VertexStructure>::drawInstanced(
     instances.bind(count_attributes(VertexStructure::ATTRIBUTES), first);
     glDrawArraysInstanced(GL_TRIANGLES, 0, vertexCount, count);
     glBindVertexArray(0);
+    MeshStats::vertices += vertexCount * count;
 }
