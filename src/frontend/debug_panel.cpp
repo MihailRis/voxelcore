@@ -158,7 +158,8 @@ std::shared_ptr<UINode> create_debug_panel(
         verticesCount = std::max<int>(verticesCount, MeshStats::vertices);
         if (frame % 4 == 0) {
             verticesCountString =
-                L"vertices: " + std::to_wstring(verticesCount);
+                L"vertices: " + std::to_wstring(verticesCount) + L" (" +
+                util::str2wstr_utf8(util::format_count(verticesCount)) + L")";
         }
         frame++;
         MeshStats::vertices = 0;
