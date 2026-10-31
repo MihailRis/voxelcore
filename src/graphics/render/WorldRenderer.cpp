@@ -48,6 +48,7 @@
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"
 #include "voxels/Chunks.hpp"
+#include "voxels/blocks_agent.hpp"
 #include "voxels/Pathfinding.hpp"
 #include "window/Window.hpp"
 #include "world/Level.hpp"
@@ -322,9 +323,9 @@ void WorldRenderer::renderBlockSelection() {
     const glm::vec3 point = selection.hitPosition;
     const glm::vec3 norm = selection.normal;
 
-    const std::vector<AABB>& hitboxes =
-        block.rotatable ? block.rt.hitboxes[selection.vox.state.rotation]
-                        : block.hitboxes;
+    const auto& hitboxes = block.getHitboxes(
+        blocks_agent::hitbox_state(*player.chunks, pos, selection.vox.state)
+    );
 
     lineBatch->lineWidth(2.0f);
     for (auto& hitbox : hitboxes) {

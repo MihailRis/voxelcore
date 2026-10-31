@@ -128,7 +128,7 @@ private:
         const glm::ivec3& coord,
         const UVRegion(&faces)[6], 
         const Block* block, 
-        ubyte rotation,
+        blockstate states,
         bool lights,
         bool ambientOcclusion
     );

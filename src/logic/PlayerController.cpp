@@ -459,7 +459,7 @@ void PlayerController::processRightClick(
     blockid_t chosenBlock = def.rt.id;
 
     if (def.obstacle) {
-        const auto& hitboxes = def.rt.hitboxes[state.rotation];
+        const auto& hitboxes = def.getHitboxes(state);
         for (const AABB& blockAABB : hitboxes) {
             if (level.entities->hasBlockingInside(blockAABB.translated(coord)
                 )) {

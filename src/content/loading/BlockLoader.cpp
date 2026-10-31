@@ -42,6 +42,21 @@ static void perform_user_block_fields(
     layout = StructLayout::create(fields);
 }
 
+static AABB load_hitbox(const dv::value& box) {
+    if (box.size() < 6) {
+        throw std::runtime_error("hitbox requires 6 elements");
+    }
+    AABB aabb;
+    aabb.a = glm::vec3(
+        box[0].asNumber(), box[1].asNumber(), box[2].asNumber()
+    );
+    aabb.b = glm::vec3(
+        box[3].asNumber(), box[4].asNumber(), box[5].asNumber()
+    );
+    aabb.b += aabb.a;
+    return aabb;
+}
+
 static void load_variant(
     Variant& variant, const dv::value& root, const std::string& name
 ) {
@@ -86,6 +101,17 @@ static void load_variant(
         logger.error() << "unknown culling mode: " << cullingModeName;
     }
     root.at("draw-group").get(variant.drawGroup);
+
+    if (auto found = root.at("hitboxes")) {
+        const auto& boxarr = *found;
+        variant.hitboxes.clear();
+        variant.hitboxes.reserve(boxarr.size());
+        for (uint i = 0; i < boxarr.size(); i++) {
+            variant.hitboxes.push_back(load_hitbox(boxarr[i]));
+        }
+    } else if (auto found = root.at("hitbox")) {
+        variant.hitboxes = {load_hitbox(*found)};
+    }
 }
 
 template<> void ContentUnitLoader<Block>::loadUnit(
@@ -158,34 +184,6 @@ template<> void ContentUnitLoader<Block>::loadUnit(
         def.rotatable = false;
     }
 
-    // block hitbox AABB [x, y, z, width, height, depth]
-    if (auto found = root.at("hitboxes")) {
-        const auto& boxarr = *found;
-        def.hitboxes.resize(boxarr.size());
-        for (uint i = 0; i < boxarr.size(); i++) {
-            const auto& box = boxarr[i];
-            auto& hitboxesIndex = def.hitboxes[i];
-            hitboxesIndex.a = glm::vec3(
-                box[0].asNumber(), box[1].asNumber(), box[2].asNumber()
-            );
-            hitboxesIndex.b = glm::vec3(
-                box[3].asNumber(), box[4].asNumber(), box[5].asNumber()
-            );
-            hitboxesIndex.b += hitboxesIndex.a;
-        }
-    } else if (auto found = root.at("hitbox")) {
-        const auto& box = *found;
-        AABB aabb;
-        aabb.a = glm::vec3(
-            box[0].asNumber(), box[1].asNumber(), box[2].asNumber()
-        );
-        aabb.b = glm::vec3(
-            box[3].asNumber(), box[4].asNumber(), box[5].asNumber()
-        );
-        aabb.b += aabb.a;
-        def.hitboxes = {aabb};
-    }
-
     // block light emission [r, g, b] where r,g,b in range [0..15]
     if (auto found = root.at("emission")) {
         const auto& emissionarr = *found;
@@ -219,11 +217,19 @@ template<> void ContentUnitLoader<Block>::loadUnit(
             );
         }
 
-        // should variant modify hitbox?
-        if (def.defaults.model.type == BlockModelType::BLOCK &&
-            (def.size.x != 1 || def.size.y != 1 || def.size.z != 1)) {
-            def.defaults.model.type = BlockModelType::AABB;
-            def.hitboxes = {AABB(def.size)};
+        if (def.size.x != 1 || def.size.y != 1 || def.size.z != 1) {
+            auto applySize = [&def](Variant& variant) {
+                if (variant.model.type == BlockModelType::BLOCK) {
+                    variant.model.type = BlockModelType::AABB;
+                    variant.hitboxes = {AABB(def.size)};
+                }
+            };
+            applySize(def.defaults);
+            if (def.variants) {
+                for (auto& variant : def.variants->variants) {
+                    applySize(variant);
+                }
+            }
         }
 
         // grounding behaviour
