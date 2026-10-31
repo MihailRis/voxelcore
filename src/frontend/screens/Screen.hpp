@@ -4,6 +4,7 @@
 
 class Engine;
 class Batch2D;
+class Window;
 
 /// @brief Screen is a mainloop state
 class Screen : public util::ObjectsKeeper {
@@ -18,4 +19,7 @@ public:
     virtual void draw(float delta) = 0;
     virtual void onEngineShutdown() {};
     virtual const char* getName() const = 0;
+
+    /// @brief Inset of the GUI content from the top of the window
+    virtual int getContentInset(const Window& window) const;
 };

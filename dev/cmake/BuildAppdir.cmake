@@ -6,7 +6,10 @@ file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/AppDir/usr/share/VoxelCore)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/res DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/AppDir/usr/share/VoxelCore)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/dev/VoxelCore.png DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/AppDir/usr/share/icons/hicolor/256x256)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/dev/VoxelCore.png DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/AppDir)
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/dev/VoxelCore.png DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/AppDir/.dirIcon)
+# .dirIcon is the icon of the AppDir itself and has to be a file, not a directory
+file(REMOVE_RECURSE ${CMAKE_CURRENT_SOURCE_DIR}/AppDir/.dirIcon)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/dev/VoxelCore.png
+               ${CMAKE_CURRENT_SOURCE_DIR}/AppDir/.dirIcon COPYONLY)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/dev/VoxelCore.desktop DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/AppDir/usr/share/applications)
 file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/dev/VoxelCore.desktop DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/AppDir/)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/AppDir/usr/lib)

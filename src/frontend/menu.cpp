@@ -17,6 +17,7 @@
 #include "screens/MenuScreen.hpp"
 #include "settings.hpp"
 #include "util/stringutil.hpp"
+#include "window/Window.hpp"
 #include "assets/assetload_funcs.hpp"
 #include "content/ContentPack.hpp"
 
@@ -24,11 +25,12 @@ using namespace gui;
 
 void menus::create_version_label(gui::GUI& gui) {
     auto text = ENGINE_VERSION_STRING + " debug build";
+    // the menu screen keeps no inset, the bar covers the top of it
+    const int top = gui.getEngine().getWindow().getDecorationHeight() + 4;
     gui.add(guiutil::create(
         gui,
         "<label z-index='1000' color='#FFFFFF30' gravity='top-right' "
-        "margin='4'>" +
-        text + "</label>"
+        "margin='4," + std::to_string(top) + ",4,4'>" + text + "</label>"
     ));
 }
 

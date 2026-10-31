@@ -105,7 +105,7 @@ void GUI::updateTooltip(float delta) {
             tooltip->setVisible(true);
             label->setText(langs::get(text));
             auto size = label->getSize() + glm::vec2(4.0f);
-            auto pos = cursor.pos + glm::vec2(10.0f);
+            auto pos = getCursorPosition() + glm::vec2(10.0f);
             auto rootSize = container->getSize();
             pos.x = glm::min(pos.x, rootSize.x - size.x);
             pos.y = glm::min(pos.y, rootSize.y - size.y);
@@ -238,9 +238,21 @@ void GUI::actFocused() {
 }
 
 void GUI::act(float delta, const glm::uvec2& vp) {
-    container->setSize(vp);
+    const uint inset = static_cast<uint>(viewportOffset);
+    const uint contentHeight = vp.y > inset ? vp.y - inset : vp.y;
+    container->setPos({0.0f, static_cast<float>(inset)});
+    container->setSize({vp.x, contentHeight});
     for (auto& pair : frames) {
-        pair.second->act(delta);
+        auto& frame = *pair.second;
+        auto size = frame.getSize();
+        // the bar covers the top of the window, so a frame as high as the
+        // window is limited to the content area
+        if (size.y > static_cast<float>(contentHeight)) {
+            size.y = static_cast<float>(contentHeight);
+            frame.setSize(size);
+            frame.setPos({0.0f, static_cast<float>(inset)});
+        }
+        frame.act(delta);
     }
     auto prevfocus = focus;
 
@@ -272,6 +284,11 @@ void GUI::postAct() {
     focusedOnStart = focus.get();
 }
 
+glm::vec2 GUI::getCursorPosition() const {
+    const auto& cursor = input.getCursor();
+    return {cursor.pos.x, cursor.pos.y - static_cast<float>(viewportOffset)};
+}
+
 void GUI::draw(const DrawContext& pctx, Assets& assets) {
     auto ctx = pctx.sub(batch2D.get());
 
@@ -299,7 +316,7 @@ void GUI::draw(const DrawContext& pctx, Assets& assets) {
         frame->draw(ctx, assets);
     }
 
-    if (hover) {
+    if (hover && !engine.getWindow().ownsCursor()) {
         engine.getWindow().setCursor(hover->getCursor());
     }
     if (hover && debug) {

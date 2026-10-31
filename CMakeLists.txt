@@ -5,8 +5,6 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-execute_process(COMMAND ${CMAKE_COMMAND} --version)
-
 option(VOXELENGINE_BUILD_APPDIR "Pack linux build" OFF)
 option(VOXELENGINE_BUILD_TESTS "Build tests" OFF)
 
@@ -35,8 +33,6 @@ endif()
 
 target_link_libraries(VoxelCore PRIVATE VoxelCoreSrc
                                           $<$<PLATFORM_ID:Windows>:winmm>)
-
-target_link_options(VoxelCore PRIVATE $<$<CXX_COMPILER_ID:GNU>:-no-pie>)
 
 # Deploy res to build dir
 add_custom_command(
