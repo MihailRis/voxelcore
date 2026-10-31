@@ -78,6 +78,8 @@ std::shared_ptr<UINode> create_debug_panel(
     static int drawCallsMax = drawCalls;
     static std::wstring drawCallsAvgString = L"";
     static std::wstring drawCallsMinMaxString = L"";
+    static int verticesCount = 0;
+    static std::wstring verticesCountString = L"";
 
     static size_t lastTotalDownload = 0;
     static size_t lastTotalUpload = 0;
@@ -150,6 +152,18 @@ std::shared_ptr<UINode> create_debug_panel(
     }));
     panel->add(create_label(gui, []() {
         return drawCallsMinMaxString;
+    }));
+    panel->add(create_label(gui, []() {
+        static int frame = 0;
+        verticesCount = std::max<int>(verticesCount, MeshStats::vertices);
+        if (frame % 4 == 0) {
+            verticesCountString =
+                L"vertices: " + std::to_wstring(verticesCount);
+        }
+        frame++;
+        MeshStats::vertices = 0;
+        verticesCount = 0;
+        return verticesCountString;
     }));
     panel->add(create_label(gui, []() {
         return L"speakers: " + std::to_wstring(audio::count_speakers()) +
