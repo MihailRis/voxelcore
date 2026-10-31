@@ -213,7 +213,7 @@ model::Model ModelsGenerator::generate(
             mesh.shading = !blockDef.shadeless;
             switch (blockModel.type) {
                 case BlockModelType::AABB: {
-                    glm::vec3 size = blockDef.hitboxes.at(0).size();
+                    glm::vec3 size = variant.hitboxes.at(0).size();
                     float m = glm::max(size.x, glm::max(size.y, size.z));
                     m = glm::min(1.0f, m);
                     mesh.scale(size / m);

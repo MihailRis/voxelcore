@@ -224,15 +224,16 @@ void BlocksRenderer::blockAABB(
     const glm::ivec3& icoord,
     const UVRegion(&texfaces)[6],
     const Block* block,
-    ubyte rotation,
+    blockstate states,
     bool lights,
     bool ao
 ) {
-    if (block->hitboxes.empty()) {
+    const auto& hitboxes = block->getVariantByBits(states.userbits).hitboxes;
+    if (hitboxes.empty()) {
         return;
     }
-    AABB hitbox = block->hitboxes[0];
-    for (const auto& box : block->hitboxes) {
+    AABB hitbox = hitboxes[0];
+    for (const auto& box : hitboxes) {
         hitbox.a = glm::min(hitbox.a, box.a);
         hitbox.b = glm::max(hitbox.b, box.b);
     }
@@ -243,7 +244,7 @@ void BlocksRenderer::blockAABB(
     glm::vec3 coord(icoord);
     if (block->rotatable) {
         auto& rotations = block->rotations;
-        auto& orient = rotations.variants[rotation];
+        auto& orient = rotations.variants[states.rotation];
         X = orient.axes[0];
         Y = orient.axes[1];
         Z = orient.axes[2];
@@ -537,7 +538,7 @@ void BlocksRenderer::render(
             }
             case BlockModelType::AABB: {
                 if (!denseRender)
-                blockAABB({x, y, z}, texfaces, &def, vox.state.rotation,
+                blockAABB({x, y, z}, texfaces, &def, vox.state,
                             !def.shadeless, def.ambientOcclusion && enableAO);
                 break;
             }
@@ -609,7 +610,7 @@ SortingMeshData BlocksRenderer::renderTranslucent(
                     {x, y, z},
                     texfaces,
                     &def,
-                    vox.state.rotation,
+                    vox.state,
                     !def.shadeless,
                     def.ambientOcclusion && enableAO
                 );

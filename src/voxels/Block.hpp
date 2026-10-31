@@ -10,6 +10,7 @@
 #include "maths/UVRegion.hpp"
 #include "maths/aabb.hpp"
 #include "typedefs.hpp"
+#include "voxel.hpp"
 #include "util/EnumMetadata.hpp"
 #include "util/stack_vector.hpp"
 #include "interfaces/Serializable.hpp"
@@ -182,10 +183,14 @@ struct Variant {
     CullingMode culling = CullingMode::DEFAULT;
     /// @brief Influences visible block sides for transparent blocks
     uint8_t drawGroup = 0;
+    /// @brief Set of block physical hitboxes
+    std::vector<AABB> hitboxes {AABB()};
 
     struct {
         /// @brief is the block completely opaque for render
         bool solid = true;
+        /// @brief set of hitboxes sets with all coord-systems precalculated
+        std::vector<AABB> hitboxes[BlockRotProfile::MAX_COUNT];
     } rt;
 };
 
@@ -261,9 +266,6 @@ public:
     /// @brief Grounding behaviour
     GroundingBehaviour groundingBehaviour = GroundingBehaviour::PARTIAL;
 
-    /// @brief Set of block physical hitboxes
-    std::vector<AABB> hitboxes {AABB()};
-
     /// @brief Set of available block rotations (coord-systems)
     BlockRotProfile rotations = BlockRotProfile::NONE;
 
@@ -312,9 +314,6 @@ public:
         // @brief block size is greater than 1x1x1
         bool extended = false;
 
-        /// @brief set of hitboxes sets with all coord-systems precalculated
-        std::vector<AABB> hitboxes[BlockRotProfile::MAX_COUNT];
-
         /// @brief set of block callbacks flags
         BlockFuncsSet funcsset {};
 
@@ -357,6 +356,13 @@ public:
 
     const BlockModel& getModel(uint8_t bits) const {
         return getVariantByBits(bits).model;
+    }
+
+    /// @brief Get precalculated hitboxes of the variant and rotation
+    /// by the block state
+    const std::vector<AABB>& getHitboxes(blockstate state) const {
+        return getVariantByBits(state.userbits)
+            .rt.hitboxes[rotatable ? state.rotation : 0];
     }
 
     static bool isReservedBlockField(std::string_view view);

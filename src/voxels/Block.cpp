@@ -156,7 +156,6 @@ void Block::cloneTo(Block& dst) {
     dst.rotatable = rotatable;
     dst.grounded = grounded;
     dst.hidden = hidden;
-    dst.hitboxes = hitboxes;
     dst.rotations = rotations;
     dst.pickingItem = pickingItem;
     dst.scriptName = scriptName;

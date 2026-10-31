@@ -31,37 +31,48 @@ std::unique_ptr<Content> ContentBuilder::build() {
                    variant.culling == CullingMode::OPTIONAL;
         };
 
+        auto prepareHitboxes = [&def](Variant& variant) {
+            if (def.rotatable) {
+                for (uint i = 0; i < BlockRotProfile::MAX_COUNT; i++) {
+                    auto& rotated = variant.rt.hitboxes[i];
+                    rotated.clear();
+                    rotated.reserve(variant.hitboxes.size());
+                    for (AABB aabb : variant.hitboxes) {
+                        def.rotations.variants[i].transform(aabb);
+                        aabb.fix();
+                        rotated.push_back(aabb);
+                    }
+                }
+            } else {
+                variant.rt.hitboxes[0] = variant.hitboxes;
+            }
+        };
+
+        const float EPSILON = 0.01f;
+        auto isFullHitbox = [&def, EPSILON](const Variant& variant) {
+            return !variant.hitboxes.empty() &&
+                   glm::i8vec3(variant.hitboxes[0].size() + EPSILON) == def.size;
+        };
+
+        bool fullHitboxes;
         if (def.variants) {
+            fullHitboxes = true;
             for (auto& variant : def.variants->variants) {
                 variant.rt.solid = isSolid(variant) || def.explictlySolid;
+                prepareHitboxes(variant);
+                fullHitboxes = fullHitboxes && isFullHitbox(variant);
             }
             def.defaults = def.variants->variants.at(0);
         } else {
             def.defaults.rt.solid = isSolid(def.defaults) || def.explictlySolid;
+            prepareHitboxes(def.defaults);
+            fullHitboxes = isFullHitbox(def.defaults);
         }
-        def.rt.solid = def.defaults.rt.solid;
-
-        const float EPSILON = 0.01f;
-        def.rt.solid = def.rt.solid &&
-            def.obstacle &&
-            (glm::i8vec3(def.hitboxes[0].size() + EPSILON) == def.size);
+        def.rt.solid = def.defaults.rt.solid && def.obstacle && fullHitboxes;
         def.rt.extended = def.size.x > 1 || def.size.y > 1 || def.size.z > 1;
 
         if (def.material.empty()) {
             defaults.at("block-material").get(def.material);
-        }
-
-        if (def.rotatable) {
-            for (uint i = 0; i < BlockRotProfile::MAX_COUNT; i++) {
-                def.rt.hitboxes[i].reserve(def.hitboxes.size());
-                for (AABB aabb : def.hitboxes) {
-                    def.rotations.variants[i].transform(aabb);
-                    aabb.fix();
-                    def.rt.hitboxes[i].push_back(aabb);
-                }
-            }
-        } else {
-            def.rt.hitboxes[0] = def.hitboxes;
         }
 
         blockDefsIndices.push_back(&def);
