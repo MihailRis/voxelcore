@@ -38,7 +38,6 @@
             luajit
             curl
             openssl
-            entt
             mesa
             freeglut
           ];
@@ -47,11 +46,6 @@
             glfw
             mesa
             freeglut
-            entt
-          ];
-          cmakeFlags = [
-            "-DCMAKE_PREFIX_PATH=${pkgs.entt}"
-            "-DCMAKE_INCLUDE_PATH=${pkgs.entt}/include"
           ];
 
           installPhase = ''
