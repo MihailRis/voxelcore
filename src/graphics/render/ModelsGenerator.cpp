@@ -187,6 +187,7 @@ model::Model ModelsGenerator::fromCustom(
         mesh.vertices.push_back({v2, glm::vec2(reg.u2, reg.v2), norm});
         mesh.vertices.push_back({v3, glm::vec2(reg.u1, reg.v2), norm});
     }
+    model.calcBounds();
     return model;
 }
 

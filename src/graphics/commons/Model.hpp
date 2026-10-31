@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 
 #include "maths/UVRegion.hpp"
+#include "maths/aabb.hpp"
 
 namespace model {
     struct Vertex {
@@ -82,6 +83,7 @@ namespace model {
 
     struct Model {
         std::vector<Mesh> meshes;
+        AABB bounds {glm::vec3(0.0f), glm::vec3(0.0f)};
 
         /// @brief Add mesh to the model
         /// @param texture texture name
@@ -95,6 +97,9 @@ namespace model {
             meshes.push_back({texture, {}, shading});
             return meshes[meshes.size() - 1];
         }
+
+        void calcBounds();
+        const AABB& getBounds() const;
 
         /// @brief Remove all empty meshes
         void clean();

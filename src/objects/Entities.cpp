@@ -427,24 +427,49 @@ static void debug_render_skeleton(
     }
 }
 
+static glm::vec3 calc_extent(
+    const Transform& transform,
+    const Rigidbody& rigidbody,
+    const rigging::Skeleton& skeleton
+) {
+    const auto& size = transform.size;
+    float scale = glm::max(
+        glm::abs(size.x), glm::max(glm::abs(size.y), glm::abs(size.z))
+    );
+    return glm::max(
+        rigidbody.hitbox.getHalfSize(), glm::vec3(skeleton.boundsRadius * scale)
+    );
+}
+
+static bool check_frustum(
+    const Frustum& frustum,
+    const Transform& transform,
+    const Rigidbody& rigidbody,
+    const rigging::Skeleton& skeleton
+) {
+    glm::vec3 ext = calc_extent(transform, rigidbody, skeleton);
+    return frustum.isBoxVisible(transform.pos - ext, transform.pos + ext);
+}
+
 void Entities::renderDebug(
     LineBatch& batch, const Frustum* frustum, const DrawContext& pctx, entityid_t fpsEntity
 ) {
     {
         auto ctx = pctx.sub(&batch);
         ctx.setLineWidth(1);
-        auto view = registry->view<Transform, Rigidbody>();
-        for (auto [entity, transform, rigidbody] : view.each()) {
+        auto view = registry->view<Transform, Rigidbody, rigging::Skeleton>();
+        for (auto [entity, transform, rigidbody, skeleton] : view.each()) {
             const auto& hitbox = rigidbody.hitbox;
-            const auto& pos = transform.pos;
-            const auto& size = transform.size;
-            if (frustum && !frustum->isBoxVisible(pos - size, pos + size)) {
+            if (frustum && !check_frustum(*frustum, transform, rigidbody, skeleton)) {
                 continue;
             }
             batch.box(
                 hitbox.position, hitbox.getHalfSize() * 2.0f, glm::vec4(1.0f)
             );
-
+            glm::vec3 ext = calc_extent(transform, rigidbody, skeleton);
+            batch.box(
+                transform.pos, ext * 2.0f, glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)
+            );
             for (auto& sensor : rigidbody.sensors) {
                 if (sensor.type != SensorType::AABB) continue;
                 batch.box(
@@ -456,12 +481,12 @@ void Entities::renderDebug(
         }
     }
     {
-        auto view = registry->view<EntityId, Transform, rigging::Skeleton>();
+        auto view = registry->view<EntityId, Transform, Rigidbody, rigging::Skeleton>();
         auto ctx = pctx.sub(&batch);
         ctx.setDepthTest(false);
         ctx.setDepthMask(false);
         ctx.setLineWidth(2);
-        for (auto [entity, eid, transform, skeleton] : view.each()) {
+        for (auto [entity, eid, transform, rigidbody, skeleton] : view.each()) {
             if (eid.uid == fpsEntity) {
                 continue;
             }
@@ -469,9 +494,7 @@ void Entities::renderDebug(
             if (config == nullptr) {
                 continue;
             }
-            const auto& pos = transform.pos;
-            const auto& size = transform.size;
-            if (frustum && !frustum->isBoxVisible(pos - size, pos + size)) {
+            if (frustum && !check_frustum(*frustum, transform, rigidbody, skeleton)) {
                 continue;
             }
             auto bone = config->getRoot();
@@ -494,25 +517,29 @@ void Entities::render(
         const auto& def = eid.def;
         const auto& pos = transform.pos;
         const auto& size = transform.size;
-        const auto& halfSize = rigidbody.hitbox.getHalfSize();
-        // todo: more correct frustum culling
-        if (frustum && !frustum->isBoxVisible(pos - halfSize, pos + halfSize)) {
+        const auto& rigConfig = skeleton.config;
+        if (rigConfig == nullptr) {
             continue;
         }
-
-        const auto& rigConfig = skeleton.config;
-        if (rigConfig) {
-            rigConfig->render(
-                assets,
-                batch,
-                skeleton,
-                def.lightingMode,
-                transform.rot,
-                pos,
-                size,
-                def.translucent
-            );
+        if (frustum && !check_frustum(*frustum, transform, rigidbody, skeleton)) {
+            if (!skeleton.boundsDirty || !skeleton.visible) {
+                continue;
+            }
+            rigConfig->updateBounds(assets, skeleton, transform.rot, pos, size);
+            if (!check_frustum(*frustum, transform, rigidbody, skeleton)) {
+                continue;
+            }
         }
+        rigConfig->render(
+            assets,
+            batch,
+            skeleton,
+            def.lightingMode,
+            transform.rot,
+            pos,
+            size,
+            def.translucent
+        );
     }
 }
 
@@ -523,9 +550,7 @@ void Entities::updateCulling(const Frustum* frustum, entityid_t fpsEntity) {
             skeleton.culled = false;
             continue;
         }
-        const auto& pos = transform.pos;
-        const auto& halfSize = rigidbody.hitbox.getHalfSize();
-        skeleton.culled = !frustum->isBoxVisible(pos - halfSize, pos + halfSize);
+        skeleton.culled = !check_frustum(*frustum, transform, rigidbody, skeleton);
     }
 }
 
