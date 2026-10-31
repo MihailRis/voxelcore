@@ -3,6 +3,7 @@
 #include "Model.hpp"
 
 #include <algorithm>
+#include <limits>
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/matrix_decompose.hpp>
 
@@ -166,6 +167,25 @@ void Mesh::translate(const glm::vec3& offset) {
     for (auto& vertex : vertices) {
         vertex.coord += offset;
     }
+}
+
+void Model::calcBounds() {
+    glm::vec3 min(std::numeric_limits<float>::max());
+    glm::vec3 max(std::numeric_limits<float>::lowest());
+    for (const auto& mesh : meshes) {
+        for (const auto& vertex : mesh.vertices) {
+            min = glm::min(min, vertex.coord);
+            max = glm::max(max, vertex.coord);
+        }
+    }
+    if (min.x > max.x) {
+        min = max = glm::vec3(0.0f);
+    }
+    bounds = AABB(min, max);
+}
+
+const AABB& Model::getBounds() const {
+    return bounds;
 }
 
 void Model::clean() {

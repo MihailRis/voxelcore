@@ -62,6 +62,7 @@ static int l_set_model(lua::State* L) {
         } else {
             modelOverride = {lua::require_string(L, 3), {}, true};
         }
+        skeleton->boundsDirty = true;
     }
     return 0;
 }
@@ -85,6 +86,7 @@ static int l_set_matrix(lua::State* L) {
         }
         auto index = index_range_check(*skeleton, lua::tointeger(L, 2));
         skeleton->pose.matrices[index] = lua::tomat4(L, 3);
+        skeleton->boundsDirty = true;
     }
     return 0;
 }
@@ -104,6 +106,7 @@ static int l_reset_pose(lua::State* L) {
     if (auto skeleton = get_skeleton(L)) {
         auto& pose = skeleton->pose;
         std::fill(pose.matrices.begin(), pose.matrices.end(), glm::mat4(1.0f));
+        skeleton->boundsDirty = true;
     }
     return 0;
 }
@@ -157,6 +160,7 @@ static int l_set_visible(lua::State* L) {
         } else {
             skeleton->visible = lua::toboolean(L, 2);
         }
+        skeleton->boundsDirty = true;
     }
     return 0;
 }
@@ -345,6 +349,7 @@ static int l_apply_track(lua::State* L) {
         return index > 0 && index <= MAX_TRACK_VALUES ? values[index] : fallback;
     };
     auto& matrices = skeleton->pose.matrices;
+    skeleton->boundsDirty = true;
     for (size_t i = 0; i < track.bones.size(); i++) {
         int index = track.indices[i];
         if (index < 0 || static_cast<size_t>(index) >= matrices.size()) {

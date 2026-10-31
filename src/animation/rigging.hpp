@@ -97,6 +97,10 @@ namespace rigging {
         std::vector<ModelReference> modelOverrides;
         bool visible;
         bool culled = false;
+        /// @brief Bounding radius of visible models around entity position,
+        /// divided by the largest scale component
+        float boundsRadius = 0.0f;
+        bool boundsDirty = true;
         glm::vec4 tint {1.0f, 1.0f, 1.0f, 1.0f};
         std::vector<glm::vec4> boneTints;
 
@@ -127,6 +131,16 @@ namespace rigging {
         size_t update(
             size_t index, Skeleton& skeleton, Bone* node, const glm::mat4& matrix
         ) const;
+
+        void processModels(
+            const Assets& assets,
+            Skeleton& skeleton,
+            const glm::vec3& position,
+            const glm::vec3& scale,
+            ModelBatch* batch,
+            ModelLightingMode lightingMode,
+            bool translucent
+        ) const;
     public:
         SkeletonConfig(
             const std::string& name,
@@ -150,6 +164,14 @@ namespace rigging {
             const glm::vec3& position,
             const glm::vec3& scale,
             bool translucent = false
+        ) const;
+
+        void updateBounds(
+            const Assets& assets,
+            Skeleton& skeleton,
+            const glm::mat3& rotation,
+            const glm::vec3& position,
+            const glm::vec3& scale
         ) const;
 
         Skeleton instance() const {
