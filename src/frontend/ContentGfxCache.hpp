@@ -29,8 +29,11 @@ class ContentGfxCache {
     std::unique_ptr<UVRegion[]> sideregions;
     std::unordered_map<uint64_t, model::Model> models;
     
-    static inline uint64_t modelKey(blockid_t id, uint8_t variant) {
-        return (uint64_t(id) << 8) | uint64_t(variant & 0xFF);
+    static inline uint64_t modelKey(
+        blockid_t id, uint8_t variant, uint8_t rotation = 0
+    ) {
+        return (uint64_t(id) << 16) | (uint64_t(rotation & 0xFF) << 8) |
+               uint64_t(variant & 0xFF);
     }
 
     void refreshVariant(
@@ -57,7 +60,9 @@ public:
         return sideregions[getRegionIndex(id, variant, side, !dense)];
     }
 
-    const model::Model& getModel(blockid_t id, uint8_t variant) const;
+    const model::Model& getModel(
+        blockid_t id, uint8_t variant, uint8_t rotation = 0
+    ) const;
 
     void refresh(const Block& block, const Atlas& atlas);
 

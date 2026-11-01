@@ -249,6 +249,7 @@ template<> void ContentUnitLoader<Block>::loadUnit(
     root.at("sky-light-passing").get(def.skyLightPassing);
     root.at("shadeless").get(def.shadeless);
     root.at("ambient-occlusion").get(def.ambientOcclusion);
+    root.at("uv-lock").get(def.uvLock);
     root.at("breakable").get(def.breakable);
     root.at("selectable").get(def.selectable);
     root.at("grounded").get(def.grounded);
