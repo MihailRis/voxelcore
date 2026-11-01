@@ -6,6 +6,7 @@
 #include "CloudsRenderer.hpp"
 #include "DebugLinesRenderer.hpp"
 #include "Emitter.hpp"
+#include "EntitiesRenderer.hpp"
 #include "HandsRenderer.hpp"
 #include "ModelBatch.hpp"
 #include "NamedSkeletons.hpp"
@@ -161,6 +162,7 @@ WorldRenderer::WorldRenderer(
     shadowMapping = std::make_unique<Shadows>(level);
     debugLines = std::make_unique<DebugLinesRenderer>(level);
     cloudsRenderer = std::make_unique<CloudsRenderer>();
+    entitiesRenderer = std::make_unique<EntitiesRenderer>(assets, *level.entities);
 
     keepAlive(observe_setting(settings.graphics.enableFog, dirtySettings));
     keepAlive(observe_setting(settings.graphics.advancedRender, dirtySettings));
@@ -279,8 +281,7 @@ void WorldRenderer::renderOpaque(
     auto& modelShader = assets.require<Shader>("model");
     setupWorldShader(modelShader, camera, settings, fogFactor);
     setup_entity_pass(modelShader, {0.5f, true, false, false, 1.0f});
-    level.entities->render(
-        assets,
+    entitiesRenderer->render(
         *modelBatch,
         culling ? frustumCulling.get() : nullptr,
         player.currentCamera.get() == player.fpCamera.get() ? player.getEntity()
@@ -354,7 +355,7 @@ void WorldRenderer::renderInWorldLines(
     if (debug && showEntitiesDebug) {
         auto ctx = pctx.sub(lineBatch.get());
         bool culling = engine.getSettings().graphics.frustumCulling.get();
-        level.entities->renderDebug(
+        entitiesRenderer->renderDebug(
             *lineBatch, culling ? frustumCulling.get() : nullptr, ctx,
             player.currentCamera.get() == player.fpCamera.get() ? player.getEntity() : 0
         );
@@ -366,7 +367,7 @@ void WorldRenderer::updateEntitiesCulling(const Camera& camera) {
     if (culling) {
         frustumCulling->update(camera.getProjView());
     }
-    level.entities->updateCulling(
+    entitiesRenderer->updateCulling(
         culling ? frustumCulling.get() : nullptr,
         player.currentCamera.get() == player.fpCamera.get() ? player.getEntity()
                                                             : 0

@@ -21,11 +21,6 @@ struct EntityDef;
 class Level;
 class Assets;
 class Entity;
-class LineBatch;
-class ModelBatch;
-class Frustum;
-class Entities;
-class DrawContext;
 
 namespace rigging {
     struct Skeleton;
@@ -54,18 +49,6 @@ public:
     void clean();
     void updatePhysics(float delta);
     void update(float delta);
-
-    void renderDebug(
-        LineBatch& batch, const Frustum* frustum, const DrawContext& ctx, entityid_t fpsEntity
-    );
-    void render(
-        const Assets& assets,
-        ModelBatch& batch,
-        const Frustum* frustum,
-        entityid_t fpsEntity
-    );
-
-    void updateCulling(const Frustum* frustum, entityid_t fpsEntity);
 
     entityid_t spawn(
         const EntityDef& def,
@@ -120,6 +103,11 @@ public:
 
     void setNextID(entityid_t id) {
         nextID = id;
+    }
+
+    inline const std::map<entityid_t, std::unique_ptr<Entity>>& getEntities(
+    ) const {
+        return entities;
     }
 
     inline size_t size() const {
