@@ -71,6 +71,13 @@ Rotation profile (set of available block rotations and behaviour of placing bloc
 - "stairs" - "pane" + flipped variants
 - "ladder" - like a "pipe", but on horizontal surfaces it is installed like "pane"
 
+### *uv-lock*
+
+Keeps custom model textures aligned to world axes when the block is rotated,
+so textures of rotated blocks join seamlessly with neighbours.
+Applies to axis-aligned faces of `custom` models with named textures.
+Leave it off for directional textures (doors, arrows, wood). `false` by default.
+
 ### *particles*
 
 Particles are specified as a JSON object. Property names can be found [in the particles section](particles.md).
