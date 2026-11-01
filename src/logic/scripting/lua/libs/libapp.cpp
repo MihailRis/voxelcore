@@ -328,10 +328,15 @@ static int l_delete_world(lua::State* L) {
 }
 
 /// @brief Get engine version
-/// @return major, minor 
+/// @return major, minor, [patch]
 static int l_get_version(lua::State* L) {
     return lua::pushvec_stack(
-        L, glm::vec2(ENGINE_VERSION_MAJOR, ENGINE_VERSION_MINOR)
+        L,
+#ifdef VC_VERSION_PATCH
+        glm::vec3(ENGINE_VERSION_MAJOR, ENGINE_VERSION_MINOR, ENGINE_VERSION_PATCH)
+#else
+        glm::vec2(ENGINE_VERSION_MAJOR, ENGINE_VERSION_MINOR)
+#endif
     );
 }
 

@@ -119,7 +119,8 @@ app.close_world(
 
 ```lua
 -- Returns the major and minor versions of the engine.
-app.get_version() -> int, int
+-- If a patch number is available, it also returns it.
+app.get_version() -> int, int, int | nil
 
 -- Returns the value of a setting.
 -- Throws an exception if the setting does not exist.
