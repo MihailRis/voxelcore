@@ -7,6 +7,11 @@
 
 inline constexpr int ENGINE_VERSION_MAJOR = 0;
 inline constexpr int ENGINE_VERSION_MINOR = 33;
+#ifdef VC_VERSION_PATCH
+inline constexpr int ENGINE_VERSION_PATCH = VC_VERSION_PATCH;
+#else
+inline constexpr int ENGINE_VERSION_PATCH = 0;
+#endif
 
 #ifdef NDEBUG
 inline constexpr bool ENGINE_DEBUG_BUILD = false;
@@ -14,7 +19,13 @@ inline constexpr bool ENGINE_DEBUG_BUILD = false;
 inline constexpr bool ENGINE_DEBUG_BUILD = true;
 #endif // NDEBUG
 
-inline const std::string ENGINE_VERSION_STRING = "0.33";
+inline const std::string ENGINE_VERSION_STRING =
+    std::to_string(ENGINE_VERSION_MAJOR) + "." +
+    std::to_string(ENGINE_VERSION_MINOR)
+#ifdef VC_VERSION_PATCH
+    + "." + std::to_string(ENGINE_VERSION_PATCH)
+#endif
+    ;
 
 inline constexpr uint MAX_SUBPROCESSES = 1;
 inline constexpr uint MAX_SUBPROCESS_DEPTH = 2;
