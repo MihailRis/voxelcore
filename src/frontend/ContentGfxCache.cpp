@@ -18,6 +18,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 static debug::Logger logger("content-gfx-cache");
 
