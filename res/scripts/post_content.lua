@@ -14,7 +14,7 @@ local core_names = {
     "components", "sensors", "body-type", "save", "save-skeleton-pose",
     "save-skeleton-textures", "save-body-velocity", "save-body-settings",
     "skeleton-name", "lighting-mode", "mass", "elasticity", "step-height",
-    "blocking", "material", "translucent"
+    "blocking", "material", "translucent", "uv-lock"
 }
 for name, _ in pairs(user_props) do
     table.insert(core_names, name)

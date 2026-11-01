@@ -317,7 +317,11 @@ void BlocksRenderer::blockCustomModel(
         );
     }
 
-    const auto& model = cache.getModel(block.rt.id, block.getVariantIndex(states.userbits));
+    const auto& model = cache.getModel(
+        block.rt.id,
+        block.getVariantIndex(states.userbits),
+        block.uvLock && block.rotatable ? states.rotation : 0
+    );
     for (const auto& mesh : model.meshes) {
         if (vertexCount + mesh.vertices.size() >= capacity
             || indexCount + mesh.vertices.size() >= capacity) {

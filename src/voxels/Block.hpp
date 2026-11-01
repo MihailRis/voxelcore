@@ -250,6 +250,10 @@ public:
     /// @brief Can the block be oriented different ways
     bool rotatable = false;
 
+    /// @brief Keep custom model textures aligned to world axes
+    /// when the block is rotated
+    bool uvLock = false;
+
     /// @brief Can the block exist without physical support be a solid block
     /// below
     bool grounded = false;

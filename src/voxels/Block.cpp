@@ -154,6 +154,7 @@ void Block::cloneTo(Block& dst) {
     dst.replaceable = replaceable;
     dst.breakable = breakable;
     dst.rotatable = rotatable;
+    dst.uvLock = uvLock;
     dst.grounded = grounded;
     dst.hidden = hidden;
     dst.rotations = rotations;
