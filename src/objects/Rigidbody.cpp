@@ -45,9 +45,7 @@ template <void (*callback)(const Entity&, size_t, entityid_t)>
 static sensorcallback create_sensor_callback(Entities& entities) {
     return [&entities](auto entityid, auto index, auto otherid) {
         if (auto entity = entities.get(entityid)) {
-            if (entity->isValid()) {
-                callback(*entity, index, otherid);
-            }
+            callback(*entity, index, otherid);
         }
     };
 }
