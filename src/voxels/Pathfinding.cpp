@@ -7,7 +7,6 @@
 #include "voxels/Chunk.hpp"
 #include "voxels/GlobalChunks.hpp"
 #include "world/Level.hpp"
-#include "debug/debug.hpp"
 
 #include <algorithm>
 #include <cmath>
