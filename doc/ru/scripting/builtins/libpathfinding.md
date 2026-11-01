@@ -58,6 +58,9 @@ pathfinding.set_max_visited(agent: int, max_visited: int)
 --- Установка ширины агента в блоках. По-умолчанию 0.6
 pathfinding.set_width(agent: int, width: number)
 
+--- Установка высоты агента в блоках. По-умолчанию 2
+pathfinding.set_height(agent: int, width: int)
+
 --- Добавление тега избегаемых блоков
 pathfinding.avoid_tag(
     agent: int,
