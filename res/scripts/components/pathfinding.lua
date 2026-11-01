@@ -9,6 +9,7 @@ local size = body:get_size()
 agent = pathfinding.create_agent()
 pathfinding.set_max_visited(agent, 1e3)
 pathfinding.set_width(agent, math.max(size[1], size[3]))
+pathfinding.set_height(agent, math.ceil(size[2]))
 pathfinding.avoid_tag(agent, "core:liquid", 8)
 
 function set_target(new_target)
