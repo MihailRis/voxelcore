@@ -100,6 +100,20 @@ static int l_set_jump_height(lua::State* L) {
     return 0;
 }
 
+static int l_set_width(lua::State* L) {
+    if (auto agent = get_agent(L)) {
+        agent->width = lua::tonumber(L, 2);
+    }
+    return 0;
+}
+
+static int l_set_height(lua::State* L) {
+    if (auto agent = get_agent(L)) {
+        agent->height = lua::touinteger(L, 2);
+    }
+    return 0;
+}
+
 static int l_avoid_tag(lua::State* L) {
     if (auto agent = get_agent(L)) {
         int index =
@@ -125,6 +139,8 @@ const luaL_Reg pathfindinglib[] = {
     {"pull_route", lua::wrap<l_pull_route>},
     {"set_max_visited", lua::wrap<l_set_max_visited_blocks>},
     {"set_jump_height", lua::wrap<l_set_jump_height>},
+    {"set_width", lua::wrap<l_set_width>},
+    {"set_height", lua::wrap<l_set_height>},
     {"avoid_tag", lua::wrap<l_avoid_tag>},
     {nullptr, nullptr}
 };
