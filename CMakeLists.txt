@@ -12,6 +12,14 @@ option(VOXELENGINE_BUILD_TESTS "Build tests" OFF)
 
 add_compile_definitions(VC_BUILD_NAME="${VC_BUILD_NAME}")
 
+set(VC_VERSION_PATCH "" CACHE STRING "Engine version patch number")
+if(NOT VC_VERSION_PATCH STREQUAL "")
+    if(NOT VC_VERSION_PATCH MATCHES "^[0-9]+$")
+        message(FATAL_ERROR "invalid VC_VERSION_PATCH: '${VC_VERSION_PATCH}'")
+    endif()
+    add_compile_definitions(VC_VERSION_PATCH=${VC_VERSION_PATCH})
+endif()
+
 # Need for static compilation on Windows with MSVC clang TODO: Make single build
 # on Windows to avoid dependence on combinations of platforms and compilers and
 # make it independent

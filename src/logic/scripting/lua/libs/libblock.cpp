@@ -468,7 +468,10 @@ static int l_get_hitbox(lua::State* L) {
         } else {
             rotation = 0;
         }
-        auto& hitbox = def->rt.hitboxes[rotation].at(hitboxIndex);
+        const auto& variant =
+            def->variants ? def->variants->variants[get_variant_index(L, *def, 4)]
+                          : def->defaults;
+        auto& hitbox = variant.rt.hitboxes[rotation].at(hitboxIndex);
         lua::createtable(L, 2, 0);
 
         lua::pushvec3(L, hitbox.min());

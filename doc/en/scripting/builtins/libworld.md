@@ -1,5 +1,12 @@
 # *world* library
 
+Existing world logic parameters:
+
+| Parameter      | Type | Default | Description                   |
+| -------------- | ---- | ------- | ----------------------------- |
+| `random_ticks` | bool | `true`  | Enables random block ticking. |
+| `block_ticks`  | bool | `true`  | Enables block ticking.        |
+
 ```lua
 -- Checks if world is open
 world.is_open() -> bool
@@ -32,6 +39,14 @@ world.get_total_time() -> number
 
 -- Returns world seed.
 world.get_seed() -> int
+
+-- Returns a world logic parameter value by name.
+-- Only predefined parameters are supported.
+world.get_logic(name: str) -> any
+
+-- Sets a world logic parameter by name.
+-- Only predefined parameters are supported.
+world.set_logic(name: str, value: any)
 
 -- Returns generator name.
 world.get_generator() -> str
@@ -112,5 +127,3 @@ world.raycast(
     length: number, -- ray length
     normal: vec3, -- normal vector of the surface touched by the ray
 } or nil if the ray did not touch a block or entity
-```
-```

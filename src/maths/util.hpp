@@ -183,4 +183,19 @@ namespace util {
         }
         return false;
     }
+
+    inline void uv_by_normal(
+        const glm::vec3& n, glm::vec3& u, glm::vec3& v
+    ) {
+        if (std::abs(n.y) > 0.5f) {
+            u = {n.y > 0 ? 1 : -1, 0, 0};
+            v = {0, 0, -1};
+        } else if (std::abs(n.z) > 0.5f) {
+            u = {n.z > 0 ? 1 : -1, 0, 0};
+            v = {0, 1, 0};
+        } else {
+            u = {0, 0, n.x > 0 ? -1 : 1};
+            v = {0, 1, 0};
+        }
+    }
 }

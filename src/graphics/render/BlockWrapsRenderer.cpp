@@ -70,9 +70,7 @@ void BlockWrapsRenderer::draw(BlockWrapper& wrapper, const Texture* texture) {
             );
             break;
         case BlockModelType::AABB: {
-            const auto& aabb =
-                (def.rotatable ? def.rt.hitboxes[vox->state.rotation]
-                                : def.hitboxes).at(0);
+            const auto& aabb = def.getHitboxes(vox->state).at(0);
             const auto& size = aabb.size();
             batch->cube(
                 glm::vec3(wrapper.position) + aabb.center(),
@@ -121,9 +119,7 @@ void BlockWrapsRenderer::refreshWrapper(BlockWrapper& wrapper) {
     wrapper.modelType = def.getModel(vox->state.userbits).type;
     switch (wrapper.modelType) {
         case BlockModelType::AABB: {
-            const auto& aabb =
-                (def.rotatable ? def.rt.hitboxes[vox->state.rotation]
-                                : def.hitboxes).at(0);
+            const auto& aabb = def.getHitboxes(vox->state).at(0);
             const auto& size = aabb.size();
             wrapper.uvRegions[0].scale(size.z, size.y);
             wrapper.uvRegions[1].scale(size.z, size.y);
@@ -143,8 +139,10 @@ void BlockWrapsRenderer::draw(const DrawContext& pctx) {
 
     auto& shader = assets.require<Shader>("entity");
     shader.use();
-    shader.uniform1i("u_alphaClip", false);
-    shader.uniform1i("u_dithering", 0);
+    shader.uniform1f("u_alphaThreshold", 0.15f);
+    shader.uniform1i("u_opaque", false);
+    shader.uniform1i("u_forward", false);
+    shader.uniform1i("u_forwardLight", false);
     
     for (const auto& [_, wrapper] : wrappers) {
         if (wrapper->dirtySides) {

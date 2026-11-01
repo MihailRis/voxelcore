@@ -157,7 +157,18 @@ static int l_container_set_interval(lua::State* L) {
     if (auto container = std::dynamic_pointer_cast<Container>(node.node)) {
         lua::pushvalue(L, 3);
         auto runnable = lua::create_runnable(L);
-        container->listenInterval(interval, runnable);
+        return lua::pushinteger(
+            L, container->listenInterval(interval, runnable)
+        );
+    }
+    return 0;
+}
+
+static int l_container_clear_interval(lua::State* L) {
+    auto node = get_document_node(L, 1);
+    auto id = lua::tointeger(L, 2);
+    if (auto container = std::dynamic_pointer_cast<Container>(node.node)) {
+        container->cancelInterval(id);
     }
     return 0;
 }
@@ -502,6 +513,13 @@ static int p_set_interval(UINode* node, lua::State* L) {
     return 0;
 }
 
+static int p_clear_interval(UINode* node, lua::State* L) {
+    if (dynamic_cast<Container*>(node)) {
+        return lua::pushcfunction(L, lua::wrap<l_container_clear_interval>);
+    }
+    return 0;
+}
+
 static int p_get_content_offset(UINode* node, lua::State* L) {
     return lua::pushvec(L, node->getContentOffset());
 }
@@ -667,6 +685,7 @@ static int l_gui_getattr(lua::State* L) {
             {"reposition", p_get_reposition},
             {"clear", p_get_clear},
             {"setInterval", p_set_interval},
+            {"clearInterval", p_clear_interval},
             {"placeholder", p_get_placeholder},
             {"hint", p_get_hint},
             {"valid", p_is_valid},

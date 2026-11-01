@@ -8,12 +8,19 @@ local action_to_channel = {
     scale = animation.CH_SCALE,
     zoom = animation.CH_ZOOM,
     texture = animation.CH_TEXTURE,
+    show = animation.CH_SHOW,
+    model = animation.CH_MODEL,
+    color = animation.CH_COLOR,
 }
 
 local curve_to_interp = {
     const = animation.INT_CONST,
     linear = animation.INT_LINEAR,
     bezier = animation.INT_BEZIER,
+}
+
+local boolean_actions = {
+    show = true
 }
 
 local function parse_configure(raw_track, node)
@@ -62,6 +69,70 @@ local function parse_simple_frames(line, node)
     end
 end
 
+local function parse_boolean_frames(line, node)
+    line.keys = {}
+    for j, key_node in ipairs(node) do
+        local keyframe = {
+            frame = tonumber(key_node.frame),
+            value = key_node.value == "on",
+        }
+        table.insert(line.keys, keyframe)
+    end
+end
+
+local function parse_directive(node, raw_track)
+    local linesets = raw_track.linesets
+    local tag = node['#']
+    if tag == "configure" then
+        parse_configure(raw_track, node)
+        return
+    elseif tag == "curve" then
+        raw_track.curves[node.name] = node
+        return
+    end
+
+    local target_type = nil
+    if node.bone then
+        target_type = "bone"
+    elseif node.zoom then
+        target_type = "camera"
+    elseif tag == "texture" then
+        target_type = "texture"
+    end
+    local target_name = node.bone or node.name or ""
+    local lineset = linesets[target_name]
+    if not lineset then
+        lineset = {
+            lines = {},
+            target_type = target_type,
+            target_name = target_name,
+            flag = node.flag,
+        }
+        linesets[target_name] = lineset
+    end
+
+    local channel = action_to_channel[tag]
+    if not channel then
+        error("unknown directive " .. tag:escape())
+    end
+    local line = {
+        axis = node.by and (("xyz"):find(node.by) or ("rgba"):find(node.by)) or "",
+        channel = channel,
+        period = node.period or animation.MAX_FRAMES
+    }
+    if node.func then
+        line.expression = node.func
+    elseif node.curve then
+        parse_curve(line, node)
+    elseif boolean_actions[tag] then
+        parse_boolean_frames(line, node)
+    else
+        parse_simple_frames(line, node)
+    end
+
+    table.insert(lineset.lines, line)
+end
+
 local function parse_track(root)
     local raw_track = {
         duration = math.huge,
@@ -69,56 +140,10 @@ local function parse_track(root)
         linesets = {},
         curves = {},
     }
-    local linesets = raw_track.linesets
     for i, node in ipairs(root) do
-        if type(node) == "string" then
-            goto continue
+        if type(node) == 'table' then
+            parse_directive(node, raw_track)
         end
-        local tag = node['#']
-        if tag == "configure" then
-            parse_configure(raw_track, node)
-            goto continue
-        elseif tag == "curve" then
-            raw_track.curves[node.name] = node
-            goto continue
-        end
-
-        local target_type = nil
-        if node.bone then
-            target_type = "bone"
-        elseif tag == "texture" then
-            target_type = "texture"
-        end
-        local target_name = node.bone or node.name or ""
-        local lineset = linesets[target_name]
-        if not lineset then
-            lineset = {
-                lines = {},
-                target_type = target_type,
-                target_name = target_name
-            }
-            linesets[target_name] = lineset
-        end
-
-        local channel = action_to_channel[tag]
-        if not channel then
-            error("unknown directive " .. tag:escape())
-        end
-        local line = {
-            axis = node.by and ("xyz"):find(node.by) or "",
-            channel = channel,
-            period = node.period or animation.MAX_FRAMES
-        }
-        if node.func then
-            line.expression = node.func
-        elseif node.curve then
-            parse_curve(line, node)
-        else
-            parse_simple_frames(line, node)
-        end
-
-        table.insert(lineset.lines, line)
-        ::continue::
     end
     return raw_track
 end

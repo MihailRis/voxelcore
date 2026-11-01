@@ -38,15 +38,6 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v${CMAKE_VERSION}/cm
     ./cmake-${CMAKE_VERSION}-linux-x86_64.sh --skip-license --prefix=/usr/local && \
     rm cmake-${CMAKE_VERSION}-linux-x86_64.sh
 
-
-# Install specific EnTT version (the latest version that supports C++17).
-RUN git clone --branch v3.16.0 https://github.com/skypjack/entt.git && \
-    cd entt/build && \
-    cmake -DCMAKE_BUILD_TYPE=Release -DENTT_INSTALL=on .. && \
-    make install && \
-    cd ../.. && rm -rf entt
-
-
 # CMake missing LUA_INCLUDE_DIR and LUA_LIBRARIES fix:
 RUN ln -s /usr/lib/x86_64-linux-gnu/libluajit-5.1.a /usr/lib/x86_64-linux-gnu/liblua5.1.a \
     && ln -s /usr/include/luajit-2.1 /usr/include/lua

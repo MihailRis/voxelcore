@@ -19,6 +19,8 @@ struct EntityDef {
     /// @brief Entity string id (with prefix included)
     std::string const name;
 
+    dv::value properties = nullptr;
+
     /// @brief Component instances
     std::vector<ComponentInstance> components;
 
@@ -41,6 +43,9 @@ struct EntityDef {
 
     /// @brief Model lighting mode
     ModelLightingMode lightingMode = ModelLightingMode::SOLID;
+
+    /// @brief Render the entity in the translucent pass
+    bool translucent = false;
 
     /// @brief Can the entity be interacted with cursor (on_attack, on_use)
     bool selectable = true;

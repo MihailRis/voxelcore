@@ -25,6 +25,26 @@ function on_placed(x, y, z, playerid)
 Вызывается после установки блока игроком
 
 ```lua
+function can_be_placed(x, y, z, playerid, rotation) -> bool
+```
+
+Вызывается перед установкой блока игроком, после встроенных проверок
+(заменяемость, `grounded`, пересечение с сущностями).
+Блок устанавливается, только если функция возвращает `true`.
+`rotation` - индекс поворота, с которым будет установлен блок
+(см. `block.get_rotation`).
+
+Пример: саженец, который можно посадить только на землю.
+
+```lua
+function can_be_placed(x, y, z, playerid, rotation)
+    return block.name(block.get(x, y - 1, z)) == "base:dirt"
+end
+```
+
+Событие не вызывается при установке блока через `block.place` и `block.set`.
+
+```lua
 function on_broken(x, y, z, playerid)
 ```
 
@@ -104,7 +124,7 @@ function on_block_break_by(x: int, y: int, z: int, playerid: int)
 
 Вызывается при нажатии ЛКМ на блок (в т.ч неразрушимый). Предотвращает разрушение блока, если возвращает `true`
 
-## События мира  
+## События мира
 
 События мира для контент-пака прописываются в `scripts/world.lua`
 
@@ -121,10 +141,10 @@ function on_world_save()
 Вызывается перед сохранением мира
 
 ```lua
-function on_world_tick()
+function on_world_tick(tps)
 ```
 
-Вызывается 20 раз в секунду
+Вызывается *tps* раз в секунду
 
 ```lua
 function on_world_quit()
@@ -235,6 +255,12 @@ function on_content_loaded()
 ```
 
 Вызывается после того, как контент-пак был полностью загружен
+
+```lua
+function on_assets_loading()
+```
+
+Вызывается в начале загрузки ассетов
 
 ## События HUD  
 

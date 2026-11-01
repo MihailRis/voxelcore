@@ -4,11 +4,11 @@
 #include <glm/gtx/hash.hpp>
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
+#include <cstdint>
 #include <memory>
 #include <queue>
 #include <set>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "typedefs.hpp"
@@ -26,14 +26,13 @@ namespace voxels {
     };
 
     struct Route {
-        bool found;
         std::vector<RouteNode> nodes;
         int totalVisited;
+        bool found;
     };
 
     struct Node {
         glm::ivec3 pos;
-        glm::ivec3 parent;
         float gScore;
         float fScore;
     };
@@ -44,12 +43,19 @@ namespace voxels {
         }
     };
 
+    struct Visit {
+        glm::ivec3 parent;
+        float gScore;
+        bool closed;
+    };
+
     struct State {
         std::priority_queue<Node, std::vector<Node>, NodeLess> queue;
-        std::unordered_set<glm::ivec3> blocked;
-        std::unordered_map<glm::ivec3, Node> parents;
-        glm::ivec3 nearest;
-        float minHScore;
+        std::unordered_map<glm::ivec3, Visit> visits;
+        std::vector<int16_t> blockCosts;
+        int closedCount = 0;
+        glm::ivec3 nearest {};
+        float minHScore = 0.0f;
         bool finished = true;
     };
 
@@ -57,6 +63,7 @@ namespace voxels {
         bool enabled = false;
         bool mayBeIncomplete = true;
         int height = 2;
+        float width = 0.6f;
         int jumpHeight = 1;
         int maxVisitedBlocks = 1e3;
         glm::ivec3 start;
@@ -87,11 +94,5 @@ namespace voxels {
         const ContentUnitIndices<Block, blockid_t>& blockDefs;
         std::unordered_map<int, Agent> agents;
         int nextAgent = 1;
-
-        int getSurfaceAt(
-            const Agent& agent, const glm::ivec3& pos, int maxDelta, float& cost
-        );
-
-        int checkPoint(const Agent& agent, int x, int y, int z, int& cost);
     };
 }

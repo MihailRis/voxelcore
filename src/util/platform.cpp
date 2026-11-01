@@ -1,7 +1,6 @@
 #include "platform.hpp"
 
 #include <time.h>
-
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -11,6 +10,10 @@
 #include "typedefs.hpp"
 #include "debug/Logger.hpp"
 #include "frontend/locale.hpp"
+#include "interfaces/SystemProcess.hpp"
+#include "logic/scripting/io_descriptors.hpp"
+#include "io/fd_istream.hpp"
+#include "io/fd_ostream.hpp"
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -22,9 +25,13 @@
 #include <fcntl.h>
 #include <signal.h>
 #include <stdio.h>
+#include <cerrno>
+#include <cstring>
 #endif
 #ifdef __linux__
     #include <sys/prctl.h>
+#endif
+#if defined(__linux__) || defined(__APPLE__)
     #include <sys/wait.h>
 #endif
 
@@ -71,23 +78,17 @@ void platform::sleep(size_t millis) {
         return tc.wPeriodMin;
     }();
 
-    // Set the timer resolution to the minimum for the Sleep call
     timeBeginPeriod(periodMin);
-
-    // Wait...
     Sleep(static_cast<DWORD>(millis));
-
-    // Reset the timer resolution back to the system default
     timeEndPeriod(periodMin);
 }
 
 int platform::get_process_id() {
-    return GetCurrentProcessId(); 
+    return GetCurrentProcessId();
 }
 
 bool platform::open_url(const std::string& url) {
     if (url.empty()) return false;
-    // UTF-8 → UTF-16
     int wlen = MultiByteToWideChar(CP_UTF8, 0, url.c_str(), -1, nullptr, 0);
     if (wlen <= 0) return false;
 
@@ -105,11 +106,10 @@ bool platform::open_url(const std::string& url) {
 
 void platform::configure_encoding() {
 }
- 
+
 std::string platform::detect_locale() {
     const char* const programLocaleName = setlocale(LC_ALL, nullptr);
-    const char* const preferredLocaleName =
-        setlocale(LC_ALL, "");  // locale name format: ll_CC.encoding
+    const char* const preferredLocaleName = setlocale(LC_ALL, "");
     if (programLocaleName && preferredLocaleName) {
         setlocale(LC_ALL, programLocaleName);
 
@@ -224,34 +224,46 @@ std::filesystem::path platform::get_executable_path() {
 #endif
 }
 
-class SystemProcess final : public Process {
+class SystemProcessImpl final : public SystemProcess {
 public:
-#ifdef __linux__
-    SystemProcess(pid_t pid) : pid(pid) {
+#if defined(__linux__) || defined(__APPLE__)
+    SystemProcessImpl(
+        pid_t pid, int stdinDescriptor = -1, int stdoutDescriptor = -1
+    )
+        : pid(pid),
+          stdinDescriptor(stdinDescriptor),
+          stdoutDescriptor(stdoutDescriptor) {
     }
 
-    ~SystemProcess() {
+    ~SystemProcessImpl() {
         terminate();
     }
 #elif defined(_WIN32)
-    SystemProcess(const PROCESS_INFORMATION& pi)
-        : processHandle(pi.hProcess), pid(pi.dwProcessId) {
+    SystemProcessImpl(
+        const PROCESS_INFORMATION& pi,
+        int stdinDescriptor = -1,
+        int stdoutDescriptor = -1
+    )
+        : processHandle(pi.hProcess),
+          pid(pi.dwProcessId),
+          stdinDescriptor(stdinDescriptor),
+          stdoutDescriptor(stdoutDescriptor) {
         if (pi.hThread != nullptr) {
             CloseHandle(pi.hThread);
         }
     }
 
-    ~SystemProcess() {
+    ~SystemProcessImpl() {
         terminate();
     }
 #endif
-    SystemProcess(const SystemProcess&) = delete;
-    SystemProcess(SystemProcess&&) noexcept = default;
-    SystemProcess& operator=(const SystemProcess&) = delete;
+    SystemProcessImpl(const SystemProcessImpl&) = delete;
+    SystemProcessImpl(SystemProcessImpl&&) noexcept = default;
+    SystemProcessImpl& operator=(const SystemProcessImpl&) = delete;
 
-    SystemProcess& operator=(SystemProcess&& other) noexcept {
+    SystemProcessImpl& operator=(SystemProcessImpl&& other) noexcept {
         if (this != &other) {
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
             pid = other.pid;
 #elif defined(_WIN32)
             if (processHandle != nullptr) {
@@ -262,16 +274,36 @@ public:
             other.processHandle = nullptr;
             other.pid = 0;
 #endif
+            stdinDescriptor = other.stdinDescriptor;
+            stdoutDescriptor = other.stdoutDescriptor;
+            other.stdinDescriptor = -1;
+            other.stdoutDescriptor = -1;
         }
         return *this;
     }
 
     bool isActive() const override {
-#ifdef __linux__
-        if (kill(pid, 0) == 0) {
+#if defined(__linux__) || defined(__APPLE__)
+        if (pid <= 0) {
+            return false;
+        }
+
+        // fixme: ugly ugly ugly
+        int status = 0;
+        pid_t result = waitpid(pid, &status, WNOHANG);
+        if (result == -1) {
+            if (errno == ECHILD) {
+                const_cast<SystemProcessImpl*>(this)->pid = 0;
+                return false;
+            }
+            return false;
+        }
+        if (result == 0) {
             return true;
         }
-        return errno != ESRCH;
+
+        const_cast<SystemProcessImpl*>(this)->pid = 0;
+        return false;
 #elif defined(_WIN32)
         if (processHandle == nullptr) {
             return false;
@@ -283,6 +315,7 @@ public:
         return false;
 #elif defined(__APPLE__)
         // FIXME: completely implement SystemProcess for MacOS
+#else
         return false;
 #endif
     }
@@ -290,8 +323,12 @@ public:
     void update() override {}
 
     void waitForEnd() override {
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
+        if (pid <= 0) {
+            return;
+        }
         waitpid(pid, nullptr, 0);
+        pid = 0;
 #elif defined(_WIN32)
         if (processHandle != nullptr) {
             WaitForSingleObject(processHandle, INFINITE);
@@ -300,7 +337,10 @@ public:
     };
 
     void terminate() final override {
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
+        if (pid <= 0) {
+            return;
+        }
         logger.info() << "terminating " << pid;
         kill(pid, SIGTERM);
 #elif defined(_WIN32)
@@ -310,16 +350,149 @@ public:
         }
 #endif
     }
+
+    int getStdinDescriptor() const override {
+        return stdinDescriptor;
+    }
+
+    int getStdoutDescriptor() const override {
+        return stdoutDescriptor;
+    }
+
 private:
-#ifdef __linux__
+#if defined(__linux__) || defined(__APPLE__)
     pid_t pid;
+    int stdinDescriptor;
+    int stdoutDescriptor;
 #elif defined(_WIN32)
     HANDLE processHandle = nullptr;
     DWORD pid = 0;
+    int stdinDescriptor;
+    int stdoutDescriptor;
 #endif
 };
 
-std::unique_ptr<Process> platform::new_engine_instance(
+#ifndef _WIN32
+static void close_fd(int& fd) {
+    if (fd >= 0) {
+        close(fd);
+        fd = -1;
+    }
+}
+
+static bool make_cloexec_pipe(int fds[2]) {
+#ifdef __linux__
+    return pipe2(fds, O_CLOEXEC) == 0;
+#else
+    if (pipe(fds) != 0) {
+        return false;
+    }
+    fcntl(fds[0], F_SETFD, FD_CLOEXEC);
+    fcntl(fds[1], F_SETFD, FD_CLOEXEC);
+    return true;
+#endif
+}
+
+static void report_error_and_exit(int fd) {
+    int err = errno;
+    [[maybe_unused]] ssize_t _ = write(fd, &err, sizeof(err));
+    _exit(127);
+}
+
+// TODO: make sub-process die with parent in MacOS
+static std::unique_ptr<SystemProcess> start_engine_subprocess(
+    const std::filesystem::path& executable,
+    const std::vector<std::string>& args
+) {
+    int stdinPipe[2] = {-1, -1};
+    int stdoutPipe[2] = {-1, -1};
+    int execPipe[2] = {-1, -1};
+    auto closeAll = [&]() {
+        for (int* fd :
+             {&stdinPipe[0],
+              &stdinPipe[1],
+              &stdoutPipe[0],
+              &stdoutPipe[1],
+              &execPipe[0],
+              &execPipe[1]}) {
+            close_fd(*fd);
+        }
+    };
+
+    if (!make_cloexec_pipe(stdinPipe) || !make_cloexec_pipe(stdoutPipe) ||
+        !make_cloexec_pipe(execPipe)) {
+        closeAll();
+        throw std::runtime_error("failed to create subprocess pipes");
+    }
+
+    std::string path = executable.string();
+    std::vector<char*> argv;
+    argv.reserve(args.size() + 2);
+    argv.push_back(path.data());
+    for (const auto& arg : args) {
+        argv.push_back(const_cast<char*>(arg.c_str()));
+    }
+    argv.push_back(nullptr);
+
+#ifdef __linux__
+    const pid_t parentPid = getpid();
+#endif
+    const pid_t pid = fork();
+    if (pid < 0) {
+        int err = errno;
+        closeAll();
+        throw std::runtime_error("fork failed: "s + std::strerror(err));
+    }
+
+    if (pid == 0) {
+#ifdef __linux__
+        prctl(PR_SET_PDEATHSIG, SIGTERM);
+        if (getppid() != parentPid) {
+            _exit(1);
+        }
+        prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
+#endif
+        if (dup2(stdinPipe[0], STDIN_FILENO) < 0 ||
+            dup2(stdoutPipe[1], STDOUT_FILENO) < 0 ||
+            dup2(stdoutPipe[1], STDERR_FILENO) < 0) {
+            report_error_and_exit(execPipe[1]);
+        }
+        execv(argv[0], argv.data());
+        report_error_and_exit(execPipe[1]);
+    }
+
+    close_fd(stdinPipe[0]);
+    close_fd(stdoutPipe[1]);
+    close_fd(execPipe[1]);
+
+    int childErrno = 0;
+    ssize_t n;
+    do {
+        n = read(execPipe[0], &childErrno, sizeof(childErrno));
+    } while (n < 0 && errno == EINTR);
+    close_fd(execPipe[0]);
+
+    if (n > 0) {
+        waitpid(pid, nullptr, 0);
+        closeAll();
+        throw std::runtime_error(
+            "starting an engine instance failed: "s + std::strerror(childErrno)
+        );
+    }
+
+    const int stdinDescriptorId = scripting::io_descriptors::add_descriptor(
+        std::make_unique<fd_ostream>(stdinPipe[1])
+    );
+    const int stdoutDescriptorId = scripting::io_descriptors::add_descriptor(
+        std::make_unique<fd_istream>(stdoutPipe[0])
+    );
+    return std::make_unique<SystemProcessImpl>(
+        pid, stdinDescriptorId, stdoutDescriptorId
+    );
+}
+#endif
+
+std::unique_ptr<SystemProcess> platform::new_engine_instance(
     const std::vector<std::string>& args,
     std::filesystem::path outputFile,
     bool subProcess
@@ -334,7 +507,7 @@ std::unique_ptr<Process> platform::new_engine_instance(
     }
 
     auto toWString = [](const std::string& src) -> std::wstring {
-        if (src.empty()) 
+        if (src.empty())
             return L"";
         int size = MultiByteToWideChar(CP_UTF8, 0, src.c_str(), -1, nullptr, 0);
         if (size == 0) {
@@ -358,10 +531,81 @@ std::unique_ptr<Process> platform::new_engine_instance(
     auto commandString = toWString(ss.str());
 
     STARTUPINFOW si = { sizeof(si) };
+    PROCESS_INFORMATION pi = { 0 };
+
+    if (subProcess) {
+        SECURITY_ATTRIBUTES pipeAttributes{};
+        pipeAttributes.nLength = sizeof(pipeAttributes);
+        pipeAttributes.bInheritHandle = TRUE;
+
+        HANDLE stdinRead = nullptr;
+        HANDLE stdinWrite = nullptr;
+        HANDLE stdoutRead = nullptr;
+        HANDLE stdoutWrite = nullptr;
+
+        if (!CreatePipe(&stdinRead, &stdinWrite, &pipeAttributes, 0) ||
+            !CreatePipe(&stdoutRead, &stdoutWrite, &pipeAttributes, 0)) {
+            throw std::runtime_error(
+                "CreatePipe failed with code: " + std::to_string(GetLastError())
+            );
+        }
+
+        if (!SetHandleInformation(stdinWrite, HANDLE_FLAG_INHERIT, 0) ||
+            !SetHandleInformation(stdoutRead, HANDLE_FLAG_INHERIT, 0)) {
+            CloseHandle(stdinRead);
+            CloseHandle(stdinWrite);
+            CloseHandle(stdoutRead);
+            CloseHandle(stdoutWrite);
+            throw std::runtime_error(
+                "SetHandleInformation failed with code: " + std::to_string(GetLastError())
+            );
+        }
+
+        si.dwFlags = STARTF_USESTDHANDLES;
+        si.hStdInput = stdinRead;
+        si.hStdOutput = stdoutWrite;
+        si.hStdError = stdoutWrite;
+
+        const DWORD flags = CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS;
+        const BOOL success = CreateProcessW(
+            nullptr,
+            commandString.data(),
+            nullptr,
+            nullptr,
+            TRUE,
+            flags,
+            nullptr,
+            nullptr,
+            &si,
+            &pi
+        );
+
+        CloseHandle(stdinRead);
+        CloseHandle(stdoutWrite);
+
+        if (!success) {
+            CloseHandle(stdinWrite);
+            CloseHandle(stdoutRead);
+            throw std::runtime_error(
+                "starting an engine instance failed with code: " +
+                std::to_string(GetLastError())
+            );
+        }
+
+        int stdinDescriptor = scripting::io_descriptors::add_descriptor(
+            std::make_unique<fd_ostream>(stdinWrite)
+        );
+        int stdoutDescriptor = scripting::io_descriptors::add_descriptor(
+            std::make_unique<fd_istream>(stdoutRead)
+        );
+        return std::make_unique<SystemProcessImpl>(pi, stdinDescriptor, stdoutDescriptor);
+    }
+
     if (!outputFile.empty()) {
         si.dwFlags |= STARTF_USESTDHANDLES;
+        const auto outputPath = toWString(outputFile.u8string());
         si.hStdOutput = CreateFileW(
-            toWString(outputFile.empty() ? outputFile.u8string() : "NUL"s).data(),
+            outputPath.c_str(),
             GENERIC_WRITE,
             FILE_SHARE_WRITE | FILE_SHARE_READ,
             nullptr,
@@ -371,15 +615,13 @@ std::unique_ptr<Process> platform::new_engine_instance(
         );
         if (si.hStdOutput == INVALID_HANDLE_VALUE) {
             throw std::runtime_error(
-                "CreateFileW failed with code: " +
-                std::to_string(GetLastError())
+                "CreateFileW failed with code: " + std::to_string(GetLastError())
             );
         }
     }
-    PROCESS_INFORMATION pi = { 0 };
-    DWORD flags = CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS;
-    // | CREATE_NO_WINDOW;
-    BOOL success = CreateProcessW(
+
+    const DWORD flags = CREATE_NEW_PROCESS_GROUP | DETACHED_PROCESS;
+    const BOOL success = CreateProcessW(
         nullptr,
         commandString.data(),
         nullptr,
@@ -391,38 +633,6 @@ std::unique_ptr<Process> platform::new_engine_instance(
         &si,
         &pi
     );
-    if (subProcess) {
-        HANDLE job = CreateJobObjectW(nullptr, nullptr);
-
-        JOBOBJECT_EXTENDED_LIMIT_INFORMATION info{};
-        info.BasicLimitInformation.LimitFlags =
-            JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-
-        try {
-            if (!SetInformationJobObject(
-                job,
-                JobObjectExtendedLimitInformation,
-                &info,
-                sizeof(info))) {
-                throw std::runtime_error(
-                    "SetInformationJobObject failed with code: " +
-                    std::to_string(GetLastError())
-                );
-            }
-            if (!AssignProcessToJobObject(job, pi.hProcess)) {
-                throw std::runtime_error(
-                    "SetInformationJobObject failed with code: " +
-                    std::to_string(GetLastError())
-                );
-            }
-            return std::make_unique<SystemProcess>(pi);
-        } catch (const std::exception& err) {
-            CloseHandle(job);
-            CloseHandle(pi.hProcess);
-            CloseHandle(pi.hThread);
-            return nullptr;
-        }
-    }
     if (success) {
         CloseHandle(pi.hProcess);
         CloseHandle(pi.hThread);
@@ -433,51 +643,12 @@ std::unique_ptr<Process> platform::new_engine_instance(
         );
     }
 #else
-
-// TODO: implement
-#ifndef __APPLE__
     if (subProcess) {
-        pid_t pid = fork();
-
-        if (outputFile.empty()) {
-            outputFile = "/dev/null";
-        }
-        int fd = open(
-            outputFile.string().c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644
-        ); 
-
-        if (pid == 0) {
-            prctl(PR_SET_PDEATHSIG, SIGTERM);
-
-            if (getppid() == 1) {
-                _exit(1);
-            }
-
-            dup2(fd, STDOUT_FILENO);
-            dup2(fd, STDERR_FILENO);
-            close(fd);
-
-            std::vector<const char*> argv(args.size() + 2);
-            argv[0] = const_cast<char*>(executable.c_str());
-            for (int i = 0; i < args.size(); i++) {
-                argv[i + 1] = args[i].c_str();
-            }
-            argv[args.size() + 1] = nullptr;
-
-            prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0); 
-            execvp(executable.c_str(), const_cast<char**>(argv.data()));
-
-            _exit(127);
-        } else {
-            close(fd);
-            usleep(1000); // waiting for execvp call
-            return std::make_unique<SystemProcess>(pid);
-        }
+        return start_engine_subprocess(executable, args);
     }
-#endif
 
     std::stringstream ss;
-    ss << executable;
+    ss << util::quote(executable.u8string());
     for (int i = 0; i < args.size(); i++) {
         ss << " " << util::quote(args[i]);
     }
@@ -501,7 +672,22 @@ std::unique_ptr<Process> platform::new_engine_instance(
 
 bool platform::stdin_has_data() {
 #ifdef _WIN32
-    return _kbhit();
+    const HANDLE inputHandle = GetStdHandle(STD_INPUT_HANDLE);
+    if (inputHandle == nullptr || inputHandle == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+
+    DWORD mode = 0;
+    if (GetConsoleMode(inputHandle, &mode)) {
+        return _kbhit() != 0;
+    }
+
+    DWORD available = 0;
+    if (!PeekNamedPipe(inputHandle, nullptr, 0, nullptr, &available, nullptr)) {
+        const DWORD error = GetLastError();
+        return error != ERROR_BROKEN_PIPE && error != ERROR_INVALID_HANDLE;
+    }
+    return available > 0;
 #else
     struct pollfd fds;
     fds.fd = STDIN_FILENO;

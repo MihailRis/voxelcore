@@ -469,6 +469,7 @@ static VcmModel load_model(const xmlelement& root) {
         perform_element(*elem, builder, ctx);
     }
 
+    model.calcBounds();
     vcmModel.parts["root"] = std::move(model);
     vcmModel.skeleton = SkeletonConfig(
         "",

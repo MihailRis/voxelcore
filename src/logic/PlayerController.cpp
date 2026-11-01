@@ -459,7 +459,7 @@ void PlayerController::processRightClick(
     blockid_t chosenBlock = def.rt.id;
 
     if (def.obstacle) {
-        const auto& hitboxes = def.rt.hitboxes[state.rotation];
+        const auto& hitboxes = def.getHitboxes(state);
         for (const AABB& blockAABB : hitboxes) {
             if (level.entities->hasBlockingInside(blockAABB.translated(coord)
                 )) {
@@ -480,6 +480,11 @@ void PlayerController::processRightClick(
         }
     }
     if (chosenBlock != vox->id && chosenBlock) {
+        if (!scripting::can_block_be_placed(
+                &player, def, coord, state.rotation
+            )) {
+            return;
+        }
         if (!player.isInfiniteItems()) {
             auto& slot = player.getInventory()->getSlot(player.getChosenSlot());
             slot.setCount(slot.getCount() - 1);
@@ -493,11 +498,11 @@ void PlayerController::processRightClick(
 void PlayerController::updateEntityInteraction(
     entityid_t eid, bool lclick, bool rclick
 ) {
-    auto entityOpt = level.entities->get(eid);
-    if (!entityOpt.has_value()) {
+    auto entityPtr = level.entities->get(eid);
+    if (entityPtr == nullptr) {
         return;
     }
-    auto entity = *entityOpt;
+    const auto& entity = *entityPtr;
     if (lclick) {
         scripting::on_attacked(entity, &player, player.getEntity());
     }

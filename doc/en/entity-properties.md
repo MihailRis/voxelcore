@@ -1,5 +1,17 @@
 # Entity properties
 
+## User properties
+
+Access to custom entity properties is provided through the table `entities.properties[id]["property"]`, where `id` is the entity definition index.
+
+Custom properties follow the same pack inheritance and override rules as block and item properties, and must be declared in `pack:config/user-props.toml`:
+
+```toml
+"pack:property_name" = {}
+```
+
+This makes the property available in Lua scripts as `entities.properties[entities.def_index("pack:entity")]["property"]`.
+
 ## Logic
 
 ### *components*
@@ -131,6 +143,14 @@ The default value is the same as the entity name. Determines which skeleton will
 
 - *bone-based* - lighting is calculated for each skeletal bone separately.
 - *solid* - lighting is calculated for the entire entity.
+
+### *translucent*
+
+Enables translucency support in the entity textures (semi-transparent parts).
+Should only be used when needed, as it impacts performance.
+Not required for full transparency (cutout parts) and for fading the entity out with the skeleton tint alpha.
+
+Default value: *false*.
 
 ## Saving/Loading
 

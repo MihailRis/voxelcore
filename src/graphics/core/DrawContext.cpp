@@ -19,6 +19,14 @@ static void set_blend_mode(BlendMode mode) {
         case BlendMode::inversion:
             glBlendFunc(GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA);
             break;
+        case BlendMode::coverage:
+            glBlendFuncSeparate(
+                GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA
+            );
+            break;
+        case BlendMode::premultiplied:
+            glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+            break;
     }
 }
 

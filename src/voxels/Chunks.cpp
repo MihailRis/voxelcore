@@ -70,12 +70,14 @@ const AABB* Chunks::isObstacleAt(float x, float y, float z) const {
         return nullptr;
     }
     glm::ivec3 offset {};
-    if (v->state.segment) {
+    blockstate state = v->state;
+    if (state.segment) {
         glm::ivec3 point(ix, iy, iz);
-        offset = seekOrigin(point, def, v->state) - point;
+        auto origin = seekOrigin(point, def, state);
+        offset = origin - point;
+        state = blocks_agent::hitbox_state(*this, origin, state);
     }
-    const auto& boxes =
-        def.rotatable ? def.rt.hitboxes[v->state.rotation] : def.hitboxes;
+    const auto& boxes = def.getHitboxes(state);
     for (const auto& hitbox : boxes) {
         if (hitbox.contains(
             {x - ix - offset.x, y - iy - offset.y, z - iz - offset.z}
@@ -262,18 +264,18 @@ glm::vec3 Chunks::rayCastToObstacle(
             const auto& def = indices.blocks.require(voxel->id);
             if (def.obstacle) {
                 if (!def.rt.solid) {
-                    const std::vector<AABB>& hitboxes =
-                        def.rt.hitboxes[voxel->state.rotation];
-
                     scalar_t distance;
                     glm::ivec3 norm;
                     Ray ray(start, dir);
 
                     glm::ivec3 offset {};
-                    if (voxel->state.segment) {
-                        offset = seekOrigin({ix, iy, iz}, def, voxel->state) -
-                                 glm::ivec3(ix, iy, iz);
+                    blockstate state = voxel->state;
+                    if (state.segment) {
+                        auto origin = seekOrigin({ix, iy, iz}, def, state);
+                        offset = origin - glm::ivec3(ix, iy, iz);
+                        state = blocks_agent::hitbox_state(*this, origin, state);
                     }
+                    const auto& hitboxes = def.getHitboxes(state);
 
                     for (const auto& box : hitboxes) {
                         // norm is dummy now, can be inefficient

@@ -71,6 +71,13 @@ Rotation profile (set of available block rotations and behaviour of placing bloc
 - "stairs" - "pane" + flipped variants
 - "ladder" - like a "pipe", but on horizontal surfaces it is installed like "pane"
 
+### *uv-lock*
+
+Keeps custom model textures aligned to world axes when the block is rotated,
+so textures of rotated blocks join seamlessly with neighbours.
+Applies to axis-aligned faces of `custom` models with named textures.
+Leave it off for directional textures (doors, arrows, wood). `false` by default.
+
 ### *particles*
 
 Particles are specified as a JSON object. Property names can be found [in the particles section](particles.md).
@@ -112,6 +119,8 @@ Properties available for variance:
 - model-name
 - texture
 - texture-faces
+- hitbox
+- hitboxes
 - model-primitives (deprecated)
 
 Variants are managed via `block.set_variant(x, y, z, index)`.
@@ -141,6 +150,26 @@ In this example:
 - Variant 0 = `stairs_middle` (from root)
 - Variant 1 = `stairs_left` (from variants[0])
 - Variant 2 = `stairs_right` (from variants[1])
+
+### Hitbox variants
+
+A variant can override `hitbox` or `hitboxes`. Variants without them inherit the root hitboxes. Collisions, raycasts, block selection and `aabb` models use the hitboxes of the current variant.
+
+```json
+{
+    "model": "aabb",
+    "hitbox": [0.0, 0.0, 0.0, 1.0, 0.5, 1.0],
+    "rotation": "pipe",
+    "state-based": {
+        "bits": 1,
+        "variants": [
+            { "hitbox": [0.0, 0.0, 0.0, 1.0, 1.0, 1.0] }
+        ]
+    }
+}
+```
+
+For extended blocks the variant is taken from the origin segment.
 
 ## Lighting
 

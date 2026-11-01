@@ -18,7 +18,7 @@ local exclude_patters = {
 }
 
 --  TODO: replace with actual expression -> lua translator
-local function process_expression(src, memoised, mode)
+local function process_expression(src, mode)
     if mode == 'mul' then
         src = string.format("(%s) * intensity + (1.0 - intensity)", src)
     elseif mode == "add" then
@@ -33,7 +33,6 @@ local function process_expression(src, memoised, mode)
     for i, pattern in ipairs(patterns) do
         local pattern_safe = string.pattern_safe(pattern.pattern)
         if src:find(pattern_safe) then
-            memoised[pattern.name] = pattern.pattern
             src = src:gsub(pattern_safe, pattern.name)
         end
     end
@@ -79,7 +78,7 @@ local env = {
             return keys[left].value
         end
         left = keys[left]
-        if interp == INT_CONST then
+        if not interp or interp == INT_CONST then
             return left.value
         end
         right = keys[right]
@@ -119,8 +118,8 @@ local env = {
             if target.set_rot then
                 target:set_rot(rot)
             end
-            if target.set_scale then
-                target:set_scale(scale)
+            if target.set_size then
+                target:set_size(scale)
             end
         end
     end,
@@ -141,42 +140,48 @@ local is_multiplier = {
     [animation.CH_ZOOM] = true,
 }
 
-local function codegen_track(raw_track, lineset, memoised, keysets, use_tsf)
+local function codegen_line(raw_track, lineset, line, index, keysets)
+    if line.expression then
+        return "(" .. process_expression(line.expression,
+            is_multiplier[line.channel] and "mul" or "add") .. ")"
+    elseif line.keys then
+        local target_keysets = keysets[lineset.target_name]
+        if not target_keysets then
+            target_keysets = {}
+            keysets[lineset.target_name] = target_keysets
+        end
+        target_keysets[index] = line.keys
+
+        if line.curve_func then
+            local valueat = string.format("curves[%s]", string.escape(line.curve_func))
+            return string.format("value_at_custom(keysets['%s'][%d], t * %s %% %s, %s)",
+                lineset.target_name, index, raw_track.fps, line.period, valueat)
+        elseif line.channel == animation.CH_TEXTURE then
+            return string.format("string_at(keysets['%s'][%d], t * %s %% %s)",
+                lineset.target_name, index, raw_track.fps, line.period)
+        else
+            return string.format("value_at(keysets['%s'][%d], t * %s %% %s, %s)",
+                lineset.target_name, index, raw_track.fps, line.period, line.interp)
+        end
+    end
+end
+
+local function codegen_track(raw_track, lineset, keysets, use_tsf, target_type)
+    if lineset.target_type ~= target_type then
+        return ""
+    end
+
     local lines = lineset.lines
     local code = ""
     local has_tsf = false
     local translation = {false, false, false}
     local rotation = {false, false, false}
     local scale = {false, false, false}
+    local color = {false, false, false, false}
+
     for i, line in ipairs(lines) do
-        if line.expression then
-            code = code .. "\n   local l" .. i .. " = (" ..
-                process_expression(line.expression, memoised,
-                is_multiplier[line.channel] and "mul" or "add") .. ")"
-        elseif line.keys then
-            local target_keysets = keysets[lineset.target_name]
-            if not target_keysets then
-                target_keysets = {}
-                keysets[lineset.target_name] = target_keysets
-            end
-            target_keysets[i] = line.keys
-
-            if line.curve_func then
-                local valueat = string.format("curves[%s]", string.escape(line.curve_func))
-
-                code = code .. string.format(
-                "\n   local l%d = value_at_custom(keysets['%s'][%d], t * %s %% %s, %s)",
-                i, lineset.target_name, i, raw_track.fps, line.period, valueat)
-            elseif line.channel == animation.CH_TEXTURE then
-                code = code .. string.format(
-                    "\n   local l%d = string_at(keysets['%s'][%d], t * %s %% %s)",
-                    i, lineset.target_name, i, raw_track.fps, line.period)
-            else
-                code = code .. string.format(
-                    "\n   local l%d = value_at(keysets['%s'][%d], t * %s %% %s, %s)",
-                    i, lineset.target_name, i, raw_track.fps, line.period, line.interp)
-            end
-        end
+        code = code .. string.format("\n   local l%d = ", i)
+            .. codegen_line(raw_track, lineset, line, i, keysets)
 
         if line.channel == animation.CH_TRANSLATE then
             translation[line.axis] = i
@@ -190,7 +195,31 @@ local function codegen_track(raw_track, lineset, memoised, keysets, use_tsf)
         elseif line.channel == animation.CH_ZOOM then
             code = code .. "\n   zoom = l" .. i
         elseif line.channel == animation.CH_TEXTURE then
-            code = code .. string.format("\n   target:set_texture(%s, %s)", lineset.target_name:escape(), "l"..i)
+            code = code .. string.format("\n   target:set_texture(%s, l%d)",
+                lineset.target_name:escape(), i)
+        elseif line.channel == animation.CH_MODEL then
+            code = code .. string.format("\n   target:set_model(bone_index, l%d)", i)
+        elseif line.channel == animation.CH_SHOW then
+            if target_type == "bone" then
+                code = code .. string.format("\n   target:set_visible(bone_index, l%d)", i)
+            else
+                code = code .. string.format("\n   target:set_visible(l%d)", i)
+            end
+        elseif line.channel == animation.CH_COLOR then
+            color[line.axis] = i
+        end
+    end
+
+    if color[1] or color[2] or color[3] or color[4] then
+        local color_vector = "{" ..
+            (color[1] and ("l" .. color[1]) or '1').. ", " ..
+            (color[2] and ("l" .. color[2]) or '1').. ", " ..
+            (color[3] and ("l" .. color[3]) or '1').. ", " ..
+            (color[4] and ("l" .. color[4]) or '1').. "}"
+        if target_type == "bone" then
+            code = code .. "\n   target:set_color(" .. color_vector .. ", bone_index)"
+        else
+            code = code .. "\n   target:set_color(" .. color_vector .. ")"
         end
     end
 
@@ -230,17 +259,18 @@ end
 local function codegen_rig_target(raw_track, context)
     local code = "\n if target.set_matrix and target.index then\n"
     for bone, lineset in pairs(raw_track.linesets) do
-        if lineset.target_type ~= "bone" and lineset.target_type ~= "texture" then
+        if lineset.target_type ~= "bone" then
             goto continue
         end
-        local lineset_code = codegen_track(
-            raw_track, lineset, context.memoised, context.keysets, true)
+        local lineset_code = codegen_track(raw_track, lineset, context.keysets, true, "bone")
 
+        code = code .. string.format("\n  local bone_index = target:index(%s)", string.escape(bone))
+        if context.has_tsf then
+            code = code .. "\n  local dst = target:get_matrix(bone_index)"
+        end
         code = code
-            .. string.format("\n  local bone_index = target:index(%s)"
-            .. "\n  local dst = target:get_matrix(bone_index)", string.escape(bone))
             .. "\n  do" .. lineset_code .. "\n  end\n"
-        if lineset.target_type == "bone" then
+        if context.has_tsf then
             code = code ..
                 "  target:set_matrix(bone_index, dst)\n"
         end
@@ -279,14 +309,14 @@ local function codegen_native_rig_target(raw_track, context, track_name)
     end
 
     for bone, lineset in pairs(raw_track.linesets) do
-        if lineset.target_type ~= "bone" and lineset.target_type ~= "texture" then
+        if lineset.target_type ~= "bone" then
             goto continue
         end
         local lineset_code = codegen_track(
-            raw_track, lineset, context.memoised, context.keysets, false)
+            raw_track, lineset, context.keysets, false, "bone")
         local exported = {}
         local entry = {name = bone}
-        if lineset.target_type == "bone" then
+        do
             local channels = {
                 [animation.CH_TRANSLATE] = {},
                 [animation.CH_ROTATE] = {},
@@ -351,18 +381,35 @@ local function codegen_native_rig_target(raw_track, context, track_name)
     return "\n if target.__native_rig then" .. code
 end
 
-local function codegen_object_target(raw_track, context)
-    local code = "\n if target.set_pos then\n"
-    code = code .. "  local dst = mat4.idt()\n"
-    local lineset = raw_track.linesets[""]
-    if not lineset then
+local function codegen_texture_target(raw_track, context)
+    local code = ""
+    for _, lineset in pairs(raw_track.linesets) do
+        if lineset.target_type == "texture" then
+            code = code .. "\n  do"
+                .. codegen_track(raw_track, lineset, context.keysets, false, "texture")
+                .. "\n  end\n"
+        end
+    end
+    if #code == 0 then
         return ""
     end
-    local lineset_code = codegen_track(
-        raw_track, lineset, context.memoised, context.keysets, true)
-    code = code .. "\n  do" .. lineset_code .. "\n  end\n"
-    .. "  set_matrix(target, dst)\n"
-    return code .. " end"
+    return "\n if target.set_texture then" .. code .. " end\n"
+end
+
+local function codegen_object_target(raw_track, context)
+    local code = codegen_texture_target(raw_track, context)
+    local lineset = raw_track.linesets[""]
+    if not lineset then
+        return code
+    end
+    local lineset_code = codegen_track(raw_track, lineset, context.keysets, true)
+    code = code .. "  local dst = mat4.idt()\n"
+        .. "\n  do" .. lineset_code .. "\n  end\n"
+
+    if context.has_tsf then
+        code = code .. "  set_matrix(target, dst)\n"
+    end
+    return code
 end
 
 local function codegen_camera_target(raw_track, context)
@@ -372,25 +419,37 @@ local function codegen_camera_target(raw_track, context)
     if not lineset then
         return ""
     end
-    local lineset_code = codegen_track(
-        raw_track, lineset, context.memoised, context.keysets, false)
+    local lineset_code = codegen_track(raw_track, lineset, context.keysets, false, "camera")
     code = code .. "\n  do" .. lineset_code .. "\n  end\n"
     .. "  target:set_zoom(zoom)\n"
     return code .. " end"
 end
 
 
+local function has_transform_directive(raw_track)
+    for _, lineset in pairs(raw_track.linesets) do
+        for _, line in ipairs(lineset.lines) do
+            if line.channel == animation.CH_TRANSLATE or
+                line.channel == animation.CH_ROTATE or
+                line.channel == animation.CH_SCALE then
+                return true
+            end
+        end
+    end
+    return false
+end
+
 function internals.compile_animation_track(raw_track, track_name)
     local code = ""
     local context = {
-        memoised = {},
         keysets = {},
         curves = {},
+        has_tsf = has_transform_directive(raw_track),
     }
     for name, curve in pairs(raw_track.curves) do
         context.curves[name] = load(string.format(
             "return function(kl, kr, t) return %s end",
-            process_expression(curve.func, context.memoised, "curve")
+            process_expression(curve.func, "curve")
         ), "<curve>", "t", env)()
     end
 
@@ -403,17 +462,8 @@ function internals.compile_animation_track(raw_track, track_name)
     code = code .. codegen_object_target(raw_track, context)
     code = code .. codegen_camera_target(raw_track, context)
 
-    local memoised_code = ""
-    for name, expression in pairs(context.memoised) do
-        memoised_code = memoised_code .. "\n local " .. name .. " = "
-            .. expression
-    end
-
-    if #memoised_code > 0 then
-        code = memoised_code .. "\n" .. code
-    end
-
-    local src = "return function(target, t, intensity, m)\n m = m or 1\n intensity = intensity or 1.0\n"
+    local src = "return function(target, t, intensity, m)\n"
+        .. " m = m or 1\n intensity = intensity or 1.0\n"
         .. code .. "\nend"
 
     if animation.TRACE_CODEGEN then

@@ -46,7 +46,7 @@ std::unique_ptr<ImageData> BlocksPreview::draw(
         case BlockModelType::AABB:
             {
                 glm::vec3 hitbox {};
-                for (const auto& box : def.hitboxes) {
+                for (const auto& box : def.defaults.hitboxes) {
                     hitbox = glm::max(hitbox, box.size());
                 }
                 offset = glm::vec3(1, 1, 0.0f);

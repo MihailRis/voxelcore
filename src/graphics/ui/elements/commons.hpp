@@ -8,6 +8,7 @@ namespace gui {
     using OnTimeOut = std::function<void()>;
 
     struct IntervalEvent {
+        int id;
         OnTimeOut callback;
         float interval;
         float timer;

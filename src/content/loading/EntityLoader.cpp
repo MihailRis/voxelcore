@@ -1,5 +1,6 @@
 #define VC_ENABLE_REFLECTION
 #include "ContentUnitLoader.hpp"
+#include "ContentLoadingCommons.hpp"
 
 #include "../ContentBuilder.hpp"
 #include "coders/json.hpp"
@@ -16,6 +17,7 @@ template<> void ContentUnitLoader<EntityDef>::loadUnit(
     EntityDef& def, const std::string& name, const io::path& file
 ) {
     auto root = io::read_json(file);
+    process_properties(def, name, root);
 
     if (root.has("parent")) {
         const auto& parentName = root["parent"].asString();
@@ -94,6 +96,7 @@ template<> void ContentUnitLoader<EntityDef>::loadUnit(
     root.at("mass").get(def.mass);
     root.at("elasticity").get(def.elasticity);
     root.at("step-height").get(def.stepHeight);
+    root.at("translucent").get(def.translucent);
     
     std::string lightingModeName;
     root.at("lighting-mode").get(lightingModeName);

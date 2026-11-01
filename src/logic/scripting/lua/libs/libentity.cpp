@@ -28,7 +28,7 @@ static const EntityDef* require_entity_def(lua::State* L) {
 }
 
 static int l_exists(lua::State* L) {
-    return lua::pushboolean(L, get_entity(L, 1).has_value());
+    return lua::pushboolean(L, get_entity(L, 1) != nullptr);
 }
 
 static int l_def_index(lua::State* L) {
@@ -138,8 +138,7 @@ static int l_get_all_in_box(lua::State* L) {
     auto found = level->entities->getAllInside(AABB(pos, pos + size));
     lua::createtable(L, found.size(), 0);
     for (size_t i = 0; i < found.size(); i++) {
-        const auto& entity = found[i];
-        lua::pushinteger(L, entity.getUID());
+        lua::pushinteger(L, found[i]->getUID());
         lua::rawseti(L, i + 1);
     }
     return 1;
@@ -151,8 +150,7 @@ static int l_get_all_in_radius(lua::State* L) {
     auto found = level->entities->getAllInRadius(pos, radius);
     lua::createtable(L, found.size(), 0);
     for (size_t i = 0; i < found.size(); i++) {
-        const auto& entity = found[i];
-        lua::pushinteger(L, entity.getUID());
+        lua::pushinteger(L, found[i]->getUID());
         lua::rawseti(L, i + 1);
     }
     return 1;

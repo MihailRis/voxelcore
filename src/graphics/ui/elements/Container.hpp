@@ -13,6 +13,7 @@ namespace gui {
     protected:
         std::vector<std::shared_ptr<UINode>> nodes;
         std::vector<IntervalEvent> intervalEvents;
+        int nextIntervalId = 1;
         int scrollY = 0;
         int scrollX = 0;
         int scrollStep = 40;
@@ -41,7 +42,8 @@ namespace gui {
         virtual void remove(const std::string& id);
         virtual void scrolled(int value) override;
         virtual void setScrollable(bool flag);
-        void listenInterval(float interval, OnTimeOut callback, int repeat=-1);
+        int listenInterval(float interval, OnTimeOut callback, int repeat=-1);
+        void cancelInterval(int id);
         virtual glm::vec2 getContentOffset() const override {
             return glm::vec2(scrollX, scrollY);
         };

@@ -8,51 +8,62 @@
 #include "ScriptComponents.hpp"
 #include "Transform.hpp"
 
-#include <entt/entt.hpp>
-
 static inline std::string SAVED_DATA_VARNAME = "SAVED_DATA";
 
+Entity::Entity(
+    Entities& entities,
+    EntityId id,
+    Transform transform,
+    Rigidbody rigidbody,
+    std::unique_ptr<rigging::Skeleton> skeleton
+)
+    : entities(entities),
+      id(std::move(id)),
+      transform(std::move(transform)),
+      rigidbody(std::move(rigidbody)),
+      skeleton(std::move(skeleton)) {
+}
+
+Entity::~Entity() = default;
+
 void Entity::setInterpolatedPosition(const glm::vec3& position) {
-    if (auto skeleton = getSkeleton()) {
+    if (skeleton) {
         skeleton->interpolation.refresh(position);
     }
 }
 
 glm::vec3 Entity::getInterpolatedPosition() const {
-    if (auto skeleton = getSkeleton()) {
-        if (skeleton->interpolation.isEnabled()) {
-            return skeleton->interpolation.getCurrent();
+    if (skeleton) {
+        const auto& interpolation = skeleton->interpolation;
+        if (interpolation.isEnabled() && interpolation.isRefreshed()) {
+            return interpolation.getCurrent();
         }
     }
-    return getTransform().pos;
+    return transform.pos;
+}
+
+void Entity::setInterpolatedRotation(const glm::quat& rotation) {
+    if (skeleton) {
+        skeleton->rotationInterpolation.refresh(rotation);
+    }
 }
 
 void Entity::destroy() {
-    if (isValid()) {
-        entities.despawn(id);
-    }
-}
-
-rigging::Skeleton* Entity::getSkeleton() const {
-    return registry.try_get<rigging::Skeleton>(entity);
+    entities.despawn(id.uid);
 }
 
 void Entity::setRig(std::shared_ptr<const rigging::SkeletonConfig> rigConfig) {
-    auto& skeleton = registry.get<rigging::Skeleton>(entity);
-    skeleton.setConfig(std::move(rigConfig));
+    if (skeleton) {
+        skeleton->setConfig(std::move(rigConfig));
+    }
 }
 
 dv::value Entity::serialize() const {
-    const auto& eid = getID();
-    const auto& def = eid.def;
-    const auto& transform = getTransform();
-    const auto& rigidbody = getRigidbody();
-    const auto& scripts = getScripting();
-    auto skeleton = getSkeleton();
+    const auto& def = id.def;
 
     auto root = dv::object();
     root["def"] = def.name;
-    root["uid"] = eid.uid;
+    root["uid"] = id.uid;
 
     root[COMP_TRANSFORM] = transform.serialize();
     root[COMP_RIGIDBODY] =
@@ -68,9 +79,9 @@ dv::value Entity::serialize() const {
             );
         }
     }
-    if (!scripts.components.empty()) {
+    if (!scripting.components.empty()) {
         auto& compsMap = root.object("comps");
-        for (auto& comp : scripts.components) {
+        for (auto& comp : scripting.components) {
             if (comp->env == nullptr) {
                 continue;
             }
@@ -82,45 +93,11 @@ dv::value Entity::serialize() const {
     return root;
 }
 
-EntityId& Entity::getID() const {
-    return registry.get<EntityId>(entity);
-}
-
-bool Entity::isValid() const {
-    return registry.valid(entity);
-}
-
-Transform& Entity::getTransform() const {
-    return registry.get<Transform>(entity);
-}
-
-
-ScriptComponents& Entity::getScripting() const {
-    return registry.get<ScriptComponents>(entity);
-}
-
-const EntityDef& Entity::getDef() const {
-    return registry.get<EntityId>(entity).def;
-}
-
-Rigidbody& Entity::getRigidbody() const {
-    return registry.get<Rigidbody>(entity);
-}
-
-entityid_t Entity::getUID() const {
-    return registry.get<EntityId>(entity).uid;
-}
-
-int64_t Entity::getPlayer() const {
-    return registry.get<EntityId>(entity).player;
-}
-
-void Entity::setPlayer(int64_t id) {
-    auto& eid = registry.get<EntityId>(entity);
-    if (eid.player == id) {
+void Entity::setPlayer(int64_t player) {
+    if (id.player == player) {
         return;
     }
-    eid.player = id;
-    scripting::on_entity_player_set(*this, id);
+    id.player = player;
+    scripting::on_entity_player_set(*this, player);
 }
 

@@ -11,6 +11,11 @@ on:
         required: true
         type: string
         description: 'Build name passed as VC_BUILD_NAME define'
+      version_patch:
+        required: false
+        type: string
+        default: ''
+        description: 'Engine version patch number passed as VC_VERSION_PATCH define'
 
 jobs:
   build-appimage:
@@ -35,14 +40,8 @@ jobs:
           # fix luajit paths
           sudo ln -s /usr/lib/x86_64-linux-gnu/libluajit-5.1.a /usr/lib/x86_64-linux-gnu/liblua5.1.a
           sudo ln -s /usr/include/luajit-2.1 /usr/include/lua
-          # install EnTT
-          git clone --branch v3.16.0 https://github.com/skypjack/entt.git
-          cd entt/build
-          cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DENTT_INSTALL=on ..
-          sudo make install
-          cd ../..
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_APPDIR=1 -DVOXELENGINE_BUILD_TESTS=ON -DVC_BUILD_NAME="${{ inputs.build_name }}"
+        run: cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_BUILD_TYPE=Release -DVOXELENGINE_BUILD_APPDIR=1 -DVOXELENGINE_BUILD_TESTS=ON -DVC_BUILD_NAME="${{ inputs.build_name }}" -DVC_VERSION_PATCH="${{ inputs.version_patch }}"
       - name: Build
         run: cmake --build build -t install
       - name: Run tests
