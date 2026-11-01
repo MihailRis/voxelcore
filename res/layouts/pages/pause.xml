@@ -2,7 +2,7 @@
     <button onclick='gui.close_menu()'>@Continue</button>
     <button onclick='menu.page="content?mode=world"'>@Content</button>
     <button onclick='menu.page="settings"'>@Settings</button>
-    <button onclick='app.close_world(true)'>
+    <button id='quit_btn' onclick='app.close_world(true)'>
         @Save and Quit to Menu
     </button>
 </panel>

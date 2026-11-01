@@ -7,11 +7,11 @@
     </textbox>
     <label>@Seed</label>
     <textbox id='seed_box' placeholder='-' padding='4'></textbox>
-    <button onclick='save_state() menu.page="generators"' id='generator_btn'>
+    <button id='generator_btn' onclick='save_state() menu.page="generators"'>
         @World generator
     </button>
     <button id='content_btn' onclick='save_state() menu.page="content"'/>
-    <button onclick='create_world()' margin='0,20,0,1'>
+    <button id='create_world_btn' onclick='create_world()' margin='0,20,0,1'>
         @Create World
     </button>
     <button onclick='menu:back()'>@Back</button>

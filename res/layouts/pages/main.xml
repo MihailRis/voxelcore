@@ -1,5 +1,5 @@
 <panel size='400' color='0' interval='1' context='menu'>
-    <button onclick='menu.page="worlds"'>@Worlds</button>
+    <button id='worlds_btn' onclick='menu.page="worlds"'>@Worlds</button>
     <button onclick='menu.page="scripts"'>@Scripts</button>
     <button onclick='menu.page="settings"'>@Settings</button>
     <button onclick='menu.page="content_menu"'>@Content</button>

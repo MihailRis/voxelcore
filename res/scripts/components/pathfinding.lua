@@ -47,6 +47,25 @@ function next_waypoint()
     return route[#route]
 end
 
+local function is_passed(waypoint, next_point, pos)
+    local wx, wz = waypoint[1] + 0.5, waypoint[3] + 0.5
+    local dx, dz = pos[1] - wx, pos[3] - wz
+    if dx * dx + dz * dz > 2.25 then
+        return false
+    end
+    return dx * (next_point[1] + 0.5 - wx) + dz * (next_point[3] + 0.5 - wz) > 0
+end
+
+local function drop_passed_waypoints(new_route)
+    table.remove(new_route, #new_route)
+    local pos = tsf:get_pos()
+    while #new_route >= 2 and
+        is_passed(new_route[#new_route], new_route[#new_route - 1], pos) do
+        table.remove(new_route, #new_route)
+    end
+    return new_route
+end
+
 local refresh_internal = 100
 local frameid = math.random(0, refresh_internal)
 
@@ -66,7 +85,7 @@ function on_update()
     else
         local new_route = pathfinding.pull_route(agent)
         if new_route then
-            route = new_route
+            route = drop_passed_waypoints(new_route)
             started = false
         end
     end
