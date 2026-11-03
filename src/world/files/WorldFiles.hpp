@@ -24,7 +24,8 @@ struct WorldInfo;
 struct DebugSettings;
 
 struct ContentRemovalRequest {
-    std::vector<std::string> units;
+    std::vector<std::string> blocks;
+    std::vector<std::string> items;
 };
 
 class WorldFiles {

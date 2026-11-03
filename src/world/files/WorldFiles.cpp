@@ -249,8 +249,10 @@ static void replace_all(
 
 void WorldFiles::deleteContent(const ContentRemovalRequest& request) {
     auto root = io::read_json(getIndicesFile());
-    for (const auto& unit : request.units) {
+    for (const auto& unit : request.blocks) {
         replace_all(root["blocks"], unit, CORE_AIR);
+    }
+    for (const auto& unit : request.items) {
         replace_all(root["items"], unit, CORE_EMPTY);
     }
     io::write_json(getIndicesFile(), root);
