@@ -14,9 +14,8 @@
 static debug::Logger logger("entity-content-loader");
 
 template<> void ContentUnitLoader<EntityDef>::loadUnit(
-    EntityDef& def, const std::string& name, const io::path& file
+    EntityDef& def, const std::string& name, dv::value root
 ) {
-    auto root = io::read_json(file);
     process_properties(def, name, root);
 
     if (root.has("parent")) {

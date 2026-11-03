@@ -38,16 +38,21 @@ public:
     T& create(const std::string& id, bool* created = nullptr) {
         auto found = defs.find(id);
         if (found != defs.end()) {
-            if (created) *created = false;
+            if (created) {
+                *created = false;
+            }
             return *found->second;
         }
-        if (created) *created = true;
+        if (created) {
+            *created = true;
+        }
         checkIdentifier(id);
         allNames[id] = type;
         names.push_back(id);
         defs[id] = std::make_unique<T>(id);
         return *defs[id];
     }
+
     // Only fetch existing definition, return null otherwise.
     T* get(const std::string& id) {
         auto found = defs.find(id);

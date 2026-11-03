@@ -115,9 +115,8 @@ static void load_variant(
 }
 
 template<> void ContentUnitLoader<Block>::loadUnit(
-    Block& def, const std::string& name, const io::path& file
+    Block& def, const std::string& name, dv::value root
 ) {
-    auto root = io::read_json(file);
     process_properties(def, name, root);
     process_tags(def, root);
 
@@ -126,7 +125,7 @@ template<> void ContentUnitLoader<Block>::loadUnit(
         auto parentDef = builder.get(parentName);
         if (parentDef == nullptr) {
             throw std::runtime_error(
-                "Failed to find parent(" + parentName + ") for " + name
+                "failed to find parent(" + parentName + ") for " + name
             );
         }
         parentDef->cloneTo(def);
@@ -146,7 +145,7 @@ template<> void ContentUnitLoader<Block>::loadUnit(
             stateBased.at("offset").get(offset);
             stateBased.at("bits").get(bitsCount);
             if (offset < 0 || bitsCount <= 0 || offset + bitsCount > 8) {
-                throw std::runtime_error("Invalid state-based bits configuration");
+                throw std::runtime_error("invalid state-based bits configuration");
             }
 
             def.variants = std::make_unique<Variants>();
@@ -161,6 +160,13 @@ template<> void ContentUnitLoader<Block>::loadUnit(
             while (def.variants->variants.size() < BLOCK_MAX_VARIANTS) {
                 def.variants->variants.push_back(def.defaults);
             }
+        }
+    } else if (def.variants) {
+        auto& variants = def.variants->variants;
+        variants.at(0) = def.defaults;
+
+        for (int i = 1; i < variants.size(); i++) {
+            load_variant(variants.at(i), root, name);
         }
     }
 
