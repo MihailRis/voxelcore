@@ -235,3 +235,23 @@ void WorldFiles::removeIndices(const std::vector<std::string>& packs) {
 io::path WorldFiles::getFolder() const {
     return directory;
 }
+
+static void replace_all(
+    dv::value& list, const std::string& unit, const std::string& placeholder
+) {
+    for (uint i = 0; i < list.size(); i++) {
+        auto& name = list[i].asString();
+        if (name == unit) {
+            list[i] = placeholder;
+        }
+    }
+}
+
+void WorldFiles::deleteContent(const ContentRemovalRequest& request) {
+    auto root = io::read_json(getIndicesFile());
+    for (const auto& unit : request.units) {
+        replace_all(root["blocks"], unit, CORE_AIR);
+        replace_all(root["items"], unit, CORE_EMPTY);
+    }
+    io::write_json(getIndicesFile(), root);
+}
