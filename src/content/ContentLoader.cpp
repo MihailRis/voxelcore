@@ -180,7 +180,8 @@ void ContentUnitLoader<DefT>::loadUnit(
     auto configFile = folder / (defsDir + "/" + name + ".json");
     if (io::exists(configFile)) {
         try {
-            loadUnit(def, full, configFile);
+            dv::value root = io::read_json(configFile);
+            loadUnit(def, full, std::move(root));
         } catch (const std::runtime_error& err) {
             throw std::runtime_error(
                 "file " + util::quote(configFile.string()) + ": " +
@@ -286,12 +287,15 @@ void ContentLoader::loadContent(const dv::value& root) {
     };
 
     ContentUnitLoader<Block>(*pack, builder.blocks, "blocks", 
-        [this](Block& def) {
+        [this](const Block& def) {
         if (!def.hidden) {
             bool created;
-            auto& item = builder.items.create(def.name + BLOCK_ITEM_SUFFIX, &created);
+            auto& item = builder.items.create(
+                def.name + BLOCK_ITEM_SUFFIX, &created
+            );
             item.generated = true;
-            item.caption = def.caption;
+            item.caption = def.caption.empty() ? util::id_to_caption(def.name)
+                                               : def.caption;
             item.iconType = ItemIconType::BLOCK;
             item.icon = def.name;
             item.placingBlock = def.name;

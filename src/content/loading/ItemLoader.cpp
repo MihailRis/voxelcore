@@ -15,9 +15,8 @@ static debug::Logger logger("item-content-loader");
 
 
 template<> void ContentUnitLoader<ItemDef>::loadUnit(
-    ItemDef& def, const std::string& name, const io::path& file
+    ItemDef& def, const std::string& name, dv::value root
 ) {
-    auto root = io::read_json(file);
     process_properties(def, name, root);
     process_tags(def, root);
 
