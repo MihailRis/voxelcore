@@ -1,5 +1,8 @@
 #include "ContentBuilder.hpp"
 
+#include "core_defs.hpp"
+#include "util/stringutil.hpp"
+
 ContentBuilder::~ContentBuilder() = default;
 
 void ContentBuilder::add(std::unique_ptr<ContentPackRuntime> pack) {
@@ -18,6 +21,11 @@ std::unique_ptr<Content> ContentBuilder::build() {
     auto groups = std::make_unique<DrawGroups>();
     for (const std::string& name : blocks.names) {
         Block& def = *blocks.defs[name];
+
+        // Filling auto fields
+        if (def.caption.empty()) {
+            def.caption = util::id_to_caption(def.name);
+        }
 
         // Generating runtime info
         def.rt.id = blockDefsIndices.size();
@@ -83,6 +91,11 @@ std::unique_ptr<Content> ContentBuilder::build() {
     for (const std::string& name : items.names) {
         ItemDef& def = *items.defs[name];
 
+        // Filling auto fields
+        if (def.caption.empty()) {
+            def.caption = util::id_to_caption(def.name);
+        }
+
         // Generating runtime info
         def.rt.id = itemDefsIndices.size();
         def.rt.emissive = *reinterpret_cast<uint32_t*>(def.emission);
@@ -116,8 +129,17 @@ std::unique_ptr<Content> ContentBuilder::build() {
 
     // Now, it's time to resolve foreign keys
     for (Block* def : blockDefsIndices) {
-        def->rt.pickingItem = content->items.require(def->pickingItem).rt.id;
-        def->rt.surfaceReplacement = content->blocks.require(def->surfaceReplacement).rt.id;
+        def->rt.pickingItem =
+            content->items
+                .require(
+                    def->pickingItem.empty()
+                        ? (def->hidden ? CORE_EMPTY
+                                       : def->name + BLOCK_ITEM_SUFFIX)
+                        : def->pickingItem
+                )
+                .rt.id;
+        def->rt.surfaceReplacement =
+            content->blocks.require(def->surfaceReplacement).rt.id;
         if (def->properties == nullptr) {
             def->properties = dv::object();
         }

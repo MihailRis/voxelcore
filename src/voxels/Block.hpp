@@ -274,7 +274,7 @@ public:
     BlockRotProfile rotations = BlockRotProfile::NONE;
 
     /// @brief Item will be picked on MMB click on the block
-    std::string pickingItem = name + BLOCK_ITEM_SUFFIX;
+    std::string pickingItem;
 
     /// @brief Block script name in blocks/ without extension
     std::string scriptName = name.substr(name.find(':') + 1);

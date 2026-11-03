@@ -120,8 +120,7 @@ const BlockRotProfile BlockRotProfile::LADDER {
     4
 };
 
-Block::Block(const std::string& name)
-    : name(name), caption(util::id_to_caption(name)) {
+Block::Block(const std::string& name) : name(name) {
     for (int i = 0; i < defaults.textureFaces.size(); i++) {
         defaults.textureFaces[i] = TEXTURE_NOTFOUND;
     }
