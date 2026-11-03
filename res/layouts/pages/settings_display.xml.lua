@@ -66,6 +66,20 @@ function on_open()
         "</select>", app.get_setting("display.window-mode"))
     )
 
+    -- the bar height matters wherever the engine draws the window frame
+    if app.has_engine_window_frame() then
+        create_checkbox(
+            "display.compact-window-bar", "Narrow Window Bar",
+            "display.compact-window-bar.tooltip"
+        )
+    end
+    -- every backend has an alternative to redrawing during a resize: the
+    -- cached frame on wayland, the frame the system stretches elsewhere
+    create_checkbox(
+        "display.live-resize", "Live Window Resize",
+        "display.live-resize.tooltip"
+    )
+
     create_checkbox("camera.shaking", "Camera Shaking")
     create_checkbox("camera.inertia", "Camera Inertia")
     create_checkbox("camera.fov-effects", "Camera FOV Effects")

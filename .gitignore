@@ -1,8 +1,6 @@
 Debug/src/**/*.d
 Debug/src/**/*.o
 
-Debug/voxel_engine
-
 /build
 /cmake-build-**
 /screenshots
@@ -36,6 +34,7 @@ Debug/voxel_engine
 /Default/
 AppDir
 appimage-build/
+*.AppImage*
 
 # macOS folder attributes
 *.DS_Store

@@ -23,9 +23,6 @@ cmake -DCMAKE_BUILD_TYPE=Release -DENTT_INSTALL=ON ..
 sudo make install
 ```
 
-> [!WARNING]
-> If you are using ALT Linux, do **not** use this EnTT installation method.
-
 #### ALT Linux based distros
 
 ```sh
@@ -58,6 +55,15 @@ sudo dnf install glfw-devel glew-devel glm-devel libpng-devel libvorbis-devel op
 ```sh
 sudo pacman -S glfw glew glm libpng libvorbis openal luajit curl freetype2 openssl
 ```
+
+#### Wayland
+
+On Linux the engine draws the window frame itself and needs `libwayland-dev`
+(with `libwayland-bin` for `wayland-scanner`), `libxkbcommon-dev` and
+`libegl-dev`. The protocol XML descriptions are vendored in
+`src/window/wayland/protocols`, so the `wayland-protocols` package is not used.
+`libsystemd-dev` is optional and adds the window button layout read through
+sd-bus. Build with `-DVOXELCORE_WAYLAND=OFF` to fall back to GLFW.
 
 ### Building engine with CMake
 

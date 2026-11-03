@@ -1,0 +1,10 @@
+From wayland-protocols (not libwayland), newer than 1.25 (xdg-shell v7, cursor-shape-v1 v2).
+sha256 of the revision in use, keep the copyright headers when updating:
+
+bb57d91e53a79dadab7c612dab87c233393cee73673feefa7442cfbfdd9aed2f  cursor-shape-v1.xml
+c2ac9f002c6669ca6c02eb9b587b8e9108e3ce6deab4a2de58b576f4f864ca38  idle-inhibit-unstable-v1.xml
+f980fac900ba1dcfbbe97f588fc17b893926bd2b57624563653a1bfe4d035948  pointer-constraints-unstable-v1.xml
+ab4930dd3084f732b6fdd12ee6dbd0a112a758ed8a57b170366391dbeb1a22ff  relative-pointer-unstable-v1.xml
+db291b574adb2d42d27f3d01a77723bb3350a7a32e6d33de16513521b42294a9  tablet-unstable-v2.xml
+68753c4a85a28659e3aa1fe0f138329a8bf3dff0b4789f4663a2c7fedbfecf2f  xdg-decoration-unstable-v1.xml
+7ba7f9c8473deee674cb1f154a18abd0bb0cc072604fc055b0c15e459fc4c7df  xdg-shell.xml

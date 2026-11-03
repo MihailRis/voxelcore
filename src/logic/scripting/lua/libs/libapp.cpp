@@ -229,6 +229,16 @@ static int l_open_url(lua::State* L) {
 }
 
 
+/// @brief Whether the engine draws the window frame itself
+static int l_has_engine_window_frame(lua::State* L) {
+    return lua::pushboolean(L, engine->getWindow().hasEngineFrame());
+}
+
+/// @brief Name of the windowing backend ("glfw" or "wayland")
+static int l_get_window_backend(lua::State* L) {
+    return lua::pushstring(L, engine->getWindow().getBackendName());
+}
+
 /// @brief Bring application window to focus
 static int l_focus(lua::State* L) {
     engine->getWindow().focus();
@@ -502,6 +512,8 @@ const luaL_Reg applib[] = {
     {"open_folder", lua::wrap<l_open_folder>},
     {"open_url", lua::wrap<l_open_url>},
     /// window
+    {"get_window_backend", lua::wrap<l_get_window_backend>},
+    {"has_engine_window_frame", lua::wrap<l_has_engine_window_frame>},
     {"focus", lua::wrap<l_focus>},
     {"set_title", lua::wrap<l_set_title>},
     {"quit", lua::wrap<l_quit>},

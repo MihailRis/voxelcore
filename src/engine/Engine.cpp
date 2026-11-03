@@ -1,8 +1,11 @@
 #include "Engine.hpp"
+#include "WindowBar.hpp"
 
 #ifndef GLEW_STATIC
 #define GLEW_STATIC
 #endif
+
+#include <GL/glew.h>
 
 #include "AssetsManagement.hpp"
 #include "audio/audio.hpp"
@@ -280,6 +283,7 @@ void Engine::updateFrontend() {
     assets->update();
     updateHotkeys();
     audio::update(delta);
+    gui->setContentInset(screen->getContentInset(*window));
     gui->act(delta, window->getSize());
     screen->update(delta);
     gui->postAct();
@@ -319,10 +323,17 @@ void Engine::renderFrame() {
     if (input->isCursorLocked() != (gui->getActiveFrame() == nullptr)) {
         input->toggleCursor();
     }
+    glViewport(
+        0,
+        0,
+        static_cast<GLsizei>(window->getSize().x),
+        static_cast<GLsizei>(window->getSize().y)
+    );
     screen->draw(time.getDelta());
 
     DrawContext ctx(nullptr, *window, nullptr);
     gui->draw(ctx, *assets->getStorage());
+    draw_window_bar(*this);
 }
 
 void Engine::saveSettings() {

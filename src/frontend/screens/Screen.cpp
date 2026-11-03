@@ -1,4 +1,5 @@
 #include "Screen.hpp"
+#include "window/Window.hpp"
 
 #include "graphics/core/Batch2D.hpp"
 #include "engine/Engine.hpp"
@@ -9,4 +10,8 @@ Screen::Screen(Engine& engine)
 }
 
 Screen::~Screen() {
+}
+
+int Screen::getContentInset(const Window& window) const {
+    return window.getDecorationHeight();
 }

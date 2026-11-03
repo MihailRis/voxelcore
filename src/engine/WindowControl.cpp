@@ -59,10 +59,20 @@ WindowControl::Result WindowControl::initialize() {
         throw initialize_error("could not initialize window");
     }
     window->setFramerate(settings.display.framerate.get());
-    if (auto icon = load_icon()) {
-        icon->flipY();
-        window->setIcon(icon.get());
+    if (window->isIconSupported()) {
+        if (auto icon = load_icon()) {
+            icon->flipY();
+            window->setIcon(icon.get());
+        }
     }
+
+    // The platform blocks the main loop while it resizes the window, so the
+    // frame is drawn from here, with the frontend layout updated first.
+    window->setRefreshHandler([this] {
+        engine.updateFrontend();
+        engine.renderFrame();
+        engine.getWindow().swapBuffers();
+    });
 
     return Result {std::move(window), std::move(input)};
 }

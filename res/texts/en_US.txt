@@ -25,6 +25,8 @@ graphics.backlight.tooltip=Backlight to prevent total darkness
 graphics.dense-render.tooltip=Enables transparency in blocks like leaves
 graphics.soft-lighting.tooltip=Enables blocks soft lighting
 graphics.advanced-render.tooltip=Use graphics pipeline supporting advanced effects like shadows, SSAO
+display.compact-window-bar.tooltip=Window bar 24 px high instead of 48 px
+display.live-resize.tooltip=Redraw the window while it is resized (off: show the last frame)
 
 # settings
 settings.Controls Search Mode=Search by attached button name
