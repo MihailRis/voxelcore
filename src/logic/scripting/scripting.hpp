@@ -65,7 +65,7 @@ namespace scripting {
     scriptenv create_pack_environment(const ContentPack& pack);
     scriptenv create_environment(const scriptenv& parent);
     scriptenv create_doc_environment(
-        const scriptenv& parent, const std::string& name
+        const scriptenv& parent, const std::string& name, bool app = false
     );
 
     void process_post_runnables();

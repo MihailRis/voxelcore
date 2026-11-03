@@ -9,12 +9,16 @@ class Engine;
 class World;
 class ContentReport;
 class LevelController;
+struct ContentRemovalRequest;
 
 class EngineController {
     Engine& engine;
 
     int64_t localPlayer = -1;
-    void onMissingContent(const std::shared_ptr<ContentReport>& report);
+    void onMissingContent(
+        const std::string& worldName,
+        const std::shared_ptr<ContentReport>& report
+    );
 public:
     EngineController(Engine& engine);
 
@@ -26,6 +30,10 @@ public:
     /// @brief Show world removal confirmation dialog
     /// @param name world name
     void deleteWorld(const std::string& name);
+
+    void deleteWorldContent(
+        const std::string& name, ContentRemovalRequest request, bool loadWorld
+    );
 
     void reconfigPacks(
         LevelController* controller,
