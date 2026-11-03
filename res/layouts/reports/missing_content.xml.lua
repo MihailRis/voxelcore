@@ -1,19 +1,12 @@
 content_report = nil
 
 function delete_content()
-    local blocks = {}
-    local items = {}
+    local units = {}
     for i, entry in ipairs(content_report.content) do
-        local type = entry.type
-        if type == "block" then
-            table.insert(blocks, entry.name)
-        elseif type == "item" then
-            table.insert(items, entry.name)
-        end
+        table.insert(units, entry.name)
     end
     local request = {
-        blocks = blocks,
-        items = items
+        units = units
     }
     app.delete_world_content(content_report.world, request, true)
 end

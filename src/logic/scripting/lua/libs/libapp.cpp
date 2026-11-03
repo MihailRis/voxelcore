@@ -328,34 +328,21 @@ static int l_delete_world(lua::State* L) {
     return 0;
 }
 
-static ContentRemovalRequest parse_content_removal_request(
-    lua::State* L, int idx
-) {
+static ContentRemovalRequest parse_content_removal_request(lua::State* L, int idx) {
     ContentRemovalRequest request;
     if (!lua::istable(L, idx)) {
         throw std::runtime_error("table expected as argument");
     }
-    lua::pushnil(L);
-    while (lua::next(L, idx)) {
-        auto key = lua::require_lstring(L, -2);
-        int len = lua::objlen(L, -1);
-
-        for (int i = 0; i < len; i++) {
-            lua::rawgeti(L, i + 1);
-            auto value = lua::require_lstring(L, -1);
-
-            if (key == "blocks") {
-                request.blocks.emplace_back(value);
-            } else if (key == "items") {
-                request.items.emplace_back(value);
-            } else {
-                throw std::runtime_error(
-                    "invalid key in content removal request: " +
-                    std::string(key)
-                );
-            }
-            lua::pop(L);
-        }
+    if (!lua::getfield(L, "units", idx)) {
+        throw std::runtime_error("table with 'units' field expected");
+    }
+    if (!lua::istable(L, -1)) {
+        throw std::runtime_error("'units' field must be a table");
+    }
+    int len = lua::objlen(L, -1);
+    for (int i = 0; i < len; i++) {
+        lua::rawgeti(L, i + 1);
+        request.units.emplace_back(lua::require_lstring(L, -1));
         lua::pop(L);
     }
     return request;
