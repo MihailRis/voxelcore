@@ -696,7 +696,8 @@ SortingMeshData BlocksRenderer::renderTranslucent(
 void BlocksRenderer::build(
     const Chunk* chunk, const VoxelsRenderVolume& volume
 ) {
-    directionalLightFactor = settings.graphics.shadowsQuality.get() > 0.0f
+    directionalLightFactor = settings.graphics.shadowsQuality.get() > 0 &&
+                                     settings.graphics.advancedRender.get()
                                  ? 0.0f
                                  : DEFAULT_DIRECTIONAL_LIGHT_FACTOR;
 

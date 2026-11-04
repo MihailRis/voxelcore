@@ -89,9 +89,25 @@ LevelScreen::LevelScreen(
         resetChunks(false);
         frontend->getContentGfxCache().refresh();
     }));
-    keepAlive(settings.graphics.shadowsQuality.observe([=](int quality) {
+    auto graphics = &settings.graphics;
+    auto shadowsMeshing = std::make_shared<bool>(
+        graphics->shadowsQuality.get() > 0 && graphics->advancedRender.get()
+    );
+    auto updateShadowsMeshing = [=]() {
+        bool enabled =
+            graphics->shadowsQuality.get() > 0 && graphics->advancedRender.get();
+        if (enabled == *shadowsMeshing) {
+            return;
+        }
+        *shadowsMeshing = enabled;
         resetChunks(false);
         frontend->getContentGfxCache().refresh();
+    };
+    keepAlive(settings.graphics.shadowsQuality.observe([=](int) {
+        updateShadowsMeshing();
+    }));
+    keepAlive(settings.graphics.advancedRender.observe([=](bool) {
+        updateShadowsMeshing();
     }));
     keepAlive(settings.camera.fov.observe([=](double value) {
         player->fpCamera->setFov(glm::radians(value));
