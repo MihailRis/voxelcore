@@ -177,7 +177,13 @@ block.get_textures(id: int, [опционально] variant_index: int = 0) -> 
 -- 2. Размер хитбокса
 -- rotation_index - индекс поворота блока
 -- hitbox_index - индекс хитбокса
-block.get_hitbox(id: int, rotation_index: int, [опционально] hitbox_index: int = 0) -> {vec3, vec3}
+-- variant_index - индекс варианта
+block.get_hitbox(
+    id: int,
+    rotation_index: int,
+    [опционально] hitbox_index: int = 0,
+    [опционально] variant_index: int = 0
+) -> {vec3, vec3}
 ```
 
 ## Данные блоков

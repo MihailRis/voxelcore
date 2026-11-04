@@ -17,7 +17,11 @@ enum class BlendMode {
     /// @brief Additive blending mode.
     addition, 
     /// @brief Subtractive blending mode.
-    inversion
+    inversion,
+    /// @brief Normal color blending with alpha accumulated as coverage.
+    coverage,
+    /// @brief Blending of premultiplied-alpha color.
+    premultiplied
 };
 
 /// @brief Standard GLFW 3.4 cursor shapes (same order and count as in GLFW).

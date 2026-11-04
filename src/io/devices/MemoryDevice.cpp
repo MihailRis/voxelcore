@@ -14,8 +14,13 @@ std::filesystem::path io::MemoryDevice::resolve(std::string_view path) {
 
 std::unique_ptr<std::ostream> io::MemoryDevice::write(std::string_view path) {
     std::string filePath = std::string(path);
+
+    auto memoryStream = std::make_unique<memory_ostream>();
+    memoryStream->set_sync_callback([this, filePath](std::string_view data) {
+        createFile(std::move(filePath), util::Buffer<char>(data.data(), data.size()));
+    });
     return std::make_unique<finalizing_ostream>(
-        std::make_unique<memory_ostream>(),
+        std::move(memoryStream),
         [this, filePath](auto ostream) {
             auto& memoryStream = dynamic_cast<memory_ostream&>(*ostream);
             createFile(std::move(filePath), memoryStream.release());

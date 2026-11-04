@@ -41,6 +41,11 @@ entities.defs_count() -> int
 
 ```
 
+```lua
+-- Table of custom entity properties (see ../../entity-properties.md)
+entities.properties: table<int, table<string, object>>
+```
+
 > [!NOTE]
 > The following functions for retrieving multiple entities return tables with integer keys (uid).
 > For iteration, use `pairs`, and for calculating the table size, use `table.count_pairs`.

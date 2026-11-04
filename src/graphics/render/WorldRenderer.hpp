@@ -18,6 +18,7 @@ class ChunksRenderer;
 class DebugLinesRenderer;
 class DrawContext;
 class Engine;
+class EntitiesRenderer;
 class Frustum;
 class HandsRenderer;
 class Level;
@@ -33,6 +34,7 @@ class Shader;
 class Shadows;
 class Skybox;
 class TextsRenderer;
+class TranslucentLayers;
 class CloudsRenderer;
 struct EngineSettings;
 struct Weather;
@@ -79,6 +81,8 @@ private:
     std::unique_ptr<DebugLinesRenderer> debugLines;
     std::unique_ptr<PrecipitationRenderer> precipitation;
     std::unique_ptr<CloudsRenderer> cloudsRenderer;
+    std::unique_ptr<EntitiesRenderer> entitiesRenderer;
+    std::unique_ptr<TranslucentLayers> translucentLayers;
     
     float timer = 0.0f;
     bool debug = false;
@@ -124,6 +128,12 @@ private:
     );
 
     void renderWeatherEffects(Camera& camera);
+
+    void renderTranslucency(
+        const DrawContext& context,
+        Camera& camera,
+        PostProcessing& postProcessing
+    );
 
     void renderHandsPass(const DrawContext& pctx, Camera& camera);
 

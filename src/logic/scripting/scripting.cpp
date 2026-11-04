@@ -24,6 +24,7 @@
 #include "world/Level.hpp"
 #include "world/World.hpp"
 #include "interfaces/Process.hpp"
+#include "objects/EntityDef.hpp"
 
 #include <iostream>
 #include <stdexcept>
@@ -215,7 +216,7 @@ std::unique_ptr<Process> scripting::start_app_script(const io::path& script) {
 }
 
 [[nodiscard]] scriptenv scripting::create_doc_environment(
-    const scriptenv& parent, const std::string& name
+    const scriptenv& parent, const std::string& name, bool app
 ) {
     auto L = lua::get_main_state();
     int id = lua::create_environment(L, *parent);
@@ -224,6 +225,12 @@ std::unique_ptr<Process> scripting::start_app_script(const io::path& script) {
     lua::setfield(L, "DOC_ENV");
     lua::pushstring(L, name);
     lua::setfield(L, "DOC_NAME");
+
+    if (app) {
+        if (lua::getregistry(L, "app")) {
+            lua::setfield(L, "app");
+        }
+    }
 
     if (lua::getglobal(L, "Document")) {
         if (lua::getfield(L, "new")) {
@@ -261,7 +268,12 @@ static int push_properties_tables(
 }
 
 void scripting::on_assets_loading() {
-     lua::call_internal(lua::get_main_state(), "backup_and_clear_animation");
+    auto L = lua::get_main_state();
+    lua::call_internal(L, "backup_and_clear_animation");
+
+    for (auto& pack : content_control->getAllContentPacks()) {
+        lua::emit_event(L, pack.id + ":.onassetsloading");
+    }
 }
 
 void scripting::revert_assets_loading() {
@@ -290,6 +302,11 @@ void scripting::on_content_load(Content* content) {
     }
     if (lua::getglobal(L, "item")) {
         push_properties_tables(L, indices.items);
+        lua::setfield(L, "properties");
+        lua::pop(L);
+    }
+    if (lua::getglobal(L, "entities")) {
+        push_properties_tables(L, indices.entities);
         lua::setfield(L, "properties");
         lua::pop(L);
     }
@@ -345,7 +362,9 @@ void scripting::on_world_tick(int tps) {
         lua::pop(L);
     } 
     for (auto& pack : content_control->getAllContentPacks()) {
-        lua::emit_event(L, pack.id + ":.worldtick");
+        lua::emit_event(L, pack.id + ":.worldtick", [tps](lua::State* L) {
+            return lua::pushinteger(L, tps);
+        });
     }
 }
 
@@ -449,6 +468,23 @@ static bool on_block_common(
         }
     }
     return result;
+}
+
+bool scripting::can_block_be_placed(
+    Player* player, const Block& block, const glm::ivec3& pos, int rotation
+) {
+    if (!block.rt.funcsset.canbeplaced) {
+        return true;
+    }
+    std::string name = block.name + ".canbeplaced";
+    return lua::emit_event(
+        lua::get_main_state(), name, [pos, player, rotation](auto L) {
+            lua::pushivec_stack(L, pos);
+            lua::pushinteger(L, player ? player->getId() : -1);
+            lua::pushinteger(L, rotation);
+            return 5;
+        }
+    );
 }
 
 void scripting::on_block_placed(
@@ -717,6 +753,8 @@ void scripting::load_content_script(
         register_event(env, "on_breaking", prefix + ".breaking");
     funcsset.onbroken = register_event(env, "on_broken", prefix + ".broken");
     funcsset.onplaced = register_event(env, "on_placed", prefix + ".placed");
+    funcsset.canbeplaced =
+        register_event(env, "can_be_placed", prefix + ".canbeplaced");
     funcsset.onreplaced =
         register_event(env, "on_replaced", prefix + ".replaced");
     funcsset.oninteract =
@@ -821,6 +859,7 @@ void scripting::load_content_script(
 
     register_event(env, "on_scripts_loading", prefix + ":.onscriptsloading");
     register_event(env, "on_content_loaded", prefix + ":.oncontentloaded");
+    register_event(env, "on_assets_loading", prefix + ":.onassetsloading");
 }
 
 void scripting::load_layout_script(

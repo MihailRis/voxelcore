@@ -38,6 +38,48 @@ Additional load settings example:
     ]
 }
 ```
+## Patterns
+
+An asset name may contain `*` to include multiple assets at once. The `*` matches any sequence of characters within a single path segment.
+
+Pattern matching is performed within the pack containing `preload.json`, specifically within the folder corresponding to the asset type (e.g., `textures/`, `sounds/`, etc.).
+The resulting asset names are the same as if each discovered asset had been specified explicitly.
+
+```json
+{
+    "textures": [
+        "gui/*",
+        "mobs/*/skin-*"
+    ],
+    "sounds": [
+        "steps/*"
+    ]
+}
+```
+
+> [!NOTE]
+> Sound variations (such as `grass_0.ogg`, `grass_1.ogg`, etc.) are added as a single sound entry (e.g., `steps/grass`).
+
+A pattern ending in `/` matches directories rather than individual files. This is used for atlases:
+```json
+{
+    "atlases": [
+        "smth/*/other-*/*/"
+    ]
+}
+```
+
+Entry parameters apply to all matched assets. The `path` parameter cannot be used in conjunction with a pattern:
+```json
+{
+    "sounds": [
+        {
+            "name": "ambient/*",
+            "keep-pcm": true
+        }
+    ]
+}
+```
 
 *preload.json* example from `core:` package (`res/preload.json`):
 ```json

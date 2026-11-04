@@ -26,16 +26,26 @@ assets.load_texture(
 
 -- Парсит и загружает 3D модель
 assets.parse_model(
-    -- Формат файла модели (xml / vcm)
+    -- Формат файла модели (xml / vcm / obj / vec3)
     format: string,
     -- Содержимое файла модели
-    content: string,
+    content: string | Bytearray (.vec3),
     -- Имя модели после загрузки
     name: string,
     -- Имя скелета после загрузки. Может совпадать с именем модели.
     -- Модель будет разделена по именованным костям.
     [опционально]
     skeleton_name: string
+)
+
+-- Парсит и загружает определение скелета
+assets.parse_skeleton(
+    -- Формат файла скелета (json / vcm / xml)
+    format: string,
+    -- Содержимое файла скелета
+    content: string,
+    -- Имя скелета после загрузки
+    name: string
 )
 
 -- Парсит и загружает анимацию

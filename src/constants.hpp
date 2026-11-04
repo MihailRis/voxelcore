@@ -6,7 +6,12 @@
 #include <string>
 
 inline constexpr int ENGINE_VERSION_MAJOR = 0;
-inline constexpr int ENGINE_VERSION_MINOR = 32;
+inline constexpr int ENGINE_VERSION_MINOR = 33;
+#ifdef VC_VERSION_PATCH
+inline constexpr int ENGINE_VERSION_PATCH = VC_VERSION_PATCH;
+#else
+inline constexpr int ENGINE_VERSION_PATCH = 0;
+#endif
 
 #ifdef NDEBUG
 inline constexpr bool ENGINE_DEBUG_BUILD = false;
@@ -14,7 +19,13 @@ inline constexpr bool ENGINE_DEBUG_BUILD = false;
 inline constexpr bool ENGINE_DEBUG_BUILD = true;
 #endif // NDEBUG
 
-inline const std::string ENGINE_VERSION_STRING = "0.32";
+inline const std::string ENGINE_VERSION_STRING =
+    std::to_string(ENGINE_VERSION_MAJOR) + "." +
+    std::to_string(ENGINE_VERSION_MINOR)
+#ifdef VC_VERSION_PATCH
+    + "." + std::to_string(ENGINE_VERSION_PATCH)
+#endif
+    ;
 
 inline constexpr uint MAX_SUBPROCESSES = 1;
 inline constexpr uint MAX_SUBPROCESS_DEPTH = 2;
@@ -75,7 +86,8 @@ inline constexpr int DEFAULT_FONT_SIZE = 16;
 
 inline constexpr int DEFAULT_PRE_RENDER_FONT_PAGES = 1; // must be at least 1
 
-inline const std::string ANIMATION_FOLDER = "animation";
+inline const std::string ANIMATION_FOLDER = "animations";
+inline const std::string ANIMATION_FOLDER_ALIAS = "animation";
 inline const std::string FONTS_FOLDER = "fonts";
 inline const std::string LAYOUTS_FOLDER = "layouts";
 inline const std::string MODELS_FOLDER = "models";

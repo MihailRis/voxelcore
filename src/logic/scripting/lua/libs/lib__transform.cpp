@@ -61,9 +61,11 @@ static int l_get_rot(lua::State* L) {
 
 static int l_set_rot(lua::State* L) {
     if (auto entity = get_entity(L, 1)) {
-        auto matrix = lua::tomat4(L, 2);
+        glm::mat3 matrix(lua::tomat4(L, 2));
         check_valid(matrix);
-        entity->getTransform().setRot(matrix);
+        auto rotation = glm::normalize(glm::quat_cast(matrix));
+        entity->getTransform().setRot(glm::mat3_cast(rotation));
+        entity->setInterpolatedRotation(rotation);
     }
     return 0;
 }

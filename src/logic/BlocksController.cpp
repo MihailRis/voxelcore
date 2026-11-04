@@ -69,11 +69,11 @@ void BlocksController::breakBlock(
     onBlockInteraction(
         player, glm::ivec3(x, y, z), def, BlockInteraction::destruction
     );
+    scripting::on_block_broken(player, def, glm::ivec3(x, y, z));
     blocks_agent::set(chunks, x, y, z, 0, {});
     if (lighting) {
         lighting->onBlockSet(x, y, z, 0);
     }
-    scripting::on_block_broken(player, def, glm::ivec3(x, y, z));
     if (def.rt.extended) {
         updateSides(x, y, z , def.size.x, def.size.y, def.size.z);
     } else {
@@ -130,14 +130,26 @@ void BlocksController::updateBlock(int x, int y, int z) {
 }
 
 void BlocksController::update(float delta, uint padding) {
-    if (int parts = randTickClock.update(delta)) {
-        for (int i = 0; i < parts; i++) {
-            randomTick(randTickClock.convertPart(i), randTickClock.getParts(), padding);
+    auto& worldInfo = level.getWorld().getInfo();
+
+    if (worldInfo.getLogicFlag("random_ticks", true)) {
+        if (int parts = randTickClock.update(delta)) {
+            for (int i = 0; i < parts; i++) {
+                randomTick(
+                    randTickClock.convertPart(i),
+                    randTickClock.getParts(),
+                    padding
+                );
+            }
         }
     }
-    if (int parts = blocksTickClock.update(delta)) {
-        for (int i = 0; i < parts; i++) {
-            onBlocksTick(blocksTickClock.convertPart(i), blocksTickClock.getParts());
+    if (worldInfo.getLogicFlag("block_ticks", true)) {
+        if (int parts = blocksTickClock.update(delta)) {
+            for (int i = 0; i < parts; i++) {
+                onBlocksTick(
+                    blocksTickClock.convertPart(i), blocksTickClock.getParts()
+                );
+            }
         }
     }
     if (worldTickClock.update(delta)) {

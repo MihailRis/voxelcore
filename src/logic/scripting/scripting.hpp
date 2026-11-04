@@ -65,7 +65,7 @@ namespace scripting {
     scriptenv create_pack_environment(const ContentPack& pack);
     scriptenv create_environment(const scriptenv& parent);
     scriptenv create_doc_environment(
-        const scriptenv& parent, const std::string& name
+        const scriptenv& parent, const std::string& name, bool app = false
     );
 
     void process_post_runnables();
@@ -92,6 +92,9 @@ namespace scripting {
     void on_blocks_tick(const Block& block, int tps);
     void update_block(const Block& block, const glm::ivec3& pos);
     void random_update_block(const Block& block, const glm::ivec3& pos);
+    bool can_block_be_placed(
+        Player* player, const Block& block, const glm::ivec3& pos, int rotation
+    );
     void on_block_placed(
         Player* player, const Block& block, const glm::ivec3& pos
     );

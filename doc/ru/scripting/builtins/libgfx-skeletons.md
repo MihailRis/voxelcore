@@ -27,6 +27,10 @@ skeleton:get_matrix(index: int) -> mat4
 -- Устанавливает матрицу трансформации кости с указанным индексом
 skeleton:set_matrix(index: int, matrix: mat4)
 
+-- Возвращает смещение кости с указанным индексом относительно родительской
+-- (как задано в конфиге скелета)
+skeleton:get_bone_offset(index: int) -> vec3
+
 -- Возвращает текстуру по ключу (динамически назначаемые текстуры - '$имя')
 skeleton:get_texture(key: string) -> string
 

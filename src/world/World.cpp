@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 #include <memory>
+#include <unordered_set>
 #include <utility>
 
 #include "content/Content.hpp"
@@ -14,6 +15,7 @@
 #include "objects/Player.hpp"
 #include "objects/Players.hpp"
 #include "settings.hpp"
+#include "util/stringutil.hpp"
 #include "voxels/Chunk.hpp"
 #include "voxels/Chunks.hpp"
 #include "voxels/GlobalChunks.hpp"
@@ -23,6 +25,7 @@
 
 static debug::Logger logger("world");
 const float DAYIME_SPECIFIC_SPEED = 1.0f / 1440.0f;  // 1.0f/60.0f/24.0f;
+
 
 world_load_error::world_load_error(const std::string& message)
     : std::runtime_error(message) {
@@ -38,8 +41,7 @@ World::World(
     packs(packs),
     wfile(std::move(worldFiles)) {}
 
-World::~World() {
-}
+World::~World() = default;
 
 void World::updateTimers(float delta) {
     info.daytime += delta * info.daytimeSpeed * DAYIME_SPECIFIC_SPEED;
@@ -74,6 +76,49 @@ void World::write(Level& level) {
     io::write_json(wfile->getPlayerFile(), playerFile);
 
     writeResources(content);
+}
+
+dv::value WorldInfo::getLogicValue(const std::string& name,
+                                  const dv::value& def) const {
+    if (logic.isObject()) {
+        if (auto field = logic.at(name)) {
+            return *field;
+        }
+    }
+    const auto& defaults = defaultLogic();
+    if (defaults.isObject()) {
+        if (auto field = defaults.at(name)) {
+            return *field;
+        }
+    }
+    return def;
+}
+
+void WorldInfo::setLogicValue(const std::string& name, dv::value value) {
+    if (!WorldInfo::isLogicKey(name)) {
+        throw std::runtime_error("unknown logic parameter " + util::quote(name));
+    }
+    if (!logic.isObject()) {
+        logic = dv::object();
+    }
+    logic[name] = std::move(value);
+}
+
+bool WorldInfo::getLogicFlag(const std::string& name, bool def) const {
+    auto value = getLogicValue(name, dv::value(def));
+    if (value.isBoolean()) {
+        return value.asBoolean();
+    }
+    if (value.isInteger()) {
+        return value.asInteger() != 0;
+    }
+    if (value.isNumber()) {
+        return value.asNumber() != 0.0;
+    }
+    if (value.isString()) {
+        return !value.asString().empty();
+    }
+    return def;
 }
 
 std::unique_ptr<Level> World::create(
@@ -216,6 +261,14 @@ void WorldInfo::deserialize(const dv::value& root) {
         daytimeSpeed = timeobj["day-time-speed"].asNumber();
         totalTime = timeobj["total-time"].asNumber();
     }
+    if (root.has("logic")) {
+        logic = root["logic"];
+    } else {
+        logic = dv::object({
+            {"random_ticks", true},
+            {"block_ticks", true}
+        });
+    }
     nextInventoryId = root["next-inventory-id"].asInteger(2);
     nextEntityId = root["next-entity-id"].asInteger(1);
     root.at("next-player-id").get(nextPlayerId);
@@ -244,5 +297,6 @@ dv::value WorldInfo::serialize() const {
     root["next-inventory-id"] = nextInventoryId;
     root["next-entity-id"] = nextEntityId;
     root["next-player-id"] = nextPlayerId;
+    root["logic"] = logic;
     return root;
 }

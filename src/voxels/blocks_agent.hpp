@@ -264,6 +264,22 @@ inline glm::ivec3 seek_origin(
     }
 }
 
+/// @brief Get block state selecting the variant hitboxes.
+/// Variant bits of an extended block are stored in its origin segment
+/// @param origin extended block origin position
+/// @param state state of the checked segment
+template <class Storage>
+inline blockstate hitbox_state(
+    Storage& chunks, const glm::ivec3& origin, blockstate state
+) {
+    if (state.segment) {
+        if (auto* voxel = get(chunks, origin.x, origin.y, origin.z)) {
+            state.userbits = voxel->state.userbits;
+        }
+    }
+    return state;
+}
+
 /// @brief Check blocks replaceability with specified block
 /// @tparam Storage chunks storage class
 /// @param chunks chunks storage
@@ -490,12 +506,14 @@ inline std::optional<AABB> is_obstacle_at(
         return std::nullopt;
     }
     glm::ivec3 offset {};
-    if (v->state.segment) {
+    blockstate state = v->state;
+    if (state.segment) {
         glm::ivec3 point(ix, iy, iz);
-        offset = seek_origin(chunks, point, def, v->state) - point;
+        auto origin = seek_origin(chunks, point, def, state);
+        offset = origin - point;
+        state = hitbox_state(chunks, origin, state);
     }
-    const auto& boxes =
-        def.rotatable ? def.rt.hitboxes[v->state.rotation] : def.hitboxes;
+    const auto& boxes = def.getHitboxes(state);
 
     for (const auto& hitbox : boxes) {
         if (hitbox.intersects(aabb - glm::ivec3(ix, iy, iz))) {

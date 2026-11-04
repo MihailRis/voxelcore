@@ -19,13 +19,16 @@
 #include "util/stringutil.hpp"
 #include "window/Window.hpp"
 #include "world/Level.hpp"
+#include "world/files/WorldFiles.hpp"
 
 #include <array>
+#include <unordered_map>
 
 using namespace scripting;
 
 namespace {
-    static std::array<std::unique_ptr<Process>, MAX_SUBPROCESSES> processes;
+    static std::unordered_map<int, std::unique_ptr<SystemProcess>> processes;
+    static int next_process_id = 1;
 }
 
 /// @brief Check if content is loaded
@@ -325,11 +328,45 @@ static int l_delete_world(lua::State* L) {
     return 0;
 }
 
+static ContentRemovalRequest parse_content_removal_request(lua::State* L, int idx) {
+    ContentRemovalRequest request;
+    if (!lua::istable(L, idx)) {
+        throw std::runtime_error("table expected as argument");
+    }
+    if (!lua::getfield(L, "units", idx)) {
+        throw std::runtime_error("table with 'units' field expected");
+    }
+    if (!lua::istable(L, -1)) {
+        throw std::runtime_error("'units' field must be a table");
+    }
+    int len = lua::objlen(L, -1);
+    for (int i = 0; i < len; i++) {
+        lua::rawgeti(L, i + 1);
+        request.units.emplace_back(lua::require_lstring(L, -1));
+        lua::pop(L);
+    }
+    return request;
+}
+
+static int l_delete_world_content(lua::State* L) {
+    auto name = lua::require_string(L, 1);
+    auto controller = engine->getController();
+    auto request = parse_content_removal_request(L, 2);
+    bool loadWorld = lua::toboolean(L, 3);
+    controller->deleteWorldContent(name, request, loadWorld);
+    return 0;
+}
+
 /// @brief Get engine version
-/// @return major, minor 
+/// @return major, minor, [patch]
 static int l_get_version(lua::State* L) {
     return lua::pushvec_stack(
-        L, glm::vec2(ENGINE_VERSION_MAJOR, ENGINE_VERSION_MINOR)
+        L,
+#ifdef VC_VERSION_PATCH
+        glm::vec3(ENGINE_VERSION_MAJOR, ENGINE_VERSION_MINOR, ENGINE_VERSION_PATCH)
+#else
+        glm::vec2(ENGINE_VERSION_MAJOR, ENGINE_VERSION_MINOR)
+#endif
     );
 }
 
@@ -429,6 +466,7 @@ static int l_start_background_instance(lua::State* L) {
         "--sub-depth", std::to_string(engine->getCoreParameters()
             .subProcessDepth + 1),
         "--log", io::resolve(outputPath).u8string(),
+        "--stdin-cmd",
     };
     args.emplace_back("--project");
     args.emplace_back(io::resolve(engine->getProject().path).u8string());
@@ -444,25 +482,17 @@ static int l_start_background_instance(lua::State* L) {
         }
     }
 
-    int handle = -1;
-    for (int i = 0; i < ::processes.size(); i++) {
-        if (!::processes[i] || !::processes[i]->isActive()) {
-            handle = i;
-            break;
-        }
-    }
-    if (handle == -1) {
+    if (::processes.size() >= MAX_SUBPROCESSES) {
         throw std::runtime_error("sub-processes limit exceeded");
     }
-    ::processes[handle] =
-        platform::new_engine_instance(std::move(args), "", true);
-
-    return lua::pushinteger(L, handle);
+    int id = ::next_process_id++;
+    ::processes[id] = platform::new_engine_instance(std::move(args), "", true);
+    return lua::pushinteger(L, id);
 }
 
 static int l_is_instance_alive(lua::State* L) {
     int handle = lua::tointeger(L, 1);
-    if (handle < 0 || handle >= ::processes.size()) {
+    if (handle < 0 || ::processes.find(handle) == ::processes.end()) {
         throw std::runtime_error("invalid process handle");
     }
     auto& process = ::processes[handle];
@@ -471,16 +501,42 @@ static int l_is_instance_alive(lua::State* L) {
 
 static int l_terminate_instance(lua::State* L) {
     int handle = lua::tointeger(L, 1);
-    if (handle < 0 || handle >= ::processes.size()) {
+    if (handle < 0 || ::processes.find(handle) == ::processes.end()) {
+        throw std::runtime_error("invalid process handle");
+    }
+    auto it = ::processes.find(handle);
+    if (it->second == nullptr) {
+        ::processes.erase(it);
+        return lua::pushboolean(L, false);
+    }
+    bool active = it->second->isActive();
+    it->second.reset();
+    ::processes.erase(it);
+    return lua::pushboolean(L, active);
+}
+
+static int l_get_stdin_stream(lua::State* L) {
+    int handle = lua::tointeger(L, 1);
+    if (handle < 0 || ::processes.find(handle) == ::processes.end()) {
         throw std::runtime_error("invalid process handle");
     }
     auto& process = ::processes[handle];
     if (process == nullptr) {
-        return lua::pushboolean(L, false);
+        return 0;
     }
-    bool active = process->isActive();
-    process.reset();
-    return lua::pushboolean(L, active);
+    return lua::pushinteger(L, process->getStdinDescriptor());
+}
+
+static int l_get_stdout_stream(lua::State* L) {
+    int handle = lua::tointeger(L, 1);
+    if (handle < 0 || ::processes.find(handle) == ::processes.end()) {
+        throw std::runtime_error("invalid process handle");
+    }
+    auto& process = ::processes[handle];
+    if (process == nullptr) {
+        return 0;
+    }
+    return lua::pushinteger(L, process->getStdoutDescriptor());
 }
 
 const luaL_Reg applib[] = {
@@ -512,12 +568,16 @@ const luaL_Reg applib[] = {
     {"save_world", lua::wrap<l_save_world>},
     {"close_world", lua::wrap<l_close_world>},
     {"delete_world", lua::wrap<l_delete_world>},
+    {"delete_world_content", lua::wrap<l_delete_world_content>},
     /// other
     {"get_version", lua::wrap<l_get_version>},
     {"create_memory_device", lua::wrap<l_create_memory_device>},
+    // sub-instances
     {"start_debug_instance", lua::wrap<l_start_debug_instance>},
     {"start_background_instance", lua::wrap<l_start_background_instance>},
     {"is_instance_alive", lua::wrap<l_is_instance_alive>},
     {"terminate_instance", lua::wrap<l_terminate_instance>},
+    {"get_stdin_stream", lua::wrap<l_get_stdin_stream>},
+    {"get_stdout_stream", lua::wrap<l_get_stdout_stream>},
     {nullptr, nullptr}
 };

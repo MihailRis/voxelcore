@@ -275,19 +275,19 @@ static inline voxel* raycast_blocks(
             iend = {ix, iy, iz};
 
             if (!def.rt.solid) {
-                const std::vector<AABB>& hitboxes =
-                    def.rotatable ? def.rt.hitboxes[voxel->state.rotation]
-                                  : def.hitboxes;
-
                 scalar_t distance = maxDist;
                 Ray ray(start, dir);
 
                 bool hit = false;
 
                 glm::vec3 offset {};
-                if (voxel->state.segment) {
-                    offset = seek_origin(chunks, iend, def, voxel->state) - iend;
+                blockstate state = voxel->state;
+                if (state.segment) {
+                    auto origin = seek_origin(chunks, iend, def, state);
+                    offset = origin - iend;
+                    state = hitbox_state(chunks, origin, state);
                 }
+                const auto& hitboxes = def.getHitboxes(state);
 
                 for (auto box : hitboxes) {
                     box.a += offset;

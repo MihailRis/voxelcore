@@ -121,7 +121,21 @@ static int l_get_inv(lua::State* L) {
 
 static int l_set_selected_slot(lua::State* L) {
     if (auto player = get_player(L, 1)) {
-        player->setChosenSlot(lua::tointeger(L, 2) % 10);
+        player->setChosenSlot(lua::tointeger(L, 2) % player->getHotbarSize());
+    }
+    return 0;
+}
+
+static int l_get_hotbar_size(lua::State* L) {
+    if (auto player = get_player(L, 1)) {
+        return lua::pushinteger(L, player->getHotbarSize());
+    }
+    return 0;
+}
+
+static int l_set_hotbar_size(lua::State* L) {
+    if (auto player = get_player(L, 1)) {
+        player->setHotbarSize(lua::tointeger(L, 2));
     }
     return 0;
 }
@@ -401,6 +415,8 @@ const luaL_Reg playerlib[] = {
     {"get_interaction_distance", lua::wrap<l_get_interaction_distance>},
     {"set_interaction_distance", lua::wrap<l_set_interaction_distance>},
     {"set_selected_slot", lua::wrap<l_set_selected_slot>},
+    {"get_hotbar_size", lua::wrap<l_get_hotbar_size>},
+    {"set_hotbar_size", lua::wrap<l_set_hotbar_size>},
     {"get_selected_block", lua::wrap<l_get_selected_block>},
     {"get_selected_entity", lua::wrap<l_get_selected_entity>},
     {"set_spawnpoint", lua::wrap<l_set_spawnpoint>},

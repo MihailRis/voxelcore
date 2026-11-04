@@ -81,6 +81,8 @@ world.upgrade-request=Формат мира устарел! Конвертиро
 world.convert-with-loss=Конвертировать мир с потерями?
 world.convert-block-layouts=Есть изменения в полях блоков! Конвертировать мир?
 world.delete-confirm=Удалить мир безвозвратно?
+world.Delete Content=Удалить контент
+world.delete-content-confirm=Удалить отсутствующий контент из мира __**(безвозвратно)**__?
 
 # Настройки
 settings.Ambient=Фон

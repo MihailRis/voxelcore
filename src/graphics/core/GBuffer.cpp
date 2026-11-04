@@ -8,7 +8,11 @@ using namespace advanced_pipeline;
 
 static debug::Logger logger("gl-gbuffer");
 
-void GBuffer::createBuffer(Buffer& buffer) {
+uint GBuffer::getSSAODownsample() const {
+    return 2;
+}
+
+void GBuffer::createBuffer(Buffer& buffer, int downsample) {
     if (buffer.buffer == 0) {
         if (&buffer == &depthBuffer)
             glGenRenderbuffers(1, &depthBuffer.buffer);
@@ -27,8 +31,8 @@ void GBuffer::createBuffer(Buffer& buffer) {
             GL_TEXTURE_2D,
             0,
             buffer.internalformat,
-            width,
-            height,
+            width / downsample,
+            height / downsample,
             0,
             buffer.format,
             buffer.type,
@@ -48,8 +52,7 @@ void GBuffer::createBuffer(Buffer& buffer) {
 }
 
 GBuffer::GBuffer(uint width, uint height)
-    : width(width), height(height), 
-
+    : width(width), height(height),
       colorBuffer       {0, GL_RGB,     GL_RGB,  GL_UNSIGNED_BYTE, GL_COLOR_ATTACHMENT0},
       positionsBuffer   {0, GL_RGBA16F, GL_RGBA, GL_FLOAT,         GL_COLOR_ATTACHMENT1},
       normalsBuffer     {0, GL_RGBA16F, GL_RGB,  GL_FLOAT,         GL_COLOR_ATTACHMENT2},
@@ -83,7 +86,7 @@ GBuffer::GBuffer(uint width, uint height)
 
     glGenFramebuffers(1, &ssaoFbo);
     glBindFramebuffer(GL_FRAMEBUFFER, ssaoFbo);
-    createBuffer(ssaoBuffer);
+    createBuffer(ssaoBuffer, getSSAODownsample());
     glFramebufferTexture2D(
         GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoBuffer.buffer, 0
     );
@@ -168,7 +171,7 @@ void GBuffer::resize(uint width, uint height) {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     glBindFramebuffer(GL_FRAMEBUFFER, ssaoFbo);
-    createBuffer(ssaoBuffer);
+    createBuffer(ssaoBuffer, getSSAODownsample());
     glBindTexture(GL_TEXTURE_2D, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

@@ -40,6 +40,11 @@ entities.def_index(name: string) -> int
 entities.defs_count() -> int
 ```
 
+```lua
+-- Таблица пользовательских свойств сущностей (см. ../../entity-properties.md)
+entities.properties: table<int, table<string, object>>
+```
+
 > [!NOTE]
 > Следующие функции для получения нескольких сущностей возвращают таблицы с целочисленными ключами (uid).
 > Для итерации нужно использовать pairs, для подсчёта размера таблицы - table.count_pairs.

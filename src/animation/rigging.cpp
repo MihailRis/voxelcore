@@ -88,6 +88,7 @@ void Skeleton::deserialize(const dv::value& root) {
             dv::get_mat(posearr[i], pose.matrices[i]);
         }
     }
+    boundsDirty = true;
 }
 
 void Skeleton::setConfig(std::shared_ptr<const SkeletonConfig> rigConfig) {
@@ -105,6 +106,7 @@ void Skeleton::setConfig(std::shared_ptr<const SkeletonConfig> rigConfig) {
     for (size_t i = 0; i < bonesCount; i++) {
         flags[i].visible = true;
     }
+    boundsDirty = true;
 }
 
 static void get_all_nodes(std::vector<Bone*>& nodes, Bone* node) {
@@ -160,17 +162,87 @@ void SkeletonConfig::update(
     const glm::vec3& position,
     const glm::vec3& scale
 ) const {
-    if (skeleton.interpolation.isEnabled()) {
-        const auto& interpolation = skeleton.interpolation;
-        update(
-            0,
-            skeleton,
-            root.get(),
-            build_matrix(rotation, interpolation.getCurrent(), scale)
-        );
-    } else {
-        update(0, skeleton, root.get(), build_matrix(rotation, position, scale));
+    glm::vec3 pos = position;
+    const auto& interpolation = skeleton.interpolation;
+    if (interpolation.isEnabled() && interpolation.isRefreshed()) {
+        pos = interpolation.getCurrent();
     }
+    glm::mat3 rot = rotation;
+    const auto& rotationInterpolation = skeleton.rotationInterpolation;
+    if (rotationInterpolation.isEnabled() && rotationInterpolation.isRefreshed()) {
+        rot = glm::mat3_cast(rotationInterpolation.getCurrent());
+    }
+    update(0, skeleton, root.get(), build_matrix(rot, pos, scale));
+}
+
+static float max_component(const glm::vec3& v) {
+    return glm::max(glm::abs(v.x), glm::max(glm::abs(v.y), glm::abs(v.z)));
+}
+
+static float farthest_corner_distance(
+    const glm::mat4& matrix, const AABB& aabb, const glm::vec3& origin
+) {
+    glm::vec3 center = glm::vec3(matrix * glm::vec4(aabb.center(), 1.0f));
+    glm::vec3 halfSize = aabb.size() * 0.5f;
+    glm::vec3 extent = glm::abs(glm::vec3(matrix[0])) * halfSize.x +
+                       glm::abs(glm::vec3(matrix[1])) * halfSize.y +
+                       glm::abs(glm::vec3(matrix[2])) * halfSize.z;
+    return glm::length(glm::abs(center - origin) + extent);
+}
+
+void SkeletonConfig::processModels(
+    const Assets& assets,
+    Skeleton& skeleton,
+    const glm::vec3& position,
+    const glm::vec3& scale,
+    ModelBatch* batch,
+    ModelLightingMode lightingMode,
+    bool translucent
+) const {
+    float radius = 0.0f;
+    bool pending = false;
+    for (size_t i = 0; i < nodes.size(); i++) {
+        auto* node = nodes[i];
+        if (!skeleton.flags[i].visible) {
+            continue;
+        }
+        node->model.refresh(assets);
+        auto model = node->model.model.lock(); // TODO: cache model pointer during frame
+        auto& modelOverride = skeleton.modelOverrides.at(i);
+        if (modelOverride.updateFlag) {
+            modelOverride.refresh(assets);
+        }
+        if (auto foundOverride = modelOverride.model.lock()) {
+            model = std::move(foundOverride);
+        }
+        if (model == nullptr) {
+            if (!node->model.name.empty()) {
+                node->model.updateFlag = true;
+                pending = true;
+            } 
+            continue;
+        }
+        const auto& matrix = skeleton.calculated.matrices[i];
+        radius = glm::max(
+            radius, farthest_corner_distance(matrix, model->getBounds(), position)
+        );
+        if (batch == nullptr) {
+            continue;
+        }
+        batch->draw(
+            matrix,
+            skeleton.tint * skeleton.boneTints[i],
+            lightingMode == ModelLightingMode::SOLID
+                ? position - glm::vec3(matrix * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f))
+                : glm::vec3(),
+            model,
+            &skeleton.textures,
+            translucent
+        );
+    }
+    float maxScale = max_component(scale);
+    skeleton.boundsRadius = maxScale > 0.0f ? radius / maxScale : radius;
+    skeleton.boundsDirty = pending;
 }
 
 void SkeletonConfig::render(
@@ -180,7 +252,8 @@ void SkeletonConfig::render(
     ModelLightingMode lightingMode,
     const glm::mat3& rotation,
     const glm::vec3& position,
-    const glm::vec3& scale
+    const glm::vec3& scale,
+    bool translucent
 ) const {
     if (skeleton.config->root == nullptr) {
         return;
@@ -190,39 +263,31 @@ void SkeletonConfig::render(
     if (!skeleton.visible) {
         return;
     }
-    for (size_t i = 0; i < nodes.size(); i++) {
-        auto* node = nodes[i];
-        if (!skeleton.flags[i].visible) {
-            continue;
-        }
-        node->model.refresh(assets);
-        auto model = node->model.model.lock().get(); // TODO: cache model pointer during frame
-        auto& modelOverride = skeleton.modelOverrides.at(i);
-        if (modelOverride.updateFlag) {
-            modelOverride.refresh(assets);
-        }
-        if (auto foundOverride = modelOverride.model.lock()) {
-            model = foundOverride.get();
-        }
-        if (model == nullptr) {
-            if (!node->model.name.empty()) {
-                node->model.updateFlag = true;
-            } 
-            continue;
-        }
-        batch.draw(
-            skeleton.calculated.matrices[i],
-            skeleton.tint * skeleton.boneTints[i],
-            lightingMode == ModelLightingMode::SOLID
-                ? position - glm::vec3(
-                      skeleton.calculated.matrices[i] *
-                      glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)
-                  )
-                : glm::vec3(),
-            model,
-            &skeleton.textures
-        );
+    processModels(
+        assets, skeleton, position, scale, &batch, lightingMode, translucent
+    );
+}
+
+void SkeletonConfig::updateBounds(
+    const Assets& assets,
+    Skeleton& skeleton,
+    const glm::mat3& rotation,
+    const glm::vec3& position,
+    const glm::vec3& scale
+) const {
+    if (skeleton.config->root == nullptr) {
+        return;
     }
+    update(skeleton, rotation, position, scale);
+    processModels(
+        assets,
+        skeleton,
+        position,
+        scale,
+        nullptr,
+        ModelLightingMode::SOLID,
+        false
+    );
 }
 
 const Bone* SkeletonConfig::find(std::string_view str) const {

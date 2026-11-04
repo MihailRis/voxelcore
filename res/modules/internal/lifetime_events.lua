@@ -197,7 +197,9 @@ local function __process_post_runnables()
     network.__process_events()
     if not hud or not hud.is_paused() then
         internals.process_block_register_events()
-        internals.tick_updating_blocks(time.delta())
+        if world.is_open() and world.get_logic("block_ticks") then
+            internals.tick_updating_blocks(time.delta())
+        end
     end
 end
 

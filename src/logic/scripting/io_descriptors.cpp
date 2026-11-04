@@ -19,6 +19,18 @@ namespace {
         std::unique_ptr<std::ostream> out;
     };
     std::vector<std::optional<StreamDescriptor>> descriptors;
+
+    int add_descriptor(StreamDescriptor descriptor) {
+        for (int i = 0; i < static_cast<int>(descriptors.size()); ++i) {
+            if (!descriptors[i].has_value()) {
+                descriptors[i] = std::move(descriptor);
+                return i;
+            }
+        }
+
+        descriptors.emplace_back(std::move(descriptor));
+        return static_cast<int>(descriptors.size() - 1);
+    }
 }
 
 std::istream* io_descriptors::get_input(int id) {
@@ -121,6 +133,18 @@ void io_descriptors::close(int id) {
     ::descriptors[id] = std::nullopt;
 }
 
+int io_descriptors::add_descriptor(std::unique_ptr<std::istream> stream) {
+    return add_descriptor(StreamDescriptor {
+        std::move(stream), nullptr
+    });
+}
+
+int io_descriptors::add_descriptor(std::unique_ptr<std::ostream> stream) {
+    return add_descriptor(StreamDescriptor {
+        nullptr, std::move(stream)
+    });
+}
+
 int io_descriptors::open_descriptor(const io::path& path, bool write, bool read) {
     std::unique_ptr<std::istream> in;
     std::unique_ptr<std::ostream> out;
@@ -138,15 +162,9 @@ int io_descriptors::open_descriptor(const io::path& path, bool write, bool read)
         return -1;
     }
 
-    for (int i = 0; i < static_cast<int>(descriptors.size()); ++i) {
-        if (!descriptors[i].has_value()) {
-            descriptors[i] = StreamDescriptor{ std::move(in), std::move(out) };
-            return i;
-        }
-    }
-
-    ::descriptors.emplace_back(StreamDescriptor{ std::move(in), std::move(out) });
-    return static_cast<int>(::descriptors.size() - 1);
+    return add_descriptor(StreamDescriptor{
+        std::move(in), std::move(out)
+    });
 }
 
 

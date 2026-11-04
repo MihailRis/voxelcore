@@ -1,2 +1,4 @@
 generator = "core:default"
 player-entity = ""
+hotbar-size = 10
+inventory-layout = "core:inventory"

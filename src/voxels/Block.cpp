@@ -120,8 +120,7 @@ const BlockRotProfile BlockRotProfile::LADDER {
     4
 };
 
-Block::Block(const std::string& name)
-    : name(name), caption(util::id_to_caption(name)) {
+Block::Block(const std::string& name) : name(name) {
     for (int i = 0; i < defaults.textureFaces.size(); i++) {
         defaults.textureFaces[i] = TEXTURE_NOTFOUND;
     }
@@ -154,9 +153,9 @@ void Block::cloneTo(Block& dst) {
     dst.replaceable = replaceable;
     dst.breakable = breakable;
     dst.rotatable = rotatable;
+    dst.uvLock = uvLock;
     dst.grounded = grounded;
     dst.hidden = hidden;
-    dst.hitboxes = hitboxes;
     dst.rotations = rotations;
     dst.pickingItem = pickingItem;
     dst.scriptName = scriptName;

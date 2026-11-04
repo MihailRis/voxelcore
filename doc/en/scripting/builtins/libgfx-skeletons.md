@@ -26,6 +26,10 @@ skeleton:get_matrix(index: int) -> mat4
 -- Sets the transformation matrix of the bone with the specified index
 skeleton:set_matrix(index: int, matrix: mat4)
 
+-- Returns the offset of the bone with the specified index relative to its parent
+-- (as defined in the skeleton config)
+skeleton:get_bone_offset(index: int) -> vec3
+
 -- Returns the texture by key (dynamically assigned textures - '$name')
 skeleton:get_texture(key: str) -> str
 

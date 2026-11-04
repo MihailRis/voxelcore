@@ -25,7 +25,7 @@ public:
           postFunc(std::move(postFunc)) {
     }
     void loadUnit(DefT& def, const std::string& full, const std::string& name);
-    void loadUnit(DefT& def, const std::string& name, const io::path& file);
+    void loadUnit(DefT& def, const std::string& name, dv::value root);
     void loadDefs(const dv::value& root);
 private:
     const ContentPack& pack;

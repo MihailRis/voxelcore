@@ -5,6 +5,7 @@
 #include "maths/util.hpp"
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 static debug::Logger logger("entity-transform");
 

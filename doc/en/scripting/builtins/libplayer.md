@@ -142,7 +142,14 @@ Switches the player's camera. See [cameras](libcameras.md).
 player.set_selected_slot(playerid: int, slotid: int)
 ```
 
-Sets the selected slot index
+Sets the selected slot index. The index wraps around the hotbar size.
+
+```lua
+player.get_hotbar_size(playerid: int) -> int
+player.set_hotbar_size(playerid: int, size: int)
+```
+
+Hotbar size getter and setter: the number of first player inventory slots that can be selected. `player.set_selected_slot` wraps the index by it, and the selected slot is moved into the range when the size decreases. Default value is `hotbar-size` from `config/defaults.toml` (10); the value is not saved with the world. On the client these slots are shown in the hotbar and selected with the mouse wheel and number keys.
 
 ```lua
 player.get_selected_block(playerid: int) -> x,y,z

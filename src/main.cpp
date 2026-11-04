@@ -33,6 +33,9 @@ int main(int argc, char** argv) {
         std::cerr << err.what() << std::endl;
         return EXIT_FAILURE;
     }
+#ifndef _WIN32
+    std::signal(SIGPIPE, SIG_IGN);
+#endif
     std::signal(SIGTERM, sigterm_handler);
 #ifdef NDEBUG
     std::signal(SIGINT, sigterm_handler);

@@ -5,7 +5,9 @@
         "main",
         "lines",
         "entity",
+        "model",
         "translucent",
+        "translucent_composite",
         "background",
         "skybox_gen",
         "shadows",
@@ -23,37 +25,11 @@
         }
     ],
     "textures": [
-        "gui/menubg",
-        "gui/delete_icon",
-        "gui/no_icon",
-        "gui/no_world_icon",
-        "gui/warning",
-        "gui/error",
-        "gui/cross",
-        "gui/refresh",
-        "gui/folder_icon",
-        "gui/settings_icon",
-        "misc/rain",
-        "misc/snow",
-        "gui/check_mark",
-        "gui/left_arrow",
-        "gui/right_arrow",
-        "gui/lock",
-        "gui/save",
-        "gui/block",
-        "gui/item",
-        "gui/file",
-        "gui/module",
-        "gui/play",
-        "gui/info",
-        "gui/world",
-        "gui/hud",
-        "gui/entity",
-        "gui/half_block",
         {
             "name": "",
             "path": "textures/misc/blank"
-        }
+        },
+        "gui/*"
     ],
     "fonts": [
         {

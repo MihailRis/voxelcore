@@ -11,6 +11,11 @@ on:
         required: true
         type: string
         description: 'Build name passed as VC_BUILD_NAME define'
+      version_patch:
+        required: false
+        type: string
+        default: ''
+        description: 'Engine version patch number passed as VC_VERSION_PATCH define'
 
 jobs:
   build-windows:
@@ -53,7 +58,7 @@ jobs:
             export VCPKG_ROOT=$(pwd)/vcpkg
             mkdir build
             cd build
-            cmake -G "MinGW Makefiles" -DVCPKG_TARGET_TRIPLET=x64-mingw-static -DVC_BUILD_NAME="${{ inputs.build_name }}" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake ..
+            cmake -G "MinGW Makefiles" -DVCPKG_TARGET_TRIPLET=x64-mingw-static -DVC_BUILD_NAME="${{ inputs.build_name }}" -DVC_VERSION_PATCH="${{ inputs.version_patch }}" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake ..
             cmake --build . --config Release
       - name: Package for Windows
         run: |

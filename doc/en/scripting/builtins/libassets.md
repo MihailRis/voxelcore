@@ -25,16 +25,26 @@ assets.load_texture(
 
 -- Parses and loads a 3D model
 assets.parse_model(
-    -- Model file format (xml / vcm)
+    -- Model file format (xml / vcm / obj / vec3)
     format: str,
     -- Contents of the model file
-    content: str,
+    content: str | Bytearray (.vec3),
     -- Model name after loading
     name: str,
     -- The skeleton name after loading. May be the same as the model name.
     -- The model will be split by the named bones.
     [optional]
     skeleton_name: string
+)
+
+-- Parses and loads a skeleton definition
+assets.parse_skeleton(
+    -- Skeleton file format (json / vcm / xml)
+    format: str,
+    -- Contents of the skeleton file
+    content: str,
+    -- Skeleton name after loading
+    name: str
 )
 
 -- Parses and loads animation

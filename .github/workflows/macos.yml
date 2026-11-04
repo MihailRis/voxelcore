@@ -11,6 +11,11 @@ on:
         required: true
         type: string
         description: 'Build name passed as VC_BUILD_NAME define'
+      version_patch:
+        required: false
+        type: string
+        default: ''
+        description: 'Engine version patch number passed as VC_VERSION_PATCH define'
 
 jobs:
   build-dmg:
@@ -23,13 +28,13 @@ jobs:
 
       - name: Install dependencies from brew
         run: |
-          brew install glfw glew libpng openal-soft luajit libvorbis skypjack/entt/entt googletest glm freetype
+          brew install glfw glew libpng openal-soft luajit libvorbis googletest glm freetype
 
       - name: Configure
         run: |
           cmake -DOPENAL_INCLUDE_DIR=$(brew --prefix openal-soft)/include \
            -DOPENAL_LIBRARY=$(brew --prefix openal-soft)/lib/libopenal.dylib \
-           -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DVOXELENGINE_BUILD_TESTS=ON -DVOXELENGINE_BUILD_APPDIR=1 -DVC_BUILD_NAME="${{ inputs.build_name }}"
+           -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DVOXELENGINE_BUILD_TESTS=ON -DVOXELENGINE_BUILD_APPDIR=1 -DVC_BUILD_NAME="${{ inputs.build_name }}" -DVC_VERSION_PATCH="${{ inputs.version_patch }}"
 
       - name: Build
         run: |

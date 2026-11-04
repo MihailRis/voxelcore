@@ -92,10 +92,18 @@ void Container::act(float delta) {
         // TODO: make it interval-based
         gui.getWindow().setShouldRefresh();
     }
-    for (IntervalEvent& event : intervalEvents) {
-        event.timer += delta;
-        if (event.timer > event.interval) {
-            event.callback();
+    for (size_t i = 0; i < intervalEvents.size(); i++) {
+        if (intervalEvents[i].repeat == 0) {
+            continue;
+        }
+        intervalEvents[i].timer += delta;
+        if (intervalEvents[i].timer > intervalEvents[i].interval) {
+            auto callback = intervalEvents[i].callback;
+            callback();
+            IntervalEvent& event = intervalEvents[i];
+            if (event.repeat == 0) {
+                continue;
+            }
             event.timer = fmod(event.timer, event.interval);
             if (event.repeat > 0) {
                 event.repeat--;
@@ -232,8 +240,19 @@ void Container::clear() {
     refresh();
 }
 
-void Container::listenInterval(float interval, OnTimeOut callback, int repeat) {
-    intervalEvents.push_back({std::move(callback), interval, 0.0f, repeat});
+int Container::listenInterval(float interval, OnTimeOut callback, int repeat) {
+    int id = nextIntervalId++;
+    intervalEvents.push_back({id, std::move(callback), interval, 0.0f, repeat});
+    return id;
+}
+
+void Container::cancelInterval(int id) {
+    for (auto& event : intervalEvents) {
+        if (event.id == id) {
+            event.repeat = 0;
+            return;
+        }
+    }
 }
 
 void Container::setSize(const glm::vec2& size) {

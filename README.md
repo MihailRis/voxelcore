@@ -11,26 +11,11 @@
 
 ### Install libraries
 
-#### Install EnTT
-
-Installing last version that supports C++17.
-
-```sh
-git clone --branch v3.16.0 https://github.com/skypjack/entt.git
-cd entt
-mkdir -p build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release -DENTT_INSTALL=ON ..
-sudo make install
-```
-
-> [!WARNING]
-> If you are using ALT Linux, do **not** use this EnTT installation method.
-
 #### ALT Linux based distros
 
 ```sh
 su -
-apt-get install entt-devel libglfw3-devel libGLEW-devel libglm-devel libpng-devel libvorbis-devel libopenal-devel libluajit-devel libstdc++13-devel-static libcurl-devel libfreetype-devel libssl-devel
+apt-get install libglfw3-devel libGLEW-devel libglm-devel libpng-devel libvorbis-devel libopenal-devel libluajit-devel libstdc++13-devel-static libcurl-devel libfreetype-devel libssl-devel
 ```
 
 #### Debian based distros
@@ -80,7 +65,7 @@ cmake --build . --parallel
 ### Install libraries
 
 ```sh
-brew install glfw glew glm libpng libvorbis lua luajit libcurl openal-soft skypjack/entt/entt freetype
+brew install glfw glew glm libpng libvorbis lua luajit libcurl openal-soft freetype
 ```
 
 > [!TIP]

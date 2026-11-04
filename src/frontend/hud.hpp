@@ -89,6 +89,10 @@ class Hud : public util::ObjectsKeeper {
     std::shared_ptr<gui::InventoryView> contentAccess;
     /// @brief Player inventory hotbar
     std::shared_ptr<gui::InventoryView> hotbarView;
+    /// @brief Hotbar layout set by 'hotbar-layout', nullptr for built-in
+    UiDocument* hotbarDocument = nullptr;
+    /// @brief Hotbar is not hidden by scripts
+    bool hotbarVisible = true;
     /// @brief Debug info and control panel (F3 key)
     std::shared_ptr<gui::UINode> debugPanel;
     /// @brief Overlay used in pause mode
@@ -218,6 +222,10 @@ public:
     void setDebugCheats(bool flag);
 
     void setAllowPause(bool flag);
+
+    void setHotbarVisible(bool flag);
+
+    bool isHotbarVisible() const;
 
     bool isOpen(const std::string& layoutid) const;
 

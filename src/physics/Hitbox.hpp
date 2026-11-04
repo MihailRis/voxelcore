@@ -73,6 +73,9 @@ struct Hitbox {
     glm::vec3 prevPosition {};
     glm::vec3 prevVelocity {};
     bool prevGrounded = false;
+    float substepTime = 0.0f;
+    uint doneSubsteps = 0;
+    uint nextSubstep = 0;
 
     static inline constexpr float TELEPORT_THRESOLD_SQR = 0.5f;
 

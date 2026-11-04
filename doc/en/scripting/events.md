@@ -15,6 +15,26 @@ function on_placed(x, y, z, playerid)
 Called on block placed by player
 
 ```lua
+function can_be_placed(x, y, z, playerid, rotation) -> bool
+```
+
+Called before a player places the block, after the built-in checks
+(replaceability, `grounded`, intersection with entities).
+The block is placed only if the function returns `true`.
+`rotation` is the rotation index the block will be placed with
+(see `block.get_rotation`).
+
+Example: a sapling that can only be planted on dirt.
+
+```lua
+function can_be_placed(x, y, z, playerid, rotation)
+    return block.name(block.get(x, y - 1, z)) == "base:dirt"
+end
+```
+
+The event is not called when the block is placed with `block.place` or `block.set`.
+
+```lua
 function on_broken(x, y, z, playerid)
 ```
 
@@ -117,10 +137,10 @@ function on_world_save()
 Called before world save.
 
 ```lua
-function on_world_tick()
+function on_world_tick(tps)
 ```
 
-Called 20 times per second
+Called *tps* times per second
 
 ```lua
 function on_world_quit()
@@ -224,6 +244,12 @@ function on_content_loaded()
 ```
 
 Called after the content pack has been fully loaded
+
+```lua
+function on_assets_loading()
+```
+
+Called on assets loading start
 
 ## HUD events
 

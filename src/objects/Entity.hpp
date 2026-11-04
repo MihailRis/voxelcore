@@ -2,16 +2,17 @@
 
 #include "typedefs.hpp"
 #include "data/dv_fwd.hpp"
+#include "Transform.hpp"
+#include "Rigidbody.hpp"
+#include "ScriptComponents.hpp"
 
+#include <memory>
 #include <string>
-#include <entt/fwd.hpp>
 #include <glm/vec3.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 class Entities;
 struct EntityDef;
-struct Transform;
-struct Rigidbody;
-struct ScriptComponents;
 
 inline std::string COMP_TRANSFORM = "transform";
 inline std::string COMP_RIGIDBODY = "rigidbody";
@@ -31,50 +32,83 @@ struct EntityId {
 
 class Entity {
     Entities& entities;
-    entityid_t id;
-    entt::registry& registry;
-    const entt::entity entity;
+    EntityId id;
+    Transform transform;
+    Rigidbody rigidbody;
+    ScriptComponents scripting;
+    std::unique_ptr<rigging::Skeleton> skeleton;
 public:
     Entity(
         Entities& entities,
-        entityid_t id,
-        entt::registry& registry,
-        const entt::entity entity
-    )
-        : entities(entities), id(id), registry(registry), entity(entity) {
-    }
+        EntityId id,
+        Transform transform,
+        Rigidbody rigidbody,
+        std::unique_ptr<rigging::Skeleton> skeleton
+    );
+
+    Entity(const Entity&) = delete;
+    Entity& operator=(const Entity&) = delete;
+
+    ~Entity();
 
     dv::value serialize() const;
 
-    EntityId& getID() const;
+    EntityId& getID() {
+        return id;
+    }
+    const EntityId& getID() const {
+        return id;
+    }
 
-    bool isValid() const;
+    const EntityDef& getDef() const {
+        return id.def;
+    }
 
-    const EntityDef& getDef() const;
+    Transform& getTransform() {
+        return transform;
+    }
+    const Transform& getTransform() const {
+        return transform;
+    }
 
-    Transform& getTransform() const;
+    Rigidbody& getRigidbody() {
+        return rigidbody;
+    }
+    const Rigidbody& getRigidbody() const {
+        return rigidbody;
+    }
 
-    Rigidbody& getRigidbody() const;
+    ScriptComponents& getScripting() {
+        return scripting;
+    }
+    const ScriptComponents& getScripting() const {
+        return scripting;
+    }
 
-    ScriptComponents& getScripting() const;
-
-    rigging::Skeleton* getSkeleton() const;
+    rigging::Skeleton* getSkeleton() {
+        return skeleton.get();
+    }
+    const rigging::Skeleton* getSkeleton() const {
+        return skeleton.get();
+    }
 
     void setRig(std::shared_ptr<const rigging::SkeletonConfig> rigConfig);
 
-    entityid_t getUID() const;
+    entityid_t getUID() const {
+        return id.uid;
+    }
 
-    int64_t getPlayer() const;
+    int64_t getPlayer() const {
+        return id.player;
+    }
 
-    void setPlayer(int64_t id);
+    void setPlayer(int64_t player);
 
     void setInterpolatedPosition(const glm::vec3& position);
 
     glm::vec3 getInterpolatedPosition() const;
 
-    entt::entity getHandler() const {
-        return entity;
-    }
+    void setInterpolatedRotation(const glm::quat& rotation);
 
     void destroy();
 };

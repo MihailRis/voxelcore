@@ -108,6 +108,17 @@ static int l_get_seed(lua::State* L) {
     return lua::pushinteger(L, require_world_info().seed);
 }
 
+static int l_get_logic(lua::State* L) {
+    auto name = lua::require_string(L, 1);
+    return lua::pushvalue(L, require_world_info().getLogicValue(name));
+}
+
+static int l_set_logic(lua::State* L) {
+    auto name = lua::require_string(L, 1);
+    require_world_info().setLogicValue(name, lua::tovalue(L, 2));
+    return 0;
+}
+
 static int l_exists(lua::State* L) {
     auto name = lua::require_string(L, 1);
     auto worldsDir = engine->getPaths().getWorldFolderByName(name);
@@ -250,6 +261,8 @@ const luaL_Reg worldlib[] = {
     {"set_day_time_speed", lua::wrap<l_set_day_time_speed>},
     {"get_day_time_speed", lua::wrap<l_get_day_time_speed>},
     {"get_seed", lua::wrap<l_get_seed>},
+    {"get_logic", lua::wrap<l_get_logic>},
+    {"set_logic", lua::wrap<l_set_logic>},
     {"get_generator", lua::wrap<l_get_generator>},
     {"is_day", lua::wrap<l_is_day>},
     {"is_night", lua::wrap<l_is_night>},

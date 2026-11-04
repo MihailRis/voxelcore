@@ -24,6 +24,8 @@ public:
     uint getHeight() const;
 
     std::unique_ptr<ImageData> toImage() const;
+
+    uint getSSAODownsample() const;
 private:
     struct Buffer {
         uint buffer;
@@ -45,5 +47,5 @@ private:
     uint ssaoFbo;
     Buffer ssaoBuffer;
 
-    void createBuffer(Buffer& buffer);
+    void createBuffer(Buffer& buffer, int downsample = 1);
 };

@@ -27,6 +27,7 @@ local function tb_frame_tostring(frame)
 end
 
 local __vc__app_script_coroutine
+local __vc_process_streams = { stdin = {}, stdout = {} }
 
 local function complete_app_lib(app)
     local tick_required = true
@@ -39,6 +40,45 @@ local function complete_app_lib(app)
     end
     local __app_set_setting = app.set_setting
     local __app_quit = app.quit
+    local __app_get_stdout_stream = app.get_stdout_stream
+    local __app_get_stdin_stream = app.get_stdin_stream
+    local io_stream = require "core:io_stream"
+    local stdio_stream_lib = {
+        read = file.__read_descriptor,
+        write = file.__write_descriptor,
+        seek = file.__seek_descriptor,
+        tell = file.__tell_descriptor,
+        flush = file.__flush_descriptor,
+        available = file.__available_descriptor,
+        is_alive = file.__has_descriptor,
+        close = file.__close_descriptor,
+    }
+
+    local function get_process_stream(kind, handle, getter)
+        local cache = __vc_process_streams[kind]
+        local stream = cache[handle]
+        if stream and stream:is_alive() then
+            return stream
+        end
+        cache[handle] = nil
+
+        local descriptor = getter(handle)
+        if descriptor == nil then
+            return nil
+        end
+
+        stream = io_stream.new(descriptor, false, stdio_stream_lib)
+        cache[handle] = stream
+        return stream
+    end
+
+    app.get_stdout_stream = function(handle)
+        return get_process_stream("stdout", handle, __app_get_stdout_stream)
+    end
+
+    app.get_stdin_stream = function(handle)
+        return get_process_stream("stdin", handle, __app_get_stdin_stream)
+    end
 
     app.sleep = sleep
     app.script = __VC_SCRIPT_NAME

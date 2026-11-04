@@ -143,9 +143,11 @@ std::shared_ptr<InventoryView> Hud::createHotbar() {
     auto inventory = player.getInventory();
     auto& content = frontend.getLevel().content;
 
+    int size = player.getHotbarSize();
+
     SlotLayout slotLayout(-1, glm::vec2(), false, false, nullptr, nullptr, nullptr);
     InventoryBuilder builder(gui);
-    builder.addGrid(10, 10, glm::vec2(), glm::vec4(4), true, slotLayout);
+    builder.addGrid(size, size, glm::vec2(), glm::vec4(4), true, slotLayout);
     auto view = builder.build();
     view->setId("hud.hotbar");
     view->setOrigin(glm::vec2(view->getSize().x/2, 0));
@@ -177,7 +179,25 @@ Hud::Hud(Engine& engine, LevelFrontend& frontend, Player& player)
     contentAccessPanel->setScrollable(true);
     contentAccessPanel->setId("hud.content-access-panel");
 
-    hotbarView = createHotbar();
+    auto hotbarLayout =
+        frontend.getLevel().content.getDefaults()["hotbar-layout"].asString("");
+    if (hotbarLayout.empty()) {
+        hotbarView = createHotbar();
+    } else {
+        hotbarDocument = &assets.require<UiDocument>(hotbarLayout);
+        hotbarView =
+            std::dynamic_pointer_cast<InventoryView>(hotbarDocument->getRoot());
+        if (hotbarView == nullptr) {
+            throw std::runtime_error(
+                "hotbar UI root element must be 'inventory'"
+            );
+        }
+        hotbarView->bind(player.getInventory(), &frontend.getLevel().content);
+        hotbarView->setInteractive(false);
+        if (hotbarView->getPositionFunc() == nullptr) {
+            hotbarView->setOrigin(glm::vec2(hotbarView->getSize().x / 2, 0));
+        }
+    }
     darkOverlay = guiutil::create(
         gui,
         "<container size='4000' color='#00000080' z-index='-1' visible='false'/>"
@@ -229,6 +249,7 @@ Hud::~Hud() {
     for (auto& element : elements) {
         onRemove(element);
     }
+    hotbarView->unbind();
     gui.remove(hotbarView);
     gui.remove(darkOverlay);
     gui.remove(inventoryDropArea);
@@ -263,12 +284,13 @@ void Hud::processInput(bool visible) {
 }
 
 void Hud::updateHotbarControl() {
+    int size = player.getHotbarSize();
     int scroll = input.getScroll();
     if (!inventoryOpen && scroll) {
         int slot = player.getChosenSlot();
-        slot = (slot - scroll) % 10;
+        slot = (slot - scroll) % size;
         if (slot < 0) {
-            slot += 10;
+            slot += size;
         }
         player.setChosenSlot(slot);
     }
@@ -277,11 +299,12 @@ void Hud::updateHotbarControl() {
         i <= static_cast<int>(Keycode::NUM_9); 
         i++
     ) {
-        if (input.jpressed(static_cast<Keycode>(i))) {
-            player.setChosenSlot(i - static_cast<int>(Keycode::NUM_1));
+        int slot = i - static_cast<int>(Keycode::NUM_1);
+        if (slot < size && input.jpressed(static_cast<Keycode>(i))) {
+            player.setChosenSlot(slot);
         }
     }
-    if (input.jpressed(Keycode::NUM_0)) {
+    if (size > 9 && input.jpressed(Keycode::NUM_0)) {
         player.setChosenSlot(9);
     }
 }
@@ -375,7 +398,16 @@ void Hud::update(bool visible) {
     contentAccessPanel->setVisible(inventoryView != nullptr && showContentPanel);
     contentAccessPanel->setSize(glm::vec2(caSize.x, windowSize.y));
     contentAccess->setMinSize(glm::vec2(1, windowSize.y));
-    hotbarView->setVisible(visible && !(secondUI && !inventoryView));
+    if (hotbarDocument == nullptr &&
+        static_cast<int>(hotbarView->getSlotsCount()) !=
+            player.getHotbarSize()) {
+        gui.remove(hotbarView);
+        hotbarView = createHotbar();
+        gui.add(hotbarView);
+    }
+    hotbarView->setVisible(
+        visible && hotbarVisible && !(secondUI && !inventoryView)
+    );
     darkOverlay->setVisible(isMenuOpen);
     inventoryDropArea->setVisible(inventoryOpen);
     menu.setVisible(isMenuOpen);
@@ -404,8 +436,16 @@ void Hud::openInventory(bool playerInventory) {
     if (playerInventory) {
         auto& content = frontend.getLevel().content;
         auto inventory = player.getInventory();
-        auto inventoryDocument = assets.get<UiDocument>("core:inventory");
+        auto layout = content.getDefaults()["inventory-layout"].asString(
+            "core:inventory"
+        );
+        auto inventoryDocument = &assets.require<UiDocument>(layout);
         inventoryView = std::dynamic_pointer_cast<InventoryView>(inventoryDocument->getRoot());
+        if (inventoryView == nullptr) {
+            throw std::runtime_error(
+                "player inventory UI root element must be 'inventory'"
+            );
+        }
         inventoryView->bind(inventory, &content);
         add(HudElement(HudElementMode::INVENTORY, inventoryDocument, inventoryView, false));
     }
@@ -700,7 +740,9 @@ void Hud::updateElementsPosition(const glm::uvec2& viewport) {
     if (exchangeSlot != nullptr) {
         exchangeSlot->setPos(input.getCursor().pos);
     }
-    hotbarView->setPos(glm::vec2(viewport.x / 2, viewport.y - 65));
+    if (hotbarView->getPositionFunc() == nullptr) {
+        hotbarView->setPos(glm::vec2(viewport.x / 2, viewport.y - 65));
+    }
     hotbarView->setSelected(player.getChosenSlot());
 }
 
@@ -788,6 +830,14 @@ void Hud::setAllowPause(bool flag) {
         menu.setPage("pause", true);
     }
     allowPause = flag;
+}
+
+void Hud::setHotbarVisible(bool flag) {
+    hotbarVisible = flag;
+}
+
+bool Hud::isHotbarVisible() const {
+    return hotbarVisible;
 }
 
 bool Hud::isOpen(const std::string& layoutid) const {

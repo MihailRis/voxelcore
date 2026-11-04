@@ -39,7 +39,7 @@ void corecontent::setup(Input* input, ContentBuilder& builder) {
         for (uint i = 0; i < 6; i++) {
             block.defaults.textureFaces[i] = "obstacle";
         }
-        block.hitboxes = {AABB()};
+        block.defaults.hitboxes = {AABB()};
         block.breakable = false;
         ItemDef& item = builder.items.create(CORE_OBSTACLE+".item");
         item.iconType = ItemIconType::BLOCK;
@@ -55,7 +55,7 @@ void corecontent::setup(Input* input, ContentBuilder& builder) {
         block.defaults.drawGroup = -1;
         block.skyLightPassing = true;
         block.lightPassing = true;
-        block.hitboxes = {AABB()};
+        block.defaults.hitboxes = {AABB()};
         block.obstacle = false;
         ItemDef& item = builder.items.create(CORE_STRUCT_AIR+".item");
         item.iconType = ItemIconType::BLOCK;

@@ -42,6 +42,21 @@ static void perform_user_block_fields(
     layout = StructLayout::create(fields);
 }
 
+static AABB load_hitbox(const dv::value& box) {
+    if (box.size() < 6) {
+        throw std::runtime_error("hitbox requires 6 elements");
+    }
+    AABB aabb;
+    aabb.a = glm::vec3(
+        box[0].asNumber(), box[1].asNumber(), box[2].asNumber()
+    );
+    aabb.b = glm::vec3(
+        box[3].asNumber(), box[4].asNumber(), box[5].asNumber()
+    );
+    aabb.b += aabb.a;
+    return aabb;
+}
+
 static void load_variant(
     Variant& variant, const dv::value& root, const std::string& name
 ) {
@@ -86,12 +101,22 @@ static void load_variant(
         logger.error() << "unknown culling mode: " << cullingModeName;
     }
     root.at("draw-group").get(variant.drawGroup);
+
+    if (auto found = root.at("hitboxes")) {
+        const auto& boxarr = *found;
+        variant.hitboxes.clear();
+        variant.hitboxes.reserve(boxarr.size());
+        for (uint i = 0; i < boxarr.size(); i++) {
+            variant.hitboxes.push_back(load_hitbox(boxarr[i]));
+        }
+    } else if (auto found = root.at("hitbox")) {
+        variant.hitboxes = {load_hitbox(*found)};
+    }
 }
 
 template<> void ContentUnitLoader<Block>::loadUnit(
-    Block& def, const std::string& name, const io::path& file
+    Block& def, const std::string& name, dv::value root
 ) {
-    auto root = io::read_json(file);
     process_properties(def, name, root);
     process_tags(def, root);
 
@@ -100,7 +125,7 @@ template<> void ContentUnitLoader<Block>::loadUnit(
         auto parentDef = builder.get(parentName);
         if (parentDef == nullptr) {
             throw std::runtime_error(
-                "Failed to find parent(" + parentName + ") for " + name
+                "failed to find parent(" + parentName + ") for " + name
             );
         }
         parentDef->cloneTo(def);
@@ -120,7 +145,7 @@ template<> void ContentUnitLoader<Block>::loadUnit(
             stateBased.at("offset").get(offset);
             stateBased.at("bits").get(bitsCount);
             if (offset < 0 || bitsCount <= 0 || offset + bitsCount > 8) {
-                throw std::runtime_error("Invalid state-based bits configuration");
+                throw std::runtime_error("invalid state-based bits configuration");
             }
 
             def.variants = std::make_unique<Variants>();
@@ -135,6 +160,13 @@ template<> void ContentUnitLoader<Block>::loadUnit(
             while (def.variants->variants.size() < BLOCK_MAX_VARIANTS) {
                 def.variants->variants.push_back(def.defaults);
             }
+        }
+    } else if (def.variants) {
+        auto& variants = def.variants->variants;
+        variants.at(0) = def.defaults;
+
+        for (int i = 1; i < variants.size(); i++) {
+            load_variant(variants.at(i), root, name);
         }
     }
 
@@ -156,34 +188,6 @@ template<> void ContentUnitLoader<Block>::loadUnit(
     } else if (profile != "none") {
         logger.error() << "unknown rotation profile " << profile;
         def.rotatable = false;
-    }
-
-    // block hitbox AABB [x, y, z, width, height, depth]
-    if (auto found = root.at("hitboxes")) {
-        const auto& boxarr = *found;
-        def.hitboxes.resize(boxarr.size());
-        for (uint i = 0; i < boxarr.size(); i++) {
-            const auto& box = boxarr[i];
-            auto& hitboxesIndex = def.hitboxes[i];
-            hitboxesIndex.a = glm::vec3(
-                box[0].asNumber(), box[1].asNumber(), box[2].asNumber()
-            );
-            hitboxesIndex.b = glm::vec3(
-                box[3].asNumber(), box[4].asNumber(), box[5].asNumber()
-            );
-            hitboxesIndex.b += hitboxesIndex.a;
-        }
-    } else if (auto found = root.at("hitbox")) {
-        const auto& box = *found;
-        AABB aabb;
-        aabb.a = glm::vec3(
-            box[0].asNumber(), box[1].asNumber(), box[2].asNumber()
-        );
-        aabb.b = glm::vec3(
-            box[3].asNumber(), box[4].asNumber(), box[5].asNumber()
-        );
-        aabb.b += aabb.a;
-        def.hitboxes = {aabb};
     }
 
     // block light emission [r, g, b] where r,g,b in range [0..15]
@@ -219,11 +223,19 @@ template<> void ContentUnitLoader<Block>::loadUnit(
             );
         }
 
-        // should variant modify hitbox?
-        if (def.defaults.model.type == BlockModelType::BLOCK &&
-            (def.size.x != 1 || def.size.y != 1 || def.size.z != 1)) {
-            def.defaults.model.type = BlockModelType::AABB;
-            def.hitboxes = {AABB(def.size)};
+        if (def.size.x != 1 || def.size.y != 1 || def.size.z != 1) {
+            auto applySize = [&def](Variant& variant) {
+                if (variant.model.type == BlockModelType::BLOCK) {
+                    variant.model.type = BlockModelType::AABB;
+                    variant.hitboxes = {AABB(def.size)};
+                }
+            };
+            applySize(def.defaults);
+            if (def.variants) {
+                for (auto& variant : def.variants->variants) {
+                    applySize(variant);
+                }
+            }
         }
 
         // grounding behaviour
@@ -243,6 +255,7 @@ template<> void ContentUnitLoader<Block>::loadUnit(
     root.at("sky-light-passing").get(def.skyLightPassing);
     root.at("shadeless").get(def.shadeless);
     root.at("ambient-occlusion").get(def.ambientOcclusion);
+    root.at("uv-lock").get(def.uvLock);
     root.at("breakable").get(def.breakable);
     root.at("selectable").get(def.selectable);
     root.at("grounded").get(def.grounded);

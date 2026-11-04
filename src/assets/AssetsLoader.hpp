@@ -149,9 +149,14 @@ private:
     AssetsLoadInfo& assetsLoadInfo;
 
     void processPreload(
-        AssetType tag, const std::string& name, const dv::value& map
+        AssetType tag,
+        const std::string& name,
+        const dv::value& map,
+        const io::path& packFolder
     );
-    void processPreloadList(AssetType tag, const dv::value& list);
+    void processPreloadList(
+        AssetType tag, const dv::value& list, const io::path& packFolder
+    );
     void processPreloadConfig(const io::path& file);
     void processPreloadConfigs(const Content* content);
 };

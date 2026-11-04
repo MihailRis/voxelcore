@@ -1,7 +1,9 @@
 #pragma once
 
+#include <cmath>
 #include <limits>
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 const float INTERPOLATION_DURATION = 0.15f; // seconds
 
@@ -9,6 +11,7 @@ namespace util {
     template<int N, typename T, bool angular=false>
     class VecInterpolation {
         bool enabled;
+        bool refreshed = false;
         glm::vec<N, T> prevPos {std::numeric_limits<T>::quiet_NaN()};
         glm::vec<N, T> nextPos {};
         mutable glm::vec<N, T> interpolationStep {};
@@ -37,6 +40,7 @@ namespace util {
             } else {
                 interpolationStep = (nextPos - prevPos) / currentDuration.x;
             }
+            refreshed = true;
             timer = 0.0;
         }
 
@@ -55,6 +59,50 @@ namespace util {
                 }
             }
             return interpolated;
+        }
+
+        bool isRefreshed() const {
+            return refreshed;
+        }
+
+        bool isEnabled() const {
+            return enabled;
+        }
+
+        void setEnabled(bool enabled) {
+            this->enabled = enabled;
+        }
+    };
+
+    class RotationInterpolation {
+        bool enabled;
+        bool refreshed = false;
+        glm::quat prevRot {1.0f, 0.0f, 0.0f, 0.0f};
+        glm::quat nextRot {1.0f, 0.0f, 0.0f, 0.0f};
+        float timer = 0.0f;
+    public:
+        RotationInterpolation(bool enabled) : enabled(enabled) {}
+
+        void refresh(const glm::quat& rotation) {
+            prevRot = refreshed ? getCurrent() : rotation;
+            nextRot = rotation;
+            refreshed = true;
+            timer = 0.0f;
+        }
+
+        void updateTimer(float delta) {
+            timer += delta;
+        }
+
+        glm::quat getCurrent() const {
+            if (timer >= INTERPOLATION_DURATION) {
+                return nextRot;
+            }
+            return glm::slerp(prevRot, nextRot, timer / INTERPOLATION_DURATION);
+        }
+
+        bool isRefreshed() const {
+            return refreshed;
         }
 
         bool isEnabled() const {

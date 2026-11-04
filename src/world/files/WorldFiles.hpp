@@ -23,6 +23,10 @@ class World;
 struct WorldInfo;
 struct DebugSettings;
 
+struct ContentRemovalRequest {
+    std::vector<std::string> units;
+};
+
 class WorldFiles {
     io::path directory;
     WorldRegions regions;
@@ -76,6 +80,8 @@ public:
     bool doesWriteLights() const {
         return doWriteLights;
     }
+
+    void deleteContent(const ContentRemovalRequest& request);
 
     static const inline std::string WORLD_FILE = "world.json";
 };

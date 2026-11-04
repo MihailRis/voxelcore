@@ -33,7 +33,7 @@ SOFTWARE.
 #define ABSORPTION_BETA vec3(2.04e-5, 4.97e-5, 1.95e-6) /* what color gets absorbed by the atmosphere (Due to things like ozone) */
 #define G 0.9 /* mie scattering direction, or how big the blob around the sun is */
 // and the heights (how far to go up before the scattering has no effect)
-#define HEIGHT_RAY 8e3 /* rayleigh height */
+#define HEIGHT_RAY 12e3 /* rayleigh height */
 #define HEIGHT_MIE 1.2e3 /* and mie */
 #define HEIGHT_ABSORPTION 30e3 /* at what height the absorption is at it's maximum */
 #define ABSORPTION_FALLOFF 4e3 /* how much the absorption decreases the further away it gets from the maximum height */

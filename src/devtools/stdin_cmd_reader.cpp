@@ -28,6 +28,7 @@ void cmd::start_stdin_cmd_reader(Engine& engine) {
             if (line.empty()) {
                 continue;
             }
+            logger.debug() << "input received: " << line;
             engine.postRunnable([line, &interpreter] () {
                 try {
                     auto result = interpreter.execute(line);

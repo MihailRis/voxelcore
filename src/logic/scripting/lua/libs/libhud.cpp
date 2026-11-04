@@ -194,6 +194,15 @@ static int l_set_allow_pause(lua::State* L) {
     return 0;
 }
 
+static int l_is_hotbar_visible(lua::State* L) {
+    return lua::pushboolean(L, hud->isHotbarVisible());
+}
+
+static int l_set_hotbar_visible(lua::State* L) {
+    hud->setHotbarVisible(lua::toboolean(L, 1));
+    return 0;
+}
+
 static int l_reload_script(lua::State* L) {
     auto packid = lua::require_string(L, 1);
     if (content == nullptr) {
@@ -237,6 +246,8 @@ const luaL_Reg hudlib[] = {
     {"_set_content_access", wrap_hud<l_set_content_access>},
     {"_set_debug_cheats", wrap_hud<l_set_debug_cheats>},
     {"set_allow_pause", wrap_hud<l_set_allow_pause>},
+    {"is_hotbar_visible", wrap_hud<l_is_hotbar_visible>},
+    {"set_hotbar_visible", wrap_hud<l_set_hotbar_visible>},
     {"reload_script", wrap_hud<l_reload_script>},
     {"is_open", wrap_hud<l_is_open>},
     {nullptr, nullptr}

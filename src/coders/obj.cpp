@@ -134,6 +134,7 @@ public:
         auto model = std::make_unique<Model>();
         buildMeshes(*model);
         model->clean();
+        model->calcBounds();
         return model;
     }
 };

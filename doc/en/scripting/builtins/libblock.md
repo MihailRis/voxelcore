@@ -177,7 +177,12 @@ block.get_textures(id: int, [optional] variant_index: int = 0) -> string table
 -- returns array of two vectors (arrays of 3 numbers):
 -- 1. Minimum point of the hitbox
 -- 2. Hitbox size
-block.get_hitbox(id: int, rotation_index: int, [optional] hitbox_index: int = 0) -> {vec3, vec3}
+block.get_hitbox(
+    id: int,
+    rotation_index: int,
+    [optional] hitbox_index: int = 0,
+    [optional] variant_index: int = 0
+) -> {vec3, vec3}
 ```
 
 ## Data fields

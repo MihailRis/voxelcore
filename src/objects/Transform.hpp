@@ -16,8 +16,8 @@ struct Transform {
     glm::mat4 combined;
     bool dirty = true;
 
-    glm::vec3 displayPos;
-    glm::vec3 displaySize;
+    glm::vec3 displayPos {};
+    glm::vec3 displaySize {};
 
     dv::value serialize() const;
     void deserialize(const dv::value& root);

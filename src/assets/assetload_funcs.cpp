@@ -44,6 +44,18 @@ static bool load_animated_texture(
     Atlas* dstAtlas
 );
 
+static io::path find_animation(const ResPaths& paths, const std::string& filename) {
+    auto path = paths.find(filename + ".vca");
+    const auto prefix = ANIMATION_FOLDER + "/";
+    if (io::is_regular_file(path) || filename.rfind(prefix, 0) != 0) {
+        return path;
+    }
+    auto alias = paths.find(
+        ANIMATION_FOLDER_ALIAS + "/" + filename.substr(prefix.length()) + ".vca"
+    );
+    return io::is_regular_file(alias) ? alias : path;
+}
+
 assetload::postfunc assetload::animation(
     AssetsLoader& loader,
     const ResPaths& paths,
@@ -51,7 +63,7 @@ assetload::postfunc assetload::animation(
     const std::string& name,
     const std::shared_ptr<AssetCfg>&
 ) {
-    auto path = paths.find(filename + ".vca");
+    auto path = find_animation(paths, filename);
     loader.attachToFile(path, {name, AssetType::ANIMATION});
 
     if (io::is_regular_file(path)) {
