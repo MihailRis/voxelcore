@@ -204,11 +204,18 @@ uint Label::getLinesNumber() const {
     return cache.lines.size();
 }
 
-void Label::draw(const DrawContext& pctx, const Assets& assets) {
-    auto batch = pctx.getBatch2D();
+glm::vec2 Label::getTextOrigin() const {
+    return textOrigin;
+}
+
+void Label::setRenderText(bool value) {
+    renderText = value;
+}
+
+bool Label::prepareLayout(const Assets& assets) {
     auto font = assets.getShared<Font>(fontName);
     if (font == nullptr) {
-        return;
+        return false;
     }
     cache.prepare(
         font,
@@ -222,7 +229,6 @@ void Label::draw(const DrawContext& pctx, const Assets& assets) {
     if (cache.resetFlag) {
         cache.update(text, multiline, textWrap);
     }
-    batch->setColor(calcColor());
 
     uint lineHeight = font->getLineHeight();
     if (cache.lines.size() > 1) {
@@ -248,6 +254,18 @@ void Label::draw(const DrawContext& pctx, const Assets& assets) {
     textYOffset = pos.y-calcPos().y;
     totalLineHeight = lineHeight;
 
+    textOrigin = pos;
+    return true;
+}
+
+void Label::draw(const DrawContext& pctx, const Assets& assets) {
+    if (!prepareLayout(assets) || !renderText) {
+        return;
+    }
+    auto batch = pctx.getBatch2D();
+    auto font = assets.getShared<Font>(fontName);
+    batch->setColor(calcColor());
+    glm::vec2 pos = textOrigin;
     const auto& viewport = pctx.getViewport();
     glm::vec4 bounds {0, 0, viewport.x, viewport.y};
     if (parent) {
