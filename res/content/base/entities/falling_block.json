@@ -4,5 +4,6 @@
     ],
     "skeleton-name": "base:block",
     "hitbox": [0.98, 0.98, 0.98],
-    "solid": true
+    "solid": true,
+    "translucent": true
 }
