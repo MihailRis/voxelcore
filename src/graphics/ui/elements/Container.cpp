@@ -99,7 +99,7 @@ void Container::act(float delta) {
         intervalEvents[i].timer += delta;
         if (intervalEvents[i].timer > intervalEvents[i].interval) {
             auto callback = intervalEvents[i].callback;
-            callback();
+            gui.postRunnable(callback);
             IntervalEvent& event = intervalEvents[i];
             if (event.repeat == 0) {
                 continue;
