@@ -14,5 +14,6 @@
         ["radius", 0.3],
         ["radius", 1.6]
     ],
-    "blocking": false
+    "blocking": false,
+    "translucent": true
 }
