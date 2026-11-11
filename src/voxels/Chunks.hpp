@@ -123,9 +123,9 @@ public:
         const worldvec3& start, const glm::vec3& dir, float maxDist
     ) const;
 
-    const AABB* isObstacleAt(float x, float y, float z) const;
+    const AABB* isObstacleAt(double x, double y, double z) const;
 
-    const AABB* isObstacleAt(const glm::vec3& pos) const {
+    const AABB* isObstacleAt(const worldvec3& pos) const {
         return isObstacleAt(pos.x, pos.y, pos.z);
     }
     

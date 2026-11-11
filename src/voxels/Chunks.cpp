@@ -52,7 +52,7 @@ voxel& Chunks::require(int32_t x, int32_t y, int32_t z) const {
     return blocks_agent::require(*this, x, y, z);
 }
 
-const AABB* Chunks::isObstacleAt(float x, float y, float z) const {
+const AABB* Chunks::isObstacleAt(double x, double y, double z) const {
     int ix = std::floor(x);
     int iy = std::floor(y);
     int iz = std::floor(z);

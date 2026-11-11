@@ -35,16 +35,16 @@ void TextsRenderer::renderNote(
 ) {
     const auto& text = note.getText();
     const auto& preset = note.getPreset();
-    auto pos = note.getPosition();
+    auto worldPos = note.getPosition();
 
     entityid_t eid = note.getEntity();
     if (eid != ENTITY_NONE) {
         if (auto entity = level.entities->get(eid)) {
-            pos += entity->getTransform().displayPos;
+            worldPos += entity->getTransform().displayPos;
         }
     }
 
-    pos = util::to_local(pos, camera.getOrigin());
+    glm::vec3 pos = util::to_local(worldPos, camera.getOrigin());
     const glm::vec3 cameraPos = camera.getLocalPosition();
 
     if (util::distance2(pos, cameraPos) >
