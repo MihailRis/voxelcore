@@ -352,7 +352,7 @@ void audio::set_input_device(const std::string& deviceName) {
 }
 
 void audio::set_listener(
-    glm::vec3 position, glm::vec3 velocity, glm::vec3 lookAt, glm::vec3 up
+    worldvec3 position, glm::vec3 velocity, glm::vec3 lookAt, glm::vec3 up
 ) {
     backend->setListener(position, velocity, lookAt, up);
 }
@@ -380,7 +380,7 @@ void remove_lower_priority_speaker(int priority) {
 
 speakerid_t audio::play(
     Sound* sound,
-    glm::vec3 position,
+    worldvec3 position,
     bool relative,
     float volume,
     float pitch,
@@ -419,7 +419,7 @@ speakerid_t audio::play(
 
 speakerid_t audio::play(
     const std::shared_ptr<Stream>& stream,
-    glm::vec3 position,
+    worldvec3 position,
     bool relative,
     float volume,
     float pitch,
@@ -451,7 +451,7 @@ speakerid_t audio::play(
 
 speakerid_t audio::play_stream(
     const io::path& file,
-    glm::vec3 position,
+    worldvec3 position,
     bool relative,
     float volume,
     float pitch,

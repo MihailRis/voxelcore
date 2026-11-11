@@ -342,6 +342,7 @@ void ALSpeaker::update(const Channel* channel) {
     if (source == 0) return;
     float gain = this->volume * channel->getVolume();
     AL_CHECK(alSourcef(source, AL_GAIN, gain));
+    refreshPosition();
 
     if (!paused) {
         if (isPaused() && !channel->isPaused()) {
@@ -451,12 +452,18 @@ void ALSpeaker::setTime(duration_t time) {
     AL_CHECK(alSourcef(source, AL_SEC_OFFSET, static_cast<float>(time)));
 }
 
-void ALSpeaker::setPosition(glm::vec3 pos) {
+void ALSpeaker::refreshPosition() {
+    glm::vec3 pos(relative ? position : position - al->listenerPosition);
     AL_CHECK(alSource3f(source, AL_POSITION, pos.x, pos.y, pos.z));
 }
 
-glm::vec3 ALSpeaker::getPosition() const {
-    return AL::getSource3f(source, AL_POSITION);
+void ALSpeaker::setPosition(worldvec3 pos) {
+    position = pos;
+    refreshPosition();
+}
+
+worldvec3 ALSpeaker::getPosition() const {
+    return position;
 }
 
 void ALSpeaker::setVelocity(glm::vec3 vel) {
@@ -468,9 +475,11 @@ glm::vec3 ALSpeaker::getVelocity() const {
 }
 
 void ALSpeaker::setRelative(bool relative) {
+    this->relative = relative;
     AL_CHECK(
         alSourcei(source, AL_SOURCE_RELATIVE, relative ? AL_TRUE : AL_FALSE)
     );
+    refreshPosition();
 }
 
 bool ALSpeaker::isRelative() const {
@@ -782,11 +791,12 @@ void ALAudio::freeBuffer(uint buffer) {
 }
 
 void ALAudio::setListener(
-    glm::vec3 position, glm::vec3 velocity, glm::vec3 at, glm::vec3 up
+    worldvec3 position, glm::vec3 velocity, glm::vec3 at, glm::vec3 up
 ) {
     ALfloat listenerOri[] = {at.x, at.y, at.z, up.x, up.y, up.z};
 
-    AL_CHECK(alListener3f(AL_POSITION, position.x, position.y, position.z));
+    listenerPosition = position;
+    AL_CHECK(alListener3f(AL_POSITION, 0.0f, 0.0f, 0.0f));
     AL_CHECK(alListener3f(AL_VELOCITY, velocity.x, velocity.y, velocity.z));
     AL_CHECK(alListenerfv(AL_ORIENTATION, listenerOri));
     AL_CHECK(alListenerf(AL_GAIN, get_channel(0)->getVolume()));
