@@ -5,7 +5,7 @@
 
 inline constexpr double ORIGIN_STEP = 1024.0;
 
-Camera::Camera(glm::vec3 position, float fov) : fov(fov), position(position) {
+Camera::Camera(worldvec3 position, float fov) : fov(fov), position(position) {
     updateVectors();
 }
 
@@ -51,7 +51,7 @@ glm::ivec3 Camera::getOrigin() const {
 }
 
 glm::vec3 Camera::getLocalPosition() const {
-    return glm::dvec3(position) - glm::dvec3(getOrigin());
+    return glm::vec3(position - worldvec3(getOrigin()));
 }
 
 glm::mat4 Camera::getView(bool pos) const {

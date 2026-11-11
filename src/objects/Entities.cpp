@@ -159,7 +159,7 @@ void Entities::loadEntity(const dv::value& map, Entity& entity) {
 }
 
 std::optional<Entities::RaycastResult> Entities::rayCast(
-    glm::vec3 start,
+    worldvec3 start,
     glm::vec3 dir,
     float maxDistance,
     const RaycastSettings& settings
@@ -187,7 +187,11 @@ std::optional<Entities::RaycastResult> Entities::rayCast(
         glm::ivec3 normal;
         double distance;
         if (ray.intersectAABB(
-                glm::vec3(), hitbox.getAABB(), maxDistance, normal, distance
+                hitbox.position,
+                AABB(-hitbox.halfsize, hitbox.halfsize),
+                maxDistance,
+                normal,
+                distance
             ) > RayRelation::None) {
             foundUID = eid.uid;
             foundNormal = normal;

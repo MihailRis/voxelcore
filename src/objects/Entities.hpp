@@ -84,7 +84,7 @@ public:
     /// @param maxDistance Max ray length
     /// @return An optional structure containing entity, normal and distance
     std::optional<RaycastResult> rayCast(
-        glm::vec3 start,
+        worldvec3 start,
         glm::vec3 dir,
         float maxDistance,
         const RaycastSettings& settings

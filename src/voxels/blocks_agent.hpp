@@ -447,10 +447,10 @@ struct RaycastSettings {
 /// @return voxel pointer or nullptr
 voxel* raycast(
     const Chunks& chunks,
-    const glm::vec3& start,
+    const worldvec3& start,
     const glm::vec3& dir,
     float maxDist,
-    glm::vec3& end,
+    worldvec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
     const RaycastSettings& settings
@@ -469,10 +469,10 @@ voxel* raycast(
 /// @return voxel pointer or nullptr
 voxel* raycast(
     const GlobalChunks& chunks,
-    const glm::vec3& start,
+    const worldvec3& start,
     const glm::vec3& dir,
     float maxDist,
-    glm::vec3& end,
+    worldvec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
     const RaycastSettings& settings

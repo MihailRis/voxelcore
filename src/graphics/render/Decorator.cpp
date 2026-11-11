@@ -120,7 +120,7 @@ void Decorator::updateAcoustics(const Camera& camera) {
         glm::vec3 dir = { r * std::cos(phi), r * std::sin(phi), z };
 
         dir = glm::normalize(dir);
-        glm::vec3 end;
+        worldvec3 end;
         glm::ivec3 norm;
         glm::ivec3 iend;
         blocks_agent::RaycastSettings raycast {};
@@ -128,7 +128,7 @@ void Decorator::updateAcoustics(const Camera& camera) {
         if (vox == nullptr) {
             continue;
         }
-        auto distance = glm::distance(start, end);
+        float distance = glm::distance(start, end);
         if (distance >= length * 0.98f) {
             continue;
         }

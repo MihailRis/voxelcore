@@ -118,7 +118,7 @@ void DebugLinesRenderer::render(
 
     if (showChunkBorders) {
         linesShader.uniformMatrix("u_projview", camera.getProjView());
-        glm::vec3 coord = camera.position;
+        worldvec3 coord = camera.position;
         if (coord.x < 0) coord.x--;
         if (coord.z < 0) coord.z--;
         int cx = floordiv(static_cast<int>(coord.x), CHUNK_W);

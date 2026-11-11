@@ -180,10 +180,10 @@ void Shadows::generateShadowsMap(
     float shadowMapScale = 0.32f / (1 << glm::max(0, quality)) * scale;
     float shadowMapSize = resolution * shadowMapScale;
 
-    glm::vec3 basePos = glm::floor(camera.position / 4.0f) * 4.0f;
-    glm::vec3 prevPos = shadowCamera.position;
+    worldvec3 basePos = glm::floor(camera.position / 4.0) * 4.0;
+    worldvec3 prevPos = shadowCamera.position;
     shadowCamera = Camera(
-        glm::distance2(prevPos, basePos) > 25.0f ? basePos : prevPos,
+        glm::distance2(prevPos, basePos) > 25.0 ? basePos : prevPos,
         shadowMapSize
     );
     shadowCamera.near = 0.1f;
@@ -206,9 +206,9 @@ void Shadows::generateShadowsMap(
         glm::radians(0.0f)
     );
 
-    shadowCamera.position -= shadowCamera.front * 500.0f;
-    shadowCamera.position += shadowCamera.up * 0.0f;
-    shadowCamera.position += camera.front * 0.0f;
+    shadowCamera.position -= worldvec3(shadowCamera.front * 500.0f);
+    shadowCamera.position += worldvec3(shadowCamera.up * 0.0f);
+    shadowCamera.position += worldvec3(camera.front * 0.0f);
 
     auto view = shadowCamera.getView();
 

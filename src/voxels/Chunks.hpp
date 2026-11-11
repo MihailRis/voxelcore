@@ -110,17 +110,17 @@ public:
     void setRotation(int32_t x, int32_t y, int32_t z, uint8_t rotation);
 
     voxel* rayCast(
-        const glm::vec3& start,
+        const worldvec3& start,
         const glm::vec3& dir,
         float maxLength,
-        glm::vec3& end,
+        worldvec3& end,
         glm::ivec3& norm,
         glm::ivec3& iend,
         const blocks_agent::RaycastSettings& settings
     ) const;
 
-    glm::vec3 rayCastToObstacle(
-        const glm::vec3& start, const glm::vec3& dir, float maxDist
+    worldvec3 rayCastToObstacle(
+        const worldvec3& start, const glm::vec3& dir, float maxDist
     ) const;
 
     const AABB* isObstacleAt(float x, float y, float z) const;

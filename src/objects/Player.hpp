@@ -38,7 +38,7 @@ struct CursorSelection {
     glm::ivec3 position {};
     glm::ivec3 actualPosition {};
     glm::ivec3 normal {};
-    glm::vec3 hitPosition;
+    worldvec3 hitPosition;
     entityid_t entity = ENTITY_NONE;
 };
 
