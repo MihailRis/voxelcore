@@ -54,7 +54,7 @@ CameraControl::CameraControl(
 }
 
 void CameraControl::refreshPosition() {
-    camera->position = player.getPosition() + offset;
+    camera->position = player.getPosition() + worldvec3(offset);
 }
 
 void CameraControl::refreshRotation() {
@@ -461,8 +461,7 @@ void PlayerController::processRightClick(
     if (def.obstacle) {
         const auto& hitboxes = def.getHitboxes(state);
         for (const AABB& blockAABB : hitboxes) {
-            if (level.entities->hasBlockingInside(blockAABB.translated(coord)
-                )) {
+            if (level.entities->hasBlockingInside(coord, blockAABB)) {
                 return;
             }
         }

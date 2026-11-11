@@ -47,7 +47,7 @@ static int l_set_pos(lua::State* L) {
     auto x = lua::tonumber(L, 2);
     auto y = lua::tonumber(L, 3);
     auto z = lua::tonumber(L, 4);
-    player->teleport(glm::vec3(x, y, z));
+    player->teleport(worldvec3(x, y, z));
     return 0;
 }
 
@@ -256,7 +256,7 @@ static int l_set_spawnpoint(lua::State* L) {
         auto x = lua::tonumber(L, 2);
         auto y = lua::tonumber(L, 3);
         auto z = lua::tonumber(L, 4);
-        player->setSpawnPoint(glm::vec3(x, y, z));
+        player->setSpawnPoint(worldvec3(x, y, z));
     }
     return 0;
 }
@@ -359,7 +359,7 @@ static int l_set_suspended(lua::State* L) {
 
 static int l_get_all_in_radius(lua::State* L) {
     auto& level = require_level();
-    auto center = lua::tovec3(L, 1);
+    auto center = lua::tovec<3, double>(L, 1);
     auto radius = static_cast<float>(lua::tonumber(L, 2));
 
     auto players = level.players->getAllInRadius(center, radius);
@@ -383,7 +383,7 @@ static int l_get_all(lua::State* L) {
 
 static int l_get_nearest(lua::State* L) {
     auto& level = require_level();
-    auto position = lua::tovec3(L, 1);
+    auto position = lua::tovec<3, double>(L, 1);
     if (auto player = level.players->getNearest(position)) {
         lua::pushinteger(L, player->getId());
         return 1;

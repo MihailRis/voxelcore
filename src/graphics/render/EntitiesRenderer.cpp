@@ -147,7 +147,11 @@ void EntitiesRenderer::renderDebug(
             for (auto& sensor : rigidbody.sensors) {
                 if (sensor.type != SensorType::AABB) continue;
                 batch.box(
-                    util::to_local(sensor.calculated.aabb.center(), origin),
+                    util::to_local(
+                        sensor.position +
+                            worldvec3(sensor.calculated.aabb.center()),
+                        origin
+                    ),
                     sensor.calculated.aabb.size(),
                     glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)
                 );

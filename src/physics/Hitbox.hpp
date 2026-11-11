@@ -19,7 +19,7 @@ enum class SensorType {
 
 union SensorParams {
     AABB aabb;
-    glm::vec4 radial; // x,y,z calculated entity coords + w - radius
+    glm::vec4 radial; // w - radius
 
     constexpr SensorParams() : aabb() {
     }
@@ -38,6 +38,7 @@ struct Sensor {
     std::set<entityid_t> nextEntered;
     sensorcallback enterCallback;
     sensorcallback exitCallback;
+    worldvec3 position {};
 };
 
 enum class BodyType {
@@ -53,7 +54,7 @@ VC_ENUM_END
 struct Hitbox {
     entityid_t entity;
     BodyType type;
-    glm::vec3 position;
+    worldvec3 position;
     glm::vec3 halfsize;
     glm::vec3 velocity;
     glm::vec3 scale {1.0f, 1.0f, 1.0f};
@@ -70,7 +71,7 @@ struct Hitbox {
     std::string groundMaterial;
     glm::vec3 groundVelocity {};
     
-    glm::vec3 prevPosition {};
+    worldvec3 prevPosition {};
     glm::vec3 prevVelocity {};
     bool prevGrounded = false;
     float substepTime = 0.0f;
@@ -80,18 +81,19 @@ struct Hitbox {
     static inline constexpr float TELEPORT_THRESOLD_SQR = 0.5f;
 
     Hitbox(
-        entityid_t entity, BodyType type, glm::vec3 position, glm::vec3 halfsize
+        entityid_t entity, BodyType type, worldvec3 position, glm::vec3 halfsize
     );
 
-    AABB getAABB() const {
-        return AABB(position - halfsize, position + halfsize);
+    AABB getAABB(const worldvec3& origin) const {
+        glm::vec3 pos(position - origin);
+        return AABB(pos - halfsize, pos + halfsize);
     }
 
     glm::vec3 getHalfSize() const {
         return halfsize * scale;
     }
 
-    void setPos(const glm::vec3& vec) {
+    void setPos(const worldvec3& vec) {
         position = vec;
         if (glm::distance2(position, prevPosition) >= TELEPORT_THRESOLD_SQR) {
             prevPosition = vec;

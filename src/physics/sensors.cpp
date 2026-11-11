@@ -3,8 +3,6 @@
 void physics::update_sensors(
     Hitbox& hitbox, const std::vector<Sensor*>& sensors
 ) {
-    auto aabb = hitbox.getAABB();
-
     for (size_t i = 0; i < sensors.size(); i++) {
         auto& sensor = *sensors[i];
         if (sensor.entity == hitbox.entity) {
@@ -13,12 +11,12 @@ void physics::update_sensors(
         bool triggered = false;
         switch (sensor.type) {
             case SensorType::AABB:
-                triggered = aabb.intersects(sensor.calculated.aabb);
+                triggered = hitbox.getAABB(sensor.position)
+                                .intersects(sensor.calculated.aabb);
                 break;
             case SensorType::RADIUS:
-                triggered = glm::distance2(
-                    hitbox.position, glm::vec3(sensor.calculated.radial))
-                    < sensor.calculated.radial.w;
+                triggered = glm::distance2(hitbox.position, sensor.position) <
+                            sensor.calculated.radial.w;
                 break;
         }
         if (!triggered) {

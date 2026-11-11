@@ -34,8 +34,8 @@ namespace dv {
         return values;
     }
 
-    template <int n>
-    void get_vec(const dv::value& list, glm::vec<n, float>& vec) {
+    template <int n, typename T>
+    void get_vec(const dv::value& list, glm::vec<n, T>& vec) {
         for (size_t i = 0; i < n; i++) {
             vec[i] = list[i].asNumber();
         }

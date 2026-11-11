@@ -43,7 +43,7 @@ Entity* Entities::get(entityid_t id) {
 
 entityid_t Entities::spawn(
     const EntityDef& def,
-    glm::vec3 position,
+    worldvec3 position,
     dv::value args,
     dv::value saved,
     entityid_t uid
@@ -272,17 +272,22 @@ void Entities::updateSensors(
         sensor.nextEntered.clear();
 
         switch (sensor.type) {
-            case SensorType::AABB:
+            case SensorType::AABB: {
+                glm::mat4 matrix = tsf.combined;
+                matrix[3] = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
                 sensor.calculated.aabb = sensor.params.aabb;
-                sensor.calculated.aabb.transform(tsf.combined);
+                sensor.calculated.aabb.transform(matrix);
+                sensor.position = tsf.displayPos;
                 break;
+            }
             case SensorType::RADIUS:
                 sensor.calculated.radial = glm::vec4(
-                    body.hitbox.position.x,
-                    body.hitbox.position.y,
-                    body.hitbox.position.z,
+                    0.0f,
+                    0.0f,
+                    0.0f,
                     sensor.params.radial.w * sensor.params.radial.w
                 );
+                sensor.position = body.hitbox.position;
                 break;
         }
         sensors.push_back(&sensor);
@@ -409,10 +414,10 @@ void Entities::update(float delta) {
     }
 }
 
-bool Entities::hasBlockingInside(AABB aabb) {
+bool Entities::hasBlockingInside(const worldvec3& origin, AABB aabb) {
     constexpr float eps = 0.05f;
     for (const auto& [uid, entity] : entities) {
-        AABB bodyAABB(entity->getRigidbody().hitbox.getAABB());
+        AABB bodyAABB(entity->getRigidbody().hitbox.getAABB(origin));
         bodyAABB.scale(glm::vec3(1.0f - eps));
         if (entity->getID().def.blocking && aabb.intersects(bodyAABB)) {
             return true;
@@ -421,17 +426,24 @@ bool Entities::hasBlockingInside(AABB aabb) {
     return false;
 }
 
-std::vector<Entity*> Entities::getAllInside(AABB aabb) {
+std::vector<Entity*> Entities::getAllInside(
+    const worldvec3& a, const worldvec3& b
+) {
+    const worldvec3 min = glm::min(a, b);
+    const worldvec3 max = glm::max(a, b);
     std::vector<Entity*> collected;
     for (const auto& [uid, entity] : entities) {
-        if (!entity->getID().destroyFlag && aabb.contains(entity->getTransform().pos)) {
+        const auto& pos = entity->getTransform().pos;
+        if (!entity->getID().destroyFlag &&
+            glm::all(glm::greaterThanEqual(pos, min)) &&
+            glm::all(glm::lessThan(pos, max))) {
             collected.push_back(entity.get());
         }
     }
     return collected;
 }
 
-std::vector<Entity*> Entities::getAllInRadius(glm::vec3 center, float radius) {
+std::vector<Entity*> Entities::getAllInRadius(worldvec3 center, float radius) {
     std::vector<Entity*> collected;
     for (const auto& [uid, entity] : entities) {
         if (glm::distance2(entity->getTransform().pos, center) <= radius * radius) {

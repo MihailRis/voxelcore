@@ -50,8 +50,8 @@ class Player : public Serializable {
     
     int chosenSlot;
     int hotbarSize;
-    glm::vec3 position;
-    glm::vec3 spawnpoint {std::nanf(""), std::nanf(""), std::nanf("")};
+    worldvec3 position;
+    worldvec3 spawnpoint {std::nanf(""), std::nanf(""), std::nanf("")};
     std::shared_ptr<Inventory> inventory;
     bool suspended = false;
     bool flight = false;
@@ -81,14 +81,14 @@ public:
         Level& level,
         int64_t id,
         const std::wstring& name,
-        glm::vec3 position,
+        worldvec3 position,
         float speed,
         std::shared_ptr<Inventory> inv,
         entityid_t eid
     );
     ~Player();
 
-    void teleport(glm::vec3 position);
+    void teleport(worldvec3 position);
     void updateEntity();
     void updateSelectedEntity();
     void postUpdate();
@@ -134,7 +134,7 @@ public:
 
     const std::shared_ptr<Inventory>& getInventory() const;
 
-    const glm::vec3& getPosition() const {
+    const worldvec3& getPosition() const {
         return position;
     }
 
@@ -142,8 +142,8 @@ public:
 
     Hitbox* getHitbox() const;
 
-    void setSpawnPoint(glm::vec3 point);
-    glm::vec3 getSpawnPoint() const;
+    void setSpawnPoint(worldvec3 point);
+    worldvec3 getSpawnPoint() const;
 
     glm::vec3 getRotation(bool interpolated=false) const;
     void setRotation(const glm::vec3& rotation);

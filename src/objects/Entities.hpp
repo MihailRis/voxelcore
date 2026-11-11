@@ -52,7 +52,7 @@ public:
 
     entityid_t spawn(
         const EntityDef& def,
-        glm::vec3 position,
+        worldvec3 position,
         dv::value args = nullptr,
         dv::value saved = nullptr,
         entityid_t uid = 0
@@ -94,9 +94,9 @@ public:
     void loadEntity(const dv::value& map);
     void loadEntity(const dv::value& map, Entity& entity);
     void onSave(const Entity& entity);
-    bool hasBlockingInside(AABB aabb);
-    std::vector<Entity*> getAllInside(AABB aabb);
-    std::vector<Entity*> getAllInRadius(glm::vec3 center, float radius);
+    bool hasBlockingInside(const worldvec3& origin, AABB aabb);
+    std::vector<Entity*> getAllInside(const worldvec3& a, const worldvec3& b);
+    std::vector<Entity*> getAllInRadius(worldvec3 center, float radius);
     void despawn(entityid_t id);
     void despawn(const std::vector<Entity*>& entities);
     dv::value serialize(const std::vector<Entity*>& entities);

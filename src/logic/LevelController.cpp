@@ -59,7 +59,7 @@ LevelController::LevelController(
                 confirmed++;
                 continue;
             }
-            glm::vec3 position = player->getPosition();
+            const auto& position = player->getPosition();
             player->chunks->configure(
                 std::floor(position.x), std::floor(position.z), 1
             );
@@ -82,7 +82,7 @@ void LevelController::update(float delta, bool pause) {
             continue;
         }
         player->rotationInterpolation.updateTimer(delta);
-        glm::vec3 position = player->getPosition();
+        const auto& position = player->getPosition();
         player->chunks->configure(
             glm::floor(position.x),
             glm::floor(position.z),

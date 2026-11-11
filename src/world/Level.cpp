@@ -64,7 +64,7 @@ Level::Level(
     chunks->setOnUnload([this](Chunk& chunk) {
         events->trigger(LevelEventType::CHUNK_UNLOAD, &chunk);
         AABB aabb = chunk.getAABB();
-        entities->despawn(entities->getAllInside(aabb));
+        entities->despawn(entities->getAllInside(aabb.a, aabb.b));
     });
     inventories = std::make_unique<Inventories>(*this);
 }

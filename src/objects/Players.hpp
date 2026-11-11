@@ -36,9 +36,11 @@ public:
 
     void remove(int64_t id);
 
-    std::vector<Player*> getAllInRadius(const glm::vec3& center, float radius) const;
+    std::vector<Player*> getAllInRadius(
+        const worldvec3& center, float radius
+    ) const;
     std::vector<Player*> getAll() const;
-    Player* getNearest(const glm::vec3& position) const;
+    Player* getNearest(const worldvec3& position) const;
 
     dv::value serialize() const override;
 

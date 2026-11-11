@@ -13,8 +13,9 @@ namespace physics {
     ) {
         float n = static_cast<float>(substeps);
         auto accel = gravity * box.gravityScale;
-        box.position += box.velocity * (dt * n) +
-                        accel * (dt * dt * n * (n + 2.0f) * 0.5f);
+        box.position += worldvec3(
+            box.velocity * (dt * n) + accel * (dt * dt * n * (n + 2.0f) * 0.5f)
+        );
         box.velocity += accel * (dt * n);
     }
 

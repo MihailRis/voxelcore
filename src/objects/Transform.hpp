@@ -2,6 +2,8 @@
 
 #define GLM_ENABLE_EXPERIMENTAL
 
+#include "typedefs.hpp"
+
 #include <stdexcept>
 #include <glm/vec3.hpp>
 #include <glm/mat4x4.hpp>
@@ -10,13 +12,13 @@
 
 struct Transform {
     static inline constexpr float EPSILON = 1e-7f;
-    glm::vec3 pos;
+    worldvec3 pos;
     glm::vec3 size;
     glm::mat3 rot;
     glm::mat4 combined;
     bool dirty = true;
 
-    glm::vec3 displayPos {};
+    worldvec3 displayPos {};
     glm::vec3 displaySize {};
 
     dv::value serialize() const;
@@ -33,7 +35,7 @@ struct Transform {
     }
 
     inline void setSize(const glm::vec3& v) {
-        if (!checkValue(v, "size")) {
+        if (!checkValue(worldvec3(v), "size")) {
             return;
         }
         if (glm::distance2(displaySize, v) >= EPSILON) {
@@ -42,7 +44,7 @@ struct Transform {
         size = v;
     }
 
-    inline void setPos(const glm::vec3& v) {
+    inline void setPos(const worldvec3& v) {
         if (!checkValue(v, "position")) {
             return;
         }
@@ -52,6 +54,6 @@ struct Transform {
         pos = v;
     }
 
-    static bool checkValue(const glm::vec3& v, std::string_view name);
+    static bool checkValue(const worldvec3& v, std::string_view name);
     static bool checkValue(const glm::mat3& v, std::string_view name);
 };

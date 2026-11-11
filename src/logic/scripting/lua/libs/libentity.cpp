@@ -72,7 +72,7 @@ static int l_spawn(lua::State* L) {
     auto level = controller->getLevel();
     auto defname = lua::require_string(L, 1);
     auto& def = content->entities.require(defname);
-    auto pos = lua::tovec3(L, 2);
+    auto pos = lua::tovec<3, double>(L, 2);
     dv::value args = nullptr;
     if (lua::gettop(L) > 2) {
         args = lua::tovalue(L, 3);
@@ -133,9 +133,9 @@ static int l_set_skeleton(lua::State* L) {
 }
 
 static int l_get_all_in_box(lua::State* L) {
-    auto pos = lua::tovec<3>(L, 1);
-    auto size = lua::tovec<3>(L, 2);
-    auto found = level->entities->getAllInside(AABB(pos, pos + size));
+    auto pos = lua::tovec<3, double>(L, 1);
+    auto size = lua::tovec<3, double>(L, 2);
+    auto found = level->entities->getAllInside(pos, pos + size);
     lua::createtable(L, found.size(), 0);
     for (size_t i = 0; i < found.size(); i++) {
         lua::pushinteger(L, found[i]->getUID());
@@ -145,7 +145,7 @@ static int l_get_all_in_box(lua::State* L) {
 }
 
 static int l_get_all_in_radius(lua::State* L) {
-    auto pos = lua::tovec<3>(L, 1);
+    auto pos = lua::tovec<3, double>(L, 1);
     auto radius = lua::tonumber(L, 2);
     auto found = level->entities->getAllInRadius(pos, radius);
     lua::createtable(L, found.size(), 0);
