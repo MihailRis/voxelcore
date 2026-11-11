@@ -41,16 +41,11 @@ glm::mat4 Camera::getProjection() const {
 }
 
 glm::mat4 Camera::getView(bool pos) const {
-    glm::vec3 camera_pos = this->position;
-    if (!pos) {
-        camera_pos = glm::vec3(0.0f);
+    glm::mat4 view = glm::lookAt(glm::vec3(0.0f), front, up);
+    if (pos) {
+        view = glm::translate(view, -position);
     }
-    if (perspective) {
-        return glm::lookAt(camera_pos, camera_pos + front, up);
-    } else {
-        return glm::lookAt(camera_pos, camera_pos + front, up);
-        //return glm::translate(glm::mat4(1.0f), camera_pos);
-    }
+    return view;
 }
 
 glm::mat4 Camera::getProjView(bool pos) const {
