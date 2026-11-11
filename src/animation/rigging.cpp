@@ -8,6 +8,7 @@
 #include "data/dv_util.hpp"
 #include "graphics/commons/Model.hpp"
 #include "graphics/render/ModelBatch.hpp"
+#include "maths/util.hpp"
 
 using namespace rigging;
 
@@ -160,13 +161,15 @@ void SkeletonConfig::update(
     Skeleton& skeleton,
     const glm::mat3& rotation,
     const glm::vec3& position,
-    const glm::vec3& scale
+    const glm::vec3& scale,
+    const glm::ivec3& origin
 ) const {
     glm::vec3 pos = position;
     const auto& interpolation = skeleton.interpolation;
     if (interpolation.isEnabled() && interpolation.isRefreshed()) {
         pos = interpolation.getCurrent();
     }
+    pos = util::to_local(pos, origin);
     glm::mat3 rot = rotation;
     const auto& rotationInterpolation = skeleton.rotationInterpolation;
     if (rotationInterpolation.isEnabled() && rotationInterpolation.isRefreshed()) {
@@ -253,18 +256,25 @@ void SkeletonConfig::render(
     const glm::mat3& rotation,
     const glm::vec3& position,
     const glm::vec3& scale,
+    const glm::ivec3& origin,
     bool translucent
 ) const {
     if (skeleton.config->root == nullptr) {
         return;
     }
-    update(skeleton, rotation, position, scale);
+    update(skeleton, rotation, position, scale, origin);
 
     if (!skeleton.visible) {
         return;
     }
     processModels(
-        assets, skeleton, position, scale, &batch, lightingMode, translucent
+        assets,
+        skeleton,
+        util::to_local(position, origin),
+        scale,
+        &batch,
+        lightingMode,
+        translucent
     );
 }
 
@@ -273,16 +283,17 @@ void SkeletonConfig::updateBounds(
     Skeleton& skeleton,
     const glm::mat3& rotation,
     const glm::vec3& position,
-    const glm::vec3& scale
+    const glm::vec3& scale,
+    const glm::ivec3& origin
 ) const {
     if (skeleton.config->root == nullptr) {
         return;
     }
-    update(skeleton, rotation, position, scale);
+    update(skeleton, rotation, position, scale, origin);
     processModels(
         assets,
         skeleton,
-        position,
+        util::to_local(position, origin),
         scale,
         nullptr,
         ModelLightingMode::SOLID,

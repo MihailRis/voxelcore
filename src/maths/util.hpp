@@ -17,6 +17,10 @@ namespace util {
 
     constexpr inline float EPSILON = 1e-6f;
 
+    inline glm::vec3 to_local(const glm::vec3& pos, const glm::ivec3& origin) {
+        return glm::dvec3(pos) - glm::dvec3(origin);
+    }
+
     class PseudoRandom {
         uint32_t seed;
 

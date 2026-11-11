@@ -91,7 +91,7 @@ private:
     bool dirtySettings = true;
 
     /// @brief Render block selection lines
-    void renderBlockSelection();
+    void renderBlockSelection(const Camera& camera);
     
     /// @brief Render lines (selection and debug)
     /// @param camera active camera

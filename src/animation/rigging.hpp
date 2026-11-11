@@ -152,7 +152,8 @@ namespace rigging {
             Skeleton& skeleton,
             const glm::mat3& rotation,
             const glm::vec3& position,
-            const glm::vec3& scale
+            const glm::vec3& scale,
+            const glm::ivec3& origin
         ) const;
 
         void render(
@@ -163,6 +164,7 @@ namespace rigging {
             const glm::mat3& rotation,
             const glm::vec3& position,
             const glm::vec3& scale,
+            const glm::ivec3& origin,
             bool translucent = false
         ) const;
 
@@ -171,7 +173,8 @@ namespace rigging {
             Skeleton& skeleton,
             const glm::mat3& rotation,
             const glm::vec3& position,
-            const glm::vec3& scale
+            const glm::vec3& scale,
+            const glm::ivec3& origin
         ) const;
 
         Skeleton instance() const {

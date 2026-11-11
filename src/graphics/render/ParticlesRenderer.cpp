@@ -154,7 +154,7 @@ void ParticlesRenderer::renderParticle(
                 camera.front * rotatedUp.z;
     }
     batch->quad(
-        particle.position,
+        util::to_local(particle.position, camera.getOrigin()),
         localRight,
         localUp,
         -camera.front,

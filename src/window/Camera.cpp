@@ -3,6 +3,8 @@
 #include <cmath>
 #include <glm/ext.hpp>
 
+inline constexpr double ORIGIN_STEP = 1024.0;
+
 Camera::Camera(glm::vec3 position, float fov) : fov(fov), position(position) {
     updateVectors();
 }
@@ -40,10 +42,22 @@ glm::mat4 Camera::getProjection() const {
     }
 }
 
+glm::ivec3 Camera::getOrigin() const {
+    return glm::ivec3(
+        std::round(position.x / ORIGIN_STEP) * ORIGIN_STEP,
+        0,
+        std::round(position.z / ORIGIN_STEP) * ORIGIN_STEP
+    );
+}
+
+glm::vec3 Camera::getLocalPosition() const {
+    return glm::dvec3(position) - glm::dvec3(getOrigin());
+}
+
 glm::mat4 Camera::getView(bool pos) const {
     glm::mat4 view = glm::lookAt(glm::vec3(0.0f), front, up);
     if (pos) {
-        view = glm::translate(view, -position);
+        view = glm::translate(view, -getLocalPosition());
     }
     return view;
 }

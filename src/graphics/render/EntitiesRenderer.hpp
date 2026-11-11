@@ -2,6 +2,8 @@
 
 #include "typedefs.hpp"
 
+#include <glm/vec3.hpp>
+
 class Assets;
 class DrawContext;
 class Entities;
@@ -16,15 +18,21 @@ public:
     EntitiesRenderer(const Assets& assets, Entities& entities);
 
     void render(
-        ModelBatch& batch, const Frustum* frustum, entityid_t fpsEntity
+        ModelBatch& batch,
+        const glm::ivec3& origin,
+        const Frustum* frustum,
+        entityid_t fpsEntity
     );
 
     void renderDebug(
         LineBatch& batch,
+        const glm::ivec3& origin,
         const Frustum* frustum,
         const DrawContext& ctx,
         entityid_t fpsEntity
     );
 
-    void updateCulling(const Frustum* frustum, entityid_t fpsEntity);
+    void updateCulling(
+        const glm::ivec3& origin, const Frustum* frustum, entityid_t fpsEntity
+    );
 };

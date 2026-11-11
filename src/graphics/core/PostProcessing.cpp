@@ -109,7 +109,7 @@ void PostProcessing::configureEffect(
     shader.uniform1i("u_noise", TARGET_SSAO); // used in SSAO pass
     shader.uniform1i("u_ssao", TARGET_SSAO);
     shader.uniform2i("u_screenSize", viewport / downsample);
-    shader.uniform3f("u_cameraPos", camera.position);
+    shader.uniform3f("u_cameraPos", camera.getLocalPosition());
     shader.uniform1f("u_timer", timer);
     shader.uniformMatrix("u_projection", camera.getProjection());
     const auto view = camera.getView();

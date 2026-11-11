@@ -10,6 +10,7 @@
 #include "lighting/Lightmap.hpp"
 #include "voxels/Block.hpp"
 #include "voxels/Chunks.hpp"
+#include "window/Camera.hpp"
 
 #include <algorithm>
 
@@ -24,7 +25,9 @@ BlockWrapsRenderer::BlockWrapsRenderer(
 
 BlockWrapsRenderer::~BlockWrapsRenderer() = default;
 
-void BlockWrapsRenderer::draw(BlockWrapper& wrapper, const Texture* texture) {
+void BlockWrapsRenderer::draw(
+    BlockWrapper& wrapper, const Texture* texture, const glm::ivec3& origin
+) {
     if (wrapper.cullingBits == 0x0) {
         return;
     }
@@ -60,7 +63,7 @@ void BlockWrapsRenderer::draw(BlockWrapper& wrapper, const Texture* texture) {
     switch (wrapper.modelType) {
         case BlockModelType::BLOCK:
             batch->cube(
-                glm::vec3(wrapper.position) + glm::vec3(0.5f),
+                glm::vec3(wrapper.position - origin) + glm::vec3(0.5f),
                 glm::vec3(1.01f),
                 wrapper.uvRegions,
                 light,
@@ -73,7 +76,7 @@ void BlockWrapsRenderer::draw(BlockWrapper& wrapper, const Texture* texture) {
             const auto& aabb = def.getHitboxes(vox->state).at(0);
             const auto& size = aabb.size();
             batch->cube(
-                glm::vec3(wrapper.position) + aabb.center(),
+                glm::vec3(wrapper.position - origin) + aabb.center(),
                 size * glm::vec3(1.01f),
                 wrapper.uvRegions,
                 light,
@@ -134,8 +137,9 @@ void BlockWrapsRenderer::refreshWrapper(BlockWrapper& wrapper) {
     }
 }
 
-void BlockWrapsRenderer::draw(const DrawContext& pctx) {
+void BlockWrapsRenderer::draw(const DrawContext& pctx, const Camera& camera) {
     auto ctx = pctx.sub();
+    const glm::ivec3 origin = camera.getOrigin();
 
     auto& shader = assets.require<Shader>("entity");
     shader.use();
@@ -151,7 +155,7 @@ void BlockWrapsRenderer::draw(const DrawContext& pctx) {
     }
     for (const auto& [texture, wrapper] : renderOrder) {
         batch->setTexture(texture);
-        draw(*wrapper, texture);
+        draw(*wrapper, texture, origin);
     }
     batch->flush();
 }
