@@ -36,7 +36,7 @@ static int l_is_enabled(lua::State* L) {
 static int push_route(lua::State* L, const voxels::Route& route) {
     lua::createtable(L, route.nodes.size(), 1);
     for (int i = 0; i < route.nodes.size(); i++) {
-        lua::pushvec3(L, route.nodes[i].pos);
+        lua::pushvec(L, route.nodes[i].pos);
         lua::rawseti(L, i + 1);
     }
     lua::pushinteger(L, route.totalVisited);

@@ -184,7 +184,7 @@ static int l_push_ray(
     lua::pushnumber(L, ray ? ray->distance : glm::distance(start, end));
     lua::setfield(L, "length");
 
-    lua::pushvec3(L, iend);
+    lua::pushvec(L, iend);
     lua::setfield(L, "iendpoint");
 
     lua::pushinteger(L, block);

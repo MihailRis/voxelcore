@@ -598,7 +598,7 @@ static int l_raycast(lua::State* L) {
         lua::pushnumber(L, glm::distance(start, end));
         lua::setfield(L, "length");
 
-        lua::pushvec3(L, iend);
+        lua::pushvec(L, iend);
         lua::setfield(L, "iendpoint");
 
         lua::pushinteger(L, voxel->id);
