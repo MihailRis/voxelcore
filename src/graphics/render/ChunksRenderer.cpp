@@ -315,6 +315,19 @@ void ChunksRenderer::drawChunks(
         if (chunk == nullptr) {
             continue;
         }
+        int cx = chunk->x;
+        int cz = chunk->z;
+        if (culling) {
+            glm::vec3 min(cx * CHUNK_W, chunk->bottom, cz * CHUNK_D);
+            glm::vec3 max(
+                cx * CHUNK_W + CHUNK_W, chunk->top, cz * CHUNK_D + CHUNK_D
+            );
+
+            if (!frustum.isBoxVisible(min, max)) {
+                continue;
+            }
+        }
+
         auto found = meshes.find(glm::ivec2(chunk->x, chunk->z));
         if (found == meshes.end()) {
             continue;
@@ -323,19 +336,19 @@ void ChunksRenderer::drawChunks(
         if (mesh.mesh == nullptr) {
             continue;
         }
+
         if (culling) {
             const auto& meshAABB = mesh.meshAABB;
             auto aabbMin = meshAABB.min();
             auto aabbMax = meshAABB.max();
+
             glm::vec3 min(
-                chunk->x * CHUNK_W + std::min(0.0f, aabbMin.x),
+                cx * CHUNK_W + std::min(0.0f, aabbMin.x),
                 chunk->bottom,
-                chunk->z * CHUNK_D + std::min(0.0f, aabbMin.z)
+                cz * CHUNK_D + std::min(0.0f, aabbMin.z)
             );
             glm::vec3 max(
-                chunk->x * CHUNK_W + aabbMax.x,
-                chunk->top,
-                chunk->z * CHUNK_D + aabbMax.z
+                cx * CHUNK_W + aabbMax.x, chunk->top, cz * CHUNK_D + aabbMax.z
             );
 
             if (!frustum.isBoxVisible(min, max)) {
@@ -388,20 +401,21 @@ void ChunksRenderer::drawSortedMeshes(const Camera& camera, Shader& shader) {
         if (chunk == nullptr || !chunk->flags.lighted) {
             continue;
         }
-        const auto& found = meshes.find(glm::ivec2(chunk->x, chunk->z));
-        if (found == meshes.end() || found->second.sortingMeshData.entries.empty()) {
-            continue;
-        }
 
+        int cx = chunk->x;
+        int cz = chunk->z;
         if (culling) {
-            glm::vec3 min(chunk->x * CHUNK_W, chunk->bottom, chunk->z * CHUNK_D);
+            glm::vec3 min(cx * CHUNK_W, chunk->bottom, cz * CHUNK_D);
             glm::vec3 max(
-                chunk->x * CHUNK_W + CHUNK_W,
-                chunk->top,
-                chunk->z * CHUNK_D + CHUNK_D
+                cx * CHUNK_W + CHUNK_W, chunk->top, cz * CHUNK_D + CHUNK_D
             );
 
             if (!frustum.isBoxVisible(min, max)) continue;
+        }
+
+        const auto& found = meshes.find(glm::ivec2(cx, cz));
+        if (found == meshes.end() || found->second.sortingMeshData.entries.empty()) {
+            continue;
         }
 
         auto& chunkEntries = found->second.sortingMeshData.entries;
