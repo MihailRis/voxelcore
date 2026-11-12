@@ -46,7 +46,7 @@ LevelController::LevelController(
         );
     }
     blocks = std::make_unique<BlocksController>(
-        *level, chunks ? chunks->lighting.get() : nullptr
+        *level, chunks ? chunks->lighting.get() : nullptr, settings
     );
     scripting::on_world_load(this);
 
