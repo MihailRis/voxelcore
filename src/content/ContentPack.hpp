@@ -1,5 +1,6 @@
 #pragma once
 
+#include "constants.hpp"
 #include "typedefs.hpp"
 #include "content_fwd.hpp"
 #include "io/io.hpp"
@@ -72,6 +73,7 @@ struct ContentPack {
     io::path folder;
     std::vector<DependencyPack> dependencies;
     std::string source = "";
+    std::string targetVersion = ">=" + std::string(ENGINE_VERSION_STRING);
 
     io::path getContentFile() const;
 
