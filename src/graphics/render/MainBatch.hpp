@@ -46,7 +46,7 @@ public:
     void flush();
 
     static glm::vec4 sampleLight(
-        const glm::vec3& pos, const Chunks& chunks, bool backlight
+        const glm::dvec3& pos, const Chunks& chunks, bool backlight
     );
 
     inline void vertex(

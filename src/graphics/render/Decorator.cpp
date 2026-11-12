@@ -83,7 +83,7 @@ void Decorator::addParticles(const Block& def, const glm::ivec3& pos) {
     );
     blockEmitters[pos] = renderer.particles->add(std::make_unique<Emitter>(
         level,
-        glm::vec3{pos.x + 0.5, pos.y + 0.5, pos.z + 0.5},
+        worldvec3 {pos.x + 0.5, pos.y + 0.5, pos.z + 0.5},
         *def.particles,
         treg.texture,
         treg.region,
@@ -120,7 +120,7 @@ void Decorator::updateAcoustics(const Camera& camera) {
         glm::vec3 dir = { r * std::cos(phi), r * std::sin(phi), z };
 
         dir = glm::normalize(dir);
-        glm::vec3 end;
+        worldvec3 end;
         glm::ivec3 norm;
         glm::ivec3 iend;
         blocks_agent::RaycastSettings raycast {};
@@ -128,7 +128,7 @@ void Decorator::updateAcoustics(const Camera& camera) {
         if (vox == nullptr) {
             continue;
         }
-        auto distance = glm::distance(start, end);
+        float distance = glm::distance(start, end);
         if (distance >= length * 0.98f) {
             continue;
         }
@@ -205,7 +205,7 @@ void Decorator::updateRandom(
         );
         renderer.particles->add(std::make_unique<Emitter>(
             level,
-            glm::vec3 {
+            worldvec3 {
                 pos.x + random.randFloat(),
                 pos.y + 1.1,
                 pos.z + random.randFloat()},
@@ -308,11 +308,11 @@ void Decorator::updateTextNotes() {
             renderer.texts->remove(textsIter->second);
             textsIter = playerTexts.erase(textsIter);
         } else {
-            glm::vec3 position = player->getPosition();
+            worldvec3 position = player->getPosition();
             if (auto entity = level.entities->get(player->getEntity())) {
                 position = entity->getInterpolatedPosition();
             }
-            note->setPosition(position + glm::vec3(0, 1, 0));
+            note->setPosition(position + worldvec3(0, 1, 0));
             if (note->getText() != player->getName()) {
                 note->setText(player->getName());
             }

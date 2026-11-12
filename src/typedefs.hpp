@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <cstdint>
+#include <glm/fwd.hpp>
 
 using scriptenv = std::shared_ptr<int>;
 
@@ -11,6 +12,9 @@ class ObserverHandler;
 using integer_t = int64_t;
 /// @brief dynamic floating-point type (64 bit floating point)
 using number_t = double;
+
+/// @brief position in the world (64 bit floating point components)
+using worldvec3 = glm::dvec3;
 
 using uint = unsigned int;
 using u64id_t = uint64_t;

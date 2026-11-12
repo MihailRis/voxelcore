@@ -637,12 +637,7 @@ SortingMeshData BlocksRenderer::renderTranslucent(
             continue;
         }
         SortingMeshEntry entry {
-            glm::vec3(
-                x + chunk->x * CHUNK_W + 0.5f,
-                y + 0.5f,
-                z + chunk->z * CHUNK_D + 0.5f
-            ),
-            util::Buffer<ChunkVertex>(indexCount), 0};
+            glm::vec3(x, y, z), util::Buffer<ChunkVertex>(indexCount), 0};
 
         totalSize += entry.vertexData.size();
 
@@ -660,10 +655,6 @@ SortingMeshData BlocksRenderer::renderTranslucent(
             } else {
                 aabb.addPoint(vertex.position);
             }
-
-            vertex.position.x += chunk->x * CHUNK_W + 0.5f;
-            vertex.position.y += 0.5f;
-            vertex.position.z += chunk->z * CHUNK_D + 0.5f;
         }
         sortingMesh.entries.push_back(std::move(entry));
         vertexCount = 0;

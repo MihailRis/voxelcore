@@ -121,6 +121,10 @@ namespace audio {
         int priority;
         int channel;
         float volume = 0.0f;
+        worldvec3 position {};
+        bool relative = false;
+
+        void refreshPosition();
     public:
         ALStream* stream = nullptr;
         bool manuallyStopped = true;
@@ -153,8 +157,8 @@ namespace audio {
         duration_t getDuration() const override;
         void setTime(duration_t time) override;
 
-        void setPosition(glm::vec3 pos) override;
-        glm::vec3 getPosition() const override;
+        void setPosition(worldvec3 pos) override;
+        worldvec3 getPosition() const override;
 
         void setVelocity(glm::vec3 vel) override;
         glm::vec3 getVelocity() const override;
@@ -188,6 +192,7 @@ namespace audio {
         std::array<uint, 1> filters;
 
         bool useEffects;
+        worldvec3 listenerPosition {};
 
         ALAudio(
             ALCdevice* device,
@@ -221,7 +226,7 @@ namespace audio {
         std::vector<std::string> getInputDeviceNames() override;
 
         void setListener(
-            glm::vec3 position,
+            worldvec3 position,
             glm::vec3 velocity,
             glm::vec3 lookAt,
             glm::vec3 up

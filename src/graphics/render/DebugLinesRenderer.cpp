@@ -11,15 +11,17 @@
 
 bool DebugLinesRenderer::showPaths = false;
 
-static void draw_route(LineBatch& batch, const voxels::Agent& agent) {
+static void draw_route(
+    LineBatch& batch, const voxels::Agent& agent, const glm::ivec3& origin
+) {
     const auto& route = agent.route;
     if (!route.found) return;
 
     batch.lineWidth(1.0f);
 
     for (int i = 1; i < route.nodes.size(); i++) {
-        const auto& a = glm::vec3(route.nodes.at(i - 1).pos);
-        const auto& b = glm::vec3(route.nodes.at(i).pos);
+        const auto& a = glm::vec3(route.nodes.at(i - 1).pos - origin);
+        const auto& b = glm::vec3(route.nodes.at(i).pos - origin);
 
         glm::vec3 a_base = a + glm::vec3(0.5);
         glm::vec3 b_base = b + glm::vec3(0.5);
@@ -99,10 +101,12 @@ void DebugLinesRenderer::render(
     Shader& linesShader,
     bool showChunkBorders
 ) {
+    const glm::ivec3 origin = camera.getOrigin();
+
     // In-world lines
     if (showPaths) {
         for (const auto& [_, agent] : level.pathfinding->getAgents()) {
-            draw_route(linesBatch, agent);
+            draw_route(linesBatch, agent, origin);
         }
     }
     DrawContext ctx = pctx.sub(&linesBatch);
@@ -114,7 +118,7 @@ void DebugLinesRenderer::render(
 
     if (showChunkBorders) {
         linesShader.uniformMatrix("u_projview", camera.getProjView());
-        glm::vec3 coord = camera.position;
+        worldvec3 coord = camera.position;
         if (coord.x < 0) coord.x--;
         if (coord.z < 0) coord.z--;
         int cx = floordiv(static_cast<int>(coord.x), CHUNK_W);
@@ -122,12 +126,12 @@ void DebugLinesRenderer::render(
 
         drawBorders(
             linesBatch,
-            cx * CHUNK_W,
+            cx * CHUNK_W - origin.x,
             0,
-            cz * CHUNK_D,
-            (cx + 1) * CHUNK_W,
+            cz * CHUNK_D - origin.z,
+            (cx + 1) * CHUNK_W - origin.x,
             CHUNK_H,
-            (cz + 1) * CHUNK_D
+            (cz + 1) * CHUNK_D - origin.z
         );
     }
 

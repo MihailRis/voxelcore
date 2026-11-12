@@ -1,5 +1,7 @@
 #pragma once
 
+#include "typedefs.hpp"
+
 #include <stdint.h>
 
 #include <ctime>
@@ -16,6 +18,10 @@ namespace util {
     }
 
     constexpr inline float EPSILON = 1e-6f;
+
+    inline glm::vec3 to_local(const worldvec3& pos, const glm::ivec3& origin) {
+        return glm::vec3(pos - worldvec3(origin));
+    }
 
     class PseudoRandom {
         uint32_t seed;

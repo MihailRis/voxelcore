@@ -292,7 +292,7 @@ std::shared_ptr<UINode> create_debug_panel(
         if (allowDebugCheats) {
             box->setTextConsumer([&player, ax](const std::wstring& text) {
                 try {
-                    glm::vec3 position = player.getPosition();
+                    worldvec3 position = player.getPosition();
                     position[ax] = std::stoi(text);
                     player.teleport(position);
                 } catch (std::exception& _) {

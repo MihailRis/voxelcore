@@ -548,7 +548,7 @@ static int l_destruct(lua::State* L) {
 static int l_raycast(lua::State* L) {
     const auto& level = require_level();
 
-    auto start = lua::tovec<3>(L, 1);
+    auto start = lua::tovec<3, double>(L, 1);
     auto dir = lua::tovec<3>(L, 2);
     auto maxDistance = lua::tonumber(L, 3);
 
@@ -576,7 +576,7 @@ static int l_raycast(lua::State* L) {
     if (luaStackSize >= 6) {
         raycast.includeNonSelectable = lua::toboolean(L, 6);
     }
-    glm::vec3 end;
+    worldvec3 end;
     glm::ivec3 normal;
     glm::ivec3 iend;
 
@@ -589,7 +589,7 @@ static int l_raycast(lua::State* L) {
             lua::createtable(L, 0, 5);
         }
 
-        lua::pushvec3(L, end);
+        lua::pushvec(L, end);
         lua::setfield(L, "endpoint");
 
         lua::pushvec3(L, normal);
@@ -598,7 +598,7 @@ static int l_raycast(lua::State* L) {
         lua::pushnumber(L, glm::distance(start, end));
         lua::setfield(L, "length");
 
-        lua::pushvec3(L, iend);
+        lua::pushvec(L, iend);
         lua::setfield(L, "iendpoint");
 
         lua::pushinteger(L, voxel->id);

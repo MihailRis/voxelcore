@@ -42,9 +42,7 @@ static audio::speakerid_t play_sound(
     }
     return audio::play(
         sound,
-        glm::vec3(
-            static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)
-        ),
+        worldvec3(x, y, z),
         relative,
         volume,
         pitch,
@@ -75,11 +73,7 @@ static audio::speakerid_t play_stream(
         if (stream) {
             return audio::play(
                 audio::open_stream(std::move(stream), true),
-                glm::vec3(
-                    static_cast<float>(x),
-                    static_cast<float>(y),
-                    static_cast<float>(z)
-                ),
+                worldvec3(x, y, z),
                 relative,
                 volume,
                 pitch,
@@ -96,15 +90,7 @@ static audio::speakerid_t play_stream(
         file = paths.find(filename);
     }
     return audio::play_stream(
-        file,
-        glm::vec3(
-            static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)
-        ),
-        relative,
-        volume,
-        pitch,
-        loop,
-        channel
+        file, worldvec3(x, y, z), relative, volume, pitch, loop, channel
     );
 }
 
@@ -277,9 +263,7 @@ static int l_audio_set_position(lua::State* L) {
         auto x = lua::tonumber(L, 2);
         auto y = lua::tonumber(L, 3);
         auto z = lua::tonumber(L, 4);
-        speaker->setPosition(glm::vec3(
-            static_cast<float>(x), static_cast<float>(y), static_cast<float>(z)
-        ));
+        speaker->setPosition(worldvec3(x, y, z));
     }
     return 0;
 }

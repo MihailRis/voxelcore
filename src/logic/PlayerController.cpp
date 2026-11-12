@@ -54,7 +54,7 @@ CameraControl::CameraControl(
 }
 
 void CameraControl::refreshPosition() {
-    camera->position = player.getPosition() + offset;
+    camera->position = player.getPosition() + worldvec3(offset);
 }
 
 void CameraControl::refreshRotation() {
@@ -200,7 +200,7 @@ void CameraControl::update(
     refreshPosition();
 
     auto castRay = [](Player& player, Camera& camera, const glm::vec3& front)
-         -> glm::vec3 {
+         -> worldvec3 {
         auto blockEnd = player.chunks->rayCastToObstacle(camera.position, front, 3.0f);
 
         Entities::RaycastSettings raycast {};
@@ -212,7 +212,7 @@ void CameraControl::update(
         );
         if (entityRay.has_value() &&
             entityRay->distance < glm::distance(camera.position, blockEnd)) {
-            return (camera.position + front * entityRay->distance);
+            return camera.position + worldvec3(front * entityRay->distance);
         } else {
             return blockEnd;
         }
@@ -220,14 +220,14 @@ void CameraControl::update(
 
     camera->updateVectors();
     if (player.currentCamera == spCamera) {
-        spCamera->position =
-            castRay(player, *camera, camera->front) - 0.4f * camera->front;
+        spCamera->position = castRay(player, *camera, camera->front) -
+                             worldvec3(0.4f * camera->front);
         spCamera->dir = -camera->dir;
         spCamera->front = -camera->front;
         spCamera->right = -camera->right;
     } else if (player.currentCamera == tpCamera) {
         tpCamera->position = castRay(player, *camera, camera->front * -1.0f) +
-                             0.4f * camera->front;
+                             worldvec3(0.4f * camera->front);
         tpCamera->dir = camera->dir;
         tpCamera->front = camera->front;
         tpCamera->right = camera->right;
@@ -366,7 +366,7 @@ voxel* PlayerController::updateSelection(float maxDistance) {
     auto camera = player.fpCamera.get();
     auto& selection = player.selection;
 
-    glm::vec3 end;
+    worldvec3 end;
     glm::ivec3 iend;
     glm::ivec3 norm;
     voxel* vox = chunks.rayCast(
@@ -393,7 +393,7 @@ voxel* PlayerController::updateSelection(float maxDistance) {
         )) {
         selection.entity = result->entity;
         selection.hitPosition =
-            camera->position + camera->front * result->distance;
+            camera->position + worldvec3(camera->front * result->distance);
         selection.position = selection.hitPosition;
         selection.actualPosition = selection.position;
         selection.normal = result->normal;
@@ -461,8 +461,7 @@ void PlayerController::processRightClick(
     if (def.obstacle) {
         const auto& hitboxes = def.getHitboxes(state);
         for (const AABB& blockAABB : hitboxes) {
-            if (level.entities->hasBlockingInside(blockAABB.translated(coord)
-                )) {
+            if (level.entities->hasBlockingInside(coord, blockAABB)) {
                 return;
             }
         }

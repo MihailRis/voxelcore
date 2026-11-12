@@ -1,6 +1,6 @@
 #include "TextNote.hpp"
 
-TextNote::TextNote(std::wstring text, NotePreset preset, glm::vec3 position)
+TextNote::TextNote(std::wstring text, NotePreset preset, worldvec3 position)
     : text(std::move(text)),
       preset(std::move(preset)),
       position(std::move(position)) {
@@ -30,11 +30,11 @@ void TextNote::updatePreset(const dv::value& data) {
     preset.deserialize(data);
 }
 
-void TextNote::setPosition(const glm::vec3& position) {
+void TextNote::setPosition(const worldvec3& position) {
     this->position = position;
 }
 
-const glm::vec3& TextNote::getPosition() const {
+const worldvec3& TextNote::getPosition() const {
     return position;
 }
 

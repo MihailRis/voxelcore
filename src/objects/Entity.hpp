@@ -104,9 +104,9 @@ public:
 
     void setPlayer(int64_t player);
 
-    void setInterpolatedPosition(const glm::vec3& position);
+    void setInterpolatedPosition(const worldvec3& position);
 
-    glm::vec3 getInterpolatedPosition() const;
+    worldvec3 getInterpolatedPosition() const;
 
     void setInterpolatedRotation(const glm::quat& rotation);
 

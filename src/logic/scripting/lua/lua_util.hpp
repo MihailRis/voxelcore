@@ -100,8 +100,8 @@ namespace lua {
         return 1;
     }
 
-    template <int n>
-    inline int pushvec_stack(lua::State* L, const glm::vec<n, float>& vec) {
+    template <int n, typename T = float>
+    inline int pushvec_stack(lua::State* L, const glm::vec<n, T>& vec) {
         for (int i = 0; i < n; i++) {
             pushnumber(L, vec[i]);
         }

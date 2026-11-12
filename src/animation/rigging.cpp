@@ -8,6 +8,7 @@
 #include "data/dv_util.hpp"
 #include "graphics/commons/Model.hpp"
 #include "graphics/render/ModelBatch.hpp"
+#include "maths/util.hpp"
 
 using namespace rigging;
 
@@ -159,10 +160,11 @@ static glm::mat4 build_matrix(
 void SkeletonConfig::update(
     Skeleton& skeleton,
     const glm::mat3& rotation,
-    const glm::vec3& position,
-    const glm::vec3& scale
+    const worldvec3& position,
+    const glm::vec3& scale,
+    const glm::ivec3& origin
 ) const {
-    glm::vec3 pos = position;
+    worldvec3 pos = position;
     const auto& interpolation = skeleton.interpolation;
     if (interpolation.isEnabled() && interpolation.isRefreshed()) {
         pos = interpolation.getCurrent();
@@ -172,7 +174,12 @@ void SkeletonConfig::update(
     if (rotationInterpolation.isEnabled() && rotationInterpolation.isRefreshed()) {
         rot = glm::mat3_cast(rotationInterpolation.getCurrent());
     }
-    update(0, skeleton, root.get(), build_matrix(rot, pos, scale));
+    update(
+        0,
+        skeleton,
+        root.get(),
+        build_matrix(rot, util::to_local(pos, origin), scale)
+    );
 }
 
 static float max_component(const glm::vec3& v) {
@@ -251,20 +258,27 @@ void SkeletonConfig::render(
     Skeleton& skeleton,
     ModelLightingMode lightingMode,
     const glm::mat3& rotation,
-    const glm::vec3& position,
+    const worldvec3& position,
     const glm::vec3& scale,
+    const glm::ivec3& origin,
     bool translucent
 ) const {
     if (skeleton.config->root == nullptr) {
         return;
     }
-    update(skeleton, rotation, position, scale);
+    update(skeleton, rotation, position, scale, origin);
 
     if (!skeleton.visible) {
         return;
     }
     processModels(
-        assets, skeleton, position, scale, &batch, lightingMode, translucent
+        assets,
+        skeleton,
+        util::to_local(position, origin),
+        scale,
+        &batch,
+        lightingMode,
+        translucent
     );
 }
 
@@ -272,17 +286,18 @@ void SkeletonConfig::updateBounds(
     const Assets& assets,
     Skeleton& skeleton,
     const glm::mat3& rotation,
-    const glm::vec3& position,
-    const glm::vec3& scale
+    const worldvec3& position,
+    const glm::vec3& scale,
+    const glm::ivec3& origin
 ) const {
     if (skeleton.config->root == nullptr) {
         return;
     }
-    update(skeleton, rotation, position, scale);
+    update(skeleton, rotation, position, scale, origin);
     processModels(
         assets,
         skeleton,
-        position,
+        util::to_local(position, origin),
         scale,
         nullptr,
         ModelLightingMode::SOLID,

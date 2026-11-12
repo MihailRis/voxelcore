@@ -3,7 +3,9 @@
 #include <cmath>
 #include <glm/ext.hpp>
 
-Camera::Camera(glm::vec3 position, float fov) : fov(fov), position(position) {
+inline constexpr double ORIGIN_STEP = 1024.0;
+
+Camera::Camera(worldvec3 position, float fov) : fov(fov), position(position) {
     updateVectors();
 }
 
@@ -40,17 +42,24 @@ glm::mat4 Camera::getProjection() const {
     }
 }
 
+glm::ivec3 Camera::getOrigin() const {
+    return glm::ivec3(
+        std::round(position.x / ORIGIN_STEP) * ORIGIN_STEP,
+        0,
+        std::round(position.z / ORIGIN_STEP) * ORIGIN_STEP
+    );
+}
+
+glm::vec3 Camera::getLocalPosition() const {
+    return glm::vec3(position - worldvec3(getOrigin()));
+}
+
 glm::mat4 Camera::getView(bool pos) const {
-    glm::vec3 camera_pos = this->position;
-    if (!pos) {
-        camera_pos = glm::vec3(0.0f);
+    glm::mat4 view = glm::lookAt(glm::vec3(0.0f), front, up);
+    if (pos) {
+        view = glm::translate(view, -getLocalPosition());
     }
-    if (perspective) {
-        return glm::lookAt(camera_pos, camera_pos + front, up);
-    } else {
-        return glm::lookAt(camera_pos, camera_pos + front, up);
-        //return glm::translate(glm::mat4(1.0f), camera_pos);
-    }
+    return view;
 }
 
 glm::mat4 Camera::getProjView(bool pos) const {

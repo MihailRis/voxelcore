@@ -26,13 +26,13 @@ Entity::Entity(
 
 Entity::~Entity() = default;
 
-void Entity::setInterpolatedPosition(const glm::vec3& position) {
+void Entity::setInterpolatedPosition(const worldvec3& position) {
     if (skeleton) {
         skeleton->interpolation.refresh(position);
     }
 }
 
-glm::vec3 Entity::getInterpolatedPosition() const {
+worldvec3 Entity::getInterpolatedPosition() const {
     if (skeleton) {
         const auto& interpolation = skeleton->interpolation;
         if (interpolation.isEnabled() && interpolation.isRefreshed()) {

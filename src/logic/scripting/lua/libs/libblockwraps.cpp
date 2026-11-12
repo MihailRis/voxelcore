@@ -7,7 +7,7 @@
 using namespace scripting;
 
 static int l_wrap(lua::State* L) {
-    auto position = lua::tovec3(L, 1);
+    auto position = lua::tovec<3, double>(L, 1);
     std::string texture = lua::require_string(L, 2);
     float emission = lua::isnumber(L, 3) ? lua::tonumber(L, 3) : 1.0f;
     glm::vec4 tint =
@@ -31,7 +31,7 @@ static int l_unwrap(lua::State* L) {
 
 static int l_set_pos(lua::State* L) {
     if (auto wrapper = renderer->blockWraps->get(lua::tointeger(L, 1))) {
-        wrapper->position = lua::tovec3(L, 2);
+        wrapper->position = lua::tovec<3, double>(L, 2);
     }
     return 0;
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "typedefs.hpp"
+
 #define GLM_FORCE_RADIANS
 #include <glm/glm.hpp>
 
@@ -12,7 +14,7 @@ public:
     glm::vec3 right {};
     glm::vec3 dir {};
 
-    glm::vec3 position {};
+    worldvec3 position {};
 
     float zoom = 1.0f;
     glm::mat4 rotation {1.0f};
@@ -27,10 +29,15 @@ public:
     Camera() {
         updateVectors();
     }
-    Camera(glm::vec3 position, float fov);
+    Camera(worldvec3 position, float fov);
 
     void updateVectors();
     void rotate(float x, float y, float z);
+
+    /// @brief Get origin of the rendering coordinate system: an integer point
+    /// near the camera, getView() is relative to it
+    glm::ivec3 getOrigin() const;
+    glm::vec3 getLocalPosition() const;
 
     glm::mat4 getProjection() const;
     glm::mat4 getView(bool position = true) const;

@@ -191,7 +191,7 @@ void GlobalChunks::save(Chunk* chunk) {
         return;
     }
     AABB aabb = chunk->getAABB();
-    auto entities = level.entities->getAllInside(aabb);
+    auto entities = level.entities->getAllInside(aabb.a, aabb.b);
     auto root = dv::object();
     root["data"] = level.entities->serialize(entities);
     if (!entities.empty()) {
@@ -214,6 +214,8 @@ void GlobalChunks::putChunk(std::shared_ptr<Chunk> chunk) {
     chunksMap[keyfrom(chunk->x, chunk->z)] = std::move(chunk);
 }
 
-std::optional<AABB> GlobalChunks::isObstacleAt(float x, float y, float z, const AABB& aabb) const {
-    return blocks_agent::is_obstacle_at(*this, x, y, z, aabb);
+std::optional<AABB> GlobalChunks::isObstacleAt(
+    const glm::ivec3& origin, float x, float y, float z, const AABB& aabb
+) const {
+    return blocks_agent::is_obstacle_at(*this, origin, x, y, z, aabb);
 }
