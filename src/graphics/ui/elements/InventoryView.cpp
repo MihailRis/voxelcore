@@ -113,30 +113,25 @@ SlotView::SlotView(GUI& gui, SlotLayout layout)
     setColor(glm::vec4(0, 0, 0, 0.2f));
     setTooltipDelay(0.0f);
 }
-// TODO: Refactor
-static std::wstring get_caption_string(
-    const ItemStack& stack, const ItemDef& item
-) {
-    dv::value* caption = stack.getField("caption");
-    if (caption != nullptr) {
-        return util::pascal_case(
-            langs::get(util::str2wstr_utf8(caption->asString()))
-        );
-    } else {
-        return util::pascal_case(langs::get(util::str2wstr_utf8(item.caption)));
-    }
-}
-// TODO: Refactor
-static std::wstring get_description_string(
-    const ItemStack& stack, const ItemDef& item
-) {
-    dv::value* description = stack.getField("description");
 
-    if (description != nullptr) {
-        return langs::get(util::str2wstr_utf8(description->asString()));
-    } else {
-        return langs::get(util::str2wstr_utf8(item.description));
-    }
+// May not work correctly, requires review
+static std::wstring get_item_field_string(
+    const ItemStack& stack, 
+    const std::string& field_name, 
+    const std::string& fallback_value
+) {
+    dv::value* field = stack.getField(field_name);
+    const std::string& target_str = (field != nullptr) ? field->asString() : fallback_value;
+    
+    return langs::get(util::str2wstr_utf8(target_str));
+}
+
+static std::wstring get_caption_string(const ItemStack& stack, const ItemDef& item) {
+    return util::pascal_case(get_item_field_string(stack, "caption", item.caption));
+}
+// pascal_case is omitted for descriptions to preserve standard text formatting and readability
+static std::wstring get_description_string(const ItemStack& stack, const ItemDef& item) {
+    return get_item_field_string(stack, "description", item.description);
 }
 
 static bool is_same_tooltip(const ItemStack& stack, const ItemStack& cache) {
