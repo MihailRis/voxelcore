@@ -89,7 +89,6 @@ namespace voxels {
 
         const std::unordered_map<int, Agent>& getAgents() const;
     private:
-        const Level& level;
         const GlobalChunks& chunks;
         const ContentUnitIndices<Block, blockid_t>& blockDefs;
         std::unordered_map<int, Agent> agents;
