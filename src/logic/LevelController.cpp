@@ -63,7 +63,7 @@ LevelController::LevelController(
             player->chunks->configure(
                 std::floor(position.x), std::floor(position.z), 1
             );
-            chunks->update(16, 1, 0, *player, player.get() == clientPlayer);
+            chunks->update(1.0f, 16, 1, 0, *player, player.get() == clientPlayer);
             if (player->chunks->get(
                     std::floor(position.x), 0, std::floor(position.z)
                 )) {
@@ -89,6 +89,7 @@ void LevelController::update(float delta, bool pause) {
             settings.chunks.loadDistance.get() + settings.chunks.padding.get()
         );
         chunks->update(
+            delta,
             settings.chunks.loadSpeed.get(),
             settings.chunks.loadDistance.get(),
             settings.chunks.padding.get(),
