@@ -15,6 +15,28 @@ class WorldGenerator;
 
 /// @brief ChunksController manages chunks dynamic loading/unloading
 class ChunksController {
+public:
+    std::unique_ptr<Lighting> lighting;
+
+    ChunksController(Level& level);
+    ~ChunksController();
+
+    /// @param delta frame time in seconds
+    /// @param loadSpeed chunks loading speed
+    void update(
+        float delta,
+        int loadSpeed,
+        int loadDistance,
+        uint padding,
+        Player& player,
+        bool isLocalPlayer
+    );
+
+    bool isInLoadingZone(const Player& player, uint padding, int x, int z) const;
+
+    const WorldGenerator* getGenerator() const {
+        return generator.get();
+    }
 private:
     struct LoadingState {
         int width = 0;
@@ -47,26 +69,4 @@ private:
     ) const;
     bool buildLights(const Player& player, const std::shared_ptr<Chunk>& chunk) const;
     void createChunk(const Player& player, int x, int y) const;
-public:
-    std::unique_ptr<Lighting> lighting;
-
-    ChunksController(Level& level);
-    ~ChunksController();
-
-    /// @param delta frame time in seconds
-    /// @param loadSpeed chunks loading speed
-    void update(
-        float delta,
-        int loadSpeed,
-        int loadDistance,
-        uint padding,
-        Player& player,
-        bool isLocalPlayer
-    );
-
-    bool isInLoadingZone(const Player& player, uint padding, int x, int z) const;
-
-    const WorldGenerator* getGenerator() const {
-        return generator.get();
-    }
 };
