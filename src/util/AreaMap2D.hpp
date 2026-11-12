@@ -120,9 +120,14 @@ namespace util {
             if (lx < 0 || ly < 0 || lx >= sizeX || ly >= sizeY) {
                 return;
             }
+            auto& element = firstBuffer[ly * sizeX + lx];
+            if (element == T{}) {
+                return;
+            }
             if (outCallback)
-                outCallback(x, y, firstBuffer[ly * sizeX + lx]);
-            firstBuffer[ly * sizeX + lx] = T{};
+                outCallback(x, y, element);
+            element = T{};
+            valuesCount--;
         }
 
         void setOutCallback(const OutCallback& callback) {
