@@ -15,6 +15,7 @@ class Chunks;
 class Lighting;
 class GlobalChunks;
 class ContentIndices;
+struct EngineSettings;
 
 enum class BlockInteraction { step, destruction, placing };
 
@@ -27,13 +28,16 @@ class BlocksController {
     const Level& level;
     GlobalChunks& chunks;
     Lighting* lighting;
+    const EngineSettings& settings;
     util::Clock randTickClock;
     util::Clock blocksTickClock;
     util::Clock worldTickClock;
     std::vector<OnBlockInteraction> blockInteractionCallbacks;
     uint64_t randomTickId = 0;
 public:
-    BlocksController(const Level& level, Lighting* lighting);
+    BlocksController(
+        const Level& level, Lighting* lighting, const EngineSettings& settings
+    );
 
     void updateSides(int x, int y, int z);
     void updateSides(int x, int y, int z, int w, int h, int d);

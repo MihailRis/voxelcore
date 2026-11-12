@@ -66,6 +66,7 @@ SettingsHandler::SettingsHandler(EngineSettings& settings) {
     builder.addSection("chunks");
     builder.add("load-distance", &settings.chunks.loadDistance);
     builder.add("load-speed", &settings.chunks.loadSpeed);
+    builder.add("update-distance", &settings.chunks.updateDistance);
     builder.add("padding", &settings.chunks.padding);
 
     builder.addSection("graphics");
