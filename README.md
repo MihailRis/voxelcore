@@ -77,6 +77,19 @@ cmake --preset default-ninja-clang-macos
 cmake --build --preset default-ninja-clang-macos
 ```
 
+### Building `.app` and `.dmg`
+> [!NOTE]
+> User files are stored in `~/Library/Application Support/VoxelCore`.
+```sh
+cmake --preset default-ninja-clang-macos -DVOXELENGINE_BUILD_MACOS_BUNDLE=ON
+cmake --build --preset default-ninja-clang-macos
+cd build
+cpack
+```
+
+This creates `build/VoxelCore.dmg` with a self-contained `VoxelCore.app`
+(Homebrew libraries are copied into the bundle). 
+
 ---
 
 ## Building in Windows

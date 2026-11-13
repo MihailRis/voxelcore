@@ -9,6 +9,7 @@ execute_process(COMMAND ${CMAKE_COMMAND} --version)
 
 option(VOXELENGINE_BUILD_APPDIR "Pack linux build" OFF)
 option(VOXELENGINE_BUILD_TESTS "Build tests" OFF)
+option(VOXELENGINE_BUILD_MACOS_BUNDLE "Pack macOS .app bundle" OFF)
 
 add_compile_definitions(VC_BUILD_NAME="${VC_BUILD_NAME}")
 
@@ -39,6 +40,10 @@ add_executable(VoxelCore src/main.cpp)
 
 if(VOXELENGINE_BUILD_APPDIR)
     include(${CMAKE_CURRENT_SOURCE_DIR}/dev/cmake/BuildAppdir.cmake)
+endif()
+
+if(VOXELENGINE_BUILD_MACOS_BUNDLE)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/dev/cmake/BuildMacBundle.cmake)
 endif()
 
 target_link_libraries(VoxelCore PRIVATE VoxelCoreSrc
