@@ -13,6 +13,17 @@ if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
     # specific for vcpkg
     find_package(OpenAL CONFIG REQUIRED)
 else()
+    if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT OPENAL_INCLUDE_DIR)
+        execute_process(
+            COMMAND brew --prefix openal-soft
+            OUTPUT_VARIABLE OPENAL_SOFT_DIR
+            OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+        if(EXISTS "${OPENAL_SOFT_DIR}/include/AL/alext.h")
+            set(OPENAL_INCLUDE_DIR "${OPENAL_SOFT_DIR}/include" CACHE PATH "")
+            set(OPENAL_LIBRARY "${OPENAL_SOFT_DIR}/lib/libopenal.dylib"
+                CACHE FILEPATH "")
+        endif()
+    endif()
     find_package(OpenAL REQUIRED)
     if(NOT TARGET OpenAL::OpenAL)
         add_library(OpenAL::OpenAL UNKNOWN IMPORTED)
@@ -25,6 +36,12 @@ endif()
 find_package(ZLIB REQUIRED)
 find_package(PNG REQUIRED)
 find_package(CURL REQUIRED)
+if(CMAKE_SYSTEM_NAME STREQUAL "Darwin" AND NOT OPENSSL_ROOT_DIR)
+    execute_process(
+        COMMAND brew --prefix openssl@3
+        OUTPUT_VARIABLE OPENSSL_ROOT_DIR
+        OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
+endif()
 find_package(OpenSSL 3.0 REQUIRED COMPONENTS Crypto)
 find_package(glfw3 REQUIRED)
 find_package(Freetype REQUIRED)
