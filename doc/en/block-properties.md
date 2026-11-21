@@ -372,11 +372,17 @@ To generate loot, the function `block_loot(block_id: int)` in the `base:util` mo
 
 ## Other properties
 
+### *abstract*
+
+An abstract block is used as a basis for defining blocks of the same type through inheritance (the `parent` property) (example: stairs). 
+As in the case of `hidden=true`, the item for the block is not generated.
+Unlike `hidden`, the property is not inherited.
+
 ### *script-name*
 
 Used to specify block script name (to reuse one script to multiple blocks). Name must not contain `packid:scripts/` and extension. Just name.
 
-### Tick Interval - *tick-interval*
+### *tick-interval*
 
 The interval in ticks (1/20th of a second). A value of 20 results in an on_block_tick call interval of one second.
 
