@@ -296,8 +296,7 @@ private:
 };
 
 Pathfinding::Pathfinding(const Level& level)
-    : level(level),
-      chunks(*level.chunks),
+    : chunks(*level.chunks),
       blockDefs(level.content.getIndices()->blocks) {
 }
 

@@ -159,7 +159,7 @@ void Decorator::updateAcoustics(const Camera& camera) {
     acoustics.reverbReflectionsDelay = minDistance / speedOfSound;
     acoustics.reverbLateReflectionsDelay = averageDistance / speedOfSound;
     acoustics.reverbDecayTime = decayTime;
-    acoustics.reverbRoomRolloff = escapeRatio * 1.5f;
+    acoustics.reverbRoomRolloff = 0.1f + escapeRatio * 1.5f;
     acoustics.reverbAbsorption = averageAbsorption;
 
     audio::set_acoustics(std::move(acoustics));

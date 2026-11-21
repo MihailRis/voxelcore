@@ -19,6 +19,7 @@
 #include "util/stringutil.hpp"
 #include "window/Window.hpp"
 #include "world/Level.hpp"
+#include "world/files/WorldFiles.hpp"
 
 #include <array>
 #include <unordered_map>
@@ -327,6 +328,35 @@ static int l_delete_world(lua::State* L) {
     return 0;
 }
 
+static ContentRemovalRequest parse_content_removal_request(lua::State* L, int idx) {
+    ContentRemovalRequest request;
+    if (!lua::istable(L, idx)) {
+        throw std::runtime_error("table expected as argument");
+    }
+    if (!lua::getfield(L, "units", idx)) {
+        throw std::runtime_error("table with 'units' field expected");
+    }
+    if (!lua::istable(L, -1)) {
+        throw std::runtime_error("'units' field must be a table");
+    }
+    int len = lua::objlen(L, -1);
+    for (int i = 0; i < len; i++) {
+        lua::rawgeti(L, i + 1);
+        request.units.emplace_back(lua::require_lstring(L, -1));
+        lua::pop(L);
+    }
+    return request;
+}
+
+static int l_delete_world_content(lua::State* L) {
+    auto name = lua::require_string(L, 1);
+    auto controller = engine->getController();
+    auto request = parse_content_removal_request(L, 2);
+    bool loadWorld = lua::toboolean(L, 3);
+    controller->deleteWorldContent(name, request, loadWorld);
+    return 0;
+}
+
 /// @brief Get engine version
 /// @return major, minor, [patch]
 static int l_get_version(lua::State* L) {
@@ -538,6 +568,7 @@ const luaL_Reg applib[] = {
     {"save_world", lua::wrap<l_save_world>},
     {"close_world", lua::wrap<l_close_world>},
     {"delete_world", lua::wrap<l_delete_world>},
+    {"delete_world_content", lua::wrap<l_delete_world_content>},
     /// other
     {"get_version", lua::wrap<l_get_version>},
     {"create_memory_device", lua::wrap<l_create_memory_device>},

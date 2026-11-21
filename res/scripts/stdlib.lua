@@ -410,7 +410,7 @@ require("core:io_stream").wrap_bytearray = require "core:internal/stream_provide
 
 network.__as_stream = require "core:internal/stream_providers/socket"
 
-math.randomseed(time.uptime() * 1536227939)
+math.randomseed(time.precise_utc_time())
 
 rules = require "core:internal/rules"
 time.schedules = {}

@@ -35,16 +35,16 @@ void ServerMainloop::run() {
 
     double targetDelta = 1.0 / static_cast<double>(coreParams.tps);
     double delta = targetDelta;
-    auto begin = system_clock::now();
-    auto startupTime = begin;
+    const auto tickDuration =
+        duration_cast<steady_clock::duration>(duration<double>(targetDelta));
+    auto startupTime = steady_clock::now();
+    auto nextTick = startupTime;
 
     while (!engine.isQuitSignal() && !engine.getAppScripts().isFinished()) {
         if (coreParams.testMode) {
             time.step(delta);
         } else {
-            auto now = system_clock::now();
-            time.update(
-                duration_cast<microseconds>(now - startupTime).count() / 1e6);
+            time.update(duration<double>(nextTick - startupTime).count());
             delta = time.getDelta();
         }
         if (controller) {
@@ -55,13 +55,15 @@ void ServerMainloop::run() {
         engine.postUpdate();
 
         if (!coreParams.testMode) {
-            auto end = system_clock::now();
-            int64_t millis = targetDelta * 1000 - 
-                duration_cast<microseconds>(end - begin).count() / 1000;
-            if (millis > 0) {
-                platform::sleep(millis);
+            nextTick += tickDuration;
+            auto now = steady_clock::now();
+            if (nextTick > now) {
+                platform::sleep(
+                    duration_cast<milliseconds>(nextTick - now).count()
+                );
+            } else if (now - nextTick > tickDuration * 5) {
+                nextTick = now;
             }
-            begin = system_clock::now();
         }
     }
     logger.info() << "script finished";

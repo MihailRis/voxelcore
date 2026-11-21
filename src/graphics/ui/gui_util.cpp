@@ -125,6 +125,7 @@ void guiutil::confirm(
     label->setSize(glm::vec2(600, 50));
     label->setMultiline(true);
     label->setTextWrapping(true);
+    label->setMarkup("md");
 
     panel->add(label);
     auto subpanel = std::make_shared<Panel>(gui, glm::vec2(600, 53));

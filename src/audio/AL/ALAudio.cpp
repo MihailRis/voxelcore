@@ -275,8 +275,7 @@ void ALStream::update(double delta) {
     unqueueBuffers(alsource);
     uint preloaded = enqueueBuffers(alsource);
 
-    // alspeaker->stopped is assigned to false at ALSpeaker::play(...)
-    if (speaker->isStopped() && !alspeaker->manuallyStopped) { //TODO: -V560 false-positive?
+    if (speaker->isStopped()) {
         if (preloaded) {
             speaker->play();
         } else if (isStopOnEnd()){

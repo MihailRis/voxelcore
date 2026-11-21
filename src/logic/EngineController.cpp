@@ -55,6 +55,32 @@ void EngineController::deleteWorld(const std::string& name) {
     );
 }
 
+void EngineController::deleteWorldContent(
+    const std::string& name, ContentRemovalRequest request, bool loadWorld
+) {
+    io::path folder = engine.getPaths().getWorldFolderByName(name);
+    auto deletion = [this, folder, loadWorld, request=std::move(request)]() {
+        logger.info() << "deleting content from the world";
+        WorldFiles worldFiles(folder);
+        worldFiles.deleteContent(std::move(request));
+        if (loadWorld) {
+            openWorld(folder.name(), true);
+        }
+    };
+
+    if (engine.isHeadless()) {
+        deletion();
+        return;
+    }
+
+    guiutil::confirm(
+        engine,
+        langs::get(L"delete-content-confirm", L"world") + L" (" +
+            util::str2wstr_utf8(folder.string()) + L")",
+        deletion
+    );
+}
+
 std::shared_ptr<Task> create_converter(
     Engine& engine,
     const std::shared_ptr<WorldFiles>& worldFiles,
@@ -174,20 +200,20 @@ static dv::value create_missing_content_report(
 }
 
 void EngineController::onMissingContent(
+    const std::string& worldName,
     const std::shared_ptr<ContentReport>& report
 ) {
+    auto fullReport = create_missing_content_report(report);
+    fullReport["world"] = worldName;
+
     if (engine.isHeadless()) {
         throw std::runtime_error(
             "missing content: " +
-            util::quote(json::stringify(create_missing_content_report(report), true, "  "))
+            util::quote(json::stringify(std::move(fullReport), true, "  "))
         );
     } else {
         engine.setScreen(std::make_shared<MenuScreen>(engine));
-        menus::show(
-            engine,
-            "reports/missing_content",
-            {create_missing_content_report(report)}
-        );
+        menus::show(engine, "reports/missing_content", {std::move(fullReport)});
     }
 }
 
@@ -234,7 +260,7 @@ void EngineController::openWorld(const std::string& name, bool confirmConvert) {
         return;
     }
     if (report->hasMissingContent()) {
-        onMissingContent(report);
+        onMissingContent(name, report);
         return;
     }
 

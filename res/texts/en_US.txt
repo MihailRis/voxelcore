@@ -11,6 +11,7 @@ error.dependency-version-not-met=Dependency pack version is not met.
 world.delete-confirm=Do you want to delete world forever?
 world.generators.default=Default
 world.generators.flat=Flat
+world.delete-content-confirm=Delete missing content from the world __**(irreversible)**__?
 
 editor.info.tooltip=CTRL+S - Save\nCTRL+R - Run\nCTRL+Z - Undo\nCTRL+Y - Redo
 devtools.traceback=Traceback (most recent call first)

@@ -216,7 +216,7 @@ std::unique_ptr<Process> scripting::start_app_script(const io::path& script) {
 }
 
 [[nodiscard]] scriptenv scripting::create_doc_environment(
-    const scriptenv& parent, const std::string& name
+    const scriptenv& parent, const std::string& name, bool app
 ) {
     auto L = lua::get_main_state();
     int id = lua::create_environment(L, *parent);
@@ -225,6 +225,12 @@ std::unique_ptr<Process> scripting::start_app_script(const io::path& script) {
     lua::setfield(L, "DOC_ENV");
     lua::pushstring(L, name);
     lua::setfield(L, "DOC_NAME");
+
+    if (app) {
+        if (lua::getregistry(L, "app")) {
+            lua::setfield(L, "app");
+        }
+    }
 
     if (lua::getglobal(L, "Document")) {
         if (lua::getfield(L, "new")) {

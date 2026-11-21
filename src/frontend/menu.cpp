@@ -79,7 +79,9 @@ UiDocument* menus::show(
 
     auto documentPtr = UiDocument::read(
         engine.getGUI(),
-        scripting::get_root_environment(),
+        scripting::create_doc_environment(
+            scripting::get_root_environment(), fullname, true
+        ),
         fullname,
         file,
         "core:layouts/" + name

@@ -361,7 +361,8 @@ void remove_lower_priority_speaker(int priority) {
     for (auto it = speakers.begin(); it != speakers.end();) {
         if (it->second->getPriority() < priority && it->second->isPaused()) {
             it->second->stop();
-            it = speakers.erase(it);
+            streams.erase(it->first);
+            speakers.erase(it);
             return;
         }
         it++;
@@ -369,7 +370,8 @@ void remove_lower_priority_speaker(int priority) {
     for (auto it = speakers.begin(); it != speakers.end();) {
         if (it->second->getPriority() < priority) {
             it->second->stop();
-            it = speakers.erase(it);
+            streams.erase(it->first);
+            speakers.erase(it);
             return;
         }
         it++;
@@ -457,6 +459,7 @@ speakerid_t audio::play_stream(
     int channel
 ) {
     std::shared_ptr<Stream> stream(open_stream(file, false));
+    stream->setStopOnEnd(true);
     return play(stream, position, relative, volume, pitch, loop, channel);
 }
 
@@ -532,8 +535,8 @@ void audio::update(double delta) {
         if (speaker->isStopped()) {
             auto foundStream = streams.find(it->first);
             if (foundStream == streams.end() ||
-                (!speaker->isManuallyStopped() &&
-                 foundStream->second->isStopOnEnd())) {
+                speaker->isManuallyStopped() ||
+                foundStream->second->isStopOnEnd()) {
                 streams.erase(it->first);
                 it = speakers.erase(it);
             } else {
