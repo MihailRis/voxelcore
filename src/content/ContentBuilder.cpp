@@ -133,7 +133,7 @@ std::unique_ptr<Content> ContentBuilder::build() {
             content->items
                 .require(
                     def->pickingItem.empty()
-                        ? (def->hidden ? CORE_EMPTY
+                        ? ((def->abstract || def->hidden) ? CORE_EMPTY
                                        : def->name + BLOCK_ITEM_SUFFIX)
                         : def->pickingItem
                 )

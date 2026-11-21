@@ -258,6 +258,9 @@ public:
     /// below
     bool grounded = false;
 
+    /// @brief Makes block abstract
+    bool abstract = false;
+
     /// @brief Turns off block item generation
     bool hidden = false;
 

@@ -260,6 +260,7 @@ template<> void ContentUnitLoader<Block>::loadUnit(
     root.at("selectable").get(def.selectable);
     root.at("grounded").get(def.grounded);
     root.at("hidden").get(def.hidden);
+    root.at("abstract").get(def.abstract);
     root.at("picking-item").get(def.pickingItem);
     root.at("surface-replacement").get(def.surfaceReplacement);
     root.at("script-name").get(def.scriptName);
