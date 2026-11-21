@@ -1,8 +1,6 @@
 # Documentation
 
->![WARNING]
-> This branch is used for VoxelCore 0.33 development, API is unstable.
-> [Proceed to VoxelCore 0.32 documentation](https://github.com/MihailRis/voxelcore/blob/release-0.32/doc/en/main-page.md)
+VoxelCore 0.33 documentation.
 
 ## Sections
 

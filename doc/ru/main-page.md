@@ -1,8 +1,6 @@
 # Документация
 
->![WARNING]
-> В этой ветке ведётся разработка VoxelCore 0.33, API нестабилен.
-> [Перейти к документации VoxelCore 0.32](https://github.com/MihailRis/voxelcore/blob/release-0.32/doc/ru/main-page.md)
+Документация VoxelCore 0.33.
 
 ## Разделы
 
