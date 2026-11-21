@@ -1,0 +1,5 @@
+{
+    "parent": "base:abstract_stairs",
+    "texture": "brick",
+    "base:durability": 10.5
+}

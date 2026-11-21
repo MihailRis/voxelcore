@@ -288,7 +288,7 @@ void ContentLoader::loadContent(const dv::value& root) {
 
     ContentUnitLoader<Block>(*pack, builder.blocks, "blocks", 
         [this](const Block& def) {
-        if (!def.abstract || !def.hidden) {
+        if (!def.abstract && !def.hidden) {
             bool created;
             auto& item = builder.items.create(
                 def.name + BLOCK_ITEM_SUFFIX, &created

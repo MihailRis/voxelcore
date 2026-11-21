@@ -1,0 +1,48 @@
+{
+    "abstract": true,
+    "model": "custom",
+    "model-name": "stairs",
+    "rotation": "stairs",
+    "uv-lock": true,
+    "hitboxes": [
+        [0, 0.0, 0, 1, 0.5, 1.0],
+        [0, 0.5, 0, 1, 0.5, 0.5]
+    ],
+    "light-passing": true,
+    "state-based": {
+        "offset": 0,
+        "bits": 3,
+        "variants": [
+            {
+                "model-name": "stairs_inner_left",
+                "hitboxes": [
+                    [0.0, 0.0, 0.0, 1.0, 0.5, 1.0],
+                    [0.0, 0.5, 0.0, 1.0, 0.5, 0.5],
+                    [0.0, 0.5, 0.5, 0.5, 0.5, 0.5]
+                ]
+            },
+            {
+                "model-name": "stairs_inner_right",
+                "hitboxes": [
+                    [0.0, 0.0, 0.0, 1.0, 0.5, 1.0],
+                    [0.0, 0.5, 0.0, 1.0, 0.5, 0.5],
+                    [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+                ]
+            },
+            {
+                "model-name": "stairs_outer_left",
+                "hitboxes": [
+                    [0.0, 0.0, 0.0, 1.0, 0.5, 1.0],
+                    [0.0, 0.5, 0.0, 0.5, 0.5, 0.5]
+                ]
+            },
+            {
+                "model-name": "stairs_outer_right",
+                "hitboxes": [
+                    [0.0, 0.0, 0.0, 1.0, 0.5, 1.0],
+                    [0.5, 0.5, 0.0, 0.5, 0.5, 0.5]
+                ]
+            }
+        ]
+    }
+}
