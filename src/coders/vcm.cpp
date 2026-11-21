@@ -240,12 +240,15 @@ static void perform_triangle(const xmlelement& root, ModelBuilder& builder) {
     glm::vec3 ba = pointB - pointA;
     glm::vec3 ca = pointC - pointA;
     glm::vec3 normal;
+    glm::vec3 backNormal;
     if (root.has("normal")) {
         normal = root.attr("normal").asVec3();
+        backNormal = normal;
     } else {
         normal = glm::normalize(glm::cross(ba, ca));
+        backNormal = -normal;
     }
-    
+
     if (root.has("uv")) {
         root.attr("uv").asNumbers(glm::value_ptr(uvs[0]), 6);
     } else {
@@ -267,10 +270,10 @@ static void perform_triangle(const xmlelement& root, ModelBuilder& builder) {
     if (cullFace == "front") {
         std::swap(pointB, pointC);
         std::swap(uvs[1], uvs[2]);
-        normal *= -1.0f;
+        normal = backNormal;
     } else if (cullFace == "off") {
         builder.addTriangle(texture, shading, pointA, pointB, pointC, normal, uvs[0], uvs[1], uvs[2]);
-        builder.addTriangle(texture, shading, pointA, pointC, pointB, -normal, uvs[0], uvs[2], uvs[1]);
+        builder.addTriangle(texture, shading, pointA, pointC, pointB, backNormal, uvs[0], uvs[2], uvs[1]);
         return;
     }
     builder.addTriangle(texture, shading, pointA, pointB, pointC, normal, uvs[0], uvs[1], uvs[2]);
