@@ -260,6 +260,7 @@ template<> void ContentUnitLoader<Block>::loadUnit(
     root.at("selectable").get(def.selectable);
     root.at("grounded").get(def.grounded);
     root.at("hidden").get(def.hidden);
+    root.at("abstract").get(def.abstract);
     root.at("picking-item").get(def.pickingItem);
     root.at("surface-replacement").get(def.surfaceReplacement);
     root.at("script-name").get(def.scriptName);
@@ -286,7 +287,7 @@ template<> void ContentUnitLoader<Block>::loadUnit(
         def.tickInterval = 1;
     }
 
-    if (def.hidden && def.pickingItem == def.name + BLOCK_ITEM_SUFFIX) {
+    if ((def.abstract || def.hidden) && def.pickingItem == def.name + BLOCK_ITEM_SUFFIX) {
         def.pickingItem = CORE_EMPTY;
     }
     if (root.has("script-name") || def.scriptFile.empty()) {
