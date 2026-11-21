@@ -1,5 +1,5 @@
 {
-    "hidden": true,
+    "abstract": true,
     "model": "custom",
     "model-name": "stairs",
     "rotation": "stairs",
