@@ -287,7 +287,7 @@ template<> void ContentUnitLoader<Block>::loadUnit(
         def.tickInterval = 1;
     }
 
-    if (def.hidden && def.pickingItem == def.name + BLOCK_ITEM_SUFFIX) {
+    if ((def.abstract || def.hidden) && def.pickingItem == def.name + BLOCK_ITEM_SUFFIX) {
         def.pickingItem = CORE_EMPTY;
     }
     if (root.has("script-name") || def.scriptFile.empty()) {
