@@ -31,8 +31,8 @@ Table of contents:
     - `@show` - visibility of a bone or entire skeleton/object
     - `@color` - color of the bone or entire skeleton/object (RGBA)
 - world logic parameters:
-    - random_ticks
-    - block_ticks
+    - `random_ticks`
+    - `block_ticks`
 - variant-based hitboxes
 - `something/*` patterns in preload.json
 - events:
@@ -51,6 +51,7 @@ Table of contents:
 - new entity properties:
     - `translucent`
 - new block properties:
+    - `abstract`
     - `ui-lock`
 - entity rotation interpolation
 - engine patch number
