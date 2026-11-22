@@ -52,7 +52,7 @@ Table of contents:
     - `translucent`
 - new block properties:
     - `abstract`
-    - `ui-lock`
+    - `uv-lock`
 - entity rotation interpolation
 - engine patch number
 - vertices count info in debug panel
