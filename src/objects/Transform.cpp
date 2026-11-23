@@ -11,7 +11,7 @@ static debug::Logger logger("entity-transform");
 
 void Transform::refresh() {
     combined = glm::mat4(1.0f);
-    combined = glm::translate(combined, pos);
+    combined = glm::translate(combined, glm::vec3(pos));
     combined = combined * glm::mat4(rot);
     combined = glm::scale(combined, size);
     displayPos = pos;
@@ -37,7 +37,7 @@ void Transform::deserialize(const dv::value& root) {
     dv::get_mat(root, "rot", rot);
 }
 
-bool Transform::checkValue(const glm::vec3& vector, std::string_view name) {
+bool Transform::checkValue(const worldvec3& vector, std::string_view name) {
     if (util::is_nan_or_inf(vector)) {
         auto message = "invalid vector attempted set to " + std::string(name) +
                        " : " + std::to_string(vector.x) + ", " +

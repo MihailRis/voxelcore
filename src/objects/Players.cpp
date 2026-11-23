@@ -25,7 +25,7 @@ Player* Players::get(int64_t id) const {
 }
 
 std::vector<Player*> Players::getAllInRadius(
-    const glm::vec3& center, float radius
+    const worldvec3& center, float radius
 ) const {
     std::vector<Player*> foundPlayers;
 
@@ -48,9 +48,9 @@ std::vector<Player*> Players::getAll() const {
     return allPlayers;
 }
 
-Player* Players::getNearest(const glm::vec3& position) const {
+Player* Players::getNearest(const worldvec3& position) const {
     Player* nearest = nullptr;
-    float nearestDist2 = std::numeric_limits<float>::max();
+    double nearestDist2 = std::numeric_limits<double>::max();
     for (const auto& pair : players) {
         auto player = pair.second.get();
         if (player->isSuspended()) {

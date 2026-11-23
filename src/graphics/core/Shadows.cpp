@@ -95,7 +95,17 @@ void Shadows::setQuality(int quality) {
     this->quality = quality;
 }
 
-void Shadows::setup(Shader& shader, const Weather& weather) {
+static glm::mat4 calc_shadows_matrix(
+    const Camera& shadowCamera, const glm::ivec3& origin
+) {
+    return glm::translate(
+        shadowCamera.getProjView(), glm::vec3(origin - shadowCamera.getOrigin())
+    );
+}
+
+void Shadows::setup(
+    Shader& shader, const Camera& camera, const Weather& weather
+) {
     if (!shadows) {
         return;
     }
@@ -106,8 +116,13 @@ void Shadows::setup(Shader& shader, const Weather& weather) {
         glm::mod((worldInfo.daytime + 0.5f) * 2.0f, 1.0f) * 2.0f - 1.0f
     ));
     shader.uniform1i("u_screen", 0);
-    shader.uniformMatrix("u_shadowsMatrix[0]", shadowCamera.getProjView());
-    shader.uniformMatrix("u_shadowsMatrix[1]", wideShadowCamera.getProjView());
+    const glm::ivec3 origin = camera.getOrigin();
+    shader.uniformMatrix(
+        "u_shadowsMatrix[0]", calc_shadows_matrix(shadowCamera, origin)
+    );
+    shader.uniformMatrix(
+        "u_shadowsMatrix[1]", calc_shadows_matrix(wideShadowCamera, origin)
+    );
     shader.uniform3f("u_sunDir", shadowCamera.front);
     shader.uniform1i("u_shadowsRes", shadowMap->getResolution());
     shader.uniform1f("u_shadowsOpacity", shadowsOpacity); // TODO: make it configurable
@@ -165,10 +180,10 @@ void Shadows::generateShadowsMap(
     float shadowMapScale = 0.32f / (1 << glm::max(0, quality)) * scale;
     float shadowMapSize = resolution * shadowMapScale;
 
-    glm::vec3 basePos = glm::floor(camera.position / 4.0f) * 4.0f;
-    glm::vec3 prevPos = shadowCamera.position;
+    worldvec3 basePos = glm::floor(camera.position / 4.0) * 4.0;
+    worldvec3 prevPos = shadowCamera.position;
     shadowCamera = Camera(
-        glm::distance2(prevPos, basePos) > 25.0f ? basePos : prevPos,
+        glm::distance2(prevPos, basePos) > 25.0 ? basePos : prevPos,
         shadowMapSize
     );
     shadowCamera.near = 0.1f;
@@ -191,13 +206,13 @@ void Shadows::generateShadowsMap(
         glm::radians(0.0f)
     );
 
-    shadowCamera.position -= shadowCamera.front * 500.0f;
-    shadowCamera.position += shadowCamera.up * 0.0f;
-    shadowCamera.position += camera.front * 0.0f;
+    shadowCamera.position -= worldvec3(shadowCamera.front * 500.0f);
+    shadowCamera.position += worldvec3(shadowCamera.up * 0.0f);
+    shadowCamera.position += worldvec3(camera.front * 0.0f);
 
     auto view = shadowCamera.getView();
 
-    auto currentPos = shadowCamera.position;
+    auto currentPos = shadowCamera.getLocalPosition();
     auto topRight = shadowCamera.right + shadowCamera.up;
     auto min = view * glm::vec4(currentPos - topRight * shadowMapSize * 0.5f, 1.0f);
     auto max = view * glm::vec4(currentPos + topRight * shadowMapSize * 0.5f, 1.0f);

@@ -6,7 +6,7 @@
 using namespace scripting;
 
 static int l_show(lua::State* L) {
-    auto position = lua::tovec3(L, 1);
+    auto position = lua::tovec<3, double>(L, 1);
     auto text = lua::require_wstring(L, 2);
     auto preset = lua::tovalue(L, 3);
     auto extension = lua::tovalue(L, 4);
@@ -47,7 +47,7 @@ static int l_get_pos(lua::State* L) {
 }
 static int l_set_pos(lua::State* L) {
     if (auto note = renderer->texts->get(lua::tointeger(L, 1))) {
-        note->setPosition(lua::tovec3(L, 2));
+        note->setPosition(lua::tovec<3, double>(L, 2));
     }
     return 0;
 }

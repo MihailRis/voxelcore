@@ -12,6 +12,7 @@
 #include <map>
 
 class Assets;
+class Camera;
 class Content;
 class Chunks;
 class Texture;
@@ -41,7 +42,9 @@ class BlockWrapsRenderer {
     std::unordered_map<u64id_t, std::unique_ptr<BlockWrapper>> wrappers;
     u64id_t nextWrapper = 1;
 
-    void draw(BlockWrapper& wrapper, const Texture* texture);
+    void draw(
+        BlockWrapper& wrapper, const Texture* texture, const glm::ivec3& origin
+    );
 
     void refreshWrapper(BlockWrapper& wrapper);
     void clearOrder(const BlockWrapper* const wrapper);
@@ -51,7 +54,7 @@ public:
     );
     ~BlockWrapsRenderer();
 
-    void draw(const DrawContext& ctx);
+    void draw(const DrawContext& ctx, const Camera& camera);
 
     u64id_t add(
         const glm::ivec3& position,

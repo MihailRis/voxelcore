@@ -47,11 +47,11 @@ static int l_name(lua::State* L) {
 }
 
 static int getter_pos(lua::State* L, const Camera& camera) {
-    return lua::pushvec3(L, camera.position);
+    return lua::pushvec(L, camera.position);
 }
 
 static void setter_pos(lua::State* L, Camera& camera, int idx) {
-    camera.position = lua::tovec<3>(L, idx);
+    camera.position = lua::tovec<3, double>(L, idx);
 }
 
 static int getter_rot(lua::State* L, const Camera& camera) {
@@ -104,9 +104,11 @@ static int getter_up(lua::State* L, const Camera& camera) {
 static int l_look_at(lua::State* L) {
     size_t index = static_cast<size_t>(lua::tointeger(L, 1));
     auto& camera = *require_level().cameras.at(index);
-    auto center = lua::tovec<3>(L, 2);
+    auto center = lua::tovec<3, double>(L, 2);
     auto matrix = glm::inverse(
-        glm::lookAt(glm::vec3(), center - camera.position, glm::vec3(0, 1, 0))
+        glm::lookAt(
+            glm::vec3(), glm::vec3(center - camera.position), glm::vec3(0, 1, 0)
+        )
     );
     if (lua::isnumber(L, 3)) {
         matrix = glm::mat4_cast(glm::slerp(

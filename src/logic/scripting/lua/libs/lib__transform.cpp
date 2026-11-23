@@ -2,7 +2,7 @@
 
 #include "maths/util.hpp"
 
-static void check_valid(const glm::vec3& vec) {
+static void check_valid(const worldvec3& vec) {
     if (util::is_nan_or_inf(vec)) {
         throw std::invalid_argument(
             "invalid vector: " + std::to_string(vec.x) + ", " +
@@ -21,14 +21,14 @@ static void check_valid(const glm::mat3& vec) {
 
 static int l_get_pos(lua::State* L) {
     if (auto entity = get_entity(L, 1)) {
-        return lua::pushvec3(L, entity->getTransform().pos);
+        return lua::pushvec(L, entity->getTransform().pos);
     }
     return 0;
 }
 
 static int l_set_pos(lua::State* L) {
     if (auto entity = get_entity(L, 1)) {
-        auto vec = lua::tovec3(L, 2);
+        auto vec = lua::tovec<3, double>(L, 2);
         check_valid(vec);
         entity->getTransform().setPos(vec);
         entity->getRigidbody().hitbox.setPos(vec);

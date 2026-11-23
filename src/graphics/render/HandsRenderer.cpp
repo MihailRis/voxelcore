@@ -33,7 +33,8 @@ void HandsRenderer::render(const Camera& camera) {
         ModelLightingMode::SOLID,
         glm::mat3(1.0f),
         glm::vec3(),
-        glm::vec3(1.0f)
+        glm::vec3(1.0f),
+        glm::ivec3()
     );
 
     modelBatch.render();

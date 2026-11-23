@@ -55,3 +55,9 @@ for i = 0, 63 do
 end
 gfx.posteffects.set_array(slot, "u_arrayName", Bytearray_as_string(buffer))
 ```
+
+## Coordinates in shaders
+
+World-space values available in shaders (`u_cameraPos`, `u_view`, `u_inverseView`, positions of vertices and models) are relative to the rendering origin, not to the world origin. The rendering origin is an integer point near the camera: its X and Z are multiples of 1024 blocks, Y is 0. This keeps `float` precise far from the world origin.
+
+Directions, distances and positions relative to the camera do not depend on the rendering origin. Neither does an effect bound to the blocks grid or repeating with a period that divides 1024.

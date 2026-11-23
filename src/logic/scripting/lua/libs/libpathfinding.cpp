@@ -36,7 +36,7 @@ static int l_is_enabled(lua::State* L) {
 static int push_route(lua::State* L, const voxels::Route& route) {
     lua::createtable(L, route.nodes.size(), 1);
     for (int i = 0; i < route.nodes.size(); i++) {
-        lua::pushvec3(L, route.nodes[i].pos);
+        lua::pushvec(L, route.nodes[i].pos);
         lua::rawseti(L, i + 1);
     }
     lua::pushinteger(L, route.totalVisited);
@@ -46,8 +46,8 @@ static int push_route(lua::State* L, const voxels::Route& route) {
 
 static int l_make_route(lua::State* L) {
     if (auto agent = get_agent(L)) {
-        auto start = lua::tovec3(L, 2);
-        auto target = lua::tovec3(L, 3);
+        auto start = lua::tovec<3, double>(L, 2);
+        auto target = lua::tovec<3, double>(L, 3);
         agent->state = {};
         agent->start = glm::floor(start);
         agent->target = target;
@@ -62,8 +62,8 @@ static int l_make_route(lua::State* L) {
 
 static int l_make_route_async(lua::State* L) {
     if (auto agent = get_agent(L)) {
-        auto start = lua::tovec3(L, 2);
-        auto target = lua::tovec3(L, 3);
+        auto start = lua::tovec<3, double>(L, 2);
+        auto target = lua::tovec<3, double>(L, 3);
         agent->state = {};
         agent->start = glm::floor(start);
         agent->target = target;

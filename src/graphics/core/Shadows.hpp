@@ -19,7 +19,7 @@ public:
     Shadows(const Level& level);
     ~Shadows();
 
-    void setup(Shader& shader, const Weather& weather);
+    void setup(Shader& shader, const Camera& camera, const Weather& weather);
     void setQuality(int quality);
     void refresh(
         const Camera& camera,

@@ -38,10 +38,10 @@ static inline void update_particle(
     auto& angle = particle.angle;
 
     vel += delta * preset.acceleration;
-    if (preset.collision && chunks.isObstacleAt(pos + vel * delta)) {
+    if (preset.collision && chunks.isObstacleAt(pos + worldvec3(vel * delta))) {
         vel *= 0.0f;
     }
-    pos += vel * delta;
+    pos += worldvec3(vel * delta);
     angle += particle.angularVelocity * delta;
     particle.lifetime -= delta;
 }
@@ -114,7 +114,8 @@ static inline glm::vec4 calc_lights(
                 light = glm::max(
                     light,
                     MainBatch::sampleLight(
-                        particle.position - size * glm::vec3(x, y, z),
+                        particle.position -
+                            worldvec3(size * glm::vec3(x, y, z)),
                         chunks,
                         backlight
                     )
@@ -154,7 +155,7 @@ void ParticlesRenderer::renderParticle(
                 camera.front * rotatedUp.z;
     }
     batch->quad(
-        particle.position,
+        util::to_local(particle.position, camera.getOrigin()),
         localRight,
         localUp,
         -camera.front,

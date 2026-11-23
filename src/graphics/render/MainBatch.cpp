@@ -63,11 +63,11 @@ void MainBatch::prepare(int vertices) {
 }
 
 glm::vec4 MainBatch::sampleLight(
-        const glm::vec3 &pos, const Chunks &chunks, bool backlight
+        const glm::dvec3 &pos, const Chunks &chunks, bool backlight
 ) {
     light_t light = chunks.getLight(
             std::floor(pos.x),
-            std::floor(std::min(CHUNK_H - 1.0f, pos.y)),
+            std::floor(std::min(CHUNK_H - 1.0, pos.y)),
             std::floor(pos.z));
     light_t minIntensity = backlight ? 1 : 0;
     return {

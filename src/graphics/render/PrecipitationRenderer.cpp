@@ -67,7 +67,7 @@ static constexpr float K = 21.41149;
 static constexpr glm::ivec2 FACE_SIZE {1, 16};
 
 static UVRegion calc_uv(
-    const glm::vec3& pos,
+    const glm::ivec3& pos,
     const glm::vec3& right,
     float timer,
     const WeatherPreset& weather
@@ -84,8 +84,10 @@ static UVRegion calc_uv(
     }
     random.setSeed(uz);
     float hspeed = (random.randFloat() * 2.0f - 1.0f) * weather.fall.hspeed;
-    float u1 = ux * scale + timer * hspeed * -m;
-    float v1 = timer * weather.fall.vspeed + pos.y * scale + uz * K;
+    float u1 =
+        glm::fract(ux * static_cast<double>(scale)) + timer * hspeed * -m;
+    float v1 = timer * weather.fall.vspeed + pos.y * scale +
+               glm::fract(uz * static_cast<double>(K));
 
     return {u1, v1, u1 + m * scale, v1 + FACE_SIZE.y * scale};
 }
@@ -103,6 +105,8 @@ void PrecipitationRenderer::render(
     int x = glm::floor(camera.position.x);
     int y = glm::floor(camera.position.y);
     int z = glm::floor(camera.position.z);
+
+    const glm::ivec3 origin = camera.getOrigin();
 
     util::CentredMatrix<int, (depth + 1) * 2> heights;
     heights.setCenter(x, z);
@@ -135,17 +139,16 @@ void PrecipitationRenderer::render(
         for (int lx = -radius; lx <= radius; lx++) {
             for (int lz = depth; lz > 0; lz--) {
                 // Position calculations
-                glm::vec3 pos = face.right * static_cast<float>(lx) +
-                                face.front * static_cast<float>(lz);
-                pos += glm::vec3(x, 0, z);
+                glm::ivec3 pos =
+                    glm::ivec3(face.right) * lx + glm::ivec3(face.front) * lz;
+                pos += glm::ivec3(x, 0, z);
                 pos.y =
                     glm::max(y - FACE_SIZE.y / 2, heights.at(pos.x, pos.z)) +
                     FACE_SIZE.y / 2 + 1;
-                pos += glm::vec3(0.5f, 0.0f, 0.5f);
 
                 // Draw
                 batch->quad(
-                    pos,
+                    glm::vec3(pos - origin) + glm::vec3(0.5f, 0.0f, 0.5f),
                     face.right,
                     {0, 1, 0},
                     glm::cross(glm::vec3(0, 1, 0), face.right),

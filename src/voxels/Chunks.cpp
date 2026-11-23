@@ -52,7 +52,7 @@ voxel& Chunks::require(int32_t x, int32_t y, int32_t z) const {
     return blocks_agent::require(*this, x, y, z);
 }
 
-const AABB* Chunks::isObstacleAt(float x, float y, float z) const {
+const AABB* Chunks::isObstacleAt(double x, double y, double z) const {
     int ix = std::floor(x);
     int iy = std::floor(y);
     int iz = std::floor(z);
@@ -211,10 +211,10 @@ void Chunks::set(
 }
 
 voxel* Chunks::rayCast(
-    const glm::vec3& start,
+    const worldvec3& start,
     const glm::vec3& dir,
     float maxDist,
-    glm::vec3& end,
+    worldvec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
     const blocks_agent::RaycastSettings& settings
@@ -224,12 +224,12 @@ voxel* Chunks::rayCast(
     );
 }
 
-glm::vec3 Chunks::rayCastToObstacle(
-    const glm::vec3& start, const glm::vec3& dir, float maxDist
+worldvec3 Chunks::rayCastToObstacle(
+    const worldvec3& start, const glm::vec3& dir, float maxDist
 ) const {
-    const float px = start.x;
-    const float py = start.y;
-    const float pz = start.z;
+    const double px = start.x;
+    const double py = start.y;
+    const double pz = start.z;
 
     float dx = dir.x;
     float dy = dir.y;
@@ -286,11 +286,11 @@ glm::vec3 Chunks::rayCastToObstacle(
                                 norm,
                                 distance
                             ) > RayRelation::None) {
-                            return start + (dir * glm::vec3(distance));
+                            return start + worldvec3(dir) * distance;
                         }
                     }
                 } else {
-                    return glm::vec3(px + t * dx, py + t * dy, pz + t * dz);
+                    return worldvec3(px + t * dx, py + t * dy, pz + t * dz);
                 }
             }
         }
@@ -316,7 +316,7 @@ glm::vec3 Chunks::rayCastToObstacle(
             }
         }
     }
-    return glm::vec3(px + maxDist * dx, py + maxDist * dy, pz + maxDist * dz);
+    return worldvec3(px + maxDist * dx, py + maxDist * dy, pz + maxDist * dz);
 }
 
 void Chunks::setCenter(int32_t x, int32_t z) {

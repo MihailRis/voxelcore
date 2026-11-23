@@ -104,7 +104,7 @@ namespace rigging {
         glm::vec4 tint {1.0f, 1.0f, 1.0f, 1.0f};
         std::vector<glm::vec4> boneTints;
 
-        util::VecInterpolation<3, float> interpolation {false};
+        util::VecInterpolation<3, double> interpolation {false};
         util::RotationInterpolation rotationInterpolation {false};
 
         Skeleton(std::shared_ptr<const SkeletonConfig> config);
@@ -151,8 +151,9 @@ namespace rigging {
         void update(
             Skeleton& skeleton,
             const glm::mat3& rotation,
-            const glm::vec3& position,
-            const glm::vec3& scale
+            const worldvec3& position,
+            const glm::vec3& scale,
+            const glm::ivec3& origin
         ) const;
 
         void render(
@@ -161,8 +162,9 @@ namespace rigging {
             Skeleton& skeleton,
             ModelLightingMode lightingMode,
             const glm::mat3& rotation,
-            const glm::vec3& position,
+            const worldvec3& position,
             const glm::vec3& scale,
+            const glm::ivec3& origin,
             bool translucent = false
         ) const;
 
@@ -170,8 +172,9 @@ namespace rigging {
             const Assets& assets,
             Skeleton& skeleton,
             const glm::mat3& rotation,
-            const glm::vec3& position,
-            const glm::vec3& scale
+            const worldvec3& position,
+            const glm::vec3& scale,
+            const glm::ivec3& origin
         ) const;
 
         Skeleton instance() const {

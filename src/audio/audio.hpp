@@ -331,11 +331,11 @@ namespace audio {
 
         /// @brief Set speaker 3D position in the world
         /// @param pos new position
-        virtual void setPosition(glm::vec3 pos) = 0;
+        virtual void setPosition(worldvec3 pos) = 0;
 
         /// @brief Get speaker 3D position in the world
         /// @return position
-        virtual glm::vec3 getPosition() const = 0;
+        virtual worldvec3 getPosition() const = 0;
 
         /// @brief Set speaker movement velocity used for Doppler effect
         /// @param vel velocity vector
@@ -391,7 +391,7 @@ namespace audio {
             uint bitsPerSample
         ) = 0;
         virtual void setListener(
-            glm::vec3 position,
+            worldvec3 position,
             glm::vec3 velocity,
             glm::vec3 lookAt,
             glm::vec3 up
@@ -482,7 +482,7 @@ namespace audio {
     /// @param lookAt point the listener look at
     /// @param up camera up vector
     void set_listener(
-        glm::vec3 position, glm::vec3 velocity, glm::vec3 lookAt, glm::vec3 up
+        worldvec3 position, glm::vec3 velocity, glm::vec3 lookAt, glm::vec3 up
     );
 
     /// @brief Play 3D sound in the world
@@ -498,7 +498,7 @@ namespace audio {
     /// @return speaker id or 0
     speakerid_t play(
         Sound* sound,
-        glm::vec3 position,
+        worldvec3 position,
         bool relative,
         float volume,
         float pitch,
@@ -518,7 +518,7 @@ namespace audio {
     /// @return speaker id or 0
     speakerid_t play(
         const std::shared_ptr<Stream>& stream,
-        glm::vec3 position,
+        worldvec3 position,
         bool relative,
         float volume,
         float pitch,
@@ -537,7 +537,7 @@ namespace audio {
     /// @return speaker id or 0
     speakerid_t play_stream(
         const io::path& file,
-        glm::vec3 position,
+        worldvec3 position,
         bool relative,
         float volume,
         float pitch,

@@ -5,6 +5,7 @@
 #include "graphics/core/DrawContext.hpp"
 #include "graphics/core/LineBatch.hpp"
 #include "maths/FrustumCulling.hpp"
+#include "maths/util.hpp"
 #include "objects/Entities.hpp"
 #include "objects/Entity.hpp"
 #include "objects/EntityDef.hpp"
@@ -46,10 +47,12 @@ static bool check_frustum(
     const Frustum& frustum,
     const Transform& transform,
     const Rigidbody& rigidbody,
-    const rigging::Skeleton& skeleton
+    const rigging::Skeleton& skeleton,
+    const glm::ivec3& origin
 ) {
+    glm::vec3 pos = util::to_local(transform.pos, origin);
     glm::vec3 ext = calc_extent(transform, rigidbody, skeleton);
-    return frustum.isBoxVisible(transform.pos - ext, transform.pos + ext);
+    return frustum.isBoxVisible(pos - ext, pos + ext);
 }
 
 EntitiesRenderer::EntitiesRenderer(const Assets& assets, Entities& entities)
@@ -57,8 +60,12 @@ EntitiesRenderer::EntitiesRenderer(const Assets& assets, Entities& entities)
 }
 
 void EntitiesRenderer::render(
-    ModelBatch& batch, const Frustum* frustum, entityid_t fpsEntity
+    ModelBatch& batch,
+    const glm::ivec3& origin,
+    const Frustum* frustum,
+    entityid_t fpsEntity
 ) {
+    batch.setLightsOffset(origin);
     for (const auto& [uid, entity] : entities.getEntities()) {
         if (!entity->getSkeleton() || uid == fpsEntity) {
             continue;
@@ -73,12 +80,17 @@ void EntitiesRenderer::render(
         if (rigConfig == nullptr) {
             continue;
         }
-        if (frustum && !check_frustum(*frustum, transform, rigidbody, skeleton)) {
+        if (frustum &&
+            !check_frustum(*frustum, transform, rigidbody, skeleton, origin)) {
             if (!skeleton.boundsDirty || !skeleton.visible) {
                 continue;
             }
-            rigConfig->updateBounds(assets, skeleton, transform.rot, pos, size);
-            if (!check_frustum(*frustum, transform, rigidbody, skeleton)) {
+            rigConfig->updateBounds(
+                assets, skeleton, transform.rot, pos, size, origin
+            );
+            if (!check_frustum(
+                    *frustum, transform, rigidbody, skeleton, origin
+                )) {
                 continue;
             }
         }
@@ -90,6 +102,7 @@ void EntitiesRenderer::render(
             transform.rot,
             pos,
             size,
+            origin,
             def.translucent
         );
     }
@@ -97,6 +110,7 @@ void EntitiesRenderer::render(
 
 void EntitiesRenderer::renderDebug(
     LineBatch& batch,
+    const glm::ivec3& origin,
     const Frustum* frustum,
     const DrawContext& pctx,
     entityid_t fpsEntity
@@ -113,20 +127,31 @@ void EntitiesRenderer::renderDebug(
             const auto& rigidbody = entity->getRigidbody();
             const auto& skeleton = *entity->getSkeleton();
             const auto& hitbox = rigidbody.hitbox;
-            if (frustum && !check_frustum(*frustum, transform, rigidbody, skeleton)) {
+            if (frustum &&
+                !check_frustum(
+                    *frustum, transform, rigidbody, skeleton, origin
+                )) {
                 continue;
             }
             batch.box(
-                hitbox.position, hitbox.getHalfSize() * 2.0f, glm::vec4(1.0f)
+                util::to_local(hitbox.position, origin),
+                hitbox.getHalfSize() * 2.0f,
+                glm::vec4(1.0f)
             );
             glm::vec3 ext = calc_extent(transform, rigidbody, skeleton);
             batch.box(
-                transform.pos, ext * 2.0f, glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)
+                util::to_local(transform.pos, origin),
+                ext * 2.0f,
+                glm::vec4(0.0f, 0.0f, 1.0f, 1.0f)
             );
             for (auto& sensor : rigidbody.sensors) {
                 if (sensor.type != SensorType::AABB) continue;
                 batch.box(
-                    sensor.calculated.aabb.center(),
+                    util::to_local(
+                        sensor.position +
+                            worldvec3(sensor.calculated.aabb.center()),
+                        origin
+                    ),
                     sensor.calculated.aabb.size(),
                     glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)
                 );
@@ -149,7 +174,10 @@ void EntitiesRenderer::renderDebug(
             if (config == nullptr) {
                 continue;
             }
-            if (frustum && !check_frustum(*frustum, transform, rigidbody, skeleton)) {
+            if (frustum &&
+                !check_frustum(
+                    *frustum, transform, rigidbody, skeleton, origin
+                )) {
                 continue;
             }
             auto bone = config->getRoot();
@@ -159,7 +187,7 @@ void EntitiesRenderer::renderDebug(
 }
 
 void EntitiesRenderer::updateCulling(
-    const Frustum* frustum, entityid_t fpsEntity
+    const glm::ivec3& origin, const Frustum* frustum, entityid_t fpsEntity
 ) {
     for (const auto& [uid, entity] : entities.getEntities()) {
         if (!entity->getSkeleton()) {
@@ -171,7 +199,11 @@ void EntitiesRenderer::updateCulling(
             continue;
         }
         skeleton.culled = !check_frustum(
-            *frustum, entity->getTransform(), entity->getRigidbody(), skeleton
+            *frustum,
+            entity->getTransform(),
+            entity->getRigidbody(),
+            skeleton,
+            origin
         );
     }
 }

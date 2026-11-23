@@ -447,10 +447,10 @@ struct RaycastSettings {
 /// @return voxel pointer or nullptr
 voxel* raycast(
     const Chunks& chunks,
-    const glm::vec3& start,
+    const worldvec3& start,
     const glm::vec3& dir,
     float maxDist,
-    glm::vec3& end,
+    worldvec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
     const RaycastSettings& settings
@@ -469,10 +469,10 @@ voxel* raycast(
 /// @return voxel pointer or nullptr
 voxel* raycast(
     const GlobalChunks& chunks,
-    const glm::vec3& start,
+    const worldvec3& start,
     const glm::vec3& dir,
     float maxDist,
-    glm::vec3& end,
+    worldvec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
     const RaycastSettings& settings
@@ -488,14 +488,20 @@ void get_voxels(
 
 template <class Storage>
 inline std::optional<AABB> is_obstacle_at(
-    const Storage& chunks, float x, float y, float z, const AABB& aabb
+    const Storage& chunks,
+    const glm::ivec3& origin,
+    float x,
+    float y,
+    float z,
+    const AABB& aabb
 ) {
     int ix = std::floor(x);
     int iy = std::floor(y);
     int iz = std::floor(z);
-    voxel* v = get(chunks, ix, iy, iz);
+    glm::ivec3 point = origin + glm::ivec3(ix, iy, iz);
+    voxel* v = get(chunks, point.x, point.y, point.z);
     if (v == nullptr) {
-        if (iy >= CHUNK_H) {
+        if (point.y >= CHUNK_H) {
             return std::nullopt;
         } else {
             return AABB();
@@ -508,10 +514,9 @@ inline std::optional<AABB> is_obstacle_at(
     glm::ivec3 offset {};
     blockstate state = v->state;
     if (state.segment) {
-        glm::ivec3 point(ix, iy, iz);
-        auto origin = seek_origin(chunks, point, def, state);
-        offset = origin - point;
-        state = hitbox_state(chunks, origin, state);
+        auto blockOrigin = seek_origin(chunks, point, def, state);
+        offset = blockOrigin - point;
+        state = hitbox_state(chunks, blockOrigin, state);
     }
     const auto& boxes = def.getHitboxes(state);
 
@@ -525,7 +530,9 @@ inline std::optional<AABB> is_obstacle_at(
 
 template <class Storage>
 inline std::optional<AABB> is_obstacle_at(const Storage& chunks, float x, float y, float z) {
-    return is_obstacle_at(chunks, x, y, z, AABB({x, y, z}, {x + 1, y + 1, z + 1}));
+    return is_obstacle_at(
+        chunks, {}, x, y, z, AABB({x, y, z}, {x + 1, y + 1, z + 1})
+    );
 }
 
 /// @brief Check block grounding

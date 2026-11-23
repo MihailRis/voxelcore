@@ -7,13 +7,13 @@
 class TextNote {
     std::wstring text;
     NotePreset preset;
-    glm::vec3 position;
+    worldvec3 position;
     entityid_t entity = ENTITY_NONE;
 
     glm::vec3 xAxis {1, 0, 0};
     glm::vec3 yAxis {0, 1, 0};
 public:
-    TextNote(std::wstring text, NotePreset preset, glm::vec3 position);
+    TextNote(std::wstring text, NotePreset preset, worldvec3 position);
 
     void setText(std::wstring_view text);
     void setEntity(entityid_t eid);
@@ -25,8 +25,8 @@ public:
 
     void updatePreset(const dv::value& data);
 
-    void setPosition(const glm::vec3& position);
-    const glm::vec3& getPosition() const;
+    void setPosition(const worldvec3& position);
+    const worldvec3& getPosition() const;
 
     const glm::vec3& getAxisX() const;
     const glm::vec3& getAxisY() const;

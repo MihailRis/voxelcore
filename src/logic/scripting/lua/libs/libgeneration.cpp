@@ -24,8 +24,8 @@ static int l_save_fragment(lua::State* L) {
 }
 
 static int l_create_fragment(lua::State* L) {
-    auto pointA = lua::tovec<3>(L, 1);
-    auto pointB = lua::tovec<3>(L, 2);
+    auto pointA = lua::tovec<3, double>(L, 1);
+    auto pointB = lua::tovec<3, double>(L, 2);
     bool crop = lua::toboolean(L, 3);
     bool saveEntities = lua::toboolean(L, 4);
 

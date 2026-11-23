@@ -42,6 +42,7 @@
 #include "items/ItemStack.hpp"
 #include "logic/PlayerController.hpp"
 #include "maths/FrustumCulling.hpp"
+#include "maths/util.hpp"
 #include "maths/voxmaths.hpp"
 #include "objects/Entities.hpp"
 #include "objects/Player.hpp"
@@ -213,7 +214,7 @@ static void setup_camera(Shader& shader, const Camera& camera) {
     shader.uniformMatrix("u_model", glm::mat4(1.0f));
     shader.uniformMatrix("u_proj", camera.getProjection());
     shader.uniformMatrix("u_view", camera.getView());
-    shader.uniform3f("u_cameraPos", camera.position);
+    shader.uniform3f("u_cameraPos", camera.getLocalPosition());
 }
 
 void WorldRenderer::setupWorldShader(
@@ -226,7 +227,7 @@ void WorldRenderer::setupWorldShader(
 
     setup_camera(shader, camera);
     setup_weather(shader, weather);
-    shadowMapping->setup(shader, weather);
+    shadowMapping->setup(shader, camera, weather);
 
     shader.uniform1f("u_timer", timer);
     shader.uniform1f("u_gamma", settings.graphics.gamma.get());
@@ -283,6 +284,7 @@ void WorldRenderer::renderOpaque(
     setup_entity_pass(modelShader, {0.5f, true, false, false, 1.0f});
     entitiesRenderer->render(
         *modelBatch,
+        camera.getOrigin(),
         culling ? frustumCulling.get() : nullptr,
         player.currentCamera.get() == player.fpCamera.get() ? player.getEntity()
                                                             : 0
@@ -297,7 +299,7 @@ void WorldRenderer::renderOpaque(
     setupWorldShader(mainShader, camera, settings, fogFactor);
 
     chunksRenderer->drawChunks(camera, mainShader);
-    blockWraps->draw(ctx);
+    blockWraps->draw(ctx, camera);
 
     if (level.environment.sky.clouds) {
         int cloudsQuality = settings.graphics.cloudsQuality.get();
@@ -315,13 +317,14 @@ void WorldRenderer::renderOpaque(
     }
 }
 
-void WorldRenderer::renderBlockSelection() {
+void WorldRenderer::renderBlockSelection(const Camera& camera) {
     const auto& selection = player.selection;
     auto indices = level.content.getIndices();
     blockid_t id = selection.vox.id;
     auto& block = indices->blocks.require(id);
+    const glm::ivec3 origin = camera.getOrigin();
     const glm::ivec3 pos = player.selection.position;
-    const glm::vec3 point = selection.hitPosition;
+    const glm::vec3 point = util::to_local(selection.hitPosition, origin);
     const glm::vec3 norm = selection.normal;
 
     const auto& hitboxes = block.getHitboxes(
@@ -330,7 +333,7 @@ void WorldRenderer::renderBlockSelection() {
 
     lineBatch->lineWidth(2.0f);
     for (auto& hitbox : hitboxes) {
-        const glm::vec3 center = glm::vec3(pos) + hitbox.center();
+        const glm::vec3 center = glm::vec3(pos - origin) + hitbox.center();
         const glm::vec3 size = hitbox.size();
         lineBatch->box(
             center, size + glm::vec3(0.01), glm::vec4(0.f, 0.f, 0.f, 1.0f)
@@ -350,13 +353,16 @@ void WorldRenderer::renderInWorldLines(
     linesShader.use();
     linesShader.uniformMatrix("u_projview", camera.getProjView());
     if (player.selection.vox.id != BLOCK_VOID) {
-        renderBlockSelection();
+        renderBlockSelection(camera);
     }
     if (debug && showEntitiesDebug) {
         auto ctx = pctx.sub(lineBatch.get());
         bool culling = engine.getSettings().graphics.frustumCulling.get();
         entitiesRenderer->renderDebug(
-            *lineBatch, culling ? frustumCulling.get() : nullptr, ctx,
+            *lineBatch,
+            camera.getOrigin(),
+            culling ? frustumCulling.get() : nullptr,
+            ctx,
             player.currentCamera.get() == player.fpCamera.get() ? player.getEntity() : 0
         );
     }
@@ -368,6 +374,7 @@ void WorldRenderer::updateEntitiesCulling(const Camera& camera) {
         frustumCulling->update(camera.getProjView());
     }
     entitiesRenderer->updateCulling(
+        camera.getOrigin(),
         culling ? frustumCulling.get() : nullptr,
         player.currentCamera.get() == player.fpCamera.get() ? player.getEntity()
                                                             : 0
@@ -587,7 +594,7 @@ void WorldRenderer::renderTranslucency(
         auto& shader = assets.require<Shader>("model");
         setupWorldShader(shader, camera, settings, fogFactor);
         setup_entity_pass(shader, {0.002f, false, true, true, 1.0f});
-        modelBatch->renderTranslucent(camera.position);
+        modelBatch->renderTranslucent(camera.getLocalPosition());
     }
     {
         auto lctx = ctx.sub();

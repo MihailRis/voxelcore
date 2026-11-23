@@ -35,16 +35,19 @@ void TextsRenderer::renderNote(
 ) {
     const auto& text = note.getText();
     const auto& preset = note.getPreset();
-    auto pos = note.getPosition();
+    auto worldPos = note.getPosition();
 
     entityid_t eid = note.getEntity();
     if (eid != ENTITY_NONE) {
         if (auto entity = level.entities->get(eid)) {
-            pos += entity->getTransform().displayPos;
+            worldPos += entity->getTransform().displayPos;
         }
     }
 
-    if (util::distance2(pos, camera.position) >
+    glm::vec3 pos = util::to_local(worldPos, camera.getOrigin());
+    const glm::vec3 cameraPos = camera.getLocalPosition();
+
+    if (util::distance2(pos, cameraPos) >
         util::sqr(preset.renderDistance / camera.zoom)) {
         return;
     }
@@ -70,7 +73,7 @@ void TextsRenderer::renderNote(
     int height = font.getLineHeight();
     if (preset.displayMode == NoteDisplayMode::Y_FREE_BILLBOARD ||
         preset.displayMode == NoteDisplayMode::XY_FREE_BILLBOARD) {
-        xvec = camera.position - pos;
+        xvec = cameraPos - pos;
         xvec.y = 0;
         std::swap(xvec.x, xvec.z);
         xvec.z *= -1;
@@ -80,9 +83,7 @@ void TextsRenderer::renderNote(
         }
         float scale =
             (1.0f - preset.perspective) *
-            glm::pow(
-                glm::distance(camera.position, pos), 1.0f - preset.perspective
-            );
+            glm::pow(glm::distance(cameraPos, pos), 1.0f - preset.perspective);
         xvec *= 1.0f + scale;
         yvec *= 1.0f + scale;
     }
@@ -91,7 +92,7 @@ void TextsRenderer::renderNote(
         float scale = 1.0f;
         if (glm::abs(preset.perspective) > 0.0001f) {
             float scale2 =
-                scale / (glm::distance(camera.position, pos) * camera.zoom *
+                scale / (glm::distance(cameraPos, pos) * camera.zoom *
                          glm::sqrt(glm::tan(camera.getFov() * 0.5f)));
             scale = scale2 * preset.perspective +
                     scale * (1.0f - preset.perspective);

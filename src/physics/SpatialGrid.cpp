@@ -2,9 +2,9 @@
 
 #include <algorithm>
 
-inline constexpr float GRID_CELL_SIZE = 4.0f;
-inline constexpr float GRID_PADDING = 0.01f;
-inline constexpr float GRID_MAX_COORD = 1e9f;
+inline constexpr double GRID_CELL_SIZE = 4.0;
+inline constexpr double GRID_PADDING = 0.01;
+inline constexpr double GRID_MAX_COORD = 1e9;
 inline constexpr int GRID_MAX_CELLS = 64;
 
 void SpatialGrid::clear() {
@@ -13,7 +13,7 @@ void SpatialGrid::clear() {
 }
 
 void SpatialGrid::insert(
-    uint id, const glm::vec3& center, const glm::vec3& extents
+    uint id, const worldvec3& center, const glm::vec3& extents
 ) {
     glm::ivec2 min, max;
     if (!calcRange(center, extents, min, max)) {
@@ -37,20 +37,20 @@ uint64_t SpatialGrid::calcKey(int x, int z) {
 }
 
 bool SpatialGrid::calcRange(
-    const glm::vec3& center,
+    const worldvec3& center,
     const glm::vec3& extents,
     glm::ivec2& min,
     glm::ivec2& max
 ) {
-    glm::vec2 c(center.x, center.z);
-    glm::vec2 e = glm::vec2(extents.x, extents.z) + GRID_PADDING;
-    glm::vec2 a = glm::floor((c - e) / GRID_CELL_SIZE);
-    glm::vec2 b = glm::floor((c + e) / GRID_CELL_SIZE);
+    glm::dvec2 c(center.x, center.z);
+    glm::dvec2 e = glm::dvec2(extents.x, extents.z) + GRID_PADDING;
+    glm::dvec2 a = glm::floor((c - e) / GRID_CELL_SIZE);
+    glm::dvec2 b = glm::floor((c + e) / GRID_CELL_SIZE);
     if (!(glm::abs(a.x) < GRID_MAX_COORD && glm::abs(a.y) < GRID_MAX_COORD &&
           glm::abs(b.x) < GRID_MAX_COORD && glm::abs(b.y) < GRID_MAX_COORD)) {
         return false;
     }
-    if ((b.x - a.x + 1.0f) * (b.y - a.y + 1.0f) > GRID_MAX_CELLS) {
+    if ((b.x - a.x + 1.0) * (b.y - a.y + 1.0) > GRID_MAX_CELLS) {
         return false;
     }
     min = glm::ivec2(a);

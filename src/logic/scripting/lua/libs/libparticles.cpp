@@ -9,7 +9,7 @@ using namespace scripting;
 static int l_emit(lua::State* L) {
     EmitterOrigin origin;
     if (lua::istable(L, 1)) {
-        origin = lua::tovec3(L, 1);
+        origin = lua::tovec<3, double>(L, 1);
     } else {
         origin = static_cast<entityid_t>(lua::tointeger(L, 1));
     }
@@ -47,8 +47,8 @@ static int l_get_origin(lua::State* L) {
     u64id_t id = lua::touinteger(L, 1);
     if (auto emitter = renderer->particles->getEmitter(id)) {
         const auto& origin = emitter->getOrigin();
-        if (auto pos = std::get_if<glm::vec3>(&origin)) {
-            return lua::pushvec3(L, *pos);
+        if (auto pos = std::get_if<worldvec3>(&origin)) {
+            return lua::pushvec(L, *pos);
         } else if (auto entityid = std::get_if<entityid_t>(&origin)) {
             return lua::pushinteger(L, *entityid);
         }
@@ -60,7 +60,7 @@ static int l_set_origin(lua::State* L) {
     u64id_t id = lua::touinteger(L, 1);
     if (auto emitter = renderer->particles->getEmitter(id)) {
         if (lua::istable(L, 2)) {
-            emitter->setOrigin(lua::tovec3(L, 2));
+            emitter->setOrigin(lua::tovec<3, double>(L, 2));
         } else {
             emitter->setOrigin(static_cast<entityid_t>(lua::tointeger(L, 2)));
         }

@@ -50,13 +50,13 @@ public:
 
     void renderTranslucent(const glm::vec3& cameraPosition);
 
-    void setLightsOffset(const glm::vec3& offset);
+    void setLightsOffset(const glm::dvec3& offset);
 private:
     const Assets& assets;
     const Chunks& chunks;
 
     const EngineSettings& settings;
-    glm::vec3 lightsOffset {};
+    glm::dvec3 lightsOffset {};
 
     struct Vertex {
         glm::vec3 coord;
@@ -103,7 +103,7 @@ private:
     struct DrawEntry {
         const Texture* texture;
         const Mesh<Vertex>* mesh;
-        glm::vec3 lightSamplePos;
+        glm::dvec3 lightSamplePos;
         bool shading;
         Instance instance;
     };

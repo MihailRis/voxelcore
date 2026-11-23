@@ -31,7 +31,7 @@ Player::Player(
     Level& level,
     int64_t id,
     const std::wstring& name,
-    glm::vec3 position,
+    worldvec3 position,
     float speed,
     std::shared_ptr<Inventory> inv,
     entityid_t eid
@@ -121,7 +121,7 @@ void Player::postUpdate() {
     }
 }
 
-void Player::teleport(glm::vec3 position) {
+void Player::teleport(worldvec3 position) {
     this->position = position;
 
     if (auto entity = level.entities->get(eid)) {
@@ -138,7 +138,7 @@ void Player::attemptToChooseSpawnpoint() {
 
     int minHeight = generatorDef.playerMinSpawnHeight;
     int maxHeight = generatorDef.playerMaxSpawnHeight;
-    glm::vec3 newpos {0.0f, random.randFloat() * (maxHeight - minHeight + 1) + minHeight, 0.0f};
+    worldvec3 newpos {0.0f, random.randFloat() * (maxHeight - minHeight + 1) + minHeight, 0.0f};
     double angle = random.randDouble() * glm::two_pi<double>();
     double radius = glm::sqrt(random.randDouble());
     newpos.x += glm::cos(angle) * generatorDef.playerSpawnRadius * radius;
@@ -154,7 +154,7 @@ void Player::attemptToChooseSpawnpoint() {
         headvox == nullptr || headvox->id != 0) {
         return;
     }
-    spawnpoint = newpos + glm::vec3(0.5f, 0.0f, 0.5f);
+    spawnpoint = newpos + worldvec3(0.5, 0.0, 0.5);
     teleport(spawnpoint);
 }
 
@@ -259,11 +259,11 @@ const std::shared_ptr<Inventory>& Player::getInventory() const {
     return inventory;
 }
 
-void Player::setSpawnPoint(glm::vec3 spawnpoint) {
+void Player::setSpawnPoint(worldvec3 spawnpoint) {
     this->spawnpoint = spawnpoint;
 }
 
-glm::vec3 Player::getSpawnPoint() const {
+worldvec3 Player::getSpawnPoint() const {
     return spawnpoint;
 }
 
@@ -324,7 +324,7 @@ void Player::deserialize(const dv::value& src) {
     dv::get_vec(rotarr, rotation);
 
     const auto& sparr = src["spawnpoint"];
-    setSpawnPoint(glm::vec3(
+    setSpawnPoint(worldvec3(
         sparr[0].asNumber(), sparr[1].asNumber(), sparr[2].asNumber()));
     
     src.at("interaction-distance").get(interactionDistance);

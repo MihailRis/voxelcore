@@ -10,13 +10,13 @@ class SpatialGrid {
 public:
     void clear();
 
-    void insert(uint id, const glm::vec3& center, const glm::vec3& extents);
+    void insert(uint id, const worldvec3& center, const glm::vec3& extents);
 
     void build();
 
     template <typename Func>
     bool query(
-        const glm::vec3& center, const glm::vec3& extents, const Func& func
+        const worldvec3& center, const glm::vec3& extents, const Func& func
     ) const {
         glm::ivec2 min, max;
         if (!calcRange(center, extents, min, max)) {
@@ -46,7 +46,7 @@ private:
     static uint64_t calcKey(int x, int z);
 
     static bool calcRange(
-        const glm::vec3& center,
+        const worldvec3& center,
         const glm::vec3& extents,
         glm::ivec2& min,
         glm::ivec2& max

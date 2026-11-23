@@ -14,7 +14,7 @@
 
 Emitter::Emitter(
     const Level& level,
-    std::variant<glm::vec3, entityid_t> origin,
+    EmitterOrigin origin,
     ParticlesPreset preset,
     const Texture* texture,
     const UVRegion& region,
@@ -50,15 +50,15 @@ static inline glm::vec3 generate_coord(ParticleSpawnShape shape) {
 
 void Emitter::update(
     float delta,
-    const glm::vec3& cameraPosition,
+    const worldvec3& cameraPosition,
     std::vector<Particle>& particles
 ) {
     const float spawnInterval = preset.spawnInterval;
     if (count == 0 || (count == -1 && spawnInterval < FLT_EPSILON)) {
         return;
     }
-    glm::vec3 position {};
-    if (auto staticPos = std::get_if<glm::vec3>(&origin)) {
+    worldvec3 position {};
+    if (auto staticPos = std::get_if<worldvec3>(&origin)) {
         position = *staticPos;
     } else if (auto entityId = std::get_if<entityid_t>(&origin)) {
         if (auto entity = level.entities->get(*entityId)) {
@@ -105,7 +105,7 @@ void Emitter::update(
         spawnOffset *= preset.spawnSpread;
         spawnOffset += preset.spawnOffset;
 
-        particle.position = position + spawnOffset;
+        particle.position = position + worldvec3(spawnOffset);
         particle.lifetime *= 1.0f - preset.lifetimeSpread * random.randFloat();
         particle.velocity += glm::ballRand(1.0f) * preset.explosion;
         if (preset.randomSubUV < 1.0f) {

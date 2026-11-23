@@ -106,8 +106,8 @@ void ModelBatch::draw(
     auto& queue =
         translucent || tint.a < 1.0f ? translucentEntries : entries;
     const auto& gpuModel = upload(model);
-    glm::vec3 lightSamplePos =
-        glm::vec3(matrix[3]) + lightsOffset + lightSampleOffset;
+    glm::dvec3 lightSamplePos =
+        glm::dvec3(matrix[3]) + lightsOffset + glm::dvec3(lightSampleOffset);
     for (size_t i = 0; i < model->meshes.size(); i++) {
         const auto& mesh = model->meshes[i];
         if (mesh.vertices.empty()) {
@@ -219,6 +219,6 @@ void ModelBatch::renderTranslucent(const glm::vec3& cameraPosition) {
     finishFrame();
 }
 
-void ModelBatch::setLightsOffset(const glm::vec3& offset) {
+void ModelBatch::setLightsOffset(const glm::dvec3& offset) {
     lightsOffset = offset;
 }

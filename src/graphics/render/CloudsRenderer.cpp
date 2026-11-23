@@ -25,6 +25,7 @@ static debug::Logger logger("clouds-render");
 static inline constexpr int MAP_SIZE = 512;
 static inline constexpr float CLOUD_VOXEL_SCALE = 8.0f;
 static inline constexpr float CLOUDS_SPEED = 4.0f;
+static inline constexpr double CLOUDS_WAVE_PERIOD = glm::two_pi<double>() * 1e3;
 
 class CloudsMap {
 public:
@@ -269,8 +270,15 @@ void CloudsRenderer::draw(
     float scale = CLOUD_VOXEL_SCALE;
     int totalDiameter = layer.segmentSize * scale;
 
-    int gcellX = floordiv(camera.position.x, totalDiameter);
-    int gcellZ = floordiv(camera.position.z, totalDiameter);
+    const glm::ivec3 origin = camera.getOrigin();
+    const glm::vec3 cameraPos = camera.getLocalPosition();
+
+    int gcellX = floordiv(
+        origin.x + static_cast<int>(glm::floor(cameraPos.x)), totalDiameter
+    );
+    int gcellZ = floordiv(
+        origin.z + static_cast<int>(glm::floor(cameraPos.z)), totalDiameter
+    );
 
     float speed = CLOUDS_SPEED;
     float speedX = glm::sin(layerId * 0.3f + 0.4f) * speed / (layerId + 1);
@@ -283,10 +291,10 @@ void CloudsRenderer::draw(
             int lcellX = gcellX - floordiv(glm::floor(timer * speedX), totalDiameter);
             int lcellZ = gcellZ - floordiv(glm::floor(timer * speedZ), totalDiameter);
             glm::vec3 position(
-                -128 * scale + (x + gcellX) * layer.segmentSize * scale +
+                -128 * scale + ((x + gcellX) * totalDiameter - origin.x) +
                     glm::mod(timer * speedX, static_cast<float>(totalDiameter)),
                 250 + layerId * 200,
-                -128 * scale + (z + gcellZ) * layer.segmentSize * scale +
+                -128 * scale + ((z + gcellZ) * totalDiameter - origin.z) +
                     glm::mod(timer * speedZ, static_cast<float>(totalDiameter))
             );
             if (glm::distance2(
@@ -294,7 +302,7 @@ void CloudsRenderer::draw(
                         position.x + totalDiameter * 0.5f,
                         position.z + totalDiameter * 0.5f
                     ),
-                    glm::vec2(camera.position.x, camera.position.z)
+                    glm::vec2(cameraPos.x, cameraPos.z)
                 ) > 4e6) {
                 continue;
             }
@@ -330,6 +338,13 @@ void CloudsRenderer::draw(
     shader.uniform4f("u_tint", glm::vec4(weather.cloudsTint(), 1.0f));
     shader.uniform1f("u_fogFactor", fogFactor * 0.03f);
     shader.uniform1f("u_fogCurve", 0.4f);
+
+    const glm::ivec3 origin = camera.getOrigin();
+    shader.uniform2f(
+        "u_waveOffset",
+        std::fmod(origin.x, CLOUDS_WAVE_PERIOD),
+        std::fmod(origin.z, CLOUDS_WAVE_PERIOD)
+    );
 
     for (int i = 0; i < std::min<int>(quality, layers.size()); i++) {
         draw(layers[i], frustum, shader, camera, timer, i);

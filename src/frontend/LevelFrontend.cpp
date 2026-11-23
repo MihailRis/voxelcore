@@ -74,7 +74,7 @@ LevelFrontend::LevelFrontend(
         }
 
         auto sound = assets.get<audio::Sound>(material->stepsSound);
-        glm::vec3 pos {};
+        worldvec3 pos {};
         auto soundsCamera = currentPlayer.currentCamera.get();
         if (currentPlayer.isCurrentCameraBuiltin()) {
             soundsCamera = currentPlayer.fpCamera.get();
@@ -117,7 +117,7 @@ LevelFrontend::LevelFrontend(
                 }
                 audio::play(
                     sound, 
-                    glm::vec3(pos.x, pos.y, pos.z) + 0.5f, 
+                    worldvec3(pos.x, pos.y, pos.z) + 0.5,
                     false, 
                     1.0f,
                     1.0f + (rand() % 6 - 3) * 0.05f, 

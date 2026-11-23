@@ -29,10 +29,10 @@ private:
     glm::vec3 gravity;
     SpatialGrid grid;
     std::vector<std::vector<Hitbox*>> nearbySolids;
-    std::vector<glm::vec3> nearbyOrigins;
+    std::vector<worldvec3> nearbyOrigins;
     std::vector<float> nearbyBudgets;
     std::vector<glm::vec3> nearbyReaches;
-    std::vector<glm::vec3> solidOrigins;
+    std::vector<worldvec3> solidOrigins;
     std::vector<float> solidBudgets;
     std::vector<uint> candidates;
     std::vector<size_t> solidStamps;

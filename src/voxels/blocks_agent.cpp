@@ -217,18 +217,18 @@ bool blocks_agent::set(
 template <class Storage>
 static inline voxel* raycast_blocks(
     const Storage& chunks,
-    const glm::vec3& start,
+    const worldvec3& start,
     const glm::vec3& dir,
     float maxDist,
-    glm::vec3& end,
+    worldvec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
     const RaycastSettings& settings
 ) {
     const auto& blocks = chunks.getContentIndices().blocks;
-    float px = start.x;
-    float py = start.y;
-    float pz = start.z;
+    double px = start.x;
+    double py = start.y;
+    double pz = start.z;
 
     float dx = dir.x;
     float dy = dir.y;
@@ -271,7 +271,7 @@ static inline voxel* raycast_blocks(
             (def.selectable || includeNonSelectable) &&
             ((filter == nullptr || filter->find(def.rt.id) == filter->end()) ==
                                       settings.blocksFilterExcludeMode)) {
-            end = start + t * dir;
+            end = start + worldvec3(t * dir);
             iend = {ix, iy, iz};
 
             if (!def.rt.solid) {
@@ -301,7 +301,7 @@ static inline voxel* raycast_blocks(
                         hit = true;
                         distance = boxDistance;
                         norm = boxNorm;
-                        end = start + (dir * glm::vec3(distance));
+                        end = start + worldvec3(dir) * distance;
                     }
                 }
 
@@ -342,17 +342,17 @@ static inline voxel* raycast_blocks(
         }
     }
     iend = {ix, iy, iz};
-    end = start + t * dir;
+    end = start + worldvec3(t * dir);
     norm = {0, 0, 0};
     return nullptr;
 }
 
 voxel* blocks_agent::raycast(
     const Chunks& chunks,
-    const glm::vec3& start,
+    const worldvec3& start,
     const glm::vec3& dir,
     float maxDist,
-    glm::vec3& end,
+    worldvec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
     const RaycastSettings& settings
@@ -362,10 +362,10 @@ voxel* blocks_agent::raycast(
 
 voxel* blocks_agent::raycast(
     const GlobalChunks& chunks,
-    const glm::vec3& start,
+    const worldvec3& start,
     const glm::vec3& dir,
     float maxDist,
-    glm::vec3& end,
+    worldvec3& end,
     glm::ivec3& norm,
     glm::ivec3& iend,
     const RaycastSettings& settings

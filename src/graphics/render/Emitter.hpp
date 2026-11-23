@@ -20,7 +20,7 @@ struct Particle {
     /// @brief Some random integer for visuals configuration.
     int random;
     /// @brief Global position
-    glm::vec3 position;
+    worldvec3 position;
     /// @brief Linear velocity
     glm::vec3 velocity;
     /// @brief Remaining life time
@@ -35,7 +35,7 @@ struct Particle {
 
 class Texture;
 
-using EmitterOrigin = std::variant<glm::vec3, entityid_t>;
+using EmitterOrigin = std::variant<worldvec3, entityid_t>;
 
 class Emitter {
     const Level& level;
@@ -61,7 +61,7 @@ public:
 
     Emitter(
         const Level& level,
-        std::variant<glm::vec3, entityid_t> origin,
+        EmitterOrigin origin,
         ParticlesPreset preset,
         const Texture* texture,
         const UVRegion& region,
@@ -79,7 +79,7 @@ public:
     /// @param particles destination particles vector
     void update(
         float delta,
-        const glm::vec3& cameraPosition,
+        const worldvec3& cameraPosition,
         std::vector<Particle>& particles
     );
 

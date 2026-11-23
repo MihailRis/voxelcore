@@ -72,7 +72,7 @@ static int l_spawn(lua::State* L) {
     auto level = controller->getLevel();
     auto defname = lua::require_string(L, 1);
     auto& def = content->entities.require(defname);
-    auto pos = lua::tovec3(L, 2);
+    auto pos = lua::tovec<3, double>(L, 2);
     dv::value args = nullptr;
     if (lua::gettop(L) > 2) {
         args = lua::tovalue(L, 3);
@@ -133,9 +133,9 @@ static int l_set_skeleton(lua::State* L) {
 }
 
 static int l_get_all_in_box(lua::State* L) {
-    auto pos = lua::tovec<3>(L, 1);
-    auto size = lua::tovec<3>(L, 2);
-    auto found = level->entities->getAllInside(AABB(pos, pos + size));
+    auto pos = lua::tovec<3, double>(L, 1);
+    auto size = lua::tovec<3, double>(L, 2);
+    auto found = level->entities->getAllInside(pos, pos + size);
     lua::createtable(L, found.size(), 0);
     for (size_t i = 0; i < found.size(); i++) {
         lua::pushinteger(L, found[i]->getUID());
@@ -145,7 +145,7 @@ static int l_get_all_in_box(lua::State* L) {
 }
 
 static int l_get_all_in_radius(lua::State* L) {
-    auto pos = lua::tovec<3>(L, 1);
+    auto pos = lua::tovec<3, double>(L, 1);
     auto radius = lua::tonumber(L, 2);
     auto found = level->entities->getAllInRadius(pos, radius);
     lua::createtable(L, found.size(), 0);
@@ -160,9 +160,9 @@ static int l_push_ray(
     lua::State* L,
     const std::optional<Entities::RaycastResult>& ray,
     blockid_t block,
-    const glm::vec3& start,
+    const worldvec3& start,
     const glm::vec3& dir,
-    const glm::vec3& end,
+    const worldvec3& end,
     const glm::ivec3& iend,
     const glm::ivec3& normal
 ) {
@@ -175,7 +175,7 @@ static int l_push_ray(
         lua::createtable(L, 0, 6);
     }
 
-    lua::pushvec3(L, ray ? (start + dir * ray->distance) : end);
+    lua::pushvec(L, ray ? (start + worldvec3(dir * ray->distance)) : end);
     lua::setfield(L, "endpoint");
 
     lua::pushvec3(L, ray ? ray->normal : normal);
@@ -184,7 +184,7 @@ static int l_push_ray(
     lua::pushnumber(L, ray ? ray->distance : glm::distance(start, end));
     lua::setfield(L, "length");
 
-    lua::pushvec3(L, iend);
+    lua::pushvec(L, iend);
     lua::setfield(L, "iendpoint");
 
     lua::pushinteger(L, block);
@@ -202,14 +202,14 @@ static int l_push_ray(
 
 static int l_raycast(
     lua::State* L,
-    const glm::vec3& start,
+    const worldvec3& start,
     const glm::vec3& dir,
     float maxDistance,
     const blocks_agent::RaycastSettings& voxelRaycast,
     const Entities::RaycastSettings& entityRaycast,
     bool entities
 ) {
-    glm::vec3 end;
+    worldvec3 end;
     glm::ivec3 normal;
     glm::ivec3 iend;
 
@@ -276,7 +276,8 @@ static int l_world_raycast(lua::State* L) {
     std::set<blockid_t> filteredBlocks {};
     std::set<entitydefid_t> filteredEntities {};
 
-    glm::vec3 start, dir;
+    worldvec3 start;
+    glm::vec3 dir;
     float maxDistance;
     bool entities = true;
 
@@ -285,7 +286,7 @@ static int l_world_raycast(lua::State* L) {
     }
 
     lua::requirefield(L, "start", 1);
-    start = lua::tovec3(L, -1);
+    start = lua::tovec<3, double>(L, -1);
 
     lua::requirefield(L, "dir", 1);
     dir = lua::tovec3(L, -1);
@@ -341,7 +342,7 @@ static int l_raycast(lua::State* L) {
     std::set<blockid_t> filteredBlocks {};
 
     const int luaStackSize = lua::gettop(L);
-    glm::vec3 start = lua::tovec<3>(L, 1);
+    worldvec3 start = lua::tovec<3, double>(L, 1);
     glm::vec3 dir = lua::tovec<3>(L, 2);
     float maxDistance = lua::tonumber(L, 3);
 
