@@ -29,6 +29,7 @@
             "name": "",
             "path": "textures/misc/blank"
         },
+        "misc/*",
         "gui/*"
     ],
     "fonts": [
