@@ -72,8 +72,8 @@
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build",
             "cacheVariables": {
-                "VOXELENGINE_BUILD_TESTS": "ON",
-                "VOXELENGINE_BUILD_APPDIR": "ON"
+                "CMAKE_BUILD_TYPE": "Release",
+                "VOXELENGINE_BUILD_TESTS": "ON"
             }
         }
     ],
@@ -105,8 +105,7 @@
         },
         {
             "name": "default-ninja-clang-macos",
-            "configurePreset": "default-ninja-clang-macos",
-            "configuration": "Debug"
+            "configurePreset": "default-ninja-clang-macos"
         }
     ],
     "testPresets": [

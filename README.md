@@ -65,22 +65,30 @@ cmake --build . --parallel
 ### Install libraries
 
 ```sh
-brew install glfw glew glm libpng libvorbis lua luajit libcurl openal-soft freetype
+git clone --recursive https://github.com/MihailRis/VoxelCore.git
+cd VoxelCore
+brew bundle
 ```
-
-> [!TIP]
-> If Homebrew fails to install `lua`, `luajit`, or `openal-soft`, download, compile, and install them manually.
 
 ### Building engine with CMake
 
 ```sh
-git clone --recursive https://github.com/MihailRis/VoxelCore.git
-cd VoxelCore
-mkdir build
-cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . --parallel
+cmake --preset default-ninja-clang-macos
+cmake --build --preset default-ninja-clang-macos
 ```
+
+### Building `.app` and `.dmg`
+> [!NOTE]
+> User files are stored in `~/Library/Application Support/VoxelCore`.
+```sh
+cmake --preset default-ninja-clang-macos -DVOXELENGINE_BUILD_MACOS_BUNDLE=ON
+cmake --build --preset default-ninja-clang-macos
+cd build
+cpack
+```
+
+This creates `build/VoxelCore.dmg` with a self-contained `VoxelCore.app`
+(Homebrew libraries are copied into the bundle). 
 
 ---
 

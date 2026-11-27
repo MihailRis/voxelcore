@@ -34,17 +34,11 @@ jobs:
         run: |
           cmake -DOPENAL_INCLUDE_DIR=$(brew --prefix openal-soft)/include \
            -DOPENAL_LIBRARY=$(brew --prefix openal-soft)/lib/libopenal.dylib \
-           -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DVOXELENGINE_BUILD_TESTS=ON -DVOXELENGINE_BUILD_APPDIR=1 -DVC_BUILD_NAME="${{ inputs.build_name }}" -DVC_VERSION_PATCH="${{ inputs.version_patch }}"
+           -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DVOXELENGINE_BUILD_TESTS=ON -DVOXELENGINE_BUILD_MACOS_BUNDLE=ON -DVC_BUILD_NAME="${{ inputs.build_name }}" -DVC_VERSION_PATCH="${{ inputs.version_patch }}"
 
       - name: Build
         run: |
-          cmake --build build -t install
-
-      - name: Make fix_dylibs.sh executable
-        run: chmod +x dev/fix_dylibs.sh
-
-      - name: Fix dylibs
-        run: ./dev/fix_dylibs.sh VoxelCore Release build
+          cmake --build build
 
       - name: Run tests
         run: ctest --output-on-failure --test-dir build
@@ -52,16 +46,25 @@ jobs:
       - name: Run engine tests
         timeout-minutes: 5
         run: |
-          chmod +x build/VoxelCore
-          chmod +x AppDir/usr/bin/vctest
-          AppDir/usr/bin/vctest -e build/VoxelCore -d dev/tests -u build --output-always --debugger "lldb -batch -o 'run' -o 'thread backtrace all' -o 'quit' -- "
+          build/vctest/vctest -e build/VoxelCore -d dev/tests -u build --output-always --debugger "lldb -batch -o 'run' -o 'thread backtrace all' -o 'quit' -- "
+
       - name: Create DMG
         run: |
-          mkdir VoxelCoreDmgContent
-          cp -r build/res VoxelCoreDmgContent/
-          cp -r build/VoxelCore VoxelCoreDmgContent/
-          cp -r build/libs VoxelCoreDmgContent/libs
-          hdiutil create VoxelCoreMacApp.dmg -volname "VoxelCore" -srcfolder VoxelCoreDmgContent -ov -format UDZO
+          cd build
+          cpack
+          mv VoxelCore.dmg ../VoxelCoreMacApp.dmg
+
+      - name: Check bundle
+        run: |
+          app=build/_CPack_Packages/Darwin/DragNDrop/VoxelCore/VoxelCore.app
+          test -x "$app/Contents/MacOS/VoxelCore"
+          test -d "$app/Contents/Resources/res"
+          if find "$app/Contents" -type f -perm +111 -exec otool -L {} \; 2>/dev/null \
+              | grep -E '^[[:space:]]+(/opt/homebrew|/usr/local)/'; then
+            echo "bundle depends on libraries outside of it"
+            exit 1
+          fi
+          codesign --verify --deep --strict "$app"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
