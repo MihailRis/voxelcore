@@ -40,6 +40,7 @@ jobs:
             install: >-
                 mingw-w64-clang-x86_64-toolchain 
                 mingw-w64-clang-x86_64-cmake
+                mingw-w64-clang-x86_64-ninja
                 git
       - name: Set up vcpkg
         shell: msys2 {0}
@@ -58,7 +59,10 @@ jobs:
             export VCPKG_ROOT=$(pwd)/vcpkg
             mkdir build
             cd build
-            cmake -G "MinGW Makefiles" -DVCPKG_TARGET_TRIPLET=x64-mingw-static -DVC_BUILD_NAME="${{ inputs.build_name }}" -DVC_VERSION_PATCH="${{ inputs.version_patch }}" -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake ..
+            cmake -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+             -DVCPKG_TARGET_TRIPLET=x64-mingw-static -DVC_BUILD_NAME="${{ inputs.build_name }}" \
+             -DVC_VERSION_PATCH="${{ inputs.version_patch }}" -DCMAKE_BUILD_TYPE=Release \
+             -DCMAKE_TOOLCHAIN_FILE=./vcpkg/scripts/buildsystems/vcpkg.cmake ..
             cmake --build . --config Release
       - name: Package for Windows
         run: |

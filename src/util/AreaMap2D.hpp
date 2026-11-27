@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <algorithm>
 #include <stdexcept>
 #include <functional>
 #include <glm/glm.hpp>

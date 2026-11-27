@@ -4,6 +4,8 @@
 #include "maths/UVRegion.hpp"
 #include "constants.hpp"
 
+#include <type_traits>
+
 class Texture;
 class ImageData;
 

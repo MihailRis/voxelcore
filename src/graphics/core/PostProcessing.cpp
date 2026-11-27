@@ -13,6 +13,7 @@
 #include "window/Camera.hpp"
 
 #include <stdexcept>
+#include <cstdlib>
 #include <random>
 
 // TODO: REFACTOR WHOLE RENDER ENGINE

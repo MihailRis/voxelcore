@@ -9,6 +9,7 @@
 #include "assets/Assets.hpp"
 
 #include <unordered_map>
+#include <algorithm>
 
 using namespace lua;
 

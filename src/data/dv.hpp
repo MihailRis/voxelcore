@@ -7,6 +7,7 @@
 #include <vector>
 #include <cstring>
 #include <stdexcept>
+#include <type_traits>
 #include <unordered_map>
 
 #ifdef VC_ENABLE_REFLECTION
