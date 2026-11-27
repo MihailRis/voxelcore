@@ -19,7 +19,6 @@
 #include "util/random.hpp"
 
 #include <random>
-#include <vector>
 
 static inline constexpr int CHUNK_RANDOM_TICK_SEGMENTS = 4;
 

@@ -1,11 +1,12 @@
 #pragma once
 
-#include <functional>
-#include <glm/glm.hpp>
-
 #include "typedefs.hpp"
 #include "util/Clock.hpp"
 #include "voxels/voxel.hpp"
+
+#include <functional>
+#include <glm/glm.hpp>
+#include <vector>
 
 class Player;
 class Block;
