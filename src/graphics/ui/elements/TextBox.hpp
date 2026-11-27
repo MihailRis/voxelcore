@@ -7,6 +7,23 @@ class Font;
 class ActionsHistory;
 
 namespace gui {
+    struct TextBoxLineLayout {
+        size_t start = 0;
+        std::wstring text;
+        glm::vec2 pos {0};
+        std::vector<int> advances;
+    };
+
+    struct TextBoxLayout {
+        bool ready = false;
+        std::string font;
+        int lineHeight = 0;
+        int textHeight = 0;
+        glm::vec4 caret {0};
+        std::vector<glm::vec4> selection;
+        std::vector<TextBoxLineLayout> lines;
+    };
+
     class TextBoxHistorian;
     class TextBox final : public Container {
         const Input& inputEvents;
@@ -58,6 +75,7 @@ namespace gui {
         size_t selectionEnd = 0;
         size_t selectionOrigin = 0;
 
+        bool externalRendering = false;
         bool multiline = false;
         bool editable = true;
         bool autoresize = false;
@@ -174,6 +192,15 @@ namespace gui {
         /// @param start index of the first selected character
         /// @param end index of the last selected character + 1
         void select(int start, int end);
+
+        void setSelection(ptrdiff_t anchor, ptrdiff_t head);
+        size_t getSelectionAnchor() const;
+
+        void setExternalRendering(bool value);
+        bool isExternalRendering() const;
+
+        bool prepareTextLayout(const Assets& assets);
+        TextBoxLayout getTextLayout(const Assets& assets);
 
         /// @brief Get number of line at specific position in text
         /// @param position target position
