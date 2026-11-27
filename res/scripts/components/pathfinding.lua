@@ -20,6 +20,18 @@ function set_jump_height(height)
     pathfinding.set_jump_height(agent, height)
 end
 
+function set_width(width)
+    pathfinding.set_width(agent, width)
+end
+
+function set_height(height)
+    pathfinding.set_height(agent, height)
+end
+
+function set_max_visited(max_visited)
+    pathfinding.set_max_visited(agent, max_visited)
+end
+
 function get_target()
     return target
 end
