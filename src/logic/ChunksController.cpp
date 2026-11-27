@@ -1,5 +1,6 @@
 #include "ChunksController.hpp"
 
+#include <algorithm>
 #include <limits.h>
 #include <memory>
 
@@ -8,7 +9,6 @@
 #include "graphics/core/Mesh.hpp"
 #include "lighting/Lighting.hpp"
 #include "maths/voxmaths.hpp"
-#include "util/timeutil.hpp"
 #include "objects/Player.hpp"
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"
@@ -18,9 +18,16 @@
 #include "world/LevelEvents.hpp"
 #include "world/World.hpp"
 #include "world/generator/WorldGenerator.hpp"
+#include "debug/Logger.hpp"
 
 const uint MAX_WORK_PER_FRAME = 128;
 const uint MIN_SURROUNDING = 9;
+const float WORK_UNITS_PER_SPEED_SECOND = 600.0f;
+const float MAX_SECONDS_LIMIT = 0.25f;
+const int CREATE_CHUNK_COST = 2;
+const int BUILD_LIGHTS_COST = 4;
+
+static debug::Logger logger("chunks-control");
 
 ChunksController::ChunksController(Level& level)
     : level(level),
@@ -33,12 +40,13 @@ ChunksController::ChunksController(Level& level)
 ChunksController::~ChunksController() = default;
 
 void ChunksController::update(
-    int64_t maxDuration,
+    float delta,
+    int loadSpeed,
     int loadDistance,
     uint padding,
     Player& player,
     bool isLocalPlayer
-) const {
+) {
     const auto& position = player.getPosition();
     int centerX = floordiv<CHUNK_W>(glm::floor(position.x));
     int centerY = floordiv<CHUNK_D>(glm::floor(position.z));
@@ -50,18 +58,89 @@ void ChunksController::update(
         return;
     }
 
-    int64_t mcstotal = 0;
+    auto& chunks = *player.chunks;
+    auto& state = states[player.getId()];
+    syncState(state, chunks, padding);
 
-    for (uint i = 0; i < MAX_WORK_PER_FRAME; i++) {
-        timeutil::Timer timer;
-        if (loadVisible(player, padding, isLocalPlayer)) {
-            int64_t mcs = timer.stop();
-            if (mcstotal + mcs < maxDuration * 1000) {
-                mcstotal += mcs;
-                continue;
+    float rate = loadSpeed * WORK_UNITS_PER_SPEED_SECOND;
+    state.budget = std::min(
+        state.budget + rate * delta, rate * MAX_SECONDS_LIMIT
+    );
+    for (uint i = 0; i < MAX_WORK_PER_FRAME && state.budget > 0.0f; i++) {
+        int cost = loadVisible(state, player, isLocalPlayer);
+        if (cost == 0) {
+            state.budget = 0.0f;
+            break;
+        }
+        state.budget -= cost;
+    }
+    state.chunksCount = chunks.getChunksCount();
+}
+
+void ChunksController::syncState(
+    LoadingState& state, Chunks& chunks, uint padding
+) const {
+    int sizeX = chunks.getWidth();
+    int sizeY = chunks.getHeight();
+    bool layoutChanged = state.width != sizeX || state.height != sizeY ||
+                         state.padding != padding;
+    bool moved = state.offsetX != chunks.getOffsetX() ||
+                 state.offsetZ != chunks.getOffsetY();
+
+    if (layoutChanged) {
+        state.width = sizeX;
+        state.height = sizeY;
+        state.padding = padding;
+        state.order.clear();
+
+        int pad = static_cast<int>(padding);
+        int minDistance = ((sizeX - pad * 2) / 2) * ((sizeY - pad * 2) / 2);
+        std::vector<std::pair<int, int>> cells;
+        for (int z = pad; z < sizeY - pad; z++) {
+            for (int x = pad; x < sizeX - pad; x++) {
+                int lx = x - sizeX / 2;
+                int lz = z - sizeY / 2;
+                int distance = lx * lx + lz * lz;
+                if (distance < minDistance) {
+                    cells.emplace_back(distance, z * sizeX + x);
+                }
             }
         }
-        break;
+        std::sort(cells.begin(), cells.end());
+        state.order.reserve(cells.size());
+        for (const auto& [_, index] : cells) {
+            state.order.push_back(index);
+        }
+    }
+    if (layoutChanged || moved) {
+        removeFarChunks(chunks);
+        state.offsetX = chunks.getOffsetX();
+        state.offsetZ = chunks.getOffsetY();
+    }
+    if (layoutChanged || moved || state.chunksCount != chunks.getChunksCount()) {
+        state.loadIndex = 0;
+        state.lightIndex = 0;
+        state.lightsDirty = true;
+        state.chunksCount = chunks.getChunksCount();
+    }
+}
+
+void ChunksController::removeFarChunks(Chunks& chunks) const {
+    int sizeX = chunks.getWidth();
+    int sizeY = chunks.getHeight();
+    int maxDistance = (sizeX / 2) * (sizeY / 2);
+    const auto& buffer = chunks.getChunks();
+    for (int z = 0; z < sizeY; z++) {
+        for (int x = 0; x < sizeX; x++) {
+            if (buffer[z * sizeX + x] == nullptr) {
+                continue;
+            }
+            int lx = x - sizeX / 2;
+            int lz = z - sizeY / 2;
+            if (lx * lx + lz * lz >= maxDistance) {
+                chunks.remove(x + chunks.getOffsetX(), z + chunks.getOffsetY());
+            }
+        }
     }
 }
 
@@ -81,68 +160,49 @@ bool ChunksController::isInLoadingZone(
     return distance < minDistance;
 }
 
-bool ChunksController::loadVisible(
-    const Player& player, uint padding, bool isLocalPlayer
+int ChunksController::loadVisible(
+    LoadingState& state, const Player& player, bool isLocalPlayer
 ) const {
     auto& chunks = *player.chunks;
+    const auto& buffer = chunks.getChunks();
+    const auto& order = state.order;
+
+    while (state.loadIndex < order.size() &&
+           buffer[order[state.loadIndex]] != nullptr) {
+        state.loadIndex++;
+    }
+
+    if (isLocalPlayer && state.lightsDirty) {
+        while (state.lightIndex < state.loadIndex) {
+            const auto& chunk = buffer[order[state.lightIndex]];
+            if (chunk && chunk->flags.loaded && !chunk->flags.lighted) {
+                break;
+            }
+            state.lightIndex++;
+        }
+        for (size_t i = state.lightIndex; i < state.loadIndex; i++) {
+            const auto& chunk = buffer[order[i]];
+            if (chunk && chunk->flags.loaded && !chunk->flags.lighted &&
+                buildLights(player, chunk)) {
+                return BUILD_LIGHTS_COST;
+            }
+        }
+        state.lightsDirty = false;
+    }
+
+    if (state.loadIndex >= order.size() || !player.isLoadingChunks()) {
+        return 0;
+    }
+    int index = order[state.loadIndex];
     int sizeX = chunks.getWidth();
-    int sizeY = chunks.getHeight();
-
-    int nearX = 0;
-    int nearZ = 0;
-    bool assigned = false;
-    int minDistance = ((sizeX - padding * 2) / 2) * ((sizeY - padding * 2) / 2);
-    int maxDistance = ((sizeX) / 2) * ((sizeY) / 2);
-    for (uint z = 0; z < sizeY; z++) {
-        for (uint x = 0; x < sizeX; x++) {
-            int index = z * sizeX + x;
-            int lx = x - sizeX / 2;
-            int lz = z - sizeY / 2;
-            int distance = (lx * lx + lz * lz);
-            auto& chunk = chunks.getChunks()[index];
-            if (chunk != nullptr) {
-                if (distance >= maxDistance) {
-                    chunks.remove(
-                        x + chunks.getOffsetX(), z + chunks.getOffsetY()
-                    );
-                }
-                continue;
-            }
-        }
-    }
-    for (uint z = padding; z < sizeY - padding; z++) {
-        for (uint x = padding; x < sizeX - padding; x++) {
-            int index = z * sizeX + x;
-            int lx = x - sizeX / 2;
-            int lz = z - sizeY / 2;
-            int distance = (lx * lx + lz * lz);
-            auto& chunk = chunks.getChunks()[index];
-            if (chunk != nullptr) {
-                if (chunk->flags.loaded && !chunk->flags.lighted) {
-                    if (isLocalPlayer && buildLights(player, chunk)) {
-                        return true;
-                    }
-                }
-                continue;
-            }
-
-            if (distance < minDistance) {
-                minDistance = distance;
-                nearX = x;
-                nearZ = z;
-                assigned = true;
-            }
-        }
-    }
-
-    const auto& chunk = chunks.getChunks()[nearZ * sizeX + nearX];
-    if (chunk != nullptr || !assigned || !player.isLoadingChunks()) {
-        return false;
-    }
-    int offsetX = chunks.getOffsetX();
-    int offsetY = chunks.getOffsetY();
-    createChunk(player, nearX + offsetX, nearZ + offsetY);
-    return true;
+    createChunk(
+        player,
+        index % sizeX + chunks.getOffsetX(),
+        index / sizeX + chunks.getOffsetY()
+    );
+    state.loadIndex++;
+    state.lightsDirty = true;
+    return CREATE_CHUNK_COST;
 }
 
 bool ChunksController::buildLights(

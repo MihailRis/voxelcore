@@ -310,11 +310,24 @@ void ChunksRenderer::drawChunks(
     auto denseDistance2 = denseDistance * denseDistance;
 
     // TODO: minimize draw calls number
-    for (int i = indices.size()-1; i >= 0; i--) {
+    for (int i = indices.size() - 1; i >= 0; i--) {
         auto& chunk = chunks.getChunks()[indices[i].index];
         if (chunk == nullptr) {
             continue;
         }
+        int cx = chunk->x;
+        int cz = chunk->z;
+        if (culling) {
+            glm::vec3 min(cx * CHUNK_W, chunk->bottom, cz * CHUNK_D);
+            glm::vec3 max(
+                cx * CHUNK_W + CHUNK_W, chunk->top, cz * CHUNK_D + CHUNK_D
+            );
+
+            if (!frustum.isBoxVisible(min, max)) {
+                continue;
+            }
+        }
+
         auto found = meshes.find(glm::ivec2(chunk->x, chunk->z));
         if (found == meshes.end()) {
             continue;
@@ -323,33 +336,19 @@ void ChunksRenderer::drawChunks(
         if (mesh.mesh == nullptr) {
             continue;
         }
-        if (culling) {
-            const auto& meshAABB = mesh.meshAABB;
-            auto aabbMin = meshAABB.min();
-            auto aabbMax = meshAABB.max();
-            glm::vec3 min(
-                chunk->x * CHUNK_W + std::min(0.0f, aabbMin.x),
-                chunk->bottom,
-                chunk->z * CHUNK_D + std::min(0.0f, aabbMin.z)
-            );
-            glm::vec3 max(
-                chunk->x * CHUNK_W + aabbMax.x,
-                chunk->top,
-                chunk->z * CHUNK_D + aabbMax.z
-            );
-
-            if (!frustum.isBoxVisible(min, max)) {
-                continue;
-            }
-        }
 
         glm::vec3 coord(
             chunk->x * CHUNK_W + 0.5f, 0.5f, chunk->z * CHUNK_D + 0.5f
         );
         glm::mat4 model = glm::translate(glm::mat4(1.0f), coord);
         shader.uniformMatrix("u_model", model);
-        mesh.mesh->draw(GL_TRIANGLES, glm::distance2(camera.position * glm::vec3(1, 0, 1), 
-            (coord + glm::vec3(CHUNK_W * 0.5f, 0.0f, CHUNK_D * 0.5f))) < denseDistance2);
+        mesh.mesh->draw(
+            GL_TRIANGLES,
+            glm::distance2(
+                camera.position * glm::vec3(1, 0, 1),
+                (coord + glm::vec3(CHUNK_W * 0.5f, 0.0f, CHUNK_D * 0.5f))
+            ) < denseDistance2
+        );
         visibleChunks++;
     }
 }
@@ -388,20 +387,21 @@ void ChunksRenderer::drawSortedMeshes(const Camera& camera, Shader& shader) {
         if (chunk == nullptr || !chunk->flags.lighted) {
             continue;
         }
-        const auto& found = meshes.find(glm::ivec2(chunk->x, chunk->z));
-        if (found == meshes.end() || found->second.sortingMeshData.entries.empty()) {
-            continue;
-        }
 
+        int cx = chunk->x;
+        int cz = chunk->z;
         if (culling) {
-            glm::vec3 min(chunk->x * CHUNK_W, chunk->bottom, chunk->z * CHUNK_D);
+            glm::vec3 min(cx * CHUNK_W, chunk->bottom, cz * CHUNK_D);
             glm::vec3 max(
-                chunk->x * CHUNK_W + CHUNK_W,
-                chunk->top,
-                chunk->z * CHUNK_D + CHUNK_D
+                cx * CHUNK_W + CHUNK_W, chunk->top, cz * CHUNK_D + CHUNK_D
             );
 
             if (!frustum.isBoxVisible(min, max)) continue;
+        }
+
+        const auto& found = meshes.find(glm::ivec2(cx, cz));
+        if (found == meshes.end() || found->second.sortingMeshData.entries.empty()) {
+            continue;
         }
 
         auto& chunkEntries = found->second.sortingMeshData.entries;

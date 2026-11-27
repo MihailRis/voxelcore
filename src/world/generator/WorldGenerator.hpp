@@ -59,9 +59,7 @@ class WorldGenerator {
     SurroundMap surroundMap;
 
     /// @brief Generate chunk prototype (see ChunkPrototype)
-    /// @param x chunk position X divided by CHUNK_W
-    /// @param z chunk position Y divided by CHUNK_D
-    std::unique_ptr<ChunkPrototype> generatePrototype(int x, int z);
+    std::unique_ptr<ChunkPrototype> generatePrototype();
 
     ChunkPrototype& requirePrototype(int x, int z);
 
@@ -85,25 +83,13 @@ class WorldGenerator {
         const ChunkPrototype& prototype, voxel* voxels, int x, int z
     );
     void generateLine(
-        const ChunkPrototype& prototype, 
         const LinePlacement& placement,
         voxel* voxels, 
         int x, int z
     );
-    void generateBlock(
-        const ChunkPrototype& prototype,
-        const BlockPlacement& placement,
-        voxel* voxels,
-        int x, int z
-    );
-    void generateStructure(
-        const ChunkPrototype& prototype, 
-        const StructurePlacement& placement,
-        voxel* voxels, 
-        int x, int z
-    );
+    void generateBlock(const BlockPlacement& placement, voxel* voxels);
+    void generateStructure(const StructurePlacement& placement, voxel* voxels);
     void generatePlants(
-        const ChunkPrototype& prototype,
         float* values,
         voxel* voxels,
         int x,
@@ -111,18 +97,13 @@ class WorldGenerator {
         const Biome** biomes
     );
     void generateLand(
-        const ChunkPrototype& prototype,
         float* values,
         voxel* voxels,
-        int x,
-        int z,
         const Biome** biomes
     );
 
     void placeStructures(
-        const std::vector<Placement>& placements,
-        ChunkPrototype& prototype,
-        int x, int z
+        const std::vector<Placement>& placements, int x, int z
     );
 public:
     WorldGenerator(

@@ -1,8 +1,5 @@
 #include "WorldGenerator.hpp"
 
-#include <cstring>
-#include <algorithm>
-
 #include "maths/util.hpp"
 #include "content/Content.hpp"
 #include "voxels/Block.hpp"
@@ -14,6 +11,9 @@
 #include "maths/voxmaths.hpp"
 #include "maths/util.hpp"
 #include "debug/Logger.hpp"
+
+#include <cstring>
+#include <algorithm>
 
 static debug::Logger logger("world-generator");
 
@@ -49,7 +49,7 @@ WorldGenerator::WorldGenerator(
         if (prototypes.find({x, z}) != prototypes.end()) {
             return;
         }
-        prototypes[{x, z}] = generatePrototype(x, z);
+        prototypes[{x, z}] = generatePrototype();
     });
     surroundMap.setLevelCallback(def.wideStructsChunksRadius + 1, 
     [this](int const x, int const z) {
@@ -144,9 +144,7 @@ static inline const Biome* choose_biome(
     return chosenBiome;
 }
 
-std::unique_ptr<ChunkPrototype> WorldGenerator::generatePrototype(
-    int chunkX, int chunkZ
-) {
+std::unique_ptr<ChunkPrototype> WorldGenerator::generatePrototype() {
     return std::make_unique<ChunkPrototype>();
 }
 
@@ -237,21 +235,24 @@ void WorldGenerator::placeBlock(const BlockPlacement& block, int priority) {
     for (int cz = cza; cz <= czb; cz++) {
         for (int cx = cxa; cx <= cxb; cx++) {
             const auto& found = prototypes.find({cx, cz});
-            if (found != prototypes.end()) {
-                // position becomes relative to prototype chunk
-                glm::ivec3 rel = block.position - glm::ivec3(cx * CHUNK_W, 0, cz * CHUNK_D);
-                bool owner = (cx == floordiv<CHUNK_W>(block.position.x)) && (cz == floordiv<CHUNK_D>(block.position.z));
-                found->second->placements.emplace_back(priority, BlockPlacement{block.block, rel, block.rotation, !owner});
+            if (found == prototypes.end()) {
+                continue;
             }
+            // position becomes relative to prototype chunk
+            glm::ivec3 rel =
+                block.position - glm::ivec3(cx * CHUNK_W, 0, cz * CHUNK_D);
+            bool owner = (cx == floordiv<CHUNK_W>(block.position.x)) &&
+                         (cz == floordiv<CHUNK_D>(block.position.z));
+            found->second->placements.emplace_back(
+                priority,
+                BlockPlacement {block.block, rel, block.rotation, !owner}
+            );
         }
     }
 }
 
 void WorldGenerator::placeStructures(
-    const std::vector<Placement>& placements, 
-    ChunkPrototype& prototype, 
-    int chunkX, 
-    int chunkZ
+    const std::vector<Placement>& placements, int chunkX, int chunkZ
 ) {
     for (const auto& placement : placements) {
         if (auto sp = std::get_if<StructurePlacement>(&placement.placement)) {
@@ -278,7 +279,7 @@ void WorldGenerator::generateStructuresWide(
     auto placements = def.script->placeStructuresWide(
         {chunkX * CHUNK_W, chunkZ * CHUNK_D}, {CHUNK_W, CHUNK_D}, CHUNK_H
     );
-    placeStructures(placements, prototype, chunkX, chunkZ);
+    placeStructures(placements, chunkX, chunkZ);
 
     prototype.level = ChunkPrototypeLevel::WIDE_STRUCTS;
 }
@@ -296,7 +297,7 @@ void WorldGenerator::generateStructures(
         {chunkX * CHUNK_W, chunkZ * CHUNK_D}, {CHUNK_W, CHUNK_D},
         heightmap, CHUNK_H
     );
-    placeStructures(placements, prototype, chunkX, chunkZ);
+    placeStructures(placements, chunkX, chunkZ);
 
     util::PseudoRandom structsRand;
     structsRand.setSeed(chunkX, chunkZ);
@@ -405,12 +406,7 @@ void WorldGenerator::update(int centerX, int centerY, int loadDistance) {
 }
 
 void WorldGenerator::generatePlants(
-    const ChunkPrototype& prototype,
-    float* heights,
-    voxel* voxels,
-    int chunkX,
-    int chunkZ,
-    const Biome** biomes
+    float* heights, voxel* voxels, int chunkX, int chunkZ, const Biome** biomes
 ) {
     const auto& indices = content.getIndices()->blocks;
     util::PseudoRandom plantsRand;
@@ -447,12 +443,7 @@ void WorldGenerator::generatePlants(
 }
 
 void WorldGenerator::generateLand(
-    const ChunkPrototype& prototype,
-    float* values,
-    voxel* voxels,
-    int chunkX,
-    int chunkZ,
-    const Biome** biomes
+    float* values, voxel* voxels, const Biome** biomes
 ) {
     uint seaLevel = def.seaLevel;
     for (uint z = 0; z < CHUNK_D; z++) {
@@ -477,27 +468,13 @@ void WorldGenerator::generate(voxel* voxels, int chunkX, int chunkZ) {
     const auto& prototype = requirePrototype(chunkX, chunkZ);
     const auto values = prototype.heightmap->getValues();
 
-    uint seaLevel = def.seaLevel;
-
     std::memset(voxels, 0, sizeof(voxel) * CHUNK_VOL);
 
     const auto& biomes = prototype.biomes.get();
-    for (uint z = 0; z < CHUNK_D; z++) {
-        for (uint x = 0; x < CHUNK_W; x++) {
-            const Biome* biome = biomes[z * CHUNK_W + x];
 
-            int height = values[z * CHUNK_W + x] * CHUNK_H;
-            height = std::max(0, height);
-
-            const auto& groundLayers = biome->groundLayers;
-            const auto& seaLayers = biome->seaLayers;
-
-            generate_pole(seaLayers, seaLevel, height, seaLevel, voxels, x, z);
-            generate_pole(groundLayers, height, 0, seaLevel, voxels, x, z);
-        }
-    }
+    generateLand(values, voxels, biomes);
     generatePlacements(prototype, voxels, chunkX, chunkZ);
-    generatePlants(prototype, values, voxels, chunkX, chunkZ, biomes);
+    generatePlants(values, voxels, chunkX, chunkZ, biomes);
 
     [[maybe_unused]] const auto& indices = content.getIndices()->blocks;
     for (uint i = 0; i < CHUNK_VOL; i++) {
@@ -526,20 +503,17 @@ void WorldGenerator::generatePlacements(
     );
     for (const auto& placement : placements) {
         if (auto structure = std::get_if<StructurePlacement>(&placement.placement)) {
-            generateStructure(prototype, *structure, voxels, chunkX, chunkZ);
+            generateStructure(*structure, voxels);
         } else if (auto line = std::get_if<LinePlacement>(&placement.placement)) {
-            generateLine(prototype, *line, voxels, chunkX, chunkZ);
+            generateLine(*line, voxels, chunkX, chunkZ);
         } else if (auto block = std::get_if<BlockPlacement>(&placement.placement)) {
-            generateBlock(prototype, *block, voxels, chunkX, chunkZ);
+            generateBlock(*block, voxels);
         }
     }
 }
 
 void WorldGenerator::generateStructure(
-    const ChunkPrototype& prototype, 
-    const StructurePlacement& placement,
-    voxel* voxels, 
-    int chunkX, int chunkZ
+    const StructurePlacement& placement, voxel* voxels
 ) {
     if (placement.structure < 0 || placement.structure >= def.structures.size()) {
         logger.error() << "invalid structure index " << placement.structure;
@@ -577,10 +551,7 @@ void WorldGenerator::generateStructure(
 }
 
 void WorldGenerator::generateLine(
-    const ChunkPrototype& prototype, 
-    const LinePlacement& line,
-    voxel* voxels, 
-    int chunkX, int chunkZ
+    const LinePlacement& line, voxel* voxels, int chunkX, int chunkZ
 ) {
     const auto& indices = content.getIndices()->blocks;
 
@@ -610,26 +581,26 @@ void WorldGenerator::generateLine(
                 glm::ivec3 closest = util::closest_point_on_segment(
                     a, b, point
                 );
-                if (y > 0 &&
-                    util::distance2(closest, point) <= radius * radius
-                ) {
-                    auto& voxel = voxels[vox_index(x, y, z)];
-                    if (line.block != BLOCK_AIR) {
-                        voxel = {line.block, {}};
-                        continue;
-                    }
-                    if (!indices.require(voxel.id).replaceable) {
-                        voxel = {line.block, {}};
-                    }
-                    auto& below = voxels[vox_index(x, y-1, z)];
-                    glm::ivec3 closest2 = util::closest_point_on_segment(
-                        a, b, {gx, y-1, gz}
-                    );
-                    if (util::distance2(closest2, {gx, y-1, gz}) > radius*radius) {
-                        const auto& def = indices.require(below.id);
-                        if (def.rt.surfaceReplacement != below.id) {
-                            below = {def.rt.surfaceReplacement, {}};
-                        }
+                if (y <= 0 || util::distance2(closest, point) > radius * radius) {
+                    continue;
+                }
+                auto& voxel = voxels[vox_index(x, y, z)];
+                if (line.block != BLOCK_AIR) {
+                    voxel = {line.block, {}};
+                    continue;
+                }
+                if (!indices.require(voxel.id).replaceable) {
+                    voxel = {line.block, {}};
+                }
+                auto& below = voxels[vox_index(x, y-1, z)];
+                glm::ivec3 closest2 = util::closest_point_on_segment(
+                    a, b, {gx, y-1, gz}
+                );
+                if (util::distance2(closest2, {gx, y - 1, gz}) >
+                    radius * radius) {
+                    const auto& def = indices.require(below.id);
+                    if (def.rt.surfaceReplacement != below.id) {
+                        below = {def.rt.surfaceReplacement, {}};
                     }
                 }
             }
@@ -638,10 +609,7 @@ void WorldGenerator::generateLine(
 }
 
 void WorldGenerator::generateBlock(
-    const ChunkPrototype& prototype,
-    const BlockPlacement& placement,
-    voxel* voxels,
-    int chunkX, int chunkZ
+    const BlockPlacement& placement, voxel* voxels
 ) {
     const auto& indices = content.getIndices()->blocks;
     const auto& def = indices.require(placement.block);

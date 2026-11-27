@@ -24,7 +24,6 @@
 #include "logic/PlayerController.hpp"
 #include "logic/scripting/scripting.hpp"
 #include "logic/scripting/scripting_hud.hpp"
-#include "maths/voxmaths.hpp"
 #include "objects/Players.hpp"
 #include "objects/Entities.hpp"
 #include "physics/Hitbox.hpp"
@@ -257,8 +256,7 @@ void LevelScreen::update(float delta) {
         updateHotkeys();
     }
     updateAudio();
-    
-    auto menu = gui.getMenu();
+
     bool inputLocked =
         gui.getActiveFrame() || hud->isInventoryOpen() || gui.isFocusCaught();
     bool paused = hud->isPause();
@@ -284,7 +282,7 @@ void LevelScreen::update(float delta) {
     renderer->update(camera, delta * !hud->isPause());
 }
 
-void LevelScreen::draw(float delta) {
+void LevelScreen::draw(float) {
     Camera& camera = *playerController->getPlayer().currentCamera;
 
     const DrawContext ctx(nullptr, engine.getWindow(), batch.get());

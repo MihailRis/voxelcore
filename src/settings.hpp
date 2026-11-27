@@ -45,6 +45,8 @@ struct ChunksSettings {
     IntegerSetting loadSpeed {4, 1, 32};
     /// @brief Radius of chunks loading zone (chunk is unit) 
     IntegerSetting loadDistance {22, 3, 80};
+    /// @brief Radius of chunks update zone (chunk is unit)
+    IntegerSetting updateDistance {22, 3, 80};
     /// @brief Buffer zone where chunks are not unloading (chunk is unit)
     IntegerSetting padding {2, 1, 8};
 };

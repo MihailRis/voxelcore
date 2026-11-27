@@ -4,9 +4,7 @@
 #include "items/Inventories.hpp"
 #include "items/Inventory.hpp"
 #include "lighting/Lighting.hpp"
-#include "maths/fastmaths.hpp"
 #include "scripting/scripting.hpp"
-#include "util/timeutil.hpp"
 #include "voxels/Block.hpp"
 #include "voxels/Chunk.hpp"
 #include "voxels/Chunks.hpp"
@@ -17,15 +15,19 @@
 #include "objects/Player.hpp"
 #include "objects/Players.hpp"
 #include "util/random.hpp"
+#include "settings.hpp"
 
 #include <random>
 
 static inline constexpr int CHUNK_RANDOM_TICK_SEGMENTS = 4;
 
-BlocksController::BlocksController(const Level& level, Lighting* lighting)
+BlocksController::BlocksController(
+    const Level& level, Lighting* lighting, const EngineSettings& settings
+)
     : level(level),
       chunks(*level.chunks),
       lighting(lighting),
+      settings(settings),
       randTickClock(20, 3),
       blocksTickClock(20, 3),
       worldTickClock(20, 1) {
@@ -189,6 +191,7 @@ void BlocksController::randomTick(
         std::shuffle(randomPattern.begin(), randomPattern.end(), randomEngine);
     }
 
+    int chunkRand = (chunk.x * 73856093) ^ (chunk.z * 19349663);
     for (int s = 0; s < segments; s++) {
         int repetions = 4;
         for (int i = 0; i < repetions; i++) {
@@ -196,7 +199,9 @@ void BlocksController::randomTick(
             if (segmentY > chunk.top) {
                 break;
             }
-            size_t index = randomPattern[(s * repetions + i + randomTickId) % randomPattern.size()];
+            size_t index = randomPattern
+                [(s * repetions + i + randomTickId + chunkRand) %
+                 randomPattern.size()];
             int bx = index % CHUNK_W;
             int bz = (index / CHUNK_W) % CHUNK_D;
             int by = (index / (CHUNK_W * CHUNK_D)) + segmentY;
@@ -214,13 +219,23 @@ void BlocksController::randomTick(
     }
 }
 
+static long long calc_chunk_distance2(
+    const glm::vec3& pos, const Chunk& chunk
+) {
+    int dx = chunk.x - static_cast<int>(std::floor(pos.x / CHUNK_W));
+    int dz = chunk.z - static_cast<int>(std::floor(pos.z / CHUNK_D));
+    return dx * dx + dz * dz;
+}
+
 void BlocksController::randomTick(int tickid, int parts, uint padding) {
     auto indices = level.content.getIndices();
 
+    int updateDistance = settings.chunks.updateDistance.get();
     for (const auto& [pid, player] : *level.players) {
         const auto& chunks = *player->chunks;
         int width = chunks.getWidth();
         int height = chunks.getHeight();
+        const auto& playerPos = player->getPosition();
 
         for (uint z = padding; z < height - padding; z++) {
             for (uint x = padding; x < width - padding; x++) {
@@ -230,6 +245,10 @@ void BlocksController::randomTick(int tickid, int parts, uint padding) {
                 }
                 auto& chunk = chunks.getChunks()[index];
                 if (chunk == nullptr || !chunk->flags.ready) {
+                    continue;
+                }
+                long long distance = calc_chunk_distance2(playerPos, *chunk);
+                if (distance > updateDistance * updateDistance) {
                     continue;
                 }
                 if (chunk->lastRandomTickId == randomTickId) {
