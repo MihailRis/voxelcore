@@ -6,6 +6,7 @@
 #include <vector>
 #include <variant>
 #include <optional>
+#include <type_traits>
 #include <unordered_map>
 
 namespace io {

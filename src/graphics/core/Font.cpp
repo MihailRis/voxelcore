@@ -7,6 +7,7 @@
 #include "window/Camera.hpp"
 
 #include <limits>
+#include <type_traits>
 #include <utility>
 
 inline constexpr uint GLYPH_SIZE = 16;
