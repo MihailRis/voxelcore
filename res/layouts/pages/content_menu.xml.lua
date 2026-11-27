@@ -1,3 +1,7 @@
+local search_utils = require("search_utils")
+
+local score_func = search_utils.fuzzy_score
+
 local packs_installed = {}
 local pack_open = {}
 local PARSERS = {
@@ -14,17 +18,28 @@ function on_open()
     document.search_textbox.focused = true
 end
 
+local function update_pack_id_title(packinfo)
+    local id_el = document["pack_"..packinfo.id.."_id"]
+    local title_el = document["pack_"..packinfo.id.."_title"]
+
+    local id_md = packinfo.id_md or packinfo.id
+    if packinfo.has_indices then
+        id_md = id_md .. "\\*"
+    end
+    id_el.text = string.format("[%s %s]", id_md, packinfo.version)
+
+    title_el.text = packinfo.title_md or packinfo.title
+end
+
 function place_pack(panel, packinfo, callback)
     if packinfo.error then
         callback = nil
     end
-    if packinfo.has_indices then
-        packinfo.id_verbose = packinfo.id.."*"
-    else
-        packinfo.id_verbose = packinfo.id
-    end
+    packinfo.id_verbose = ""
+
     packinfo.callback = callback
     panel:add(gui.template("pack", packinfo))
+    update_pack_id_title(packinfo)
 end
 
 function refresh_search()
@@ -33,20 +48,66 @@ function refresh_search()
     local interval = 4
     local step = -1
 
-    for i, v in ipairs(packs_installed) do
-        local id = v[1]
-        local title = v[2]
+    local packs = table.copy(packs_installed)
+
+    local score_non_zero_num = 0
+    local smart_score_cache = {}
+    local colored_ids = {}
+    local colored_titles = {}
+
+    local function smart_score(a)
+        if smart_score_cache[a.id] then
+            return smart_score_cache[a.id]
+        end
+        local id_score, colored_id = score_func(a.id, search_text, true)
+        local title_score, colored_title = score_func(a.title, search_text, true)
+        local res = math.max(id_score, title_score)
+
+        smart_score_cache[a.id] = res
+        colored_ids[a.id] = colored_id
+        colored_titles[a.id] = colored_title
+
+        if res > 0 then
+            score_non_zero_num = score_non_zero_num + 1
+        end
+        return res
+    end
+
+    local function cmp(a, b)
+        local score_a = smart_score(a)
+        local score_b = smart_score(b)
+        if score_a == score_b then
+            return a.title > b.title
+        else
+            return score_a > score_b
+        end
+    end
+
+    table.sort(packs, cmp)
+
+    for i, v in ipairs(packs) do
+        local id = v.id
+
+        local packinfo = table.copy(packs[i])
+        if colored_ids[id] then
+            packinfo.id_md = colored_ids[id]
+        end
+        if colored_titles[id] then
+            packinfo.title_md = colored_titles[id]
+        end
+        update_pack_id_title(packinfo)
+
         local content = document["pack_" .. id]
         local pos = content.pos
         local size = content.size
 
-        if title:lower():find(search_text) or id:lower():find(search_text) or search_text == '' then
+        if i <= score_non_zero_num then
             content.enabled = true
-            content.pos = {pos[1], visible * (size[2] + interval) - step}
+            content.pos = { pos[1], visible * (size[2] + interval) - step }
             visible = visible + 1
         else
             content.enabled = false
-            content.pos = {pos[1], (visible + #packs_installed - i) * (size[2] + interval) - step}
+            content.pos = { pos[1], (visible + #packs_installed - i) * (size[2] + interval) - step }
         end
     end
 end
@@ -74,7 +135,7 @@ local function create_trackbar(id, name, val)
         "<label id='%s'>%s (%s)</label>",
         id .. "_label", name:gsub("^%l", string.upper), val
     ))
-    document.configs:add(string.format( 
+    document.configs:add(string.format(
         "<trackbar id='%s' consumer='function(x) set_value(\"%s\", \"%s\", x) end' value='%s' min='0' max='1000' step='10'>%s</trackbar>",
         id, name, id, val, name
     ))
@@ -96,7 +157,7 @@ end
 
 local function create_config(i, config, name, path)
     create_label(name, ('**[' .. name .. ']**'):upper(), "#FFFFFF")
-    pack_open[2][i] = {elements = {}, path = path}
+    pack_open[2][i] = { elements = {}, path = path }
     for _, a in ipairs(config.checkboxes) do
         create_checkbox(i .. '_' .. a[1], a[1], a[2])
         pack_open[2][i]["elements"][a[1]] = type(a[2])
@@ -145,7 +206,6 @@ local function has_valid_config(id)
 end
 
 local function load_config_file(path)
-
     local extension = path:match("^.+%.(.+)$")
     local name = path:match("([^/]+)%.([^%.]+)$")
 
@@ -162,10 +222,11 @@ end
 local function load_config(path)
     if file.exists(path) then
         local value = load_config_file(path)
-        local config = {checkboxes = {},
-                        trackbars = {},
-                        textboxes = {}
-                        }
+        local config = {
+            checkboxes = {},
+            trackbars = {},
+            textboxes = {}
+        }
 
         if not value then
             return
@@ -173,11 +234,11 @@ local function load_config(path)
 
         for i, v in pairs(value) do
             if type(v) == "string" then
-                table.insert(config.textboxes, {i, v})
+                table.insert(config.textboxes, { i, v })
             elseif type(v) == "boolean" then
-                table.insert(config.checkboxes, {i, v})
+                table.insert(config.checkboxes, { i, v })
             elseif type(v) == "number" then
-                table.insert(config.trackbars,  {i, v})
+                table.insert(config.trackbars, { i, v })
             end
         end
 
@@ -217,16 +278,18 @@ end
 
 function open_pack(id)
     local packinfo = pack.get_info(id)
-    pack_open = {id, {}}
+    pack_open = { id, {} }
 
     document.configs.visible = false
     document.content_info.visible = true
     if has_valid_config(id) then document.open_config.enabled = true else document.open_config.enabled = false end
 
-    if packinfo['dependencies'] == nil then document.dependencies.text = 'None' else document.dependencies.text = table.tostring(packinfo['dependencies']) end
+    if packinfo['dependencies'] == nil then document.dependencies.text = 'None' else document.dependencies.text = table
+        .tostring(packinfo['dependencies']) end
     if packinfo['creator'] == '' then document.author.text = 'None' else document.author.text = packinfo['creator'] end
     if packinfo['version'] == nil then document.version.text = 'None' else document.version.text = packinfo['version'] end
-    if packinfo['description'] == nil then document.description.text = 'None' else document.description.text = packinfo['description'] end
+    if packinfo['description'] == nil then document.description.text = 'None' else document.description.text = packinfo
+        ['description'] end
 end
 
 function open_config()
@@ -269,9 +332,9 @@ function refresh()
     local packinfos = pack.get_info(packs_installed)
     for i, id in ipairs(packs_installed) do
         local packinfo = packinfos[id]
-
         packinfo.id = id
-        packs_installed[i] = {packinfo.id, packinfo.title}
+        packs_installed[i] = packinfo
+
         local callback = string.format('open_pack("%s")', id)
         place_pack(contents, packinfo, callback)
     end
