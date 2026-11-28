@@ -136,3 +136,21 @@ Tags can also be added to items from other packs using the `your_pack:tags.toml`
     # ...
 ]
 ```
+
+## Inheritance
+
+### *parent*
+
+Specifies another item definition to inherit properties from. The value must be a full item id in `pack:item_name` format:
+
+```json
+{
+    "parent": "example:base_tool",
+    "icon": "items:steel_tool",
+    "stack-size": 1
+}
+```
+
+The parent must be loaded before the child. The engine copies the parent's built-in properties, and properties explicitly specified by the child override them. Custom properties and tags follow the same inheritance rules: custom properties missing from the child are taken from the parent, while child values take precedence.
+
+An item can have only one direct parent. Parent chains are allowed.

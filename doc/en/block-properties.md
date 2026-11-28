@@ -1,5 +1,23 @@
 # Block properties
 
+## Inheritance
+
+### *parent*
+
+Specifies another block definition to inherit properties from. The value must be a full block id in `pack:block_name` format:
+
+```json
+{
+    "parent": "base:abstract_stairs",
+    "texture": "brick",
+    "rotation": "stairs"
+}
+```
+
+The parent must be loaded before the child. The engine copies the parent's properties, and properties explicitly specified by the child override them. Custom properties and tags follow the same inheritance rules: custom properties missing from the child are taken from the parent, while child values take precedence.
+
+A block can have only one direct parent. Parent chains are allowed; a definition loads properties from its parent, which may itself have a parent.
+
 ## Visual & Audio
 
 ### *texture*
@@ -418,4 +436,4 @@ Block tags can also be added from other packs using the `your_pack:tags.toml` fi
 "other_prefix:other_tag_name" = [
     # ...
 ]
-``
+```
